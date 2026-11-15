@@ -2546,6 +2546,98 @@ export const STORE_ITEMS_CATALOG = [
     tryable: true
   },
 
+  // === BỘ SƯU TẬP PHÁP PHỤC MỞ RỘNG ===
+  {
+    id: 'ao_lam_co_tau',
+    category: 'ao_trang',
+    slot: 'robe',
+    name: 'Áo lam cổ tàu truyền thống',
+    description: 'Áo tràng lam khói cổ tàu năm nút, phom suông kín đáo, tay dài và đường may tối giản.',
+    image: '/public/assets/aistudio/image_8f6004e3.png',
+    swatchHex: '#87949A',
+    robeTint: [0.48, 0.57, 0.61],
+    currency: 'lotus',
+    price: 160,
+    requiredLevel: 1,
+    rare: false,
+    tryable: true
+  },
+  {
+    id: 'ao_trang_nau_gu',
+    category: 'ao_trang',
+    slot: 'robe',
+    name: 'Áo tràng nâu gụ',
+    description: 'Pháp phục nâu gụ trầm, chất vải mộc lì, phù hợp sinh hoạt và công quả tại chùa.',
+    image: '/public/assets/aistudio/image_8f6004e3.png',
+    swatchHex: '#654832',
+    robeTint: [0.39, 0.27, 0.18],
+    currency: 'lotus',
+    price: 180,
+    requiredLevel: 1,
+    rare: false,
+    tryable: true
+  },
+  {
+    id: 'ao_trang_lam_nhat',
+    category: 'ao_trang',
+    slot: 'robe',
+    name: 'Áo tràng lam sương',
+    description: 'Sắc lam xám nhạt dịu mắt, cổ đứng kín, thân áo suông và không dùng họa tiết nổi.',
+    image: '/public/assets/aistudio/image_8f6004e3.png',
+    swatchHex: '#A8B7B8',
+    robeTint: [0.67, 0.73, 0.72],
+    currency: 'lotus',
+    price: 190,
+    requiredLevel: 1,
+    rare: false,
+    tryable: true
+  },
+  {
+    id: 'ao_trang_xanh_reu',
+    category: 'ao_trang',
+    slot: 'robe',
+    name: 'Áo tràng xanh rêu',
+    description: 'Pháp phục xanh rêu trầm, phom rộng vừa phải, tạo cảm giác gần gũi và giản dị.',
+    image: '/public/assets/aistudio/image_8f6004e3.png',
+    swatchHex: '#596B55',
+    robeTint: [0.34, 0.43, 0.32],
+    currency: 'gem',
+    price: 45,
+    requiredLevel: 3,
+    rare: false,
+    tryable: true
+  },
+  {
+    id: 'ao_trang_tim_khoi',
+    category: 'ao_trang',
+    slot: 'robe',
+    name: 'Áo tràng tím khói',
+    description: 'Tím khói pha xám nhẹ, cổ tàu năm nút và đường viền tay áo tinh tế.',
+    image: '/public/assets/aistudio/image_8f6004e3.png',
+    swatchHex: '#8A7E8D',
+    robeTint: [0.53, 0.46, 0.55],
+    currency: 'gem',
+    price: 55,
+    requiredLevel: 3,
+    rare: true,
+    tryable: true
+  },
+  {
+    id: 'ao_trang_vang_dat',
+    category: 'ao_trang',
+    slot: 'robe',
+    name: 'Áo tràng vàng đất',
+    description: 'Vàng đất dịu, không ánh kim, dành cho bộ sưu tập lễ hội và ngày tu học đặc biệt.',
+    image: '/public/assets/aistudio/image_8f6004e3.png',
+    swatchHex: '#B18A4A',
+    robeTint: [0.69, 0.52, 0.27],
+    currency: 'gem',
+    price: 65,
+    requiredLevel: 5,
+    rare: true,
+    tryable: true
+  },
+
   // === 4. TRÀNG HẠT ===
   {
     id: 'trang_hat_bo_de_108_store',
