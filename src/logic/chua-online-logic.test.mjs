@@ -300,11 +300,15 @@ test('9-category Store catalog, live try-on, level gating, and Tam Quan South->N
   assert.equal(treeItems[0].price, 50);
 
   const robeItems = filterStoreItems('ao_trang');
-  assert.equal(robeItems.length, 6);
+  assert.equal(robeItems.length, 9);
   assert.equal(robeItems.find((r) => r.id === 'ao_trang_nau')?.requiredLevel, 1);
   assert.equal(robeItems.find((r) => r.id === 'ao_trang_trang')?.requiredLevel, 1);
   assert.equal(robeItems.find((r) => r.id === 'ao_vu_lan_hong')?.rare, true);
   assert.equal(robeItems.find((r) => r.id === 'ao_vang_nghe')?.requiredLevel, 10);
+  assert.ok(robeItems.some((r) => r.id === 'ao_lam_reu'));
+  assert.ok(robeItems.some((r) => r.id === 'ao_trang_mau_cat'));
+  assert.ok(robeItems.some((r) => r.id === 'ao_lam_xanh_cham'));
+  assert.ok(robeItems.every((r) => r.swatchHex && r.robeTrimHex && r.robeStyle));
 
   let st = createStoreProfileState({ level: 1, gems: 180, lotusPoints: 250 });
   const tryRes = tryOnStoreItem(st, 'ao_hoa_sen');

@@ -2470,6 +2470,110 @@ select {
   margin-top: 2px;
 }
 
+.profile-outfit-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.profile-outfit-card {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 9px;
+  border: 1.5px solid rgba(130, 90, 50, 0.24);
+  border-radius: 13px;
+  background: #fffdf8;
+  color: #241409;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease, transform 0.12s ease;
+}
+
+.profile-outfit-card:hover {
+  border-color: #165632;
+  transform: translateY(-1px);
+}
+
+.profile-outfit-card.active {
+  border-color: #165632;
+  background: #e6f5ec;
+}
+
+.profile-outfit-swatch {
+  position: relative;
+  flex: 0 0 27px;
+  width: 27px;
+  height: 34px;
+  border: 1px solid rgba(74, 50, 34, 0.3);
+  border-radius: 8px 8px 6px 6px;
+  background: linear-gradient(155deg, color-mix(in srgb, var(--outfit-swatch) 76%, white), var(--outfit-swatch) 72%);
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.22);
+}
+
+.profile-outfit-swatch::after {
+  content: "";
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  left: 50%;
+  width: 3px;
+  transform: translateX(-50%);
+  border-radius: 3px;
+  background: var(--outfit-trim);
+  opacity: 0.95;
+}
+
+.profile-outfit-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.profile-outfit-name {
+  overflow: hidden;
+  color: #241409;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+}
+
+.profile-outfit-status {
+  color: #7c522c;
+  font-size: 10.5px;
+  font-weight: 700;
+}
+
+.profile-outfit-card.active .profile-outfit-status {
+  color: #165632;
+}
+
+.profile-wardrobe-note {
+  margin-top: 7px;
+  color: #755b42;
+  font-size: 11.5px;
+  line-height: 1.4;
+}
+
+.profile-open-outfit-store {
+  margin-top: 7px;
+  padding: 7px 11px;
+  border: 1px solid rgba(22, 86, 50, 0.42);
+  border-radius: 999px;
+  background: #edf6ef;
+  color: #165632;
+  font-size: 11.5px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.profile-open-outfit-store:hover {
+  background: #dcefe1;
+}
+
 .profile-wardrobe-heading {
   font-size: 15px;
   font-weight: 800;
@@ -2541,6 +2645,9 @@ select {
 @media (max-width: 820px) {
   .profile-modal-layout {
     grid-template-columns: 1fr;
+  }
+  .profile-outfit-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .profile-wardrobe-grid,
   .profile-cta-row {

@@ -31,6 +31,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
+import { applyCharacterOutfit } from './character-outfits.mjs';
 import {
   PILGRIMAGE_STATIONS,
   DISCOVERY_ZONES,
@@ -9510,7 +9511,11 @@ export class VinhTrang3DWorld {
     if (!this.activePlayerRecord?.root || !this.storePreviewGroup) return;
 
     // 1. Live robe color preview / equipped robe
-    this.recolorPastelDress(this.activePlayerRecord.root, storeVisual.robeTint || null);
+    applyCharacterOutfit(
+      this.activePlayerRecord.root,
+      storeVisual.robeItemId || 'ao_trang_phat_tu',
+      storeVisual.robeTint || null
+    );
 
     // 2. Rebuild live prop previews attached to protagonist
     while (this.storePreviewGroup.children.length > 0) {

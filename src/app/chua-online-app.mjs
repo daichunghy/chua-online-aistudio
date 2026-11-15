@@ -44,6 +44,7 @@ import {
   calculateMeritSummary
 } from '/src/logic/chua-online-logic.mjs';
 import { VinhTrang3DWorld } from '/src/app/vinh-trang-3d-world.mjs';
+import { applyCharacterOutfit } from '/src/app/character-outfits.mjs';
 
 const STORAGE_KEY = 'chua_online_vinh_trang_state_v11';
 
@@ -743,6 +744,7 @@ export class ChuaOnlineApp {
         }
       },
       onLoaded: () => {
+        this.world3d?.updateEquippedItems?.(this.spiritual.equippedItems);
         this.syncStoreVisualsTo3D();
       },
       onTransitionFade: (active) => {
@@ -1623,7 +1625,9 @@ export class ChuaOnlineApp {
     if (!container) return;
     const eq = this.spiritual.equippedItems;
     const charProf = CHARACTER_PROFILES.find((c) => c.key === this.characterModelKey) || CHARACTER_PROFILES[0];
+    const robeItem = STORE_ITEMS_CATALOG.find((p) => p.id === this.storeProfile?.equipped?.robe);
     const chips = [`🙏 ${charProf.name} (${charProf.heightLabel})`];
+    if (robeItem) chips.push(`👘 ${robeItem.name}`);
     if (eq.hat) {
       const item = SHOP_CATALOG.find((p) => p.id === eq.hat);
       if (item) chips.push(`👒 ${item.name}`);
@@ -2353,6 +2357,7 @@ export class ChuaOnlineApp {
       });
       this.spiritual = r.state;
       this.saveState();
+      this.world3d?.updateEquippedItems?.(this.spiritual.equippedItems);
       this.updateEquippedTags();
       this.playBellTone(320, 1.5);
       this.openProductDetailModal(productId, activeChar);
@@ -3634,9 +3639,9 @@ export class ChuaOnlineApp {
      TÀI KHOẢN & TỦ ĐỒ 3 NHÂN VẬT 3D (Nam · Nữ · Trẻ em)
      ======================================================================== */
   openAccountModal() {
+    const robeItems = STORE_ITEMS_CATALOG.filter((item) => item.category === 'ao_trang' && item.slot === 'robe');
     const wearableItems = SHOP_CATALOG.filter((item) =>
       [
-        'ao_trang_phat_tu',
         'tui_vai_theu_sen',
         'non_la_theu_sen',
         'khan_ran_nam_bo',
@@ -3649,6 +3654,10 @@ export class ChuaOnlineApp {
 
     const activeProf =
       CHARACTER_PROFILES.find((c) => c.key === this.characterModelKey) || CHARACTER_PROFILES[0];
+    const activeRobe =
+      STORE_ITEMS_CATALOG.find((item) => item.id === this.storeProfile?.tryingItemId && item.slot === 'robe') ||
+      STORE_ITEMS_CATALOG.find((item) => item.id === this.storeProfile?.equipped?.robe && item.slot === 'robe') ||
+      null;
     this.profilePreviewPose = this.profilePreviewPose || 'Dung';
 
     this.openModal(
@@ -3666,7 +3675,7 @@ export class ChuaOnlineApp {
             </div>
           </div>
           <div class="profile-char-name">${activeProf.name} (${activeProf.heightLabel})</div>
-          <div class="profile-char-sub">${activeProf.outfitName}</div>
+          <div class="profile-char-sub">${activeRobe?.name || activeProf.outfitName}</div>
           <div class="profile-char-switch-row">
             ${CHARACTER_PROFILES.map(
               (c) => `
@@ -3687,7 +3696,32 @@ export class ChuaOnlineApp {
           </div>
 
           <div>
-            <div class="profile-wardrobe-heading">Trang phục &amp; đồ mang theo:</div>
+            <div class="profile-wardrobe-heading">Áo tràng &amp; pháp phục Phật tử</div>
+            <div class="profile-outfit-grid">
+              ${robeItems
+                .map((item) => {
+                  const equipped = this.storeProfile.equipped?.robe === item.id;
+                  const previewing = this.storeProfile.tryingItemId === item.id;
+                  const active = equipped || previewing;
+                  const status = previewing ? 'Đang thử' : equipped ? 'Đang mặc' : 'Thử mẫu';
+                  return `
+                    <button type="button" class="profile-outfit-card ${active ? 'active' : ''}" data-profile-outfit="${item.id}">
+                      <span class="profile-outfit-swatch" style="--outfit-swatch:${item.swatchHex};--outfit-trim:${item.robeTrimHex || '#D9C7A0'}"></span>
+                      <span class="profile-outfit-copy">
+                        <span class="profile-outfit-name">${item.name}</span>
+                        <span class="profile-outfit-status">${status}</span>
+                      </span>
+                    </button>
+                  `;
+                })
+                .join('')}
+            </div>
+            <p class="profile-wardrobe-note">Chọn mẫu để thử trực tiếp trên nhân vật 3D. Mở cửa hàng áo tràng để thỉnh mẫu muốn giữ.</p>
+            <button type="button" id="btn-profile-open-outfit-store" class="profile-open-outfit-store">Mở cửa hàng áo tràng</button>
+          </div>
+
+          <div>
+            <div class="profile-wardrobe-heading">Phụ kiện &amp; đồ mang theo:</div>
             <div class="profile-wardrobe-grid">
               ${wearableItems
                 .map((item) => {
@@ -3742,6 +3776,22 @@ export class ChuaOnlineApp {
       });
     });
 
+    document.querySelectorAll('[data-profile-outfit]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const itemId = btn.getAttribute('data-profile-outfit');
+        if (!itemId) return;
+        const result = tryOnStoreItem(this.storeProfile, itemId);
+        this.storeProfile = result.state;
+        this.syncStoreVisualsTo3D();
+        this.openAccountModal();
+      });
+    });
+
+    document.getElementById('btn-profile-open-outfit-store')?.addEventListener('click', () => {
+      this.closeModal();
+      this.openNineTabStoreModal('ao_trang');
+    });
+
     document.querySelectorAll('.wardrobe-toggle-btn').forEach((btn) => {
       btn.addEventListener('click', () => {
         const slot = btn.getAttribute('data-slot') || 'hand';
@@ -3749,6 +3799,7 @@ export class ChuaOnlineApp {
         const r = performSpiritualAction(this.spiritual, 'EQUIP_ITEM', { slot, itemKey });
         this.spiritual = r.state;
         this.saveState();
+        this.world3d?.updateEquippedItems?.(this.spiritual.equippedItems);
         this.updateEquippedTags();
         this.openAccountModal();
       });
@@ -3860,6 +3911,8 @@ export class ChuaOnlineApp {
         const scale = targetH / Math.max(0.2, geomBox.max.y - geomBox.min.y);
         cloned.scale.setScalar(scale);
         cloned.position.y = -geomBox.min.y * scale;
+        const outfitVisual = this.buildStoreVisualPayload(this.storeProfile);
+        applyCharacterOutfit(cloned, outfitVisual.robeItemId || 'ao_trang_phat_tu', outfitVisual.robeTint || null);
         stageGroup.add(cloned);
 
         // Equipped props preview on full-body character
@@ -4089,6 +4142,7 @@ export class ChuaOnlineApp {
 
     return {
       robeTint: activeRobe?.robeTint || null,
+      robeItemId: activeRobe?.id || 'ao_trang_phat_tu',
       hat: Boolean(activeHat),
       mat: activeMat?.prop3d || null,
       handProp: activeHand?.prop3d || null,
@@ -4144,13 +4198,13 @@ export class ChuaOnlineApp {
               const levelLocked = profile.level < reqLevel;
               const showOwnedCount = item.stackable || item.category === 'cay_phat';
 
-              const hasLotusMotif = item.id === 'ao_hoa_sen' || item.id === 'ao_vu_lan_hong';
-              const hasCloudTrim = item.id === 'ao_may_bac';
+              const hasLotusMotif = item.robeMotif === 'lotus';
+              const hasCloudTrim = item.robeMotif === 'cloud';
               const thumbHtml = item.swatchHex
                 ? `<div class="store-swatch-badge" style="background:linear-gradient(155deg,rgba(255,250,238,0.92),rgba(232,216,184,0.88));padding:4px;">
                     <svg viewBox="0 0 64 64" width="44" height="44" aria-hidden="true">
                       <path d="M21 12 L10 22 L15 29 L21 24 L20 54 L44 54 L43 24 L49 29 L54 22 L43 12 L37 15 Q32 18 27 15 Z" fill="${item.swatchHex}" stroke="#4A3222" stroke-width="2" stroke-linejoin="round"/>
-                      <path d="M27 15 L32 23 L32 54" fill="none" stroke="${hasCloudTrim ? '#F5FAFF' : '#D99E3A'}" stroke-width="1.8"/>
+                      <path d="M27 15 L32 23 L32 54" fill="none" stroke="${item.robeTrimHex || (hasCloudTrim ? '#F5FAFF' : '#D99E3A')}" stroke-width="1.8"/>
                       <circle cx="33.5" cy="24" r="1.2" fill="#D99E3A"/>
                       <circle cx="33.5" cy="29" r="1.2" fill="#D99E3A"/>
                       <circle cx="33.5" cy="34" r="1.2" fill="#D99E3A"/>
