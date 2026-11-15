@@ -678,7 +678,9 @@ export class VinhTrang3DWorld {
       const zOffset = spec.offset;
       const pts = [
         { x: startX, z: startZ, action: 'pass', wait: 0, lookX: null, lookZ: null },
-        { x: 53.0, z: 50.6 + zOffset, action: 'pass', wait: 0, lookX: null, lookZ: null },
+        // Step around the shuttle's front onto the pedestrian sidewalk before walking west.
+        { x: startX, z: 46.2 + zOffset * 0.2, action: 'pass', wait: 0, lookX: null, lookZ: null },
+        { x: 53.0, z: 46.2 + zOffset * 0.2, action: 'pass', wait: 0, lookX: null, lookZ: null },
         { x: 42.0, z: 47.0 + zOffset * 0.42, action: 'pass', wait: 0, lookX: null, lookZ: null },
         { x: 41.0, z: 41.5 + zOffset * 0.25, action: 'pass', wait: 0, lookX: null, lookZ: null },
         { x: 38.6, z: 34.2 + zOffset * 0.16, action: 'pass', wait: 0, lookX: null, lookZ: null },
