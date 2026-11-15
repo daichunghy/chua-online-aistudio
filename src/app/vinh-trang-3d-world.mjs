@@ -747,7 +747,7 @@ export class VinhTrang3DWorld {
       const queued = this.trafficSpawnQueue[i];
       queued.wait -= dt;
       if (queued.wait > 0) continue;
-      const direction = queued.direction;
+      const direction = this.activeVisitorShuttle ? 1 : queued.direction;
       const kind = queued.kind;
       const colors = kind === 'bike'
         ? [0x9C2C26, 0x254E8A, 0x3D434A, 0xB89342, 0xE6E1D6]
