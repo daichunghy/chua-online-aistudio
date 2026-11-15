@@ -1898,103 +1898,382 @@ export class VinhTrang3DWorld {
       }
     }
 
-    // Morning Pilgrimage Fleet: 29-Seat Tour Coach ("Xe Khách Hành Hương 29 chỗ") + Parked Motorbikes outside East entrance
-    const buildPilgrimageCoach = (cx, cz, yaw = -Math.PI / 2) => {
-      const bg = new THREE.Group();
-      const busBodyMat = new THREE.MeshStandardMaterial({ color: 0xF5EFE0, roughness: 0.34, metalness: 0.12 });
-      const busTrimMat = new THREE.MeshStandardMaterial({ color: 0x8E2920, roughness: 0.4 });
-      const busGoldMat = new THREE.MeshStandardMaterial({ color: 0xD69D34, roughness: 0.32, metalness: 0.35 });
-      const busGlassMat = new THREE.MeshStandardMaterial({ color: 0x223846, roughness: 0.12, metalness: 0.4 });
-      const tireMat = new THREE.MeshStandardMaterial({ color: 0x232528, roughness: 0.85 });
+    // Vinh Trang frontage transport: private cars stop in the roadside lay-by;
+    // motorbikes enter through the open right-side gate and park inside the compound.
+    const vehicleTireMat = new THREE.MeshStandardMaterial({ color: 0x202326, roughness: 0.94 });
+    const vehicleRimMat = new THREE.MeshStandardMaterial({ color: 0xAEB8BE, metalness: 0.78, roughness: 0.26 });
+    const vehicleChromeMat = new THREE.MeshStandardMaterial({ color: 0xB8C0C5, metalness: 0.76, roughness: 0.24 });
+    const vehicleGlassMat = new THREE.MeshStandardMaterial({ color: 0x263B47, metalness: 0.22, roughness: 0.17 });
+    const vehicleLampMat = new THREE.MeshStandardMaterial({
+      color: 0xF7F1D9, emissive: 0xD9C58A, emissiveIntensity: 0.18, roughness: 0.25
+    });
+    const vehicleAmberMat = new THREE.MeshStandardMaterial({ color: 0xE69B36, emissive: 0x8A4A12, emissiveIntensity: 0.12 });
+    const vehicleTailMat = new THREE.MeshStandardMaterial({ color: 0xA62922, emissive: 0x65100C, emissiveIntensity: 0.16 });
+    const vehicleBlackMat = new THREE.MeshStandardMaterial({ color: 0x25282A, roughness: 0.84 });
+    const vehiclePlateMat = new THREE.MeshStandardMaterial({ color: 0xE9ECEB, roughness: 0.48 });
 
-      const chassis = new THREE.Mesh(new THREE.BoxGeometry(2.55, 2.35, 8.4), busBodyMat);
-      chassis.position.y = 1.62;
-      chassis.castShadow = true;
-      bg.add(chassis);
-      const stripe = new THREE.Mesh(new THREE.BoxGeometry(2.58, 0.42, 8.42), busTrimMat);
-      stripe.position.y = 1.15;
-      bg.add(stripe);
-      const goldLine = new THREE.Mesh(new THREE.BoxGeometry(2.59, 0.1, 8.43), busGoldMat);
-      goldLine.position.y = 1.4;
-      bg.add(goldLine);
-      const sideWindows = new THREE.Mesh(new THREE.BoxGeometry(2.57, 0.92, 7.2), busGlassMat);
-      sideWindows.position.y = 2.08;
-      bg.add(sideWindows);
-      const windshield = new THREE.Mesh(new THREE.BoxGeometry(2.36, 1.08, 0.08), busGlassMat);
-      windshield.position.set(0, 2.02, 4.21);
-      windshield.rotation.x = -0.06;
-      bg.add(windshield);
-      const acPod = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.28, 3.6), busBodyMat);
-      acPod.position.set(0, 2.94, 0.2);
-      bg.add(acPod);
-      const coachSign = new THREE.Mesh(
-        new THREE.BoxGeometry(2.2, 0.32, 0.05),
-        new THREE.MeshBasicMaterial({ map: makeTextTex('ĐOÀN HÀNH HƯƠNG · VĨNH TRÀNG', { bg: '#7E241C', color: '#FFE082', border: '#D9A441', w: 512, h: 96, size: 23 }) })
+    const addVehicleBeam = (parent, a, b, radius, material, radialSegments = 8) => {
+      const direction = new THREE.Vector3().subVectors(b, a);
+      const beam = new THREE.Mesh(
+        new THREE.CylinderGeometry(radius, radius, direction.length(), radialSegments),
+        material
       );
-      coachSign.position.set(0, 2.66, 4.22);
-      bg.add(coachSign);
-
-      for (const [wx, wz] of [
-        [-1.18, 2.55],
-        [1.18, 2.55],
-        [-1.18, -2.55],
-        [1.18, -2.55]
-      ]) {
-        const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.48, 0.48, 0.34, 14), tireMat);
-        wheel.rotation.z = Math.PI / 2;
-        wheel.position.set(wx, 0.48, wz);
-        bg.add(wheel);
-        const rim = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.24, 0.36, 10), zincMat);
-        rim.rotation.z = Math.PI / 2;
-        rim.position.set(wx, 0.48, wz);
-        bg.add(rim);
-      }
-      for (const lx of [-0.88, 0.88]) {
-        const hl = new THREE.Mesh(
-          new THREE.BoxGeometry(0.32, 0.2, 0.06),
-          new THREE.MeshStandardMaterial({ color: 0xFFF3C4, emissive: 0xFFE18E, emissiveIntensity: 0.7 })
-        );
-        hl.position.set(lx, 0.85, 4.21);
-        bg.add(hl);
-      }
-      bg.position.set(cx, 0, cz);
-      bg.rotation.y = yaw;
-      this.exteriorGroup.add(bg);
+      beam.position.copy(a).add(b).multiplyScalar(0.5);
+      beam.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction.normalize());
+      parent.add(beam);
+      return beam;
     };
-    buildPilgrimageCoach(67.5, 53.0, -Math.PI / 2);
 
-    const buildParkedMotorbike = (mx, mz, yaw = 0, bodyColor = 0x9C2C26) => {
+    // Detailed Vietnamese automatic scooter: molded fairings, alloy wheels, fork, mirrors, lamps and exhaust.
+    const buildParkedMotorbike = (mx, mz, yaw = Math.PI, bodyColor = 0x9C2C26) => {
       const mg = new THREE.Group();
-      const tireM = new THREE.MeshStandardMaterial({ color: 0x202225, roughness: 0.85 });
-      const paintM = new THREE.MeshStandardMaterial({ color: bodyColor, roughness: 0.36, metalness: 0.22 });
-      const seatM = new THREE.MeshStandardMaterial({ color: 0x2A231E, roughness: 0.72 });
-      for (const wz of [-0.62, 0.62]) {
-        const w = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.26, 0.1, 10), tireM);
-        w.rotation.z = Math.PI / 2;
-        w.position.set(0, 0.26, wz);
-        mg.add(w);
+      const paintMat = new THREE.MeshStandardMaterial({ color: bodyColor, roughness: 0.34, metalness: 0.2 });
+      const darkPaintMat = new THREE.MeshStandardMaterial({ color: 0x34383B, roughness: 0.48, metalness: 0.16 });
+      const seatMat = new THREE.MeshStandardMaterial({ color: 0x211F1D, roughness: 0.76 });
+      const wheelRadius = 0.265;
+
+      const addWheel = (wheelZ) => {
+        const tire = new THREE.Mesh(new THREE.TorusGeometry(wheelRadius - 0.015, 0.048, 9, 22), vehicleTireMat);
+        tire.rotation.y = Math.PI / 2;
+        tire.position.set(0, wheelRadius + 0.015, wheelZ);
+        tire.castShadow = true;
+        mg.add(tire);
+
+        const rim = new THREE.Mesh(new THREE.CylinderGeometry(0.178, 0.178, 0.145, 18), vehicleRimMat);
+        rim.rotation.z = Math.PI / 2;
+        rim.position.set(0, wheelRadius + 0.015, wheelZ);
+        mg.add(rim);
+
+        const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.065, 0.17, 12), vehicleChromeMat);
+        hub.rotation.z = Math.PI / 2;
+        hub.position.set(0, wheelRadius + 0.015, wheelZ);
+        mg.add(hub);
+
+        for (const side of [-1, 1]) {
+          for (let spoke = 0; spoke < 8; spoke++) {
+            const angle = (spoke / 8) * Math.PI * 2;
+            const a = new THREE.Vector3(side * 0.09, wheelRadius + 0.015, wheelZ);
+            const b = new THREE.Vector3(
+              side * 0.09,
+              wheelRadius + 0.015 + Math.cos(angle) * 0.135,
+              wheelZ + Math.sin(angle) * 0.135
+            );
+            addVehicleBeam(mg, a, b, 0.009, vehicleRimMat, 5);
+          }
+        }
+      };
+
+      addWheel(0.66);
+      addWheel(-0.66);
+
+      // One-piece sculpted side profile; extrusion creates the scooter's real body volume.
+      const shellShape = new THREE.Shape();
+      shellShape.moveTo(-0.72, 0.36);
+      shellShape.quadraticCurveTo(-0.65, 0.46, -0.52, 0.76);
+      shellShape.quadraticCurveTo(-0.43, 0.99, -0.19, 1.02);
+      shellShape.quadraticCurveTo(0.12, 1.02, 0.39, 0.88);
+      shellShape.quadraticCurveTo(0.63, 0.76, 0.70, 0.53);
+      shellShape.quadraticCurveTo(0.73, 0.41, 0.58, 0.37);
+      shellShape.lineTo(-0.58, 0.34);
+      shellShape.closePath();
+      const shellGeometry = new THREE.ExtrudeGeometry(shellShape, {
+        depth: 0.43, bevelEnabled: true, bevelSegments: 3,
+        steps: 1, bevelSize: 0.035, bevelThickness: 0.035, curveSegments: 10
+      });
+      shellGeometry.translate(0, 0, -0.215);
+      shellGeometry.rotateY(-Math.PI / 2);
+      const shell = new THREE.Mesh(shellGeometry, paintMat);
+      shell.castShadow = true;
+      shell.receiveShadow = true;
+      mg.add(shell);
+
+      const footboard = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.12, 0.62), vehicleBlackMat);
+      footboard.position.set(0, 0.43, -0.02);
+      mg.add(footboard);
+      const sidePanel = new THREE.Mesh(new THREE.SphereGeometry(1, 14, 10), darkPaintMat);
+      sidePanel.scale.set(0.22, 0.19, 0.34);
+      sidePanel.position.set(0.19, 0.56, -0.23);
+      mg.add(sidePanel);
+
+      // Engine casing, rear swingarm and twin front fork legs.
+      const engine = new THREE.Mesh(new THREE.SphereGeometry(1, 14, 10), vehicleChromeMat);
+      engine.scale.set(0.18, 0.17, 0.24);
+      engine.position.set(0.19, 0.39, -0.34);
+      mg.add(engine);
+      addVehicleBeam(mg, new THREE.Vector3(0, 0.34, -0.64), new THREE.Vector3(0.12, 0.55, -0.28), 0.035, vehicleBlackMat);
+      for (const side of [-1, 1]) {
+        addVehicleBeam(
+          mg,
+          new THREE.Vector3(side * 0.105, 0.29, 0.66),
+          new THREE.Vector3(side * 0.12, 0.84, 0.48),
+          0.035,
+          vehicleChromeMat
+        );
+        addVehicleBeam(
+          mg,
+          new THREE.Vector3(side * 0.17, 0.32, -0.52),
+          new THREE.Vector3(side * 0.17, 0.77, -0.36),
+          0.026,
+          vehicleChromeMat
+        );
       }
-      const frame = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.36, 1.15), paintM);
-      frame.position.set(0, 0.52, -0.05);
-      mg.add(frame);
-      const shield = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.64, 0.22), paintM);
-      shield.position.set(0, 0.68, 0.45);
-      shield.rotation.x = -0.22;
-      mg.add(shield);
-      const seat = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.14, 0.68), seatM);
-      seat.position.set(0, 0.76, -0.2);
+
+      const frontMudguard = new THREE.Mesh(new THREE.SphereGeometry(1, 14, 9), paintMat);
+      frontMudguard.scale.set(0.29, 0.105, 0.39);
+      frontMudguard.position.set(0, 0.54, 0.65);
+      mg.add(frontMudguard);
+
+      // Seat and rear grab rail.
+      const seatBase = new THREE.Mesh(new THREE.BoxGeometry(0.37, 0.12, 0.58), vehicleBlackMat);
+      seatBase.position.set(0, 0.84, -0.22);
+      mg.add(seatBase);
+      const seat = new THREE.Mesh(new THREE.SphereGeometry(1, 16, 10), seatMat);
+      seat.scale.set(0.205, 0.09, 0.39);
+      seat.position.set(0, 0.92, -0.2);
       mg.add(seat);
-      const handle = new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.06, 0.08), zincMat);
-      handle.position.set(0, 1.02, 0.44);
-      mg.add(handle);
+      addVehicleBeam(mg, new THREE.Vector3(-0.17, 0.89, -0.53), new THREE.Vector3(-0.17, 0.96, -0.72), 0.018, vehicleChromeMat);
+      addVehicleBeam(mg, new THREE.Vector3(0.17, 0.89, -0.53), new THREE.Vector3(0.17, 0.96, -0.72), 0.018, vehicleChromeMat);
+      addVehicleBeam(mg, new THREE.Vector3(-0.17, 0.96, -0.72), new THREE.Vector3(0.17, 0.96, -0.72), 0.018, vehicleChromeMat);
+
+      // Handlebar, rear-view mirrors, headlamp and turn signals.
+      const handlebar = new THREE.Mesh(new THREE.CylinderGeometry(0.026, 0.026, 0.58, 8), vehicleChromeMat);
+      handlebar.rotation.z = Math.PI / 2;
+      handlebar.position.set(0, 1.02, 0.46);
+      mg.add(handlebar);
+      for (const side of [-1, 1]) {
+        addVehicleBeam(
+          mg,
+          new THREE.Vector3(side * 0.19, 1.04, 0.46),
+          new THREE.Vector3(side * 0.32, 1.34, 0.52),
+          0.012,
+          vehicleChromeMat
+        );
+        const mirror = new THREE.Mesh(new THREE.SphereGeometry(1, 12, 8), vehicleBlackMat);
+        mirror.scale.set(0.105, 0.065, 0.035);
+        mirror.position.set(side * 0.32, 1.37, 0.52);
+        mg.add(mirror);
+        const indicator = new THREE.Mesh(new THREE.SphereGeometry(0.055, 9, 7), vehicleAmberMat);
+        indicator.scale.set(1.1, 0.7, 0.6);
+        indicator.position.set(side * 0.22, 0.76, 0.73);
+        mg.add(indicator);
+      }
+      const headlamp = new THREE.Mesh(new THREE.SphereGeometry(1, 14, 10), vehicleLampMat);
+      headlamp.scale.set(0.13, 0.095, 0.045);
+      headlamp.position.set(0, 0.84, 0.755);
+      mg.add(headlamp);
+      const tailLamp = new THREE.Mesh(new THREE.SphereGeometry(0.075, 10, 8), vehicleTailMat);
+      tailLamp.scale.set(1, 0.75, 0.6);
+      tailLamp.position.set(0, 0.78, -0.72);
+      mg.add(tailLamp);
+
+      // Exhaust silencer and registration plate.
+      const exhaust = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.075, 0.55, 10), vehicleBlackMat);
+      exhaust.rotation.x = Math.PI / 2;
+      exhaust.position.set(0.25, 0.34, -0.43);
+      mg.add(exhaust);
+      const plate = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.12, 0.025), vehiclePlateMat);
+      plate.position.set(0, 0.52, -0.77);
+      mg.add(plate);
+
       mg.position.set(mx, 0, mz);
       mg.rotation.y = yaw;
       this.exteriorGroup.add(mg);
     };
-    buildParkedMotorbike(60.8, 46.8, -0.32, 0x9C2C26);
-    buildParkedMotorbike(62.2, 46.9, -0.28, 0x254E8A);
-    buildParkedMotorbike(63.6, 47.0, -0.35, 0x3D434A);
-    buildParkedMotorbike(65.0, 47.1, -0.24, 0xB89342);
+
+    // Compact sedan / passenger van with separate cabin, glazing, alloy wheels and road lights.
+    const buildRoadCar = (cx, cz, yaw, bodyColor, kind = 'sedan') => {
+      const isVan = kind === 'van';
+      const halfLength = isVan ? 2.68 : 2.38;
+      const bodyWidth = isVan ? 1.94 : 1.86;
+      const bodyMat = new THREE.MeshStandardMaterial({
+        color: bodyColor, roughness: 0.34, metalness: 0.28
+      });
+      const lowerShape = new THREE.Shape();
+      lowerShape.moveTo(-halfLength, 0.43);
+      lowerShape.quadraticCurveTo(-halfLength - 0.04, 0.48, -halfLength, 0.72);
+      lowerShape.lineTo(-halfLength + 0.18, 1.02);
+      lowerShape.quadraticCurveTo(-halfLength + 0.34, 1.14, -halfLength + 0.62, 1.14);
+      lowerShape.lineTo(halfLength - 0.38, 1.14);
+      lowerShape.quadraticCurveTo(halfLength, 1.10, halfLength, 0.82);
+      lowerShape.lineTo(halfLength, 0.58);
+      lowerShape.quadraticCurveTo(halfLength - 0.08, 0.43, halfLength - 0.28, 0.43);
+      lowerShape.closePath();
+      const lowerGeometry = new THREE.ExtrudeGeometry(lowerShape, {
+        depth: bodyWidth, bevelEnabled: true, bevelSegments: 3,
+        steps: 1, bevelSize: 0.055, bevelThickness: 0.04, curveSegments: 10
+      });
+      lowerGeometry.translate(0, 0, -bodyWidth / 2);
+      lowerGeometry.rotateY(-Math.PI / 2);
+      const lowerBody = new THREE.Mesh(lowerGeometry, bodyMat);
+      lowerBody.castShadow = true;
+      lowerBody.receiveShadow = true;
+      const cg = new THREE.Group();
+      cg.add(lowerBody);
+
+      const cabinShape = new THREE.Shape();
+      if (isVan) {
+        cabinShape.moveTo(-2.02, 1.10);
+        cabinShape.quadraticCurveTo(-2.0, 1.55, -1.88, 2.02);
+        cabinShape.lineTo(1.78, 2.02);
+        cabinShape.quadraticCurveTo(2.12, 1.83, 2.38, 1.10);
+      } else {
+        cabinShape.moveTo(-1.34, 1.10);
+        cabinShape.lineTo(-0.82, 1.83);
+        cabinShape.quadraticCurveTo(-0.72, 1.91, -0.54, 1.91);
+        cabinShape.lineTo(0.74, 1.91);
+        cabinShape.quadraticCurveTo(0.92, 1.91, 1.02, 1.78);
+        cabinShape.lineTo(1.42, 1.10);
+      }
+      cabinShape.closePath();
+      const cabinGeometry = new THREE.ExtrudeGeometry(cabinShape, {
+        depth: bodyWidth - 0.22, bevelEnabled: true, bevelSegments: 3,
+        steps: 1, bevelSize: 0.035, bevelThickness: 0.03, curveSegments: 10
+      });
+      cabinGeometry.translate(0, 0, -(bodyWidth - 0.22) / 2);
+      cabinGeometry.rotateY(-Math.PI / 2);
+      const cabin = new THREE.Mesh(cabinGeometry, bodyMat);
+      cabin.castShadow = true;
+      cg.add(cabin);
+
+      const axleZ = isVan ? 1.82 : 1.52;
+      for (const side of [-1, 1]) {
+        for (const wheelZ of [-axleZ, axleZ]) {
+          const tire = new THREE.Mesh(new THREE.CylinderGeometry(0.365, 0.365, 0.25, 20), vehicleTireMat);
+          tire.rotation.z = Math.PI / 2;
+          tire.position.set(side * (bodyWidth / 2 + 0.015), 0.405, wheelZ);
+          tire.castShadow = true;
+          cg.add(tire);
+          const rim = new THREE.Mesh(new THREE.CylinderGeometry(0.235, 0.235, 0.265, 18), vehicleRimMat);
+          rim.rotation.z = Math.PI / 2;
+          rim.position.copy(tire.position);
+          cg.add(rim);
+          const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.28, 12), vehicleChromeMat);
+          hub.rotation.z = Math.PI / 2;
+          hub.position.copy(tire.position);
+          cg.add(hub);
+        }
+      }
+
+      // Tinted side windows: two per side on the sedan, three on the passenger van.
+      const sideWindowZs = isVan ? [-1.22, -0.12, 0.98] : [-0.53, 0.52];
+      for (const side of [-1, 1]) {
+        for (const wz of sideWindowZs) {
+          const windowMesh = new THREE.Mesh(
+            new THREE.BoxGeometry(0.028, isVan ? 0.64 : 0.48, isVan ? 0.86 : 0.91),
+            vehicleGlassMat
+          );
+          windowMesh.position.set(side * (bodyWidth / 2 + 0.012), isVan ? 1.64 : 1.52, wz);
+          cg.add(windowMesh);
+        }
+        // Door seams, handles and side mirrors.
+        const doorSeam = new THREE.Mesh(new THREE.BoxGeometry(0.018, 0.55, 0.018), vehicleBlackMat);
+        doorSeam.position.set(side * (bodyWidth / 2 + 0.02), 0.88, isVan ? -0.55 : -0.02);
+        cg.add(doorSeam);
+        const handle = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.055, 0.22), vehicleChromeMat);
+        handle.position.set(side * (bodyWidth / 2 + 0.03), 1.08, isVan ? -0.35 : -0.18);
+        cg.add(handle);
+        const mirrorStem = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.06, 0.12), vehicleChromeMat);
+        mirrorStem.position.set(side * (bodyWidth / 2 + 0.08), 1.35, 0.92);
+        cg.add(mirrorStem);
+        const mirror = new THREE.Mesh(new THREE.SphereGeometry(0.09, 10, 8), vehicleBlackMat);
+        mirror.scale.set(1.2, 0.7, 0.55);
+        mirror.position.set(side * (bodyWidth / 2 + 0.14), 1.39, 0.98);
+        cg.add(mirror);
+      }
+
+      const windshield = new THREE.Mesh(
+        new THREE.PlaneGeometry(bodyWidth - 0.34, isVan ? 0.74 : 0.62),
+        vehicleGlassMat
+      );
+      windshield.position.set(0, isVan ? 1.57 : 1.48, isVan ? 2.15 : 1.18);
+      windshield.rotation.x = isVan ? -0.24 : -0.58;
+      cg.add(windshield);
+      const rearGlass = new THREE.Mesh(
+        new THREE.PlaneGeometry(bodyWidth - 0.38, isVan ? 0.66 : 0.56),
+        vehicleGlassMat
+      );
+      rearGlass.position.set(0, isVan ? 1.56 : 1.48, isVan ? -1.9 : -1.18);
+      rearGlass.rotation.x = isVan ? 0.16 : 0.55;
+      cg.add(rearGlass);
+
+      const frontZ = halfLength + 0.025;
+      const rearZ = -halfLength - 0.025;
+      const frontBumper = new THREE.Mesh(new THREE.BoxGeometry(bodyWidth * 0.9, 0.13, 0.13), vehicleChromeMat);
+      frontBumper.position.set(0, 0.52, frontZ);
+      cg.add(frontBumper);
+      const rearBumper = new THREE.Mesh(new THREE.BoxGeometry(bodyWidth * 0.9, 0.13, 0.13), vehicleChromeMat);
+      rearBumper.position.set(0, 0.52, rearZ);
+      cg.add(rearBumper);
+      const grille = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.19, 0.045), vehicleBlackMat);
+      grille.position.set(0, 0.79, frontZ + 0.035);
+      cg.add(grille);
+      for (const side of [-1, 1]) {
+        const headlight = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.17, 0.07), vehicleLampMat);
+        headlight.position.set(side * 0.62, 0.91, frontZ + 0.035);
+        cg.add(headlight);
+        const tailLight = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.28, 0.07), vehicleTailMat);
+        tailLight.position.set(side * 0.67, 0.88, rearZ - 0.025);
+        cg.add(tailLight);
+        const indicator = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.07, 0.055), vehicleAmberMat);
+        indicator.position.set(side * 0.79, 0.78, frontZ + 0.035);
+        cg.add(indicator);
+      }
+      const frontPlate = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.13, 0.025), vehiclePlateMat);
+      frontPlate.position.set(0, 0.63, frontZ + 0.05);
+      cg.add(frontPlate);
+      const rearPlate = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.12, 0.025), vehiclePlateMat);
+      rearPlate.position.set(0, 0.64, rearZ - 0.05);
+      cg.add(rearPlate);
+
+      if (isVan) {
+        // Simple roof rails identify a local passenger shuttle without turning it into a tour coach.
+        for (const side of [-1, 1]) {
+          const rail = new THREE.Mesh(new THREE.BoxGeometry(0.055, 0.055, 3.1), vehicleChromeMat);
+          rail.position.set(side * 0.66, 2.08, -0.02);
+          cg.add(rail);
+        }
+      }
+
+      cg.position.set(cx, 0, cz);
+      cg.rotation.y = yaw;
+      this.exteriorGroup.add(cg);
+    };
+
+    // Small paved lay-by on the pagoda side of Nguyễn Trung Trực; keep both gates unobstructed.
+    const frontCarParkingPad = new THREE.Mesh(
+      new THREE.BoxGeometry(16.0, 0.07, 3.7),
+      new THREE.MeshStandardMaterial({ map: this.pavingTex, color: 0xC8BFAE, roughness: 0.9 })
+    );
+    frontCarParkingPad.position.set(-14.0, 0.026, 52.2);
+    frontCarParkingPad.receiveShadow = true;
+    this.exteriorGroup.add(frontCarParkingPad);
+    const parkingLineMat = new THREE.MeshBasicMaterial({ color: 0xE9E4D8 });
+    for (const lx of [-22.0, -14.0, -6.0]) {
+      const bayLine = new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.018, 3.2), parkingLineMat);
+      bayLine.position.set(lx, 0.068, 52.2);
+      this.exteriorGroup.add(bayLine);
+    }
+    // The real frontage is represented by a parked passenger van and a private sedan, not a 29-seat coach.
+    buildRoadCar(-18.0, 52.2, -Math.PI / 2, 0xD2D8D9, 'van');
+    buildRoadCar(-10.0, 52.2, -Math.PI / 2, 0xAEB9C1, 'sedan');
+
+    // Motorbike parking sits beyond the right-side entrance and grocery/souvenir frontage, inside the pagoda grounds.
+    const motorbikeParkingPad = new THREE.Mesh(
+      new THREE.BoxGeometry(7.6, 0.07, 4.0),
+      new THREE.MeshStandardMaterial({ map: this.pavingTex, color: 0xC9C0B0, roughness: 0.9 })
+    );
+    motorbikeParkingPad.position.set(57.1, 0.026, 35.3);
+    motorbikeParkingPad.receiveShadow = true;
+    this.exteriorGroup.add(motorbikeParkingPad);
+    for (const lx of [53.3, 55.2, 57.1, 59.0, 60.9]) {
+      const bayLine = new THREE.Mesh(new THREE.BoxGeometry(0.045, 0.018, 3.45), parkingLineMat);
+      bayLine.position.set(lx, 0.068, 35.3);
+      this.exteriorGroup.add(bayLine);
+    }
+    buildParkedMotorbike(54.25, 35.3, Math.PI, 0x9C2C26);
+    buildParkedMotorbike(56.15, 35.3, Math.PI, 0x254E8A);
+    buildParkedMotorbike(58.05, 35.3, Math.PI, 0x3D434A);
+    buildParkedMotorbike(59.95, 35.3, Math.PI, 0xB89342);
 
     // Authentic Curved Mekong Coconut Palms ("Cây dừa nghiêng"), Banana Clumps ("Bụi chuối") & Bamboo Groves ("Bụi tre")
     const trunkMat = M.trunk;
