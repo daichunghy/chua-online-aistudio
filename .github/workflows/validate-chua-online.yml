@@ -1,0 +1,24 @@
+name: Validate Chua Online
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-chua-online.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Syntax checks
+        run: npm run build
+      - name: Logic tests
+        run: npm run lint
