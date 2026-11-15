@@ -243,34 +243,8 @@ export class VinhTrang3DWorld {
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.08;
 
-    try {
-      const pmrem = new THREE.PMREMGenerator(this.renderer);
-      const envScene = new THREE.Scene();
-      const skyBox = new THREE.Mesh(
-        new THREE.BoxGeometry(20, 20, 20),
-        new THREE.MeshBasicMaterial({ color: 0x9AD0F5, side: THREE.BackSide })
-      );
-      envScene.add(skyBox);
-      const earthFloor = new THREE.Mesh(
-        new THREE.PlaneGeometry(20, 20),
-        new THREE.MeshBasicMaterial({ color: 0x6E583D })
-      );
-      earthFloor.rotation.x = -Math.PI / 2;
-      earthFloor.position.y = -4;
-      envScene.add(earthFloor);
-      const sunPanel = new THREE.Mesh(
-        new THREE.PlaneGeometry(8, 8),
-        new THREE.MeshBasicMaterial({ color: 0xFFE9BA, side: THREE.DoubleSide })
-      );
-      sunPanel.position.set(-7, 6, 6);
-      sunPanel.lookAt(0, 0, 0);
-      envScene.add(sunPanel);
-      const envTex = pmrem.fromScene(envScene, 0.04).texture;
-      this.scene.environment = envTex;
-      pmrem.dispose();
-    } catch {
-      // Fallback safely if PMREM is unavailable
-    }
+    // The procedural Mekong sky below also drives physically based reflections.
+    this.scene.environmentIntensity = 0.82;
 
     this.clock = new THREE.Clock();
     this.gltfLoader = new GLTFLoader();
@@ -1174,12 +1148,12 @@ export class VinhTrang3DWorld {
     this.waterTex = makeCanvasTex(
       (g, w, h) => {
         const grd = g.createRadialGradient(w / 2, h / 2, 16, w / 2, h / 2, w * 0.7);
-        grd.addColorStop(0, '#3D8274');
-        grd.addColorStop(0.55, '#2A675C');
-        grd.addColorStop(1, '#1B4942');
+        grd.addColorStop(0, '#667A50');
+        grd.addColorStop(0.55, '#4F6847');
+        grd.addColorStop(1, '#314A36');
         g.fillStyle = grd;
         g.fillRect(0, 0, w, h);
-        g.strokeStyle = 'rgba(205, 244, 232, 0.22)';
+        g.strokeStyle = 'rgba(219, 226, 194, 0.18)';
         g.lineWidth = 1.6;
         for (let i = 0; i < 34; i++) {
           g.beginPath();
@@ -1192,6 +1166,9 @@ export class VinhTrang3DWorld {
       3,
       3
     );
+    this.waterBumpTex = this.waterTex.clone();
+    this.waterBumpTex.colorSpace = THREE.NoColorSpace;
+    this.waterBumpTex.needsUpdate = true;
 
     // 7. Terracotta Red "Gạch Tàu" Interior Floor Tiles (Image 2 & 3 reference)
     this.gachTauTex = makeCanvasTex(
@@ -1295,15 +1272,19 @@ export class VinhTrang3DWorld {
         bumpScale: 0.01,
         roughness: 0.65
       }),
-      redColumn: new THREE.MeshStandardMaterial({
+      redColumn: new THREE.MeshPhysicalMaterial({
         color: 0x862820,
-        roughness: 0.42,
-        metalness: 0.08
+        roughness: 0.38,
+        metalness: 0.0,
+        clearcoat: 0.18,
+        clearcoatRoughness: 0.28
       }),
       darkWood: new THREE.MeshStandardMaterial({
         color: 0x5A3D26,
         map: this.woodGrainTex,
-        roughness: 0.65
+        bumpMap: this.woodGrainTex,
+        bumpScale: 0.012,
+        roughness: 0.72
       }),
       darkOpening: new THREE.MeshStandardMaterial({ color: 0x221712, roughness: 0.88 }),
       roofTile: new THREE.MeshStandardMaterial({
@@ -1343,20 +1324,26 @@ export class VinhTrang3DWorld {
         map: this.roofTex,
         roughness: 0.64
       }),
-      mosaicBlue: new THREE.MeshStandardMaterial({
+      mosaicBlue: new THREE.MeshPhysicalMaterial({
         color: 0x2C4A8A,
-        roughness: 0.3,
-        metalness: 0.18
-      }),
-      mosaicGreen: new THREE.MeshStandardMaterial({
-        color: 0x3F7D5D,
-        roughness: 0.3,
-        metalness: 0.18
-      }),
-      mosaicRed: new THREE.MeshStandardMaterial({
-        color: 0xA83828,
         roughness: 0.36,
-        metalness: 0.12
+        metalness: 0.0,
+        clearcoat: 0.22,
+        clearcoatRoughness: 0.28
+      }),
+      mosaicGreen: new THREE.MeshPhysicalMaterial({
+        color: 0x3F7D5D,
+        roughness: 0.36,
+        metalness: 0.0,
+        clearcoat: 0.22,
+        clearcoatRoughness: 0.28
+      }),
+      mosaicRed: new THREE.MeshPhysicalMaterial({
+        color: 0xA83828,
+        roughness: 0.4,
+        metalness: 0.0,
+        clearcoat: 0.18,
+        clearcoatRoughness: 0.3
       }),
       terracottaPot: new THREE.MeshStandardMaterial({ color: 0xA45236, roughness: 0.68 }),
       trunk: new THREE.MeshStandardMaterial({
@@ -1389,11 +1376,15 @@ export class VinhTrang3DWorld {
       bougainvilleaRed: new THREE.MeshStandardMaterial({ color: 0xD94F3D, roughness: 0.6 }),
       marigold: new THREE.MeshStandardMaterial({ color: 0xF0AE2E, roughness: 0.6 }),
       lotusLeaf: new THREE.MeshStandardMaterial({ color: 0x3E6E36, roughness: 0.72 }),
-      pondWater: new THREE.MeshStandardMaterial({
+      pondWater: new THREE.MeshPhysicalMaterial({
         map: this.waterTex,
-        color: 0x5C8568,
-        roughness: 0.18,
-        metalness: 0.38
+        color: 0x687A54,
+        roughness: 0.26,
+        metalness: 0.0,
+        bumpMap: this.waterBumpTex,
+        bumpScale: 0.006,
+        clearcoat: 0.28,
+        clearcoatRoughness: 0.22
       }),
       bronzeBurner: new THREE.MeshStandardMaterial({
         color: 0x487A5E,
@@ -1466,13 +1457,19 @@ export class VinhTrang3DWorld {
     const sun = new THREE.DirectionalLight(0xFFD99E, 1.82);
     sun.position.set(-34, 24, 24);
     sun.castShadow = !this.isSoftwareGl;
-    sun.shadow.mapSize.set(1024, 1024);
+    const hardwareThreads = Number(navigator.hardwareConcurrency || 4);
+    const touchPoints = Number(navigator.maxTouchPoints || 0);
+    const shadowResolution =
+      !this.isSoftwareGl && hardwareThreads >= 8 && touchPoints <= 1 ? 2048 : 1024;
+    sun.shadow.mapSize.set(shadowResolution, shadowResolution);
+    sun.shadow.radius = this.isSoftwareGl ? 1 : 2;
     sun.shadow.camera.left = -65;
     sun.shadow.camera.right = 65;
     sun.shadow.camera.top = 65;
     sun.shadow.camera.bottom = -65;
     sun.shadow.camera.near = 5;
     sun.shadow.camera.far = 150;
+    sun.shadow.camera.updateProjectionMatrix();
     sun.shadow.bias = -0.0004;
     sun.shadow.normalBias = 0.02;
     this.scene.add(sun);
@@ -1528,6 +1525,15 @@ export class VinhTrang3DWorld {
 
     const skyTex = new THREE.CanvasTexture(skyCanvas);
     skyTex.colorSpace = THREE.SRGBColorSpace;
+
+    // Use the same sky for visible atmosphere and PBR reflections so glazed tiles,
+    // lacquered wood, vehicle paint and glass share one coherent light environment.
+    const environmentTex = skyTex.clone();
+    environmentTex.mapping = THREE.EquirectangularReflectionMapping;
+    environmentTex.colorSpace = THREE.SRGBColorSpace;
+    environmentTex.needsUpdate = true;
+    this.scene.environment = environmentTex;
+
     const skyDome = new THREE.Mesh(
       new THREE.SphereGeometry(260, 36, 20),
       new THREE.MeshBasicMaterial({ map: skyTex, side: THREE.BackSide, fog: false })
@@ -2103,7 +2109,13 @@ export class VinhTrang3DWorld {
     const vehicleTireMat = new THREE.MeshStandardMaterial({ color: 0x202326, roughness: 0.94 });
     const vehicleRimMat = new THREE.MeshStandardMaterial({ color: 0xAEB8BE, metalness: 0.78, roughness: 0.26 });
     const vehicleChromeMat = new THREE.MeshStandardMaterial({ color: 0xB8C0C5, metalness: 0.76, roughness: 0.24 });
-    const vehicleGlassMat = new THREE.MeshStandardMaterial({ color: 0x263B47, metalness: 0.22, roughness: 0.17 });
+    const vehicleGlassMat = new THREE.MeshPhysicalMaterial({
+      color: 0x263B47,
+      metalness: 0.0,
+      roughness: 0.12,
+      clearcoat: 1.0,
+      clearcoatRoughness: 0.06
+    });
     const vehicleLampMat = new THREE.MeshStandardMaterial({
       color: 0xF7F1D9, emissive: 0xD9C58A, emissiveIntensity: 0.18, roughness: 0.25
     });
@@ -2127,7 +2139,13 @@ export class VinhTrang3DWorld {
     // Detailed Vietnamese automatic scooter: molded fairings, alloy wheels, fork, mirrors, lamps and exhaust.
     const buildParkedMotorbike = (mx, mz, yaw = Math.PI, bodyColor = 0x9C2C26) => {
       const mg = new THREE.Group();
-      const paintMat = new THREE.MeshStandardMaterial({ color: bodyColor, roughness: 0.34, metalness: 0.2 });
+      const paintMat = new THREE.MeshPhysicalMaterial({
+        color: bodyColor,
+        roughness: 0.25,
+        metalness: 0.04,
+        clearcoat: 0.88,
+        clearcoatRoughness: 0.16
+      });
       const darkPaintMat = new THREE.MeshStandardMaterial({ color: 0x34383B, roughness: 0.48, metalness: 0.16 });
       const seatMat = new THREE.MeshStandardMaterial({ color: 0x211F1D, roughness: 0.76 });
       const wheelRadius = 0.265;
@@ -2291,8 +2309,12 @@ export class VinhTrang3DWorld {
       const isVan = kind === 'van';
       const halfLength = isVan ? 2.68 : 2.38;
       const bodyWidth = isVan ? 1.94 : 1.86;
-      const bodyMat = new THREE.MeshStandardMaterial({
-        color: bodyColor, roughness: 0.34, metalness: 0.28
+      const bodyMat = new THREE.MeshPhysicalMaterial({
+        color: bodyColor,
+        roughness: 0.28,
+        metalness: 0.04,
+        clearcoat: 0.84,
+        clearcoatRoughness: 0.18
       });
       const lowerShape = new THREE.Shape();
       lowerShape.moveTo(-halfLength, 0.43);
