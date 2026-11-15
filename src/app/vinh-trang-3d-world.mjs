@@ -715,7 +715,8 @@ export class VinhTrang3DWorld {
     // Light local traffic: usually one vehicle, occasionally a pair with a natural following gap.
     this.trafficSpawnTimer -= dt;
     if (this.trafficSpawnTimer <= 0) {
-      const direction = Math.random() < 0.5 ? 1 : -1;
+      // Keep the shuttle's lane clear while it approaches or leaves the drop-off.
+      const direction = this.activeVisitorShuttle ? 1 : (Math.random() < 0.5 ? 1 : -1);
       const count = Math.random() < 0.24 ? 2 : 1;
       for (let i = 0; i < count; i++) {
         const kindRoll = Math.random();
@@ -783,7 +784,6 @@ export class VinhTrang3DWorld {
       const pos = vehicle.group.position;
 
       if (vehicle.state === 'arriving' || vehicle.state === 'departing') {
-        if (vehicle.state === 'parked') continue;
         const target = vehicle.path[vehicle.pathIndex];
         const dx = target.x - pos.x;
         const dz = target.z - pos.z;
@@ -833,9 +833,10 @@ export class VinhTrang3DWorld {
         }
       }
 
-      const rollingDirection = vehicle.state === 'departing' ? 1 : vehicle.direction;
-      for (const wheel of vehicle.wheelGroups || []) {
-        wheel.rotation.x -= (rollingDirection * vehicle.speed * dt) / Math.max(0.1, vehicle.wheelRadius);
+      if (vehicle.state !== 'parked') {
+        for (const wheel of vehicle.wheelGroups || []) {
+          wheel.rotation.x -= (vehicle.speed * dt) / Math.max(0.1, vehicle.wheelRadius);
+        }
       }
     }
   }
@@ -10065,7 +10066,7 @@ export class VinhTrang3DWorld {
     // Damped Entrance Camera Tour along Tam Quan -> Yellow Banner & Vietnamese Stalls -> Right Bougainvillea Path
     const tourStep = this.isSoftwareGl ? Math.max(dt, 0.14) : dt;
     this.stepEntranceTour(tourStep);
-    this.stepRoadTraffic(dt);
+    this.stepRoadTraffic(this.isSoftwareGl ? trDt : dt);
 
     if (this.activePlayerRecord) {
       if (this.playerState.moving) {
