@@ -175,7 +175,7 @@ export const PILGRIMAGE_STATIONS = [
     pinLabel: 'Phật Niết Bàn & Bảo Tháp',
     pos: { x: -30.5, z: -38.0 },
     standPos: { x: -30.5, z: -27.5 },
-    via: [[-12.0, 20.0], [-22.0, -12.0], [-30.5, -27.5]],
+    via: [[12.0, 42.0], [-5.0, 42.0], [-8.0, 28.0], [-8.0, 20.0], [-8.0, -14.0], [-30.5, -27.5]],
     mapCoord: { x: 28, y: 28 },
     lookAt: { x: -30.5, y: 4.5, z: -38.0 },
     audio: 's5_nirvana.mp3',
