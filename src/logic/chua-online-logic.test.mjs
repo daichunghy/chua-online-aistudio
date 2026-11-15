@@ -280,6 +280,7 @@ test('9-category Store catalog, live try-on, level gating, and Tam Quan South->N
   const tamQuan = PILGRIMAGE_STATIONS.find((s) => s.key === 'cong_tam_quan');
   const chanhDien = PILGRIMAGE_STATIONS.find((s) => s.key === 'chanh_dien');
   const phatAdida = PILGRIMAGE_STATIONS.find((s) => s.key === 'phat_adida');
+  const phatDiLac = PILGRIMAGE_STATIONS.find((s) => s.key === 'phat_di_lac');
   const nietBan = PILGRIMAGE_STATIONS.find((s) => s.key === 'phat_niet_ban');
   assert.ok(tamQuan.standPos.z > tamQuan.pos.z); // Spawns South outside Tam Quan gate
   assert.equal(tamQuan.pos.x, 23); // Front Tam Quan axis aligned with Chánh điện
