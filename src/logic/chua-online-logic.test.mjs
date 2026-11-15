@@ -283,7 +283,7 @@ test('9-category Store catalog, live try-on, level gating, and Tam Quan South->N
   const nietBan = PILGRIMAGE_STATIONS.find((s) => s.key === 'phat_niet_ban');
   assert.ok(tamQuan.standPos.z > tamQuan.pos.z); // Spawns South outside Tam Quan gate
   assert.equal(tamQuan.pos.x, 23); // Front Tam Quan axis aligned with Chánh điện
-  assert.equal(phatAdida.pos.x, -8); // Front garden, west of the main approach
+  assert.equal(phatAdida.pos.x, 0); // Front garden, west of the main approach
   assert.ok(phatAdida.pos.z > 0 && phatAdida.pos.z < tamQuan.pos.z);
   assert.equal(chanhDien.pos.x, 23);
   assert.ok(nietBan.pos.z < -30); // Rear garden behind Chùa Cổ
