@@ -1919,35 +1919,10 @@ export class VinhTrang3DWorld {
       });
     };
 
-    // Dense Vietnamese Market Row across Đường Nguyễn Trung Trực (facing North toward pagoda)
-    const southMarketStalls = [
-      { x: -42.0, z: 66.8, cat: 'huong_hoa', palIdx: 0, sign: 'HOA SEN · NHANG ĐÈN', title: 'Sạp Hoa Sen & Nhang Đèn Cô Tư' },
-      { x: -30.5, z: 66.8, cat: 'thu_cong', palIdx: 1, sign: 'ÁO LAM · NÓN LÁ', title: 'Tiệm Áo Lam & Nón Lá Ngọc Mai' },
-      { x: -19.0, z: 66.8, cat: 'am_thuc_chay', palIdx: 2, sign: 'NƯỚC MÍA · DỪA XIÊM', title: 'Quán Nước Mía & Dừa Xiêm Mỹ Tho' },
-      { x: -7.5, z: 66.8, cat: 'am_thuc_chay', palIdx: 3, sign: 'BÁNH BÒ · XÔI CHÈ', title: 'Quầy Bánh Bò · Bánh Da Lợn · Xôi Chè' },
-      { x: 4.5, z: 66.8, cat: 'huong_hoa', palIdx: 4, sign: 'HOA CÚC · ĐÈN CẦY', title: 'Sạp Hoa Cúng & Đèn Hoa Đăng' },
-      { x: 16.5, z: 66.8, cat: 'thu_cong', palIdx: 0, sign: 'TRÀNG HẠT · LƯU NIỆM', title: 'Sạp Tràng Hạt & Quà Lưu Niệm Vĩnh Tràng' },
-      { x: 28.5, z: 66.8, cat: 'am_thuc_chay', palIdx: 1, sign: 'CƠM CHAY · BÁNH MÌ CHAY', title: 'Quán Cơm Chay Tâm An' },
-      { x: 40.5, z: 66.8, cat: 'huong_hoa', palIdx: 2, sign: 'MÂM NGŨ QUẢ · NHANG TRẦM', title: 'Sạp Lễ Phẩm Cổng Chùa' },
-      { x: 52.0, z: 66.8, cat: 'thu_cong', palIdx: 3, sign: 'KHĂN RẰN · GIỎ MÂY', title: 'Quầy Thủ Công Mỹ Nghệ Nam Bộ' },
-      { x: 63.5, z: 66.8, cat: 'am_thuc_chay', palIdx: 4, sign: 'TRÀ ĐÁ · TRÁI CÂY VƯỜN', title: 'Quầy Bưởi Da Xanh & Nước Giải Khát' }
-    ];
-    for (const sm of southMarketStalls) {
-      addPilgrimageStreetShop(sm.x, sm.z, Math.PI, sm);
-    }
+    // Keep the frontage road open. Local food and daily-life activity belongs to family-house porches,
+    // not to continuous rows of temporary market kiosks.
 
-    // North-side pagoda frontage street stalls (flanking outside West & East of Tam Quan/Cổng Phụ)
-    const northMarketStalls = [
-      { x: -24.0, z: 48.2, cat: 'thu_cong', palIdx: 1, sign: 'NÓN LÁ · QUẠT NAN', title: 'Sạp Nón Lá & Quạt Nan Dừa', w: 4.4, d: 2.8 },
-      { x: -12.0, z: 48.2, cat: 'huong_hoa', palIdx: 0, sign: 'HOA SEN TƯƠI · NHANG ĐÈN', title: 'Sạp Hoa Sen Trước Cổng Chùa', w: 4.5, d: 2.8 },
-      { x: -0.5, z: 48.2, cat: 'am_thuc_chay', palIdx: 2, sign: 'TRÀ TẮC · SƯƠNG SÁO', title: 'Quán Nước Mát Cô Ba', w: 4.4, d: 2.8 },
-      { x: 50.5, z: 48.2, cat: 'huong_hoa', palIdx: 4, sign: 'HƯƠNG TRẦM · ĐÈN DẦU', title: 'Sạp Nhang Hoa Cạnh Cổng Phụ', w: 4.2, d: 2.8 }
-    ];
-    for (const nm of northMarketStalls) {
-      addPilgrimageStreetShop(nm.x, nm.z, 0, nm);
-    }
-
-    // Deep-background Mekong homes behind street stalls & outer orchard perimeter (clear of expanded -68..68, -72..41.5 temple grounds)
+    // Low-rise Mekong family houses beyond the frontage road and temple boundary.
     const sideBackHouses = [
       [-42, 83.5, 9.8, 7.8, 3.8, Math.PI, 0, 0, false],
       [-16, 84.5, 10.4, 8.0, 4.0, Math.PI, 1, 2, false],
@@ -1965,99 +1940,7 @@ export class VinhTrang3DWorld {
     ];
     for (const hArgs of sideBackHouses) addMekongCountryHouse(...hArgs);
 
-    // Roadside Mekong "Quán Nước Mía · Dừa Tươi" (Textured sugarcane cart, striped umbrella, thùng đá đỏ & ghế cóc stools)
-    const addRoadsideDrinkStall = (sx, sz, rotY = 0) => {
-      const sg = new THREE.Group();
-      const cartBody = new THREE.Mesh(
-        new THREE.BoxGeometry(1.5, 0.92, 0.82),
-        new THREE.MeshStandardMaterial({ color: 0xC4CCD2, roughness: 0.42, metalness: 0.35 })
-      );
-      cartBody.position.y = 0.62;
-      cartBody.castShadow = true;
-      sg.add(cartBody);
-      // Colorful Vietnamese street cart apron decal ("NƯỚC MÍA SIÊU SẠCH · TRÀ TẮC")
-      const apronDecal = new THREE.Mesh(
-        new THREE.PlaneGeometry(1.42, 0.78),
-        new THREE.MeshBasicMaterial({
-          map: makeTextTex('NƯỚC MÍA · TRÀ TẮC', { bg: '#1F7A46', color: '#FFEA88', border: '#FFFFFF', w: 512, h: 256, size: 42 })
-        })
-      );
-      apronDecal.position.set(0, 0.62, 0.42);
-      sg.add(apronDecal);
-      // Red plastic ice cooler ("thùng đá đỏ") next to the sugarcane cart
-      const iceBox = new THREE.Mesh(
-        new THREE.BoxGeometry(0.56, 0.44, 0.42),
-        new THREE.MeshStandardMaterial({ color: 0xC6352B, roughness: 0.48 })
-      );
-      iceBox.position.set(-0.98, 0.22, 0.08);
-      sg.add(iceBox);
-      const iceLid = new THREE.Mesh(
-        new THREE.BoxGeometry(0.58, 0.06, 0.44),
-        new THREE.MeshStandardMaterial({ color: 0xECE8DF, roughness: 0.45 })
-      );
-      iceLid.position.set(-0.98, 0.46, 0.08);
-      sg.add(iceLid);
-
-      const glassTop = new THREE.Mesh(
-        new THREE.BoxGeometry(1.42, 0.72, 0.76),
-        new THREE.MeshStandardMaterial({ color: 0xDDF2F8, roughness: 0.16, transparent: true, opacity: 0.68 })
-      );
-      glassTop.position.y = 1.44;
-      sg.add(glassTop);
-      const sign = new THREE.Mesh(
-        new THREE.BoxGeometry(1.48, 0.36, 0.06),
-        new THREE.MeshBasicMaterial({ map: makeTextTex('NƯỚC MÍA · DỪA XIÊM', { bg: '#2C7A47', color: '#FFE57F', border: '#FFF6D6', w: 512, h: 128, size: 36 }) })
-      );
-      sign.position.set(0, 1.98, 0.4);
-      sg.add(sign);
-      // Green sugarcane stalks bundled beside the cart
-      for (let i = 0; i < 6; i++) {
-        const cane = new THREE.Mesh(
-          new THREE.CylinderGeometry(0.032, 0.036, 1.45, 6),
-          new THREE.MeshStandardMaterial({ color: i % 2 === 0 ? 0x6F9B3C : 0x89AD44, roughness: 0.62 })
-        );
-        cane.position.set(0.92 + (i % 3) * 0.07, 0.72, -0.2 + Math.floor(i / 3) * 0.14);
-        cane.rotation.z = -0.14;
-        sg.add(cane);
-      }
-      // Tall striped beach parasol (dù che nắng quán nước)
-      const pPole = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.045, 2.75, 8), zincMat);
-      pPole.position.set(-0.6, 1.38, -0.35);
-      sg.add(pPole);
-      const parasolMat = new THREE.MeshStandardMaterial({ map: stripedAwningTex, color: 0xF5D2B0, roughness: 0.72, side: THREE.DoubleSide });
-      const pTop = new THREE.Mesh(new THREE.ConeGeometry(1.65, 0.58, 12), parasolMat);
-      pTop.position.set(-0.6, 2.76, -0.35);
-      sg.add(pTop);
-      // Low aluminum table & plastic "ghế cóc" stools on the dirt shoulder
-      const tbl = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.05, 0.65), zincMat);
-      tbl.position.set(-0.3, 0.56, 1.15);
-      sg.add(tbl);
-      const tblLeg = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.06, 0.54, 6), zincMat);
-      tblLeg.position.set(-0.3, 0.27, 1.15);
-      sg.add(tblLeg);
-      const stoolCols = [0xC9382B, 0x2867B2, 0xC9382B, 0x2867B2];
-      [
-        [-0.95, 1.15],
-        [0.35, 1.15],
-        [-0.3, 1.72],
-        [-0.3, 0.58]
-      ].forEach(([bx, bz], idx) => {
-        const stool = new THREE.Mesh(
-          new THREE.CylinderGeometry(0.18, 0.22, 0.34, 8),
-          new THREE.MeshStandardMaterial({ color: stoolCols[idx], roughness: 0.52 })
-        );
-        stool.position.set(bx, 0.17, bz);
-        sg.add(stool);
-      });
-      sg.userData.stallType = 'am_thuc_chay';
-      sg.userData.stallTitle = 'Quán Nước Mía · Dừa Xiêm Cổng Chùa';
-      sg.position.set(sx, 0, sz);
-      sg.rotation.y = rotY;
-      this.exteriorGroup.add(sg);
-      this.stallClickTargets.push(sg);
-    };
-    addRoadsideDrinkStall(56.5, 49.4, -0.35);
-    addRoadsideDrinkStall(7.5, 50.6, 0.15);
+    // No separate roadside carts: the outer approach remains a quiet residential lane.
 
     // Mekong Alluvial Ditch & Wooden Plank Bridge ("Mương rạch phù sa, lục bình & cầu ván")
     const addMekongCanalDitch = (cx, cz, length = 34, width = 3.2, rotY = 0) => {
@@ -2875,235 +2758,335 @@ export class VinhTrang3DWorld {
     chanhDien.position.set(23, 0, 1.0);
     this.exteriorGroup.add(chanhDien);
 
-    // West Monastic Hall clear of North A Di Đà & Niết Bàn
-    const leftHall = this.buildSideHall(8.4, 14.2, 4.9, M.goldLight);
-    leftHall.position.set(2.0, 0, -14.5);
-    this.exteriorGroup.add(leftHall);
-    this.addRectObstacle(-2.4, 6.4, -21.8, -7.2);
-
     // Connected Main Temple Complex ("Chùa Chính" chữ Quốc layout — diagram-faithful 4 cross-halls & 2 Sân Thiên Tỉnh):
     // 1) Tiền Đường (porch at z=+1) -> 2) Chánh Điện (z=-7.5) -> Sân Thiên Tỉnh 1 (z=-12.8)
     // -> 3) Nhà Tổ (z=-18.4) -> Sân Thiên Tỉnh 2 (z=-23.8) -> 4) Nhà Hậu (z=-28.8), connected by West/East covered corridors.
     const buildMainTempleCompound = () => {
       const comp = new THREE.Group();
-      const darkWoodBeam = new THREE.MeshStandardMaterial({ color: 0x3D2114, map: this.woodGrainTex, roughness: 0.6 });
+      const centerX = 25.0;
+      const frontZ = 11.6;
+      const rearZ = -82.0;
+      const totalDepth = frontZ - rearZ;
+      const centerZ = (frontZ + rearZ) * 0.5;
+      const darkWoodBeam = new THREE.MeshStandardMaterial({
+        color: 0x3D2114, map: this.woodGrainTex, roughness: 0.6
+      });
+      const ceramicJade = new THREE.MeshStandardMaterial({ color: 0x3F7865, roughness: 0.44 });
+      const ceramicBlue = new THREE.MeshStandardMaterial({ color: 0x4D879E, roughness: 0.42 });
       const rockMat = new THREE.MeshStandardMaterial({ color: 0x676B66, roughness: 0.92, flatShading: true });
       const mossMat = new THREE.MeshStandardMaterial({ color: 0x3D7A3C, roughness: 0.85 });
+      const floorMat = new THREE.MeshStandardMaterial({
+        map: this.pavingTex, color: 0xD6C3A5, roughness: 0.82
+      });
 
-      // Timber-and-masonry front treatment for the connected worship halls.
-      const decorateCrossHall = (centerZ, width, depth, doorCount = 5) => {
-        const frontZ = centerZ + depth * 0.5 + 0.08;
-        const beam = new THREE.Mesh(new THREE.BoxGeometry(width + 0.5, 0.26, 0.32), darkWoodBeam);
-        beam.position.set(25.0, 5.05, frontZ + 0.04);
-        comp.add(beam);
+      // One continuous raised stone plinth ties all four worship halls and both skywells together.
+      const plinth = new THREE.Mesh(
+        new THREE.BoxGeometry(22.4, 0.96, totalDepth),
+        M.stoneLight
+      );
+      plinth.position.set(centerX, 0.48, centerZ);
+      plinth.receiveShadow = true;
+      plinth.castShadow = true;
+      comp.add(plinth);
+
+      // Two open-air courtyards are tiled separately; no roof is placed over their central spans.
+      const skywells = [
+        { z: -30.5, depth: 16.6 },
+        { z: -60.75, depth: 15.5 }
+      ];
+      for (const court of skywells) {
+        const courtFloor = new THREE.Mesh(
+          new THREE.BoxGeometry(14.8, 0.22, court.depth),
+          floorMat
+        );
+        courtFloor.position.set(centerX, 1.07, court.z);
+        courtFloor.receiveShadow = true;
+        comp.add(courtFloor);
+      }
+
+      // The east and west covered galleries run beside all four halls and both skywells.
+      const galleryZones = [
+        { z: -5.3, depth: 33.8 },
+        { z: -30.5, depth: 16.6 },
+        { z: -45.9, depth: 14.2 },
+        { z: -60.75, depth: 15.5 },
+        { z: -75.25, depth: 13.5 }
+      ];
+      for (const sideX of [15.8, 34.2]) {
+        const galleryFloor = new THREE.Mesh(
+          new THREE.BoxGeometry(3.8, 0.22, totalDepth),
+          M.stoneLight
+        );
+        galleryFloor.position.set(sideX, 1.07, centerZ);
+        galleryFloor.receiveShadow = true;
+        comp.add(galleryFloor);
+
+        for (const zone of galleryZones) {
+          const galleryRoof = makeHippedRoofMesh(
+            4.85, zone.depth + 0.8, 1.45, M.roofTile
+          );
+          galleryRoof.position.set(sideX, 5.72, zone.z);
+          galleryRoof.castShadow = true;
+          comp.add(galleryRoof);
+        }
+
+        // Timber columns at both gallery edges, spaced along the whole longitudinal axis.
+        for (const edge of [-1, 1]) {
+          const colX = sideX + edge * 1.55;
+          for (let z = 8.0; z >= -80.0; z -= 4.0) {
+            const base = new THREE.Mesh(
+              new THREE.BoxGeometry(0.46, 0.22, 0.46), M.creamTrim
+            );
+            base.position.set(colX, 1.19, z);
+            comp.add(base);
+
+            const column = new THREE.Mesh(
+              new THREE.CylinderGeometry(0.14, 0.18, 3.78, 12), M.redColumn
+            );
+            column.position.set(colX, 3.19, z);
+            column.castShadow = true;
+            comp.add(column);
+
+            const capital = new THREE.Mesh(
+              new THREE.BoxGeometry(0.5, 0.2, 0.5), M.goldAccent
+            );
+            capital.position.set(colX, 5.18, z);
+            comp.add(capital);
+          }
+        }
+      }
+
+      // Low outer balustrades define the gallery edge without closing the courtyard side.
+      for (const edgeX of [14.25, 35.75]) {
+        const rail = new THREE.Mesh(
+          new THREE.BoxGeometry(0.12, 0.62, totalDepth - 1.2), M.creamTrim
+        );
+        rail.position.set(edgeX, 1.55, centerZ);
+        comp.add(rail);
+        for (let z = 8.0; z >= -78.0; z -= 2.0) {
+          const baluster = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.035, 0.045, 0.54, 6), M.creamTrim
+          );
+          baluster.position.set(edgeX, 1.55, z);
+          comp.add(baluster);
+        }
+      }
+
+      // Cross-halls have timber side walls, a rear wall, carved front colonnades and tiled roofs.
+      const addCrossHall = (z, width, depth, height, doorCount, roofRise = 2.35) => {
+        const hall = new THREE.Group();
+        hall.position.set(centerX, 0, z);
+
+        const floor = new THREE.Mesh(
+          new THREE.BoxGeometry(width + 0.8, 0.28, depth + 0.8), M.stoneLight
+        );
+        floor.position.y = 1.1;
+        floor.receiveShadow = true;
+        hall.add(floor);
+
+        for (const side of [-1, 1]) {
+          const sideWall = new THREE.Mesh(
+            new THREE.BoxGeometry(0.34, height, depth), M.goldWall
+          );
+          sideWall.position.set(side * width * 0.5, 1.24 + height * 0.5, 0);
+          sideWall.castShadow = true;
+          sideWall.receiveShadow = true;
+          hall.add(sideWall);
+
+          // Narrow timber-framed side windows keep the long elevations from reading as blank boxes.
+          for (const wz of [-depth * 0.28, depth * 0.28]) {
+            const windowFrame = new THREE.Mesh(
+              new THREE.BoxGeometry(0.1, 1.2, 1.5), M.creamTrim
+            );
+            windowFrame.position.set(side * (width * 0.5 + 0.02), 3.75, wz);
+            hall.add(windowFrame);
+            for (let slat = 0; slat < 4; slat++) {
+              const louver = new THREE.Mesh(
+                new THREE.BoxGeometry(0.08, 0.055, 1.34), darkWoodBeam
+              );
+              louver.position.set(side * (width * 0.5 + 0.08), 3.28 + slat * 0.28, wz);
+              hall.add(louver);
+            }
+          }
+        }
+
+        const rearWall = new THREE.Mesh(
+          new THREE.BoxGeometry(width, height, 0.34), M.goldWall
+        );
+        rearWall.position.set(0, 1.24 + height * 0.5, -depth * 0.5);
+        rearWall.castShadow = true;
+        hall.add(rearWall);
+
+        const frontZ = depth * 0.5 + 0.08;
+        const beam = new THREE.Mesh(
+          new THREE.BoxGeometry(width + 0.5, 0.28, 0.34), darkWoodBeam
+        );
+        beam.position.set(0, 5.12, frontZ);
+        hall.add(beam);
 
         for (let i = 0; i <= doorCount; i++) {
-          const x = 25.0 - width * 0.5 + (width / doorCount) * i;
-          const base = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.22, 0.52), M.stoneLight);
-          base.position.set(x, 1.12, frontZ + 0.08);
-          comp.add(base);
-          const column = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.18, 3.72, 12), M.redColumn);
-          column.position.set(x, 3.08, frontZ + 0.08);
+          const x = -width * 0.5 + (width / doorCount) * i;
+          const base = new THREE.Mesh(
+            new THREE.BoxGeometry(0.48, 0.22, 0.48), M.stoneLight
+          );
+          base.position.set(x, 1.22, frontZ);
+          hall.add(base);
+
+          const column = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.14, 0.18, 3.75, 12), M.redColumn
+          );
+          column.position.set(x, 3.19, frontZ);
           column.castShadow = true;
-          comp.add(column);
-          const capital = new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.2, 0.56), M.goldAccent);
-          capital.position.set(x, 4.98, frontZ + 0.08);
-          comp.add(capital);
+          hall.add(column);
+
+          const capital = new THREE.Mesh(
+            new THREE.BoxGeometry(0.52, 0.2, 0.52), M.goldAccent
+          );
+          capital.position.set(x, 5.08, frontZ);
+          hall.add(capital);
         }
 
         for (let i = 0; i < doorCount; i++) {
           const bayWidth = width / doorCount;
-          const x = 25.0 - width * 0.5 + bayWidth * (i + 0.5);
-          const doorWidth = Math.min(1.8, bayWidth * 0.58);
-          const frame = new THREE.Mesh(new THREE.BoxGeometry(doorWidth + 0.28, 3.05, 0.16), M.creamTrim);
-          frame.position.set(x, 2.62, frontZ + 0.14);
-          comp.add(frame);
-          const leaf = new THREE.Mesh(new THREE.BoxGeometry(doorWidth, 2.72, 0.09), M.darkWood);
-          leaf.position.set(x, 2.58, frontZ + 0.24);
-          comp.add(leaf);
-          for (const panelY of [1.95, 3.12]) {
-            const panel = new THREE.Mesh(new THREE.BoxGeometry(doorWidth * 0.72, 0.72, 0.045), darkWoodBeam);
-            panel.position.set(x, panelY, frontZ + 0.30);
-            comp.add(panel);
-          }
-          const seam = new THREE.Mesh(new THREE.BoxGeometry(0.035, 2.55, 0.04), M.goldAccent);
-          seam.position.set(x, 2.58, frontZ + 0.34);
-          comp.add(seam);
-          for (const side of [-1, 1]) {
-            const handle = new THREE.Mesh(new THREE.SphereGeometry(0.045, 8, 6), M.goldAccent);
-            handle.position.set(x + side * 0.13, 2.55, frontZ + 0.39);
-            comp.add(handle);
-          }
-          const transom = new THREE.Mesh(new THREE.BoxGeometry(doorWidth, 0.42, 0.07), darkWoodBeam);
-          transom.position.set(x, 4.35, frontZ + 0.23);
-          comp.add(transom);
+          const x = -width * 0.5 + bayWidth * (i + 0.5);
+          const doorWidth = Math.min(1.75, bayWidth * 0.62);
+          const frame = new THREE.Mesh(
+            new THREE.BoxGeometry(doorWidth + 0.24, 3.08, 0.16), M.creamTrim
+          );
+          frame.position.set(x, 2.72, frontZ + 0.06);
+          hall.add(frame);
+
+          const leaf = new THREE.Mesh(
+            new THREE.BoxGeometry(doorWidth, 2.76, 0.09), M.darkWood
+          );
+          leaf.position.set(x, 2.66, frontZ + 0.16);
+          hall.add(leaf);
+
+          const centerSeam = new THREE.Mesh(
+            new THREE.BoxGeometry(0.035, 2.58, 0.045), M.goldAccent
+          );
+          centerSeam.position.set(x, 2.66, frontZ + 0.22);
+          hall.add(centerSeam);
+
+          const transom = new THREE.Mesh(
+            new THREE.BoxGeometry(doorWidth, 0.34, 0.06), darkWoodBeam
+          );
+          transom.position.set(x, 4.42, frontZ + 0.12);
+          hall.add(transom);
           for (let bar = -2; bar <= 2; bar++) {
-            const lattice = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.36, 0.035), M.goldAccent);
-            lattice.position.set(x + bar * (doorWidth / 6), 4.35, frontZ + 0.28);
-            comp.add(lattice);
+            const lattice = new THREE.Mesh(
+              new THREE.BoxGeometry(0.035, 0.28, 0.035), M.goldAccent
+            );
+            lattice.position.set(x + bar * (doorWidth / 6), 4.42, frontZ + 0.16);
+            hall.add(lattice);
           }
         }
+
+        // A restrained blue-green ceramic frieze recalls the real mosaic work without over-gilding it.
+        const frieze = new THREE.Mesh(
+          new THREE.BoxGeometry(width + 0.4, 0.34, 0.12), ceramicJade
+        );
+        frieze.position.set(0, 5.48, frontZ + 0.02);
+        hall.add(frieze);
+        for (let i = 0; i < doorCount; i++) {
+          const tile = new THREE.Mesh(
+            new THREE.BoxGeometry(0.22, 0.22, 0.06),
+            i % 2 === 0 ? ceramicBlue : M.mosaicRed
+          );
+          tile.position.set(-width * 0.5 + (i + 0.5) * (width / doorCount), 5.48, frontZ + 0.1);
+          hall.add(tile);
+        }
+
+        const roof = makeHippedRoofMesh(
+          width + 2.0, depth + 1.8, roofRise, M.roofTile
+        );
+        roof.position.set(0, 6.05, -0.12);
+        roof.castShadow = true;
+        hall.add(roof);
+
+        const ridge = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.12, 0.12, width + 0.8, 12),
+          new THREE.MeshStandardMaterial({ color: 0x783D30, roughness: 0.72 })
+        );
+        ridge.rotation.z = Math.PI / 2;
+        ridge.position.set(0, 7.55, -0.12);
+        hall.add(ridge);
+
+        comp.add(hall);
       };
 
-      // 1. Raised ~1.0m Heritage Plinth across the rear compound (x = 13.8..36.2, z = -31.2..-5.8)
-      const plinthTerrace = new THREE.Mesh(
-        new THREE.BoxGeometry(22.4, 0.96, 25.4),
-        M.stoneLight
+      // Tiền đường is the existing 13-arch front hall; these halls continue the same central axis.
+      addCrossHall(-14.1, 14.8, 16.2, 5.0, 5, 2.45);  // Chánh điện
+      addCrossHall(-45.9, 14.8, 14.2, 4.9, 5, 2.3);   // Nhà tổ
+      addCrossHall(-75.25, 16.0, 13.5, 5.0, 5, 2.35); // Nhà hậu
+
+      // The first skywell contains the single non bộ between Chánh điện and Nhà tổ.
+      const basin = new THREE.Mesh(
+        new THREE.CylinderGeometry(3.25, 3.45, 0.42, 24), M.stoneDark
       );
-      plinthTerrace.position.set(25.0, 0.48, -18.5);
-      plinthTerrace.receiveShadow = true;
-      comp.add(plinthTerrace);
-
-      // Floor of the 2 open-sky Sân Thiên Tỉnh courtyards
-      const innerCourtBase = new THREE.Mesh(
-        new THREE.BoxGeometry(14.8, 0.14, 21.5),
-        new THREE.MeshStandardMaterial({ map: this.pavingTex, color: 0xD6C3A5, roughness: 0.8 })
+      basin.position.set(centerX, 1.28, -30.5);
+      comp.add(basin);
+      const water = new THREE.Mesh(
+        new THREE.CylinderGeometry(2.92, 2.92, 0.08, 24), M.water
       );
-      innerCourtBase.position.set(25.0, 0.98, -18.2);
-      comp.add(innerCourtBase);
+      water.position.set(centerX, 1.52, -30.5);
+      comp.add(water);
 
-      // 2. Covered West & East Perimeter Corridors ("Hành lang bao quanh chữ Quốc")
-      for (const sideX of [15.8, 34.2]) {
-        const corridorFloor = new THREE.Mesh(new THREE.BoxGeometry(3.8, 0.22, 24.4), M.stoneLight);
-        corridorFloor.position.set(sideX, 1.05, -18.4);
-        corridorFloor.receiveShadow = true;
-        comp.add(corridorFloor);
+      for (const [x, y, z, sx, sy, sz] of [
+        [24.0, 2.45, -30.7, 1.25, 2.15, 1.0],
+        [26.1, 2.1, -30.3, 1.05, 1.75, 0.9],
+        [23.2, 1.9, -29.2, 0.82, 1.25, 0.78],
+        [27.0, 1.85, -31.3, 0.76, 1.2, 0.72]
+      ]) {
+        const rock = new THREE.Mesh(new THREE.DodecahedronGeometry(1, 1), rockMat);
+        rock.scale.set(sx, sy, sz);
+        rock.position.set(x, y, z);
+        rock.castShadow = true;
+        comp.add(rock);
 
-        const stripRoof = makeHippedRoofMesh(4.6, 25.0, 1.45, M.roofTile);
-        stripRoof.position.set(sideX, 5.95, -18.4);
-        stripRoof.castShadow = true;
-        comp.add(stripRoof);
-
-        for (let cz = -29.2; cz <= -7.0; cz += 3.7) {
-          for (const edge of [-1, 1]) {
-            const colX = sideX + edge * 1.55;
-            const colBase = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.22, 0.46), M.creamTrim);
-            colBase.position.set(colX, 1.28, cz);
-            comp.add(colBase);
-            const column = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.18, 3.85, 12), M.redColumn);
-            column.position.set(colX, 3.3, cz);
-            column.castShadow = true;
-            comp.add(column);
-            const capital = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.2, 0.5), M.goldAccent);
-            capital.position.set(colX, 5.25, cz);
-            comp.add(capital);
-          }
-        }
-        for (const edge of [-1, 1]) {
-          const rail = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.72, 23.0), M.creamTrim);
-          rail.position.set(sideX + edge * 1.55, 1.7, -18.4);
-          comp.add(rail);
-          for (let cz = -28.2; cz <= -8.6; cz += 1.8) {
-            const baluster = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.045, 0.62, 6), M.creamTrim);
-            baluster.position.set(sideX + edge * 1.55, 1.68, cz);
-            comp.add(baluster);
-          }
-        }
-      }
-
-      // 3. Cross-Hall 2 Ridge (Chánh Điện Sanctuary Rear Wing z = -7.6)
-      const chanhRearBody = new THREE.Mesh(new THREE.BoxGeometry(19.6, 5.2, 4.4), M.goldWall);
-      chanhRearBody.position.set(25.0, 3.55, -7.6);
-      chanhRearBody.castShadow = true;
-      comp.add(chanhRearBody);
-      decorateCrossHall(-7.6, 19.6, 4.4, 5);
-      const chanhRearRoof = makeHippedRoofMesh(21.0, 5.6, 2.35, M.roofTile);
-      chanhRearRoof.position.set(25.0, 7.3, -7.6);
-      chanhRearRoof.castShadow = true;
-      comp.add(chanhRearRoof);
-
-      // 4. Cross-Hall 3 (Nhà Tổ at z = -18.2) separating Sân Thiên Tỉnh 1 & 2
-      const nhaToWing = new THREE.Mesh(new THREE.BoxGeometry(17.6, 4.8, 5.0), M.goldWall);
-      nhaToWing.position.set(25.0, 3.35, -18.2);
-      nhaToWing.castShadow = true;
-      comp.add(nhaToWing);
-      decorateCrossHall(-18.2, 17.6, 5.0, 5);
-      const nhaToRoof = makeHippedRoofMesh(19.2, 6.2, 2.45, M.roofTile);
-      nhaToRoof.position.set(25.0, 6.95, -18.2);
-      nhaToRoof.castShadow = true;
-      comp.add(nhaToRoof);
-      const nhaToCrest = new THREE.Mesh(new THREE.BoxGeometry(9.5, 0.34, 0.34), M.goldAccent);
-      nhaToCrest.position.set(25.0, 8.22, -18.2);
-      comp.add(nhaToCrest);
-
-      // 5. Cross-Hall 4 (Nhà Hậu at z = -28.4) closing the North rear of Chữ Quốc
-      const nhaHauWing = new THREE.Mesh(new THREE.BoxGeometry(22.2, 5.0, 5.2), M.goldWall);
-      nhaHauWing.position.set(25.0, 3.45, -28.4);
-      nhaHauWing.castShadow = true;
-      comp.add(nhaHauWing);
-      decorateCrossHall(-28.4, 22.2, 5.2, 6);
-      const nhaHauRoof = makeHippedRoofMesh(23.6, 6.4, 2.4, M.roofTile);
-      nhaHauRoof.position.set(25.0, 7.1, -28.4);
-      nhaHauRoof.castShadow = true;
-      comp.add(nhaHauRoof);
-
-      // Twin Sân Thiên Tỉnh Open Sky Courtyards (Hòn Non Bộ 1 at z=-12.8 & Hòn Non Bộ 2 at z=-23.5)
-      for (const [nbIdx, nbZ] of [[1, -12.8], [2, -23.5]]) {
-        const curb = new THREE.Mesh(new THREE.CylinderGeometry(2.55, 2.75, 0.45, 20), M.stoneDark);
-        curb.position.set(25.0, 1.24, nbZ);
-        comp.add(curb);
-        const wat = new THREE.Mesh(new THREE.CylinderGeometry(2.25, 2.25, 0.35, 20), M.water);
-        wat.position.set(25.0, 1.32, nbZ);
-        comp.add(wat);
-        const peak = new THREE.Mesh(new THREE.DodecahedronGeometry(0.95, 0), rockMat);
-        peak.scale.set(1.25, 1.75 + nbIdx * 0.15, 1.05);
-        peak.position.set(25.0, 2.05, nbZ);
-        comp.add(peak);
-        const moss = new THREE.Mesh(new THREE.SphereGeometry(0.45, 8, 6), mossMat);
-        moss.position.set(25.0, 2.95, nbZ);
+        const moss = new THREE.Mesh(new THREE.SphereGeometry(0.48, 9, 7), mossMat);
+        moss.scale.set(sx * 0.72, 0.24, sz * 0.72);
+        moss.position.set(x, y + sy * 0.72, z);
         comp.add(moss);
-        for (const bx of [21.2, 28.8]) {
-          const pot = this.makeBonsai72(0.68);
-          pot.position.set(bx, 1.02, nbZ);
-          comp.add(pot);
-        }
       }
 
-      const rearSign = new THREE.Mesh(
-        new THREE.BoxGeometry(7.2, 0.82, 0.18),
-        new THREE.MeshStandardMaterial({
-          map: makeTextTex('CHÙA CHÍNH CHỮ QUỐC · NHÀ TỔ & NHÀ HẬU', {
-            w: 1200,
-            h: 180,
-            bg: '#32140A',
-            border: '#FFD875',
-            color: '#FFD970',
-            size: 50
-          })
+      const cascade = new THREE.Mesh(
+        new THREE.PlaneGeometry(0.72, 1.9),
+        new THREE.MeshBasicMaterial({
+          color: 0xB8F0FA, transparent: true, opacity: 0.64, side: THREE.DoubleSide
         })
       );
-      rearSign.position.set(25.0, 4.95, -31.12);
-      comp.add(rearSign);
+      cascade.position.set(24.8, 2.1, -29.65);
+      cascade.rotation.x = 0.12;
+      comp.add(cascade);
 
-      const eastGallerySign = new THREE.Mesh(
-        new THREE.BoxGeometry(0.18, 0.68, 6.2),
-        new THREE.MeshStandardMaterial({
-          map: makeTextTex('2 SÂN THIÊN TỈNH · 18 LA HÁN · LONG TRỤ', {
-            w: 1120,
-            h: 170,
-            bg: '#5C1610',
-            border: '#FFD875',
-            color: '#FFF2B2',
-            size: 48
-          }),
-          roughness: 0.38
-        })
-      );
-      eastGallerySign.position.set(36.2, 3.85, -18.2);
-      comp.add(eastGallerySign);
+      for (const [x, z] of [[20.8, -26.4], [29.2, -26.4], [20.8, -34.6], [29.2, -34.6]]) {
+        const bonsai = this.makeBonsai72(0.68);
+        bonsai.position.set(x, 1.18, z);
+        comp.add(bonsai);
+      }
 
-      // Clickable compound wing cue to jump straight into Interior architectural view
+      // The second skywell stays open, with only corner bonsai rather than a duplicate rockery.
+      for (const [x, z] of [[20.8, -56.8], [29.2, -56.8], [20.8, -64.7], [29.2, -64.7]]) {
+        const bonsai = this.makeBonsai72(0.62);
+        bonsai.position.set(x, 1.18, z);
+        comp.add(bonsai);
+      }
+
+      // Invisible selection volume spans the complete compound for the exterior-to-interior interaction.
       const compoundHit = new THREE.Mesh(
-        new THREE.BoxGeometry(22.2, 5.4, 24.4),
-        new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.0, depthWrite: false })
+        new THREE.BoxGeometry(22.4, 10.5, totalDepth),
+        new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false })
       );
-      compoundHit.position.set(25.0, 3.2, -18.5);
+      compoundHit.position.set(centerX, 5.4, centerZ);
       comp.add(compoundHit);
-      this.mainCompoundClickTargets.push(compoundHit, rearSign, eastGallerySign);
+      this.mainCompoundClickTargets.push(compoundHit);
 
       this.exteriorGroup.add(comp);
-      this.addRectObstacle(13.8, 36.2, -31.1, -5.8);
+      // Front façade colliders already protect the entrance; leave the stair and side-door approaches clear.
+      this.addRectObstacle(13.8, 36.2, rearZ, -6.5);
     };
+
     buildMainTempleCompound();
 
     // EXTERIOR MEKONG WOODEN STILT DINING HALL ("Nhà Sàn Gỗ Truyền Thống Miền Tây · Khu Ăn Phật Tử")
@@ -3324,12 +3307,8 @@ export class VinhTrang3DWorld {
       this.addRectObstacle(53.6, 54.6, 7.2, 12.6);
       this.addRectObstacle(53.6, 54.6, 16.4, 21.8);
     };
-    buildMekongStiltDiningPavilion();
-
-    const giangDuong = this.buildGiangDuong();
-    giangDuong.position.set(44, 0, -18);
-    this.exteriorGroup.add(giangDuong);
-    this.addRectObstacle(39, 49, -28, -8);
+    // The connected four-hall complex already contains the worship and communal spaces;
+    // do not add detached stilt dining or lecture buildings to the historic temple footprint.
 
     // 7-Tier Terracotta Bảo Tháp in the rear garden near the reclining Buddha.
     const stupa = this.buildSevenTierStupa();
@@ -3608,21 +3587,7 @@ export class VinhTrang3DWorld {
     this.exteriorGroup.add(nonBo);
     this.addObstacle(-54.0, -4.0, 8.6);
 
-    // 3. HÀNH LANG 18 VỊ LA HÁN NGOÀI TRỜI (West-North Promenade x = -49.5, z = -34..-16)
-    for (let i = 0; i < 6; i++) {
-      const az = -16.0 - i * 3.8;
-      const ped = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.85, 1.3), M.creamTrim);
-      ped.position.set(-49.5, 0.425, az);
-      this.exteriorGroup.add(ped);
-      const robe = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.44, 1.45, 10), M.statueWhite);
-      robe.position.set(-49.5, 1.55, az);
-      robe.castShadow = true;
-      this.exteriorGroup.add(robe);
-      const hd = new THREE.Mesh(new THREE.SphereGeometry(0.23, 10, 8), M.statueWhite);
-      hd.position.set(-49.5, 2.46, az);
-      this.exteriorGroup.add(hd);
-      this.addObstacle(-49.5, az, 0.95);
-    }
+    // 3. Keep the west-north promenade open; the selected La Hán remain inside the main hall.
 
     // 4. HỒ PHÓNG SINH LỚN & CẦU GỖ CHỮ Z (-16.0, -56.0)
     const releasePond = this.buildLotusPond(24.0, 15.0, 18, false);
@@ -5079,27 +5044,16 @@ export class VinhTrang3DWorld {
     this.exteriorGroup.add(this.dilacGroup);
     this.addRectObstacle(-38.5, -10.5, -4.5, 14.9);
 
-    // West Arhat Garden Plaza Statues & Manicured Round Shrubs flanking Di Lặc Courtyard (image_97204806.png left)
+    // West garden plaza: low planters and clipped tropical shrubs frame the Di Lặc courtyard.
     for (const wx of [-36.2, -13.2]) {
       for (let zi = 0; zi < 4; zi++) {
         const wz = 22.5 + zi * 4.8;
-        const ped = new THREE.Mesh(new THREE.BoxGeometry(1.15, 0.72, 1.15), M.creamTrim);
-        ped.position.set(wx, 0.36, wz);
-        ped.receiveShadow = true;
-        this.exteriorGroup.add(ped);
-        const body = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.42, 1.35, 10), M.statueWhite);
-        body.position.set(wx, 1.38, wz);
-        body.castShadow = true;
-        this.exteriorGroup.add(body);
-        const head = new THREE.Mesh(new THREE.SphereGeometry(0.22, 10, 8), M.statueWhite);
-        head.position.set(wx, 2.22, wz);
-        this.exteriorGroup.add(head);
-
-        const bushPot = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.42, 0.52, 12), M.creamTrim);
-        bushPot.position.set(wx, 0.26, wz - 2.3);
+        const bushPot = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.42, 0.52, 12), M.terracottaPot);
+        bushPot.position.set(wx, 0.26, wz);
         this.exteriorGroup.add(bushPot);
         const bush = new THREE.Mesh(new THREE.SphereGeometry(0.75, 10, 8), M.foliageMid);
-        bush.position.set(wx, 1.05, wz - 2.3);
+        bush.scale.set(1.05, 0.78, 1.0);
+        bush.position.set(wx, 0.78, wz);
         bush.castShadow = true;
         this.exteriorGroup.add(bush);
       }
@@ -5741,23 +5695,10 @@ export class VinhTrang3DWorld {
     buildFlagPole(18.2, 25.5, true);
     buildFlagPole(27.8, 25.5, false);
 
-    // 2. Central Hedge Row of White Arhat Statues dividing Central Avenue & Chánh Điện courtyard (image_97204806.png center!)
+    // 2. A low central hedge guides the pedestrian approach without a second row of statues.
     const midHedge = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.65, 18.0), M.foliageDark);
     midHedge.position.set(11.6, 0.325, 15.0);
     this.exteriorGroup.add(midHedge);
-    for (let zi = 0; zi < 5; zi++) {
-      const sz = 8.0 + zi * 3.4;
-      const ped = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.62, 0.95), M.creamTrim);
-      ped.position.set(11.6, 0.31, sz);
-      this.exteriorGroup.add(ped);
-      const fig = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.36, 1.25, 10), M.statueWhite);
-      fig.position.set(11.6, 1.25, sz);
-      fig.castShadow = true;
-      this.exteriorGroup.add(fig);
-      const hd = new THREE.Mesh(new THREE.SphereGeometry(0.19, 10, 8), M.statueWhite);
-      hd.position.set(11.6, 2.02, sz);
-      this.exteriorGroup.add(hd);
-    }
 
     // 3. RIGHT (East) Side Garden Pathway: Dense overflowing magenta Bougainvillea & Red Garden Railings (x = 33.8 & 38.2)
     const bougCoords = [
@@ -5884,20 +5825,7 @@ export class VinhTrang3DWorld {
     dirSignGroup.add(dirBoard);
     this.exteriorGroup.add(dirSignGroup);
 
-    // Outer Right Garden Row of White Arhat Statues North of Nhà Tạp Hóa (z = 15.6..25.8)
-    for (let i = 0; i < 4; i++) {
-      const az = 15.6 + i * 3.4;
-      const ped = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.68, 1.1), M.creamTrim);
-      ped.position.set(47.2, 0.34, az);
-      this.exteriorGroup.add(ped);
-      const body = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.38, 1.32, 10), M.statueWhite);
-      body.position.set(47.2, 1.32, az);
-      body.castShadow = true;
-      this.exteriorGroup.add(body);
-      const head = new THREE.Mesh(new THREE.SphereGeometry(0.2, 10, 8), M.statueWhite);
-      head.position.set(47.2, 2.15, az);
-      this.exteriorGroup.add(head);
-    }
+    // Outer-right garden remains open beside the side-gate grocery house; no duplicate statue row.
 
     // Two sculpted multi-tier bonsai pots flanking center balustrade
     for (const bx of [19.4, 26.6]) {
