@@ -85,7 +85,7 @@ export const PILGRIMAGE_STATIONS = [
     pinLabel: 'Tượng Phật A Di Đà',
     pos: { x: 23.0, z: 27.0 },
     standPos: { x: 23.0, z: 39.0 },
-    via: [[23.0, 45.8], [23.0, 41.0], [23.0, 39.0]],
+    via: [[40.5, 45.8], [40.5, 39.5], [32.0, 39.0], [23.0, 39.0]],
     mapCoord: { x: 67, y: 81 },
     lookAt: { x: 23.0, y: 12.0, z: 27.0 },
     audio: 's1_adida.mp3',
