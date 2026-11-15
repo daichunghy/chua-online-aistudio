@@ -44,7 +44,10 @@ import {
   calculateMeritSummary,
   DISCOVERY_ZONES,
   WORLD_BOUNDS,
-  findAnyTempleDestination
+  findAnyTempleDestination,
+  CHU_QUOC_ZONES,
+  CHANH_DIEN_HISTORICAL_NOTES,
+  computePilgrimProgress
 } from './chua-online-logic.mjs';
 
 test('OKLab/OKLCH perceptual color engine (meodai/skill.color-expert) preserves perceptual lightness and prevents muddy mid-tones', () => {
@@ -100,7 +103,7 @@ test('findNearestStation & Dấu Ấn Hành Trình (9 lotus petals) work across 
   assert.ok(stationKeys.includes('phat_niet_ban'));
   assert.ok(stationKeys.includes('chanh_dien'));
 
-  const nearest = findNearestStation({ x: 23, z: 3.0 });
+  const nearest = findNearestStation({ x: 23.0, z: 6.0 });
   assert.equal(nearest.station.key, 'chanh_dien');
 
   const state = createSpiritualState({
@@ -273,13 +276,17 @@ test('Daily Dharma service picks a canonical Buddhist quote, gates first visit o
   assert.notEqual(fallbackRes.quote.id, DAILY_DHARMA_FALLBACK[0].id);
 });
 
-test('9-category Store catalog, live try-on, level gating, and Tam Quan / side-door entrance layout', () => {
+test('9-category Store catalog, live try-on, level gating, and Tam Quan South->North axis layout', () => {
   const tamQuan = PILGRIMAGE_STATIONS.find((s) => s.key === 'cong_tam_quan');
   const chanhDien = PILGRIMAGE_STATIONS.find((s) => s.key === 'chanh_dien');
   const phatAdida = PILGRIMAGE_STATIONS.find((s) => s.key === 'phat_adida');
-  assert.ok(tamQuan.standPos.z > tamQuan.pos.z); // Spawns outside Tam Quan gate
-  assert.ok(chanhDien.standPos.x > chanhDien.pos.x); // Right side-door entry (cửa hông phải)
-  assert.ok(phatAdida.pos.z < 0); // North avenue standing A Di Đà in front of Bảo Tháp
+  const nietBan = PILGRIMAGE_STATIONS.find((s) => s.key === 'phat_niet_ban');
+  assert.ok(tamQuan.standPos.z > tamQuan.pos.z); // Spawns South outside Tam Quan gate
+  assert.equal(tamQuan.pos.x, 23); // Front Tam Quan axis aligned with Chánh điện
+  assert.equal(phatAdida.pos.x, -8); // North head of central avenue in front of Bảo Tháp
+  assert.ok(phatAdida.pos.z < tamQuan.pos.z);
+  assert.equal(chanhDien.pos.x, 23);
+  assert.ok(nietBan.pos.z < -30); // Behind Chùa Cổ at North rear garden
 
   assert.equal(STORE_CATEGORIES.length, 9);
   assert.deepEqual(
@@ -294,6 +301,8 @@ test('9-category Store catalog, live try-on, level gating, and Tam Quan / side-d
 
   const robeItems = filterStoreItems('ao_trang');
   assert.equal(robeItems.length, 6);
+  assert.equal(robeItems.find((r) => r.id === 'ao_trang_nau')?.requiredLevel, 1);
+  assert.equal(robeItems.find((r) => r.id === 'ao_trang_trang')?.requiredLevel, 1);
   assert.equal(robeItems.find((r) => r.id === 'ao_vu_lan_hong')?.rare, true);
   assert.equal(robeItems.find((r) => r.id === 'ao_vang_nghe')?.requiredLevel, 10);
 
@@ -302,6 +311,10 @@ test('9-category Store catalog, live try-on, level gating, and Tam Quan / side-d
   st = tryRes.state;
   assert.equal(tryRes.previewing, true);
   assert.equal(st.tryingItemId, 'ao_hoa_sen');
+
+  const buyBrown = purchaseStoreItem(st, 'ao_trang_nau');
+  assert.equal(buyBrown.ok, true);
+  assert.equal(buyBrown.state.equipped.robe, 'ao_trang_nau');
 
   const lockedBuy = purchaseStoreItem(st, 'ao_vang_nghe');
   assert.equal(lockedBuy.ok, false);
@@ -312,9 +325,15 @@ test('9-category Store catalog, live try-on, level gating, and Tam Quan / side-d
   assert.equal(buyGem.state.gems, 120);
   assert.equal(buyGem.state.equipped.robe, 'ao_hoa_sen');
   assert.ok(STORE_ITEMS_CATALOG.length >= 20);
+
+  const prog = computePilgrimProgress(
+    createSpiritualState({ bowCount: 9, incenseOfferings: 3, lotusOfferings: 2, visitedStations: [0, 1, 2, 3, 4, 5] }),
+    3
+  );
+  assert.ok(prog.level >= 4);
 });
 
-test('Temple Entrance Grocery House & Cổng Phụ side-pathway routing work cleanly', () => {
+test('Temple Entrance Grocery House & continuous Chữ Quốc walkway routing work cleanly', () => {
   assert.equal(MARKETPLACE_STALL_CATEGORIES.length, 3);
   assert.ok(MARKETPLACE_STALL_CATALOG.length >= 18);
   assert.ok(filterMarketplaceItems('huong_hoa').length >= 5);
@@ -334,19 +353,29 @@ test('Temple Entrance Grocery House & Cổng Phụ side-pathway routing work cle
   assert.equal(cartRes.cart[0].id, 'quat_nan_gio_may');
 
   const chanhDien = PILGRIMAGE_STATIONS.find((s) => s.key === 'chanh_dien');
-  assert.ok(chanhDien.via.some(([vx, vz]) => vx >= 40 && Math.abs(vz - 41.5) < 1)); // Routes via open Cổng Phụ
-  assert.ok(chanhDien.via.some(([vx]) => vx >= 30 && vx < 40)); // Then along right side bougainvillea pathway
+  assert.equal(chanhDien.standPos.x, 30.2);
+  assert.equal(chanhDien.standPos.z, 12.2); // Approaches via cửa hông courtyard before entering Tiền đường -> Chánh điện
+  assert.ok(chanhDien.via.length >= 2);
 });
 
-test('Expanded pagoda exploration zones & bounds cover Lâm Tỳ Ni, Non Bộ, Hồ Phóng Sinh, Nhà Tổ, Lầu Trà Thiền', () => {
+test('Expanded pagoda exploration zones, Chữ Quốc 6-zone order, and scholarly comparison notes are accurate', () => {
   assert.ok(WORLD_BOUNDS.maxX - WORLD_BOUNDS.minX >= 130);
-  assert.ok(WORLD_BOUNDS.maxZ - WORLD_BOUNDS.minZ >= 120);
-  assert.ok(DISCOVERY_ZONES.length >= 7);
+  assert.ok(WORLD_BOUNDS.maxZ - WORLD_BOUNDS.minZ >= 150);
+  assert.ok(DISCOVERY_ZONES.length >= 8);
   assert.ok(findAnyTempleDestination('vuon_lam_ty_ni'));
   assert.ok(findAnyTempleDestination('non_bo_quan_am'));
   assert.ok(findAnyTempleDestination('ho_phong_sinh'));
   assert.ok(findAnyTempleDestination('hau_to_nha_to'));
   assert.ok(findAnyTempleDestination('lau_tra_thien'));
+  assert.ok(findAnyTempleDestination('nha_san_trai_duong'));
+  assert.ok(findAnyTempleDestination('bao_thap_that_phat'));
+
+  assert.equal(CHU_QUOC_ZONES.length, 6);
+  assert.deepEqual(
+    CHU_QUOC_ZONES.map((z) => z.id),
+    ['tien_duong', 'chanh_dien_noi_that', 'san_thien_tinh_1', 'nha_to', 'san_thien_tinh_2', 'nha_hau']
+  );
+  assert.equal(CHANH_DIEN_HISTORICAL_NOTES.sources.length, 2);
 });
 
 

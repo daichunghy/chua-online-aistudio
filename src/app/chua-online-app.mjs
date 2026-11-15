@@ -2,6 +2,8 @@ import {
   CHARACTER_PROFILES,
   PILGRIMAGE_STATIONS,
   DISCOVERY_ZONES,
+  CHU_QUOC_ZONES,
+  CHANH_DIEN_HISTORICAL_NOTES,
   findAnyTempleDestination,
   SHOP_CATALOG,
   DHARMA_TEXTBOOKS,
@@ -333,10 +335,15 @@ export class ChuaOnlineApp {
         </div>
 
         <nav id="interior-zone-bar" class="interior-zone-bar" style="display:none;" aria-label="Các khu trong Chùa Chính">
-          <button type="button" class="walk-chip-btn active" data-interior-zone="chanh_dien">🏛️ Chánh Điện</button>
-          <button type="button" class="walk-chip-btn" data-interior-zone="non_bo_giua">🪨 Hòn Non Bộ Giữa</button>
-          <button type="button" class="walk-chip-btn" data-interior-zone="khu_tho">🕯️ Khu Thờ Tổ</button>
-          <button type="button" class="walk-chip-btn" data-interior-zone="trai_duong">🍚 Khu Ăn Phật Tử</button>
+          <button type="button" class="walk-chip-btn active" data-interior-zone="tien_duong">1. Tiền đường</button>
+          <button type="button" class="walk-chip-btn" data-interior-zone="chanh_dien">2. Chánh điện</button>
+          <button type="button" class="walk-chip-btn" data-interior-zone="non_bo_giua">3. Thiên Tỉnh 1</button>
+          <button type="button" class="walk-chip-btn" data-interior-zone="khu_tho">4. Nhà Tổ</button>
+          <button type="button" class="walk-chip-btn" data-interior-zone="san_thien_tinh_2">5. Thiên Tỉnh 2</button>
+          <button type="button" class="walk-chip-btn" data-interior-zone="nha_hau">6. Nhà Hậu</button>
+          <button type="button" class="walk-chip-btn" data-interior-zone="trai_duong">🍚 Trai Đường</button>
+          <button type="button" class="walk-chip-btn" id="btn-interior-cutaway" title="Mặt cắt kiến trúc xuyên tường chữ Quốc">✂️ Mặt cắt 3D</button>
+          <button type="button" class="walk-chip-btn" id="btn-interior-history" title="Đối chiếu tư liệu Tôn tượng Tam Bảo">📜 Tư liệu</button>
           <button type="button" class="walk-chip-btn interior-exit-chip" id="btn-interior-exit-courtyard">← Ra Sân Chùa</button>
         </nav>
 
@@ -760,17 +767,21 @@ export class ChuaOnlineApp {
             btn.classList.add('active');
             btn.innerHTML = '← Ra Sân Chánh Điện 3D';
           }
-          this.highlightInteriorZoneChip(this.world3d?.getInteriorZoneKey() || 'chanh_dien');
+          this.highlightInteriorZoneChip(this.world3d?.getInteriorZoneKey() || 'tien_duong');
+          const cutBtn = document.getElementById('btn-interior-cutaway');
+          if (cutBtn) cutBtn.classList.toggle('active', Boolean(this.world3d?.interiorCutaway));
           this.spiritual = recordSpiritualMilestone(this.spiritual, 'Vào bên trong Chùa Chính');
           this.saveState();
           this.playBellTone(216, 2.6);
           this.showToast(
-            'Bên trong Chùa Chính Vĩnh Tràng',
-            'Đi thẳng qua lối hai bên Tam Bảo để tham quan Hòn Non Bộ Giữa Chùa, Khu Thờ Tổ và Khu Ăn Phật Tử (Trai Đường).',
-            4800,
+            'Bên trong Chùa Chính Chữ Quốc (國)',
+            'Đi dọc từ 1. Tiền đường → 2. Chánh điện → 3. Thiên Tỉnh 1 → 4. Nhà Tổ → 5. Thiên Tỉnh 2 → 6. Nhà Hậu hoặc bật ✂️ Mặt cắt 3D để ngắm kết cấu.',
+            5200,
             false
           );
         } else {
+          const cutBtn = document.getElementById('btn-interior-cutaway');
+          if (cutBtn) cutBtn.classList.remove('active');
           if (btn) {
             btn.classList.remove('active');
             btn.innerHTML = 'Vào Chánh điện';
@@ -3322,8 +3333,8 @@ export class ChuaOnlineApp {
           <div style="background:#f6ebd6;border:2px solid #C9962E;border-radius:18px;padding:12px 14px;margin-bottom:12px;box-shadow:inset 0 2px 10px rgba(74,50,34,0.1);">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:8px;">
               <div>
-                <strong style="font-size:15px;color:#1C5A34;">Sơ đồ Chùa Vĩnh Tràng Mở Rộng (136m × 114m)</strong>
-                <span style="font-size:12px;color:#6E5034;margin-left:8px;">Bấm vào điểm bất kỳ (kể cả 7 khu mới) để nhân vật tự hành hương tới</span>
+                <strong style="font-size:15px;color:#1C5A34;">Mặt bằng Tổng thể Chùa Vĩnh Tràng (Bám sát thực tế 136m × 114m)</strong>
+                <span style="font-size:12px;color:#6E5034;margin-left:8px;">Bấm vào điểm bất kỳ để nhân vật hành hương tới</span>
               </div>
               <div style="font-size:12px;font-weight:700;color:#B84518;background:#fffdf8;padding:4px 10px;border-radius:999px;border:1px solid #C9962E;">
                 ● Vị trí hiện tại
@@ -3333,74 +3344,85 @@ export class ChuaOnlineApp {
             <svg viewBox="0 0 760 340" style="width:100%;height:265px;background:linear-gradient(in oklab 180deg,#d8ebd1 0%,#eee2c7 55%,#e4d3b0 100%);border-radius:14px;border:1.5px solid rgba(120,85,45,0.35);display:block;">
               <!-- Outer Pilgrimage Street Market Corridor -->
               <rect x="26" y="${mapY(46)}" width="708" height="44" rx="6" fill="#cfc3ad" stroke="#a6957c" stroke-width="1"/>
-              <text x="380" y="${mapY(55) + 4}" text-anchor="middle" fill="#4A3222" font-size="9.5" font-weight="800">PHỐ HÀNG QUÁN HÀNH HƯƠNG · ĐƯỜNG NGUYỄN TRUNG TRỰC (14 SẠP HÀNG HAI BÊN ĐƯỜNG)</text>
+              <text x="380" y="${mapY(55) + 4}" text-anchor="middle" fill="#4A3222" font-size="9.5" font-weight="800">ĐƯỜNG NGUYỄN TRUNG TRỰC · PHỐ HÀNG QUÁN HÀNH HƯƠNG</text>
 
               <!-- Expanded Pagoda Perimeter Wall -->
-              <rect x="${mapX(-68)}" y="${mapY(-72)}" width="${mapX(68) - mapX(-68)}" height="${mapY(41.5) - mapY(-72)}" rx="10" fill="rgba(255,250,238,0.48)" stroke="#9A7241" stroke-width="2.5"/>
+              <rect x="${mapX(-68)}" y="${mapY(-72)}" width="${mapX(68) - mapX(-68)}" height="${mapY(41.5) - mapY(-72)}" rx="10" fill="rgba(255,250,238,0.52)" stroke="#9A7241" stroke-width="2.5"/>
 
               <!-- Axis Road & Garden Walkways -->
-              <rect x="${axisX - 28}" y="${mapY(-28)}" width="56" height="${mapY(41.5) - mapY(-28)}" rx="6" fill="#d8ccb8" stroke="#b5a48b" stroke-width="1"/>
-              <path d="M ${mapX(-45)} ${mapY(6)} L ${mapX(48)} ${mapY(8)} M ${mapX(-45)} ${mapY(-24)} L ${mapX(47)} ${mapY(-24)} M ${mapX(-34)} ${mapY(-52)} L ${mapX(47)} ${mapY(-42)} M ${mapX(-14)} ${mapY(28)} L ${axisX} ${mapY(28)} M ${mapX(-45)} ${mapY(6)} L ${mapX(-45)} ${mapY(-24)} M ${mapX(-45)} ${mapY(-24)} L ${mapX(-34)} ${mapY(-52)}" stroke="#d8ccb8" stroke-width="10" stroke-linecap="round"/>
+              <rect x="${axisX - 24}" y="${mapY(8)}" width="48" height="${mapY(41.5) - mapY(8)}" rx="6" fill="#d8ccb8" stroke="#b5a48b" stroke-width="1"/>
+              <path d="M ${mapX(-44)} ${mapY(29)} L ${mapX(-24.5)} ${mapY(29)} M ${mapX(-44)} ${mapY(29)} L ${mapX(-44)} ${mapY(-45.5)} L ${mapX(46)} ${mapY(-45.5)} M ${mapX(40.5)} ${mapY(41.5)} L ${mapX(40.5)} ${mapY(20)} L ${mapX(51.5)} ${mapY(14)} L ${mapX(51.5)} ${mapY(-45)}" stroke="#d8ccb8" stroke-width="9" fill="none" stroke-linecap="round"/>
 
               <!-- Back North Wing -->
-              <ellipse cx="${mapX(-34)}" cy="${mapY(-52)}" rx="46" ry="20" fill="#2F6F64" stroke="#85C7B8" stroke-width="1.8"/>
-              <text x="${mapX(-34)}" y="${mapY(-52) + 3}" text-anchor="middle" fill="#FFF6E5" font-size="9" font-weight="800">Hồ Phóng Sinh</text>
+              <ellipse cx="${mapX(-16)}" cy="${mapY(-56)}" rx="48" ry="18" fill="#2F6F64" stroke="#85C7B8" stroke-width="1.8"/>
+              <text x="${mapX(-16)}" y="${mapY(-56) + 3}" text-anchor="middle" fill="#FFF6E5" font-size="8.8" font-weight="800">Hồ Phóng Sinh</text>
 
-              <rect x="${mapX(10) - 56}" y="${mapY(-47) - 14}" width="112" height="28" rx="8" fill="#f7efe0" stroke="#C9962E" stroke-width="1.8"/>
-              <text x="${mapX(10)}" y="${mapY(-47) + 4}" text-anchor="middle" fill="#4A3222" font-size="9.5" font-weight="800">Phật Niết Bàn</text>
-              <circle cx="${mapX(-10)}" cy="${mapY(-44)}" r="15" fill="#e6b84c" stroke="#7E2A22" stroke-width="1.8"/>
-              <text x="${mapX(-10)}" y="${mapY(-44) + 3}" text-anchor="middle" fill="#241409" font-size="8.5" font-weight="800">Tháp</text>
+              <rect x="${mapX(-44) - 32}" y="${mapY(-56) - 13}" width="64" height="26" rx="7" fill="#7E2A22" stroke="#FFD875" stroke-width="1.6"/>
+              <text x="${mapX(-44)}" y="${mapY(-56) + 3}" text-anchor="middle" fill="#FFD875" font-size="8.2" font-weight="800">Lầu Chuông</text>
 
-              <rect x="${mapX(26) - 46}" y="${mapY(-56) - 14}" width="92" height="28" rx="7" fill="#9E4B2E" stroke="#FFD875" stroke-width="1.8"/>
-              <text x="${mapX(26)}" y="${mapY(-56) + 4}" text-anchor="middle" fill="#FFF6E5" font-size="9" font-weight="800">Nhà Thờ Tổ</text>
+              <rect x="${mapX(22) - 44}" y="${mapY(-58) - 14}" width="88" height="28" rx="7" fill="#9E4B2E" stroke="#FFD875" stroke-width="1.8"/>
+              <text x="${mapX(22)}" y="${mapY(-58) + 4}" text-anchor="middle" fill="#FFF6E5" font-size="9" font-weight="800">Tổ Đường</text>
 
-              <rect x="${mapX(47) - 34}" y="${mapY(-42) - 14}" width="68" height="28" rx="7" fill="#7E2A22" stroke="#FFD875" stroke-width="1.8"/>
-              <text x="${mapX(47)}" y="${mapY(-42) + 4}" text-anchor="middle" fill="#FFD875" font-size="8.5" font-weight="800">Lầu Chuông</text>
+              <rect x="${mapX(46) - 32}" y="${mapY(-56) - 13}" width="64" height="26" rx="7" fill="#7E2A22" stroke="#FFD875" stroke-width="1.6"/>
+              <text x="${mapX(46)}" y="${mapY(-56) + 3}" text-anchor="middle" fill="#FFD875" font-size="8.2" font-weight="800">Lầu Trống</text>
+
+              <!-- North Central Statues: Phật Niết Bàn + Bảo Tháp 7 tầng + A Di Đà -->
+              <rect x="${mapX(12) - 54}" y="${mapY(-38) - 14}" width="108" height="28" rx="8" fill="#f7efe0" stroke="#C9962E" stroke-width="1.8"/>
+              <text x="${mapX(12)}" y="${mapY(-38) + 4}" text-anchor="middle" fill="#4A3222" font-size="9.2" font-weight="800">Phật Niết Bàn 32m</text>
+
+              <circle cx="${mapX(-8)}" cy="${mapY(-37)}" r="15" fill="#e6b84c" stroke="#7E2A22" stroke-width="1.8"/>
+              <text x="${mapX(-8)}" y="${mapY(-37) + 3}" text-anchor="middle" fill="#241409" font-size="8" font-weight="800">Bảo Tháp</text>
+
+              <circle cx="${mapX(-8)}" cy="${mapY(-25)}" r="18" fill="#fffdf8" stroke="#4E86A8" stroke-width="2"/>
+              <text x="${mapX(-8)}" y="${mapY(-25) + 3}" text-anchor="middle" fill="#1C5A34" font-size="8" font-weight="900">A Di Đà</text>
 
               <!-- West Discovery Wing -->
-              <circle cx="${mapX(-45)}" cy="${mapY(-24)}" r="24" fill="#d9c6a3" stroke="#1C5A34" stroke-width="1.8"/>
-              <text x="${mapX(-45)}" y="${mapY(-24) + 3}" text-anchor="middle" fill="#1C5A34" font-size="8.8" font-weight="800">Hòn Non Bộ</text>
-              <rect x="${mapX(-44) - 46}" y="${mapY(6) - 15}" width="92" height="30" rx="8" fill="#E6EFE0" stroke="#1C5A34" stroke-width="1.8"/>
-              <text x="${mapX(-44)}" y="${mapY(6) + 4}" text-anchor="middle" fill="#1C5A34" font-size="9" font-weight="800">Vườn Lâm Tỳ Ni</text>
+              <circle cx="${mapX(-54)}" cy="${mapY(-4)}" r="21" fill="#d9c6a3" stroke="#1C5A34" stroke-width="1.8"/>
+              <text x="${mapX(-54)}" y="${mapY(-4) + 3}" text-anchor="middle" fill="#1C5A34" font-size="8.2" font-weight="800">Hòn Non Bộ</text>
+              <rect x="${mapX(-53.5) - 42}" y="${mapY(22) - 14}" width="84" height="28" rx="8" fill="#E6EFE0" stroke="#1C5A34" stroke-width="1.8"/>
+              <text x="${mapX(-53.5)}" y="${mapY(22) + 4}" text-anchor="middle" fill="#1C5A34" font-size="8.5" font-weight="800">Vườn Lâm Tỳ Ni</text>
 
-              <!-- Core Main Temple Area (Expanded Chùa Chính Complex) -->
-              <rect x="${axisX - 58}" y="${mapY(-28)}" width="116" height="${mapY(6) - mapY(-28)}" rx="8" fill="#D9A441" stroke="#7E2A22" stroke-width="2.5"/>
-              <rect x="${axisX - 24}" y="${mapY(-18)}" width="48" height="22" rx="5" fill="#4BA3B5" stroke="#FFF6E5" stroke-width="1.4"/>
-              <text x="${axisX}" y="${mapY(-13.5)}" text-anchor="middle" fill="#FFF6E5" font-size="7.2" font-weight="800">Non Bộ Giữa</text>
-              <text x="${axisX}" y="${mapY(1.5)}" text-anchor="middle" fill="#241409" font-size="10" font-weight="900">CHÁNH ĐIỆN</text>
-              <text x="${axisX}" y="${mapY(-21.5)}" text-anchor="middle" fill="#241409" font-size="7.8" font-weight="800">Khu Thờ · Trai Đường</text>
+              <!-- Core Main Temple Area (Chùa Chính Chữ Quốc Complex x=10..36, z=-31..8) -->
+              <rect x="${axisX - 58}" y="${mapY(-31)}" width="116" height="${mapY(8) - mapY(-31)}" rx="8" fill="#D9A441" stroke="#7E2A22" stroke-width="2.5"/>
+              <rect x="${axisX - 24}" y="${mapY(-24)}" width="48" height="20" rx="5" fill="#4BA3B5" stroke="#FFF6E5" stroke-width="1.2"/>
+              <text x="${axisX}" y="${mapY(-20)}" text-anchor="middle" fill="#FFF6E5" font-size="7" font-weight="800">2 Thiên Tỉnh</text>
+              <text x="${axisX}" y="${mapY(1.5)}" text-anchor="middle" fill="#241409" font-size="9.5" font-weight="900">CHÙA CHÍNH (國)</text>
+              <text x="${axisX}" y="${mapY(-26)}" text-anchor="middle" fill="#241409" font-size="7.5" font-weight="800">Nhà Tổ · Nhà Hậu</text>
 
-              <circle cx="${mapX(-24.5)}" cy="${mapY(-4)}" r="22" fill="#fffdf8" stroke="#1C5A34" stroke-width="2"/>
-              <text x="${mapX(-24.5)}" y="${mapY(-4) + 4}" text-anchor="middle" fill="#1C5A34" font-size="8.8" font-weight="800">Phật Di Lặc</text>
+              <!-- West Plaza: Phật Di Lặc -->
+              <circle cx="${mapX(-24.5)}" cy="${mapY(4)}" r="21" fill="#fffdf8" stroke="#1C5A34" stroke-width="2"/>
+              <text x="${mapX(-24.5)}" y="${mapY(4) + 3}" text-anchor="middle" fill="#1C5A34" font-size="8.5" font-weight="800">Phật Di Lặc</text>
 
               <!-- East Wing -->
-              <rect x="${mapX(46) - 40}" y="${mapY(-20) - 14}" width="80" height="28" rx="7" fill="#8A4A34" stroke="#f6cd72" stroke-width="1.8"/>
-              <text x="${mapX(46)}" y="${mapY(-20) + 4}" text-anchor="middle" fill="#FFF6E5" font-size="9" font-weight="800">Giảng Đường</text>
-              <rect x="${mapX(48) - 40}" y="${mapY(8) - 14}" width="80" height="28" rx="7" fill="#3D6B4A" stroke="#FFD875" stroke-width="1.8"/>
-              <text x="${mapX(48)}" y="${mapY(8) + 4}" text-anchor="middle" fill="#FFF6E5" font-size="9" font-weight="800">Lầu Trà Thiền</text>
-              <rect x="${mapX(40) - 38}" y="${mapY(38) - 12}" width="76" height="24" rx="6" fill="#C96F4A" stroke="#fff" stroke-width="1.5"/>
-              <text x="${mapX(40)}" y="${mapY(38) + 3}" text-anchor="middle" fill="#FFF6E5" font-size="8.5" font-weight="800">Tạp Hóa</text>
+              <rect x="${mapX(44) - 36}" y="${mapY(-18) - 14}" width="72" height="28" rx="7" fill="#8A4A34" stroke="#f6cd72" stroke-width="1.8"/>
+              <text x="${mapX(44)}" y="${mapY(-18) + 4}" text-anchor="middle" fill="#FFF6E5" font-size="8.6" font-weight="800">Giảng Đường</text>
+              <rect x="${mapX(58) - 36}" y="${mapY(-12) - 13}" width="72" height="26" rx="7" fill="#3D6B4A" stroke="#FFD875" stroke-width="1.8"/>
+              <text x="${mapX(58)}" y="${mapY(-12) + 3}" text-anchor="middle" fill="#FFF6E5" font-size="8.2" font-weight="800">Lầu Trà Thiền</text>
+              <rect x="${mapX(59.5) - 38}" y="${mapY(14.5) - 13}" width="76" height="26" rx="7" fill="#7A4924" stroke="#FFD875" stroke-width="1.8"/>
+              <text x="${mapX(59.5)}" y="${mapY(14.5) + 3}" text-anchor="middle" fill="#FFF6E5" font-size="8.2" font-weight="800">Nhà Sàn Ăn</text>
+              <rect x="${mapX(48.6) - 34}" y="${mapY(36) - 12}" width="68" height="24" rx="6" fill="#C96F4A" stroke="#fff" stroke-width="1.5"/>
+              <text x="${mapX(48.6)}" y="${mapY(36) + 3}" text-anchor="middle" fill="#FFF6E5" font-size="8.2" font-weight="800">Tạp Hóa</text>
 
-              <ellipse cx="${mapX(5)}" cy="${mapY(16)}" rx="36" ry="15" fill="#3B6E5C" stroke="#8fc9b3" stroke-width="1.6"/>
-              <text x="${mapX(5)}" y="${mapY(16) + 3}" text-anchor="middle" fill="#FFF6E5" font-size="8.5" font-weight="800">Hồ Sen Koi</text>
+              <!-- Front Lotus Pond & Gates -->
+              <ellipse cx="${mapX(3.5)}" cy="${mapY(33)}" rx="36" ry="16" fill="#3B6E5C" stroke="#8fc9b3" stroke-width="1.6"/>
+              <text x="${mapX(3.5)}" y="${mapY(33) + 3}" text-anchor="middle" fill="#FFF6E5" font-size="8.5" font-weight="800">Hồ Sen Koi</text>
 
-              <circle cx="${mapX(-14)}" cy="${mapY(28)}" r="22" fill="#fffdf8" stroke="#4E86A8" stroke-width="2.2"/>
-              <text x="${mapX(-14)}" y="${mapY(28) + 4}" text-anchor="middle" fill="#1C5A34" font-size="8.8" font-weight="900">Phật A Di Đà</text>
-
-              <rect x="${axisX - 54}" y="${mapY(40.7) - 10}" width="108" height="20" rx="5" fill="#7E2A22" stroke="#FFD875" stroke-width="1.8"/>
-              <text x="${axisX}" y="${mapY(40.7) + 4}" text-anchor="middle" fill="#FFD875" font-size="8.8" font-weight="800">CỔNG TAM QUAN</text>
+              <rect x="${axisX - 50}" y="${mapY(41.5) - 10}" width="100" height="20" rx="5" fill="#7E2A22" stroke="#FFD875" stroke-width="1.8"/>
+              <text x="${axisX}" y="${mapY(41.5) + 4}" text-anchor="middle" fill="#FFD875" font-size="8.4" font-weight="800">TAM QUAN</text>
+              <rect x="${mapX(40.5) - 32}" y="${mapY(41.5) - 10}" width="64" height="20" rx="5" fill="#1C5A34" stroke="#FFD875" stroke-width="1.6"/>
+              <text x="${mapX(40.5)}" y="${mapY(41.5) + 4}" text-anchor="middle" fill="#FFF6E5" font-size="8.2" font-weight="800">CỔNG PHỤ</text>
 
               ${PILGRIMAGE_STATIONS.map((st) => {
                 const pinShift = {
-                  cong_tam_quan: { dx: 46, dy: -11 },
-                  ho_sen_ca_koi: { dx: 34, dy: -16 },
-                  phat_adida: { dx: 24, dy: -18 },
-                  phat_di_lac: { dx: 24, dy: -18 },
+                  cong_tam_quan: { dx: 0, dy: -13 },
+                  ho_sen_ca_koi: { dx: 0, dy: -16 },
+                  phat_adida: { dx: -20, dy: 0 },
+                  phat_di_lac: { dx: 0, dy: -18 },
                   lu_huong_san: { dx: 0, dy: -4 },
-                  chanh_dien: { dx: 54, dy: -22 },
-                  cua_hang_luu_niem: { dx: 34, dy: -14 },
-                  giang_duong: { dx: 36, dy: -14 },
-                  phat_niet_ban: { dx: 52, dy: -14 }
+                  chanh_dien: { dx: 44, dy: -14 },
+                  cua_hang_luu_niem: { dx: -24, dy: -12 },
+                  giang_duong: { dx: -24, dy: -14 },
+                  phat_niet_ban: { dx: 36, dy: -14 }
                 }[st.key] || { dx: 0, dy: -14 };
                 const sx = mapX(st.pos.x) + pinShift.dx;
                 const sy = mapY(st.pos.z) + pinShift.dy;
@@ -3415,13 +3437,15 @@ export class ChuaOnlineApp {
 
               ${DISCOVERY_ZONES.map((dz, idx) => {
                 const dzShift = {
-                  vuon_lam_ty_ni: { dx: -44, dy: 2 },
-                  non_bo_quan_am: { dx: 22, dy: -20 },
-                  vuon_la_han_ngoai: { dx: -24, dy: -14 },
-                  ho_phong_sinh: { dx: -40, dy: -18 },
-                  thap_chuong_dai_hong: { dx: 32, dy: -14 },
-                  hau_to_nha_to: { dx: 42, dy: -14 },
-                  lau_tra_thien: { dx: 36, dy: -14 }
+                  vuon_lam_ty_ni: { dx: 28, dy: -14 },
+                  non_bo_quan_am: { dx: 24, dy: -14 },
+                  vuon_la_han_ngoai: { dx: 18, dy: -12 },
+                  ho_phong_sinh: { dx: 0, dy: -16 },
+                  thap_chuong_dai_hong: { dx: 24, dy: -12 },
+                  hau_to_nha_to: { dx: 32, dy: -14 },
+                  lau_tra_thien: { dx: -22, dy: -14 },
+                  nha_san_trai_duong: { dx: -24, dy: -14 },
+                  bao_thap_that_phat: { dx: -22, dy: -12 }
                 }[dz.key] || { dx: 0, dy: -14 };
                 const sx = mapX(dz.pos.x) + dzShift.dx;
                 const sy = mapY(dz.pos.z) + dzShift.dy;
@@ -3472,7 +3496,7 @@ export class ChuaOnlineApp {
             }).join('')}
           </div>
 
-          <div style="font-size:14.5px;font-weight:800;color:#7E2A22;margin-bottom:6px;">7 Khu Cảnh Quan Mở Rộng Khám Phá</div>
+          <div style="font-size:14.5px;font-weight:800;color:#7E2A22;margin-bottom:6px;">${DISCOVERY_ZONES.length} Khu Cảnh Quan Mở Rộng Khám Phá</div>
           <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
             ${DISCOVERY_ZONES.map((dz, idx) => `
               <div style="background:#fffbf2;border:1.5px solid rgba(190,136,52,0.42);border-radius:16px;padding:12px 14px;display:flex;flex-direction:column;justify-content:space-between;gap:8px;">
@@ -4120,8 +4144,25 @@ export class ChuaOnlineApp {
               const levelLocked = profile.level < reqLevel;
               const showOwnedCount = item.stackable || item.category === 'cay_phat';
 
+              const hasLotusMotif = item.id === 'ao_hoa_sen' || item.id === 'ao_vu_lan_hong';
+              const hasCloudTrim = item.id === 'ao_may_bac';
               const thumbHtml = item.swatchHex
-                ? `<div class="store-swatch-badge" style="background:${item.swatchHex};"><span style="position:absolute;inset:0;background:linear-gradient(125deg,rgba(217,154,68,0.85) 0 18%,transparent 18%);border-radius:inherit;"></span>🙏</div>`
+                ? `<div class="store-swatch-badge" style="background:linear-gradient(155deg,rgba(255,250,238,0.92),rgba(232,216,184,0.88));padding:4px;">
+                    <svg viewBox="0 0 64 64" width="44" height="44" aria-hidden="true">
+                      <path d="M21 12 L10 22 L15 29 L21 24 L20 54 L44 54 L43 24 L49 29 L54 22 L43 12 L37 15 Q32 18 27 15 Z" fill="${item.swatchHex}" stroke="#4A3222" stroke-width="2" stroke-linejoin="round"/>
+                      <path d="M27 15 L32 23 L32 54" fill="none" stroke="${hasCloudTrim ? '#F5FAFF' : '#D99E3A'}" stroke-width="1.8"/>
+                      <circle cx="33.5" cy="24" r="1.2" fill="#D99E3A"/>
+                      <circle cx="33.5" cy="29" r="1.2" fill="#D99E3A"/>
+                      <circle cx="33.5" cy="34" r="1.2" fill="#D99E3A"/>
+                      ${
+                        hasLotusMotif
+                          ? '<path d="M38 41 Q40 36 42 41 Q40 43 38 41 Z" fill="#FFF3F8" stroke="#B83B68" stroke-width="0.9"/>'
+                          : hasCloudTrim
+                          ? '<path d="M23 43 Q26 40 29 43" fill="none" stroke="#FFFFFF" stroke-width="1.4" stroke-linecap="round"/>'
+                          : ''
+                      }
+                    </svg>
+                  </div>`
                 : item.thumbIcon
                 ? `<div class="store-swatch-badge" style="background:rgba(255,246,229,0.12);border-color:rgba(246,205,114,0.45);font-size:28px;">${item.thumbIcon}</div>`
                 : `<img src="${item.image}" alt="${item.name}" />`;
@@ -4483,7 +4524,7 @@ export class ChuaOnlineApp {
     window.addEventListener('pointerdown', unlockAmbientOnce, { once: true });
     window.addEventListener('keydown', unlockAmbientOnce, { once: true });
 
-    // Interior 4-zone quick navigation bar
+    // Interior Chữ Quốc 6-hall + Trai Đường quick navigation bar + Cutaway & Historical Source modal
     document.querySelectorAll('[data-interior-zone]').forEach((btn) => {
       btn.addEventListener('click', () => {
         const zone = btn.getAttribute('data-interior-zone');
@@ -4491,14 +4532,69 @@ export class ChuaOnlineApp {
         this.world3d.goToInteriorZone(zone);
         this.highlightInteriorZoneChip(zone);
         const zoneNotes = {
-          chanh_dien: ['🏛️ Chánh Điện · Tam Bảo', 'Chính giữa thờ Phật Thích Ca & 18 vị La Hán hai bên.'],
-          non_bo_giua: ['🪨 Hòn Non Bộ Giữa Chùa', 'Khoảng giếng trời Sân Thiên Tỉnh nối Chánh Điện, Khu Thờ và Trai Đường.'],
-          khu_tho: ['🕯️ Khu Thờ Tổ · Hậu Tổ Đường', 'Nơi tôn thờ Chư Vị Tổ Sư khai sơn tạo tự, Quán Thế Âm & Địa Tạng.'],
-          trai_duong: ['🍚 Khu Ăn Phật Tử · Trai Đường', 'Khu thọ trai thanh tịnh phục vụ cơm chay & trà đá miễn phí.']
+          tien_duong: ['1. Tiền đường · Khu Tiếp Đón', 'Hoành phi Tiền đường, Ban Hộ Pháp Vi Đà & Ban Tiêu Diện dưới hàng vòm Á–Âu.'],
+          chanh_dien: ['2. Chánh điện · Tam Bảo', 'Tôn tượng Tam Bảo, cặp Long Trụ rồng cuốn, Bao lam chạm lọng thếp vàng & 18 vị La Hán.'],
+          non_bo_giua: ['3. Sân Thiên Tỉnh 1 (Giếng trời)', 'Khoảng sân giếng trời thoáng sáng với Hòn Non Bộ, thác nước và đàn cá Koi.'],
+          khu_tho: ['4. Nhà Tổ · Hậu Tổ Đường', 'Nơi tôn thờ Chư Vị Tổ Sư khai sơn tạo tự, Ban Quán Thế Âm & Ban Địa Tạng.'],
+          san_thien_tinh_2: ['5. Sân Thiên Tỉnh 2 (Giếng trời)', 'Khoảng sân giếng trời nối Nhà Tổ với Nhà Hậu, tiểu cảnh sen đá & hành lang gỗ.'],
+          nha_hau: ['6. Nhà Hậu · Khu Thờ Tự Phía Sau', 'Không gian thờ tự & sinh hoạt phía sau khép kín mặt bằng chữ Quốc (國).'],
+          trai_duong: ['🍚 Nhà Sàn Gỗ Trai Đường', 'Khu ăn chay Phật tử dựng bằng gỗ căm xe trên sàn cọc miền Tây bên hồ sen.']
         };
         const msg = zoneNotes[zone];
-        if (msg) this.showToast(msg[0], msg[1], 3600, false);
+        if (msg) this.showToast(msg[0], msg[1], 3800, false);
       });
+    });
+    document.getElementById('btn-interior-cutaway')?.addEventListener('click', () => {
+      if (!this.world3d) return;
+      const on = this.world3d.setInteriorCutaway();
+      const btn = document.getElementById('btn-interior-cutaway');
+      if (btn) btn.classList.toggle('active', on);
+      this.showToast(
+        on ? '✂️ Đang bật Mặt cắt Kiến trúc 3D' : '🏛️ Trở lại góc nhìn tham quan trực tiếp',
+        on
+          ? 'Ẩn trần mái & vách Tây để quan sát trọn vẹn mặt bằng Chữ Quốc (國), hệ vì kèo gỗ, Long Trụ và 2 Sân Thiên Tỉnh.'
+          : 'Đã khôi phục mái ngói và tường bao nguyên bản bên trong Chùa Chính.',
+        4200,
+        false
+      );
+    });
+    document.getElementById('btn-interior-history')?.addEventListener('click', () => {
+      const notes = CHANH_DIEN_HISTORICAL_NOTES;
+      this.openModal(
+        notes.title,
+        `
+        <div style="display:flex;flex-direction:column;gap:14px;">
+          <p style="font-size:14px;line-height:1.55;color:#4A3222;background:#fff8eb;padding:12px 14px;border-radius:14px;border:1.5px solid rgba(201,150,46,0.45);">
+            ${notes.note}
+          </p>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;">
+            ${notes.sources
+              .map(
+                (src) => `
+              <div style="background:#fffdf8;border:1.5px solid #C9962E;border-radius:16px;padding:14px;">
+                <div style="font-size:14.5px;font-weight:800;color:#7E2A22;margin-bottom:6px;">${src.sourceTitle}</div>
+                <p style="font-size:13.5px;line-height:1.5;color:#3E2A1A;">${src.summary}</p>
+              </div>
+            `
+              )
+              .join('')}
+          </div>
+          <div style="background:#f5edd9;border-radius:16px;padding:14px;border:1px solid rgba(126,42,34,0.22);">
+            <div style="font-size:14px;font-weight:800;color:#1C5A34;margin-bottom:8px;">Mặt bằng 6 không gian Chữ Quốc (國) bên trong Chùa Chính</div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px;">
+              ${CHU_QUOC_ZONES.map(
+                (z) => `
+                <div style="background:#fffdf8;padding:9px 11px;border-radius:12px;border:1px solid rgba(140,100,60,0.25);">
+                  <div style="font-size:13px;font-weight:800;color:#1C5A34;">${z.name}</div>
+                  <div style="font-size:12px;color:#52361c;margin-top:2px;line-height:1.4;">${z.subtitle}</div>
+                </div>
+              `
+              ).join('')}
+            </div>
+          </div>
+        </div>
+        `
+      );
     });
     document.getElementById('btn-interior-exit-courtyard')?.addEventListener('click', () => {
       this.toggleInteriorHallIn3D(false);

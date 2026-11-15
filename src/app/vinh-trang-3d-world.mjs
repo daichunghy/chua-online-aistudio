@@ -608,9 +608,9 @@ export class VinhTrang3DWorld {
       PILGRIMAGE_STATIONS.find((s) => s.key === 'chanh_dien');
     const projectedList = [];
     if (focalSt && !this.inInterior && !this.entranceTour?.active) {
-      const tx = focalSt.lookAt?.x ?? focalSt.pos.x;
-      const ty = focalSt.key === 'chanh_dien' ? 4.95 : (focalSt.lookAt?.y ?? 3.8) + 1.1;
-      const tz = focalSt.key === 'chanh_dien' ? 6.2 : focalSt.lookAt?.z ?? focalSt.pos.z;
+      const tx = focalSt.key === 'chanh_dien' ? 23.0 : focalSt.lookAt?.x ?? focalSt.pos.x;
+      const ty = focalSt.key === 'chanh_dien' ? 5.4 : (focalSt.lookAt?.y ?? 3.8) + 1.1;
+      const tz = focalSt.key === 'chanh_dien' ? 8.4 : focalSt.lookAt?.z ?? focalSt.pos.z;
       const distToCam = Math.hypot(this.camera.position.x - tx, this.camera.position.z - tz);
       const showNearEntrance =
         focalSt.key !== 'chanh_dien' ||
@@ -7422,10 +7422,10 @@ export class VinhTrang3DWorld {
 
   initSmokeColumns() {
     const origins = [
-      new THREE.Vector3(20.1, 1.42, 11.2),
-      new THREE.Vector3(-14, 1.15, 19.2),
-      new THREE.Vector3(-24.5, 2.9, 6.4),
-      new THREE.Vector3(13.1, 1.02, 25.5)
+      new THREE.Vector3(23.0, 1.32, 12.0),
+      new THREE.Vector3(-8.0, 1.15, -17.5),
+      new THREE.Vector3(-24.5, 2.85, 17.2),
+      new THREE.Vector3(34.5, 0.98, 22.5)
     ];
     for (const orig of origins) {
       const sc = new SmokeColumn(orig, 42, 0.26, 3.4);
@@ -8445,7 +8445,7 @@ export class VinhTrang3DWorld {
         bounds = {
           minX: inSideDoorCorridor ? -11.9 : -11.05,
           maxX: inSideDoorCorridor || inEastArch ? 12.6 : 11.05,
-          minZ: -54.8,
+          minZ: -80.5,
           maxZ: 10.6
         };
       }
@@ -8506,6 +8506,22 @@ export class VinhTrang3DWorld {
           z = curZ;
         }
       }
+    }
+
+    if (this.inInterior) {
+      if (x >= 15.0 && x <= 32.0 && z >= -48.2 && z <= -22.6) {
+        this.playerElevationY = 0.85;
+      } else if (x > 13.7 && x < 15.0 && z >= -44.5 && z <= -24.5) {
+        this.playerElevationY = ((x - 13.7) / 1.3) * 0.85;
+      } else {
+        this.playerElevationY = 0;
+      }
+    } else if (x >= 54.4 && x <= 64.6 && z >= 7.6 && z <= 21.4) {
+      this.playerElevationY = 1.14;
+    } else if (x >= 52.0 && x < 54.4 && z >= 12.6 && z <= 16.4) {
+      this.playerElevationY = ((x - 52.0) / 2.4) * 1.14;
+    } else {
+      this.playerElevationY = 0;
     }
 
     return { x, z };
@@ -8790,6 +8806,18 @@ export class VinhTrang3DWorld {
     return false;
   }
 
+  setInteriorCutaway(enabled = null) {
+    const next = enabled !== null ? Boolean(enabled) : !this.interiorCutaway;
+    this.interiorCutaway = next;
+    for (let i = 0; i < this.cutawayTargets.length; i++) {
+      const obj = this.cutawayTargets[i];
+      if (obj) obj.visible = !next;
+    }
+    this.syncPlayerTransform();
+    this.renderFrame();
+    return this.interiorCutaway;
+  }
+
   toggleInterior(enter, side = null) {
     this.cancelEntranceTour();
     this.cancelAutoWalk();
@@ -8803,9 +8831,12 @@ export class VinhTrang3DWorld {
     this.exteriorGroup.visible = !this.inInterior;
     this.interiorGroup.visible = this.inInterior;
     this.playerElevationY = 0;
+    if (!this.inInterior && this.interiorCutaway) {
+      this.setInteriorCutaway(false);
+    }
     if (this.inInterior) {
       this.playerState.x = 0.0;
-      this.playerState.z = -6.2;
+      this.playerState.z = 4.6;
       this.playerState.yaw = Math.PI;
       this.cameraBaseYaw = Math.PI;
     } else {
@@ -8831,10 +8862,13 @@ export class VinhTrang3DWorld {
     if (!this.inInterior) return 'exterior';
     const px = this.playerState.x;
     const pz = this.playerState.z;
-    if (px > 12.0) return 'trai_duong';
-    if (pz < -38.8) return 'khu_tho';
-    if (pz < -22.2) return 'non_bo_giua';
-    return 'chanh_dien';
+    if (px > 12.2) return 'trai_duong';
+    if (pz > 1.5) return 'tien_duong';
+    if (pz >= -22.2) return 'chanh_dien';
+    if (pz >= -38.8) return 'non_bo_giua';
+    if (pz >= -53.0) return 'khu_tho';
+    if (pz >= -68.5) return 'san_thien_tinh_2';
+    return 'nha_hau';
   }
 
   goToInteriorZone(zoneKey = 'chanh_dien') {
@@ -8842,7 +8876,13 @@ export class VinhTrang3DWorld {
       this.toggleInterior(true, 'right');
     }
     this.cancelAutoWalk();
-    if (zoneKey === 'non_bo_giua') {
+    this.playerElevationY = 0;
+    if (zoneKey === 'tien_duong') {
+      this.playerState.x = 0.0;
+      this.playerState.z = 5.4;
+      this.playerState.yaw = Math.PI;
+      this.cameraBaseYaw = Math.PI;
+    } else if (zoneKey === 'non_bo_giua') {
       this.playerState.x = -5.6;
       this.playerState.z = -25.4;
       const lookYaw = Math.atan2(0 - -5.6, -30.8 - -25.4);
@@ -8850,12 +8890,24 @@ export class VinhTrang3DWorld {
       this.cameraBaseYaw = lookYaw;
     } else if (zoneKey === 'khu_tho') {
       this.playerState.x = 0.0;
-      this.playerState.z = -44.2;
+      this.playerState.z = -42.5;
+      this.playerState.yaw = Math.PI;
+      this.cameraBaseYaw = Math.PI;
+    } else if (zoneKey === 'san_thien_tinh_2') {
+      this.playerState.x = -5.6;
+      this.playerState.z = -56.0;
+      const lookYaw = Math.atan2(0 - -5.6, -60.8 - -56.0);
+      this.playerState.yaw = lookYaw;
+      this.cameraBaseYaw = lookYaw;
+    } else if (zoneKey === 'nha_hau') {
+      this.playerState.x = 0.0;
+      this.playerState.z = -72.5;
       this.playerState.yaw = Math.PI;
       this.cameraBaseYaw = Math.PI;
     } else if (zoneKey === 'trai_duong') {
-      this.playerState.x = 15.1;
+      this.playerState.x = 16.5;
       this.playerState.z = -35.5;
+      this.playerElevationY = 0.85;
       this.playerState.yaw = Math.PI / 2 - 0.08;
       this.cameraBaseYaw = Math.PI / 2 - 0.08;
     } else {
@@ -9060,25 +9112,51 @@ export class VinhTrang3DWorld {
 
     if (this.entranceTour?.active) return;
 
+    if (this.inInterior && this.interiorCutaway) {
+      const cutAngle = Math.PI * 0.78 + this.cameraAzimuthOffset;
+      const cutDist = 30.0;
+      const cutHeight = 20.5;
+      const focusX = this.playerState.x * 0.4;
+      const focusZ = Math.max(-72.0, Math.min(2.0, this.playerState.z - 8.0));
+      this.camera.position.set(
+        focusX - Math.sin(cutAngle) * cutDist,
+        cutHeight,
+        focusZ - Math.cos(cutAngle) * cutDist
+      );
+      this.camera.lookAt(focusX, 2.2, focusZ - 4.0);
+      const zKey = this.getInteriorZoneKey();
+      if (zKey !== this._lastInteriorZone) {
+        this._lastInteriorZone = zKey;
+        this.onInteriorZoneChange(zKey);
+      }
+      return;
+    }
+
     const isAdidaPlaza =
       !this.inInterior &&
       (this.currentStationId === 2 ||
-        Math.hypot(this.playerState.x - -8.0, this.playerState.z - -9.0) < 8.5);
+        Math.hypot(this.playerState.x - -8.0, this.playerState.z - -15.5) < 9.5);
     const isMonumental =
       !this.inInterior &&
       ([2, 3, 8].includes(this.currentStationId) ||
         isAdidaPlaza ||
-        Math.hypot(this.playerState.x - -24.5, this.playerState.z - 20.0) < 7.0 ||
-        Math.hypot(this.playerState.x - 12.0, this.playerState.z - -22.5) < 6.5);
+        Math.hypot(this.playerState.x - -24.5, this.playerState.z - 22.0) < 8.0 ||
+        Math.hypot(this.playerState.x - 12.0, this.playerState.z - -27.5) < 8.5);
 
     const transitionPull = this.interiorTransition?.phase === 'climb_side_door' ? 2.1 : 0;
     const camDist = this.inInterior
-      ? 4.4
+      ? 4.6
       : (isAdidaPlaza ? 11.2 : isMonumental ? 11.2 : 7.0) - transitionPull;
     const camHeight = this.inInterior
-      ? 2.05
+      ? 2.15 + (this.playerElevationY || 0) * 0.9
       : (isAdidaPlaza ? 2.35 : isMonumental ? 2.15 : 2.1) + (this.playerElevationY || 0) * 0.7;
-    const lookY = this.inInterior ? 2.45 : isAdidaPlaza ? 10.2 : isMonumental ? 7.6 : 3.65;
+    const lookY = this.inInterior
+      ? 2.45 + (this.playerElevationY || 0) * 0.85
+      : isAdidaPlaza
+      ? 10.2
+      : isMonumental
+      ? 7.6
+      : 3.65;
     const lookAngle = this.cameraBaseYaw + this.cameraAzimuthOffset;
     const sideOffset = this.inInterior ? 0 : isMonumental ? 0.48 : 0.62;
     const cx =
@@ -9202,6 +9280,16 @@ export class VinhTrang3DWorld {
           return;
         }
       }
+      if (this.longTruClickTargets?.length) {
+        const hits = raycaster.intersectObjects(this.longTruClickTargets, true);
+        if (hits.length > 0) {
+          this.onObjectClick('TOAST', {
+            title: '🐉 Cặp Long Trụ Rồng Cuốn Gian Giữa Chánh Điện',
+            desc: 'Hai cột gỗ lim lớn đặc trưng tại Chánh điện Chùa Vĩnh Tràng, chạm khắc rồng uốn lượn quanh thân cột thếp vàng nâng đỡ hệ vì kèo và bao lam.'
+          });
+          return;
+        }
+      }
       if (this.tamBaoAltarGroup) {
         const hits = raycaster.intersectObjects([this.tamBaoAltarGroup], true);
         if (hits.length > 0) {
@@ -9213,8 +9301,8 @@ export class VinhTrang3DWorld {
         const hits = raycaster.intersectObjects(this.interiorNonBoClickTargets, true);
         if (hits.length > 0) {
           this.onObjectClick('TOAST', {
-            title: '🪨 Hòn Non Bộ Giữa Chùa · Sân Thiên Tỉnh',
-            desc: 'Khoảng giếng trời thoáng đãng nối Chánh điện với Khu Thờ Tổ, có núi đá non bộ, thác nước, hoa sen và đàn cá Koi bơi lội.'
+            title: '🪨 Sân Thiên Tỉnh · Hòn Non Bộ Giữa Chùa',
+            desc: 'Hai khoảng giếng trời thông thoáng đón nắng gió tự nhiên, kết nối Chánh điện với Nhà Tổ và Nhà Hậu qua hành lang chữ Quốc.'
           });
           return;
         }
@@ -9230,8 +9318,8 @@ export class VinhTrang3DWorld {
         const hits = raycaster.intersectObjects(this.interiorTraiDuongClickTargets, true);
         if (hits.length > 0) {
           this.onObjectClick('TOAST', {
-            title: '🍚 Trai Đường · Khu Ăn Cơm Chay Phật Tử',
-            desc: 'Không gian thọ trai thanh tịnh bên hông Sân Thiên Tỉnh phục vụ cơm chay miễn phí và trà đá cho thiện nam tín nữ thập phương.'
+            title: '🍚 Nhà Sàn Gỗ Trai Đường · Khu Ăn Phật Tử',
+            desc: 'Không gian thọ trai dựng bằng gỗ căm xe trên hệ sàn cọc miền Tây bên hồ sen, phục vụ cơm chay và trà đá thanh tịnh.'
           });
           return;
         }
@@ -9241,6 +9329,23 @@ export class VinhTrang3DWorld {
         const hits = raycaster.intersectObjects(this.sideDoorClickTargets, true);
         if (hits.length > 0) {
           this.enterInteriorGradual('right');
+          return;
+        }
+      }
+      if (this.mainCompoundClickTargets?.length) {
+        const hits = raycaster.intersectObjects(this.mainCompoundClickTargets, true);
+        if (hits.length > 0) {
+          this.enterInteriorGradual('right');
+          return;
+        }
+      }
+      if (this.stiltDiningClickTargets?.length) {
+        const hits = raycaster.intersectObjects(this.stiltDiningClickTargets, true);
+        if (hits.length > 0) {
+          this.onObjectClick('TOAST', {
+            title: '🍚 Nhà Sàn Gỗ Trai Đường · Kiến trúc Miền Tây',
+            desc: 'Bước lên cầu thang gỗ bên hông Tây để vào khu ăn chay của Phật tử dựng trên hệ cột sàn gỗ căm xe và hồ sen.'
+          });
           return;
         }
       }
@@ -9425,7 +9530,7 @@ export class VinhTrang3DWorld {
             startX: sx,
             startZ: 0.9,
             targetX: tr.side === 'left' ? -2.0 : 2.0,
-            targetZ: -1.3,
+            targetZ: 2.8,
             onEntered: tr.onEntered
           };
         }
@@ -9443,7 +9548,7 @@ export class VinhTrang3DWorld {
             startX: tr.targetX,
             startZ: tr.targetZ,
             targetX: 0.0,
-            targetZ: -6.2,
+            targetZ: 4.6,
             onEntered: tr.onEntered
           };
         }
@@ -9465,6 +9570,9 @@ export class VinhTrang3DWorld {
       } else if (tr.phase === 'exit_veil') {
         if (t >= 1) {
           const exitSide = tr.side || this.lastDoorSide || 'right';
+          if (this.interiorCutaway) {
+            this.setInteriorCutaway(false);
+          }
           this.inInterior = false;
           this.exteriorGroup.visible = true;
           this.interiorGroup.visible = false;

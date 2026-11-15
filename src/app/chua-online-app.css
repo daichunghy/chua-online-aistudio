@@ -2185,6 +2185,10 @@ select {
   .top-nav-group {
     justify-content: center;
   }
+  .quick-walk-bar,
+  .interior-zone-bar {
+    top: 124px;
+  }
   .dpad-card {
     width: 126px;
     height: 142px;

@@ -50,136 +50,136 @@ export const PILGRIMAGE_STATIONS = [
   {
     id: 0,
     key: 'cong_tam_quan',
-    name: 'Cổng Tam Quan & Cổng Phụ',
-    zoneCode: 'Lối vào chùa',
-    pinLabel: 'Cổng Chùa Vĩnh Tràng',
-    pos: { x: 40.5, z: 41.5 },
-    standPos: { x: 36.5, z: 50.5 },
-    via: [[36.5, 50.5]],
-    mapCoord: { x: 78, y: 88 },
-    lookAt: { x: 35.0, y: 3.5, z: 41.5 },
+    name: 'Cổng Tam Quan (Phương Tiện – Cổng Sắt – Tịnh Độ)',
+    zoneCode: 'Mặt tiền trục chính Nam',
+    pinLabel: 'Cổng Tam Quan',
+    pos: { x: 23.0, z: 41.5 },
+    standPos: { x: 23.0, z: 45.8 },
+    via: [[40.5, 45.8], [32.0, 45.8], [23.0, 45.8]],
+    mapCoord: { x: 67, y: 92 },
+    lookAt: { x: 23.0, y: 4.5, z: 41.5 },
     audio: 's0_chao.mp3',
-    subtitle: 'Cổng Chính Tam Quan đóng nghi lễ giữ nét cổ kính; khách thập phương đi qua Cổng Phụ Tịnh Độ Huyền Môn bên phải đang mở rộng.',
+    subtitle: 'Cổng Sắt trung tâm đóng nghi lễ giữ nét tôn nghiêm; khách hành hương đi vào qua Cổng Phụ Tịnh Độ Huyền Môn bên phải.',
     ritualType: 'welcome'
   },
   {
     id: 1,
     key: 'ho_sen_ca_koi',
-    name: 'Hồ Sen & Cá Koi',
-    zoneCode: 'Sân trước trung tâm',
+    name: 'Hồ Sen Song Đối & Cá Koi',
+    zoneCode: 'Sân vườn phía trước',
     pinLabel: 'Hồ Sen & Cá Koi',
     pos: { x: 3.5, z: 33.0 },
-    standPos: { x: 11.8, z: 33.0 },
-    via: [[39.0, 35.0], [28.0, 36.0], [14.5, 36.0], [11.8, 33.0]],
-    mapCoord: { x: 42, y: 76 },
-    lookAt: { x: 3.5, y: 0.8, z: 33.0 },
+    standPos: { x: 13.2, z: 33.0 },
+    via: [[40.5, 41.5], [23.0, 33.0], [13.2, 33.0]],
+    mapCoord: { x: 52, y: 80 },
+    lookAt: { x: 3.5, y: 0.9, z: 33.0 },
     audio: 'day_di.mp3',
-    subtitle: 'Hồ sen lớn trước trục trung tâm với dây cờ ngũ sắc, hàng dừa xanh và đàn cá Koi bơi lượn quanh hoa sen.',
+    subtitle: 'Hồ sen lớn rợp hoa súng và đàn cá Koi bơi lượn thanh bình ngay bên trái trục sân dẫn vào Chánh điện.',
     ritualType: 'dang_hoa'
   },
   {
     id: 2,
     key: 'phat_adida',
-    name: 'Tượng Phật A Di Đà',
-    zoneCode: 'Cuối trục chính phía Bắc',
+    name: 'Tượng Phật A Di Đà (cao 24m)',
+    zoneCode: 'Sân Bắc phía trước Bảo Tháp',
     pinLabel: 'Tượng Phật A Di Đà',
     pos: { x: -8.0, z: -25.0 },
-    standPos: { x: -8.0, z: -8.5 },
-    via: [[20.0, 35.0], [10.0, 22.0], [0.0, 6.0], [-8.0, -8.5]],
-    mapCoord: { x: 34, y: 24 },
+    standPos: { x: -8.0, z: -14.2 },
+    via: [[10.0, 18.0], [-4.0, -4.0], [-8.0, -14.2]],
+    mapCoord: { x: 44, y: 40 },
     lookAt: { x: -8.0, y: 11.5, z: -25.0 },
     audio: 's1_adida.mp3',
-    subtitle: 'Pho đại tượng cao 24m đứng uy nghiêm phía trước Bảo Tháp 7 tầng, hướng mặt về Nam dọc đại lộ trung tâm.',
+    subtitle: 'Đại tượng Phật A Di Đà cao 24m đứng trang nghiêm giữa rặng cây xanh phía trước Bảo Tháp 7 tầng.',
     ritualType: 'niem_phat'
   },
   {
     id: 3,
     key: 'phat_di_lac',
-    name: 'Tượng Phật Di Lặc',
-    zoneCode: 'Hoa viên phía Tây',
+    name: 'Tượng Phật Di Lặc (cao 20m)',
+    zoneCode: 'Công viên bên hông phía Tây',
     pinLabel: 'Tượng Phật Di Lặc',
     pos: { x: -24.5, z: 4.0 },
-    standPos: { x: -24.5, z: 22.0 },
-    via: [[20.0, 36.0], [8.0, 36.0], [-14.0, 32.0], [-24.5, 22.0]],
-    mapCoord: { x: 18, y: 48 },
-    lookAt: { x: -24.5, y: 8.5, z: 4.0 },
+    standPos: { x: -24.5, z: 22.8 },
+    via: [[10.0, 22.5], [-10.0, 22.8], [-24.5, 22.8]],
+    mapCoord: { x: 32, y: 62 },
+    lookAt: { x: -24.5, y: 9.0, z: 4.0 },
     audio: 's4_dilac.mp3',
-    subtitle: 'Đại tượng Phật Di Lặc an tọa phía sau quảng trường La Hán rộng lớn, trước bệ đá bậc thang khắc chữ vàng.',
+    subtitle: 'Đại tượng Phật Di Lặc an tọa nơi công viên bên hông phía Tây, hướng mặt ra quảng trường cây kiểng và bệ đá bậc thang.',
     ritualType: 'le_phat'
   },
   {
     id: 4,
     key: 'lu_huong_san',
-    name: 'Lư hương sân cờ',
-    zoneCode: 'Sân cờ Chánh điện',
+    name: 'Lư hương sân Tiền đường',
+    zoneCode: 'Thềm tam cấp trục chính',
     pinLabel: 'Lư hương',
-    pos: { x: 23, z: 12.0 },
-    standPos: { x: 23, z: 17.5 },
-    via: [[37.5, 33.0], [27.0, 23.0], [23, 17.5]],
-    mapCoord: { x: 64, y: 54 },
-    lookAt: { x: 23, y: 3.8, z: 1.0 },
+    pos: { x: 23.0, z: 12.0 },
+    standPos: { x: 23.0, z: 15.2 },
+    via: [[36.0, 24.0], [23.0, 18.5], [23.0, 15.2]],
+    mapCoord: { x: 67, y: 68 },
+    lookAt: { x: 23.0, y: 2.2, z: 12.0 },
     audio: 's2_thap_nhang.mp3',
-    subtitle: 'Nơi thắp ba nén tâm hương giữa sân cờ Tổ quốc và cờ Phật giáo trước khi rẽ sang lối hông phải.',
+    subtitle: 'Nơi thắp ba nén tâm hương trước mặt tiền Á – Âu 13 vòm của Khu Chùa Cổ trước khi đi qua cửa hông vào Tiền đường.',
     ritualType: 'dang_huong'
   },
   {
     id: 5,
     key: 'chanh_dien',
-    name: 'Chánh điện',
-    zoneCode: 'Đường bên hông phải → Cửa hông',
-    pinLabel: 'Chánh điện (Lối hông phải)',
-    pos: { x: 23, z: 1.0 },
-    standPos: { x: 30.2, z: 11.2 },
-    via: [[40.5, 45.5], [40.5, 41.5], [39.0, 33.5], [36.2, 20.5], [35.4, 11.8], [30.2, 11.2]],
-    mapCoord: { x: 64, y: 40 },
-    lookAt: { x: 23, y: 4.8, z: 1.0 },
+    name: 'Khu Chùa Cổ · Chánh điện (Chữ Quốc 國)',
+    zoneCode: 'Cửa hông vào Tiền đường & Chánh điện',
+    pinLabel: 'Chánh điện',
+    pos: { x: 23.0, z: 4.5 },
+    standPos: { x: 30.2, z: 12.2 },
+    via: [[36.0, 24.0], [34.0, 14.5], [30.2, 12.2]],
+    mapCoord: { x: 67, y: 58 },
+    lookAt: { x: 23.0, y: 4.4, z: 1.0 },
     audio: 's3_lay_phat.mp3',
-    subtitle: 'Đi qua Cổng Phụ Tịnh Độ Huyền Môn, theo lối bên hông phải rợp hoa giấy qua Đài Quán Thế Âm, bước qua Cửa Hông Phải vào lễ Tam Bảo.',
+    subtitle: 'Bước qua cửa hông vào Tiền đường và Chánh điện trang nghiêm với Long Trụ, Bao Lam chạm lọng, 18 vị La Hán, hai Sân Thiên Tỉnh, Nhà Tổ và Nhà Hậu.',
     ritualType: 'le_phat'
   },
   {
     id: 6,
     key: 'cua_hang_luu_niem',
     name: 'Nhà Tạp Hóa Cổng Chùa',
-    zoneCode: 'Ngay sau Cổng Phụ bên phải',
+    zoneCode: 'Góc cổng phụ phía Đông',
     pinLabel: 'Nhà Tạp Hóa',
-    pos: { x: 48.2, z: 36.0 },
+    pos: { x: 48.6, z: 36.0 },
     standPos: { x: 43.2, z: 36.0 },
-    via: [[40.5, 45.5], [40.5, 41.5], [43.2, 36.0]],
-    mapCoord: { x: 88, y: 76 },
-    lookAt: { x: 48.2, y: 2.2, z: 36.0 },
+    via: [[40.5, 41.5], [43.2, 36.0]],
+    mapCoord: { x: 86, y: 83 },
+    lookAt: { x: 48.6, y: 2.2, z: 36.0 },
     audio: 'merit_box.mp3',
-    subtitle: 'Nhà tạp hóa & nước giải khát truyền thống ngay cạnh Cổng Phụ: đầy đủ nhang đèn, hoa sen, nón lá, dừa xiêm ướp lạnh và bánh chay Mỹ Tho.',
+    subtitle: 'Nhà tạp hóa & nước giải khát truyền thống bên Cổng Phụ Đông: đầy đủ nhang đèn, hoa sen, nón lá, dừa xiêm ướp lạnh và bánh chay Mỹ Tho.',
     ritualType: 'shop'
   },
   {
     id: 7,
     key: 'giang_duong',
-    name: 'Giảng đường',
-    zoneCode: 'Phía sau bên phải',
+    name: 'Giảng đường Phật pháp',
+    zoneCode: 'Khu vực phía Đông Chùa Cổ',
     pinLabel: 'Giảng đường',
-    pos: { x: 44, z: -18 },
-    standPos: { x: 37.5, z: -8.0 },
-    via: [[36.8, 22.0], [37.5, 6.0], [37.5, -8.0]],
-    mapCoord: { x: 84, y: 28 },
-    lookAt: { x: 44, y: 3.5, z: -18 },
+    pos: { x: 44.0, z: -18.0 },
+    standPos: { x: 37.8, z: -18.0 },
+    via: [[36.2, 12.0], [37.8, -6.0], [37.8, -18.0]],
+    mapCoord: { x: 82, y: 45 },
+    lookAt: { x: 44.0, y: 3.8, z: -18.0 },
     audio: 's3_giang_duong.mp3',
-    subtitle: 'Gian nhà gỗ yên tĩnh phía sau bên phải để nghe giảng pháp, đọc kinh sách và học từng bài ngắn.',
+    subtitle: 'Gian nhà gỗ yên tĩnh phía Đông dùng để nghe giảng pháp, đọc 10 bộ giáo trình Phật học và thực tập chánh niệm.',
     ritualType: 'lecture'
   },
   {
     id: 8,
     key: 'phat_niet_ban',
-    name: 'Tượng Phật Niết Bàn & Bảo Tháp',
-    zoneCode: 'Vườn sau phía Bắc',
+    name: 'Phật Niết Bàn (32m) & Bảo Tháp 7 Tầng',
+    zoneCode: 'Khu vực phía sau (Bắc)',
     pinLabel: 'Phật Niết Bàn & Bảo Tháp',
-    pos: { x: 12, z: -38 },
-    standPos: { x: 12, z: -22.5 },
-    via: [[10.0, 26.0], [-1.0, 8.0], [4.0, -14.0], [11.0, -22.5]],
-    mapCoord: { x: 52, y: 16 },
-    lookAt: { x: 12, y: 6.5, z: -38 },
+    pos: { x: 12.0, z: -38.0 },
+    standPos: { x: 10.0, z: -27.5 },
+    via: [[10.0, 20.0], [10.0, 0.0], [10.0, -18.0], [10.0, -27.5]],
+    mapCoord: { x: 59, y: 28 },
+    lookAt: { x: 12.0, y: 4.5, z: -38.0 },
     audio: 's5_nirvana.mp3',
-    subtitle: 'Tượng Đức Phật nhập Niết Bàn dài 32m kế bên Bảo Tháp Xá Lợi 7 tầng nơi vườn sau thanh vắng.',
+    subtitle: 'Chiêm bái đại tượng Đức Phật Thích Ca nhập Niết Bàn dài 32m uy nghi bên cạnh Bảo Tháp Thất Phật 7 tầng (cao 35m).',
     ritualType: 'hoi_huong'
   }
 ];
@@ -187,13 +187,14 @@ export const PILGRIMAGE_STATIONS = [
 export const DISCOVERY_ZONES = [
   {
     id: 100,
+    isDiscovery: true,
     key: 'vuon_lam_ty_ni',
     name: 'Vườn Lâm Tỳ Ni & Bồ Đề',
     zoneCode: 'Vườn Tây Nam mở rộng',
     pinLabel: 'Vườn Lâm Tỳ Ni',
     pos: { x: -53.5, z: 22.0 },
-    standPos: { x: -46.5, z: 25.0 },
-    via: [[20.0, 35.0], [-14.0, 32.0], [-38.0, 30.0], [-46.5, 25.0]],
+    standPos: { x: -45.0, z: 24.5 },
+    via: [[-24.5, 29.0], [-44.0, 29.0], [-45.0, 24.5]],
     lookAt: { x: -53.5, y: 2.8, z: 22.0 },
     audio: 'day_di.mp3',
     subtitle: 'Tái hiện vườn Lâm Tỳ Ni thanh tịnh dưới tán Cây Bồ Đề cổ thụ rợp dải lụa ước nguyện bình an.',
@@ -201,55 +202,60 @@ export const DISCOVERY_ZONES = [
   },
   {
     id: 101,
+    isDiscovery: true,
     key: 'non_bo_quan_am',
     name: 'Hòn Non Bộ & Động Quán Thế Âm',
     zoneCode: 'Hoa viên phía Tây',
     pinLabel: 'Động Quán Thế Âm',
     pos: { x: -54.0, z: -4.0 },
-    standPos: { x: -45.5, z: -2.0 },
-    via: [[-39.0, 26.0], [-42.0, 8.0], [-45.5, -2.0]],
-    lookAt: { x: -54.0, y: 4.5, z: -4.0 },
+    standPos: { x: -44.0, z: -4.0 },
+    via: [[-44.0, 24.0], [-44.0, 8.0], [-44.0, -4.0]],
+    lookAt: { x: -54.0, y: 4.0, z: -4.0 },
     audio: 's4_dilac.mp3',
     subtitle: 'Núi đá non bộ trầm mặc với thác nước đổ xuống hồ sen xanh mát và tôn tượng Quán Thế Âm từ bi.',
     ritualType: 'niem_phat'
   },
   {
     id: 102,
+    isDiscovery: true,
     key: 'vuon_la_han_ngoai',
     name: 'Hành Lang La Hán Ngoài Trời',
-    zoneCode: 'Dải vườn Tây Bắc',
+    zoneCode: 'Dải vườn phía Tây Chùa Cổ',
     pinLabel: 'Vườn La Hán',
-    pos: { x: -44.0, z: -26.0 },
-    standPos: { x: -41.5, z: -18.0 },
-    via: [[-41.5, 16.0], [-41.5, -6.0], [-41.5, -18.0]],
-    lookAt: { x: -44.0, y: 2.2, z: -26.0 },
+    pos: { x: -49.5, z: -24.0 },
+    standPos: { x: -44.0, z: -24.0 },
+    via: [[-44.0, 4.0], [-44.0, -14.0], [-44.0, -24.0]],
+    lookAt: { x: -49.5, y: 2.0, z: -24.0 },
     audio: 'day_di.mp3',
-    subtitle: 'Lối dạo thiền dưới rặng sa-la và mai chiếu thủy, nơi an vị hàng tượng La Hán đá trắng cổ kính.',
+    subtitle: 'Lối dạo thiền dưới rặng sa-la và mai chiếu thủy phía Tây hành lang Chữ Quốc.',
     ritualType: 'le_phat'
   },
   {
     id: 103,
+    isDiscovery: true,
     key: 'ho_phong_sinh',
     name: 'Hồ Phóng Sinh Lớn & Cầu Gỗ Chữ Z',
     zoneCode: 'Vườn sau phía Tây Bắc',
     pinLabel: 'Hồ Phóng Sinh',
     pos: { x: -16.0, z: -56.0 },
-    standPos: { x: -16.0, z: -46.0 },
-    via: [[4.0, -14.0], [-18.0, -32.0], [-22.0, -44.0], [-16.0, -46.0]],
+    standPos: { x: -16.0, z: -46.2 },
+    via: [[-44.0, -45.5], [-28.0, -45.5], [-16.0, -46.2]],
+    mapCoord: { x: 38, y: 14 },
     lookAt: { x: -16.0, y: 1.5, z: -56.0 },
     audio: 'day_di.mp3',
-    subtitle: 'Mặt hồ rộng lững lờ hoa súng tím và cầu gỗ chữ Z mộc mạc phía sau Bảo Tháp 7 tầng.',
+    subtitle: 'Mặt hồ rộng lững lờ hoa súng tím và cầu gỗ chữ Z mộc mạc nơi vườn Tây Bắc yên tĩnh.',
     ritualType: 'dang_hoa'
   },
   {
     id: 104,
+    isDiscovery: true,
     key: 'thap_chuong_dai_hong',
     name: 'Lầu Chuông Đại Hồng Chung',
     zoneCode: 'Góc Tây Bắc khuôn viên',
     pinLabel: 'Lầu Chuông',
     pos: { x: -44.0, z: -56.0 },
-    standPos: { x: -37.5, z: -52.0 },
-    via: [[-22.0, -36.0], [-36.0, -46.0], [-37.5, -52.0]],
+    standPos: { x: -39.0, z: -49.5 },
+    via: [[-44.0, -24.0], [-44.0, -45.5], [-39.0, -49.5]],
     lookAt: { x: -44.0, y: 6.0, z: -56.0 },
     audio: 's6_hoi_huong.mp3',
     subtitle: 'Gác chuông mái ngói âm dương hai tầng uy nghiêm; bấm vào lầu chuông để thỉnh một hồi Đại Hồng Chung.',
@@ -257,47 +263,142 @@ export const DISCOVERY_ZONES = [
   },
   {
     id: 105,
+    isDiscovery: true,
     key: 'hau_to_nha_to',
-    name: 'Hậu Tổ · Nhà Thờ Tổ Miền Nam',
-    zoneCode: 'Phía Bắc sau Chánh điện',
-    pinLabel: 'Nhà Thờ Tổ',
+    name: 'Tổ Đường Vĩnh Tràng (Sân Bắc)',
+    zoneCode: 'Khu thờ Tổ phía sau Chùa Cổ',
+    pinLabel: 'Tổ Đường',
     pos: { x: 22.0, z: -58.0 },
     standPos: { x: 22.0, z: -48.5 },
-    via: [[36.0, -12.0], [36.0, -38.0], [22.0, -48.5]],
-    lookAt: { x: 22.0, y: 3.8, z: -58.0 },
+    via: [[37.8, -18.0], [38.0, -45.5], [22.0, -48.5]],
+    lookAt: { x: 22.0, y: 3.5, z: -58.0 },
     audio: 's5_nirvana.mp3',
-    subtitle: 'Ngôi Tổ Đường gỗ lim ba gian lợp ngói âm dương nơi thờ chư vị Tổ sư khai sơn tạo tự Vĩnh Tràng.',
+    subtitle: 'Khu Tổ Đường trang nghiêm thờ chư vị Tổ sư khai sơn tạo tự Vĩnh Tràng ở khoảng sân phía sau.',
     ritualType: 'dang_huong'
   },
   {
     id: 106,
+    isDiscovery: true,
     key: 'lau_tra_thien',
     name: 'Lầu Trà Thiền & Vườn Lan Cổ Tự',
     zoneCode: 'Hoa viên phía Đông',
     pinLabel: 'Lầu Trà Thiền',
     pos: { x: 58.0, z: -12.0 },
-    standPos: { x: 52.0, z: -8.0 },
-    via: [[38.0, 26.0], [50.0, 14.5], [52.0, -8.0]],
-    lookAt: { x: 58.0, y: 3.0, z: -12.0 },
+    standPos: { x: 51.5, z: -12.0 },
+    via: [[51.5, 20.0], [51.5, 2.0], [51.5, -12.0]],
+    lookAt: { x: 58.0, y: 2.8, z: -12.0 },
     audio: 'day_di.mp3',
-    subtitle: 'Trà thất lục giác bên giàn phong lan hồ điệp tím và lối thiền trải sỏi mát rượi phía Đông Giảng Đường.',
+    subtitle: 'Trà thất lục giác bên giàn phong lan hồ điệp tím phía Đông Khu Chùa Cổ.',
     ritualType: 'welcome'
   },
   {
     id: 107,
+    isDiscovery: true,
     key: 'nha_san_trai_duong',
-    name: 'Nhà Sàn Gỗ Trai Đường Miền Tây',
-    zoneCode: 'Sân vườn phía Đông',
+    name: 'Nhà Sàn Gỗ Trai Đường · Khu Ăn Phật Tử',
+    zoneCode: 'Sân Đông bên cầu gỗ miền Tây',
     pinLabel: 'Nhà Sàn Trai Đường',
     pos: { x: 59.5, z: 14.5 },
-    standPos: { x: 52.2, z: 14.5 },
-    via: [[38.0, 26.0], [49.0, 16.0], [52.2, 14.5]],
+    standPos: { x: 51.5, z: 14.5 },
+    via: [[44.0, 26.0], [51.5, 22.0], [51.5, 14.5]],
     lookAt: { x: 59.5, y: 2.8, z: 14.5 },
     audio: 'day_di.mp3',
-    subtitle: 'Khu ẩm thực chay Phật tử dựng bằng gỗ căm xe trên hệ sàn cọc bắc qua hồ sen theo kiến trúc nhà sàn Nam Bộ.',
+    subtitle: 'Khu trai đường ăn uống của Phật tử dựng bằng gỗ căm xe trên hệ sàn cọc miền Tây bên hồ sen phía Đông.',
     ritualType: 'welcome'
+  },
+  {
+    id: 108,
+    isDiscovery: true,
+    key: 'bao_thap_that_phat',
+    name: 'Bảo Tháp Thất Phật (7 tầng · cao 35m)',
+    zoneCode: 'Sân Bắc sau Tượng Phật A Di Đà',
+    pinLabel: 'Bảo Tháp',
+    pos: { x: -8.0, z: -37.0 },
+    standPos: { x: -13.8, z: -33.0 },
+    via: [[10.0, 20.0], [-14.0, -14.0], [-13.8, -33.0]],
+    lookAt: { x: -8.0, y: 9.0, z: -37.0 },
+    audio: 's5_nirvana.mp3',
+    subtitle: 'Bảo tháp 7 tầng cao 35m đứng uy nghiêm ngay phía sau tượng Phật A Di Đà và cạnh tượng Phật Niết Bàn.',
+    ritualType: 'hoi_huong'
   }
 ];
+
+export const CHU_QUOC_ZONES = [
+  {
+    id: 'tien_duong',
+    order: 1,
+    name: '1. Tiền đường',
+    subtitle: 'Khu tiếp đón, thờ phụ Hộ Pháp & Tiêu Diện, hoành phi câu đối dưới hệ vòm Á–Âu',
+    zRange: [1.5, 11.6],
+    standPos: { x: 0.0, z: 7.5 },
+    lookAt: { x: 0.0, y: 3.4, z: -2.0 }
+  },
+  {
+    id: 'chanh_dien_noi_that',
+    order: 2,
+    name: '2. Chánh điện',
+    subtitle: 'Khu thờ Phật chính, Long Trụ rồng cuốn, 18 vị La Hán, Bao lam & Vì kèo thếp vàng',
+    zRange: [-22.2, 1.5],
+    standPos: { x: 0.0, z: -6.5 },
+    lookAt: { x: 0.0, y: 3.4, z: -18.7 }
+  },
+  {
+    id: 'san_thien_tinh_1',
+    order: 3,
+    name: '3. Sân Thiên Tỉnh 1 (Giếng trời)',
+    subtitle: 'Giếng trời lấy sáng và thông gió tự nhiên với Hòn Non Bộ, thác nước, cây kiểng giữa hai dãy hành lang',
+    zRange: [-38.8, -22.2],
+    standPos: { x: 0.0, z: -25.2 },
+    lookAt: { x: 0.0, y: 2.2, z: -31.5 }
+  },
+  {
+    id: 'nha_to',
+    order: 4,
+    name: '4. Nhà Tổ',
+    subtitle: 'Thờ chư vị Tổ sư, Trụ trì qua các đời cùng Ban Quán Thế Âm & Ban Địa Tạng',
+    zRange: [-53.0, -38.8],
+    standPos: { x: 0.0, z: -42.5 },
+    lookAt: { x: 0.0, y: 3.2, z: -51.5 }
+  },
+  {
+    id: 'san_thien_tinh_2',
+    order: 5,
+    name: '5. Sân Thiên Tỉnh 2 (Giếng trời)',
+    subtitle: 'Khoảng sân giếng trời nối Nhà Tổ và Nhà Hậu cùng tiểu cảnh sen đá & hành lang gỗ',
+    zRange: [-68.5, -53.0],
+    standPos: { x: 0.0, z: -55.8 },
+    lookAt: { x: 0.0, y: 2.2, z: -61.0 }
+  },
+  {
+    id: 'nha_hau',
+    order: 6,
+    name: '6. Nhà Hậu',
+    subtitle: 'Khu thờ tự & sinh hoạt phía sau, thông thẳng ra tượng Phật Niết Bàn & Bảo Tháp 7 tầng',
+    zRange: [-82.0, -68.5],
+    standPos: { x: 0.0, z: -72.0 },
+    lookAt: { x: 0.0, y: 3.2, z: -80.2 }
+  }
+];
+
+export const CHANH_DIEN_HISTORICAL_NOTES = {
+  title: 'Đối chiếu tư liệu Tôn tượng Gian Giữa Chánh điện',
+  note:
+    'Tư liệu nghiên cứu ghi nhận hai mô tả khác nhau về tôn tượng trung tâm tại Chánh điện Chùa Vĩnh Tràng; ứng dụng trình bày song song cả hai nguồn để người tham quan đối chiếu trực quan mà không tự ý kết luận thay thế nguồn sử liệu nào.',
+  sources: [
+    {
+      id: 'vov',
+      sourceTitle: 'Tư liệu VOV – Kiến trúc chùa Vĩnh Tràng',
+      summary:
+        'Mô tả tượng Đức Phật Thích Ca bằng đồng ngự tại gian giữa Chánh điện cùng các pho tượng Bồ Tát, bộ bao lam chạm khắc rồng phượng và 18 vị La Hán hai bên.'
+    },
+    {
+      id: 'sach_2017',
+      sourceTitle: 'Sách "Chùa Vĩnh Tràng – Một ngôi chùa nhiều mỹ hiệu" (Thích Huệ Phát, 2017)',
+      summary:
+        'Ghi nhận tôn tượng Đức Phật A Di Đà chế tác bằng gỗ mít cùng bộ Tây Phương Tam Thánh, hoành phi liễn đối và hệ thống cột Long Trụ gian giữa.'
+    }
+  ]
+};
 
 export function findAnyTempleDestination(keyOrId) {
   return (
@@ -310,8 +411,8 @@ export function findAnyTempleDestination(keyOrId) {
 export const WORLD_BOUNDS = {
   minX: -66.5,
   maxX: 66.5,
-  minZ: -70.5,
-  maxZ: 55.0
+  minZ: -104.0,
+  maxZ: 56.0
 };
 
 export function stepPlayerMovement(state, input, speed = 0.22, obstacles = []) {
@@ -2365,7 +2466,7 @@ export const STORE_ITEMS_CATALOG = [
     robeTint: [0.54, 0.37, 0.25],
     currency: 'lotus',
     price: 120,
-    requiredLevel: 3,
+    requiredLevel: 1,
     rare: false,
     tryable: true
   },
@@ -2380,7 +2481,7 @@ export const STORE_ITEMS_CATALOG = [
     robeTint: [0.92, 0.90, 0.87],
     currency: 'lotus',
     price: 200,
-    requiredLevel: 5,
+    requiredLevel: 1,
     rare: false,
     tryable: true
   },
@@ -2634,7 +2735,7 @@ export const STORE_ITEMS_CATALOG = [
     cloudColor: '#F2F7FF',
     currency: 'lotus',
     price: 160,
-    requiredLevel: 2,
+    requiredLevel: 1,
     rare: false,
     tryable: true
   },
@@ -2671,6 +2772,30 @@ export const STORE_ITEMS_CATALOG = [
     tryable: true
   }
 ];
+
+export function computePilgrimProgress(spiritual = {}, completedLessonsCount = 0) {
+  const s = createSpiritualState(spiritual);
+  const score =
+    Math.floor((s.bowCount || 0) / 3) * 15 +
+    (s.incenseOfferings || 0) * 15 +
+    (s.lotusOfferings || 0) * 12 +
+    (s.malaCycles || 0) * 60 +
+    Math.floor((s.malaBeads || 0) / 3) * 4 +
+    (s.bellRings || 0) * 8 +
+    (s.leavesSwept || 0) * 6 +
+    Math.max(0, (s.visitedStations?.length || 1) - 1) * 10 +
+    Math.max(0, Number(completedLessonsCount || 0)) * 20;
+  const level = Math.max(1, Math.min(30, 1 + Math.floor(score / 45)));
+  const levelFloor = (level - 1) * 45;
+  const nextLevelScore = level * 45;
+  const progressRatio = Math.min(1, Math.max(0, (score - levelFloor) / 45));
+  return {
+    level,
+    totalMeritScore: score,
+    nextLevelScore,
+    progressRatio
+  };
+}
 
 export function createStoreProfileState(initial = {}) {
   const eq = initial.equipped || {};
