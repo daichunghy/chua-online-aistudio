@@ -297,6 +297,7 @@ export class VinhTrang3DWorld {
     this.activeStorePreview = null;
     this.koiList = [];
     this.lotusSwayGroups = [];
+    this.windSwayGroups = [];
     this.pondLotusAnims = [];
     this.lotusBloomState = {
       active: false,
@@ -2585,6 +2586,13 @@ export class VinhTrang3DWorld {
         outer.rotation.z = -0.45;
         fg.add(outer);
         pg.add(fg);
+        this.windSwayGroups.push({
+          group: fg,
+          baseX: fg.rotation.x,
+          baseZ: fg.rotation.z,
+          phase: px * 0.11 + pz * 0.07 + fi * 0.83,
+          amplitude: 0.028 + (fi % 3) * 0.006
+        });
       }
       pg.position.set(px, 0, pz);
       this.exteriorGroup.add(pg);
@@ -2619,6 +2627,13 @@ export class VinhTrang3DWorld {
           outerBlade.rotation.z = -0.32;
           leafGroup.add(outerBlade);
           bg.add(leafGroup);
+          this.windSwayGroups.push({
+            group: leafGroup,
+            baseX: leafGroup.rotation.x,
+            baseZ: leafGroup.rotation.z,
+            phase: bx * 0.13 + bz * 0.07 + i * 1.1 + li * 0.6,
+            amplitude: 0.038 + (li % 3) * 0.006
+          });
         }
       }
       const bud = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.3, 6), budMat);
@@ -2654,6 +2669,13 @@ export class VinhTrang3DWorld {
           culm.add(spray);
         }
         gg.add(culm);
+        this.windSwayGroups.push({
+          group: culm,
+          baseX: culm.rotation.x,
+          baseZ: culm.rotation.z,
+          phase: gx * 0.09 + gz * 0.06 + i * 0.72,
+          amplitude: 0.012
+        });
       }
       gg.position.set(gx, 0, gz);
       this.exteriorGroup.add(gg);
@@ -10250,6 +10272,16 @@ export class VinhTrang3DWorld {
     for (const ls of this.lotusSwayGroups) {
       ls.group.rotation.z = Math.sin(elapsed * 1.4 + ls.phase) * 0.045;
       ls.group.rotation.x = Math.cos(elapsed * 1.1 + ls.phase) * 0.035;
+    }
+
+    // Gentle wind on palms, banana leaves and bamboo; skip the extra work on software renderers.
+    if (!this.isSoftwareGl) {
+      for (const leaf of this.windSwayGroups) {
+        const sway = Math.sin(elapsed * 0.68 + leaf.phase) * leaf.amplitude;
+        leaf.group.rotation.z = leaf.baseZ + sway;
+        leaf.group.rotation.x =
+          leaf.baseX + Math.cos(elapsed * 0.52 + leaf.phase) * leaf.amplitude * 0.55;
+      }
     }
 
     // Animate Dâng hoa blooming & glowing lotus effect in the pond (zero GC)
