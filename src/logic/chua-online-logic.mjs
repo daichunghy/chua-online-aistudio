@@ -89,7 +89,7 @@ export const PILGRIMAGE_STATIONS = [
     mapCoord: { x: 67, y: 81 },
     lookAt: { x: 23.0, y: 12.0, z: 27.0 },
     audio: 's1_adida.mp3',
-    subtitle: 'Tượng Phật A Di Đà đứng giữa hoa viên phía trước Chánh điện; thân tượng cao 18m, đài sen và bệ cao khoảng 6m.'
+    subtitle: 'Tượng Phật A Di Đà đứng giữa hoa viên phía trước Chánh điện; thân tượng cao 18m, đài sen và bệ cao khoảng 6m.',
     ritualType: 'niem_phat'
   },
   {
@@ -104,7 +104,7 @@ export const PILGRIMAGE_STATIONS = [
     mapCoord: { x: 32, y: 62 },
     lookAt: { x: -24.5, y: 9.0, z: 4.0 },
     audio: 's4_dilac.mp3',
-    subtitle: 'Đại tượng Phật Di Lặc an tọa trong công viên bên tay phải chùa khi nhìn từ trong ra, trên khối đế kiến trúc và bậc thang rộng.'
+    subtitle: 'Đại tượng Phật Di Lặc an tọa trong công viên bên tay phải chùa khi nhìn từ trong ra, trên khối đế kiến trúc và bậc thang rộng.',
     ritualType: 'le_phat'
   },
   {
@@ -179,7 +179,7 @@ export const PILGRIMAGE_STATIONS = [
     mapCoord: { x: 59, y: 24 },
     lookAt: { x: 12.0, y: 8.5, z: -43.0 },
     audio: 's5_nirvana.mp3',
-    subtitle: 'Chiêm bái tượng Đức Phật Thích Ca nhập Niết Bàn dài 32m trong khu vườn phía sau Chánh điện, gần Bảo Tháp Thất Phật 7 tầng.'
+    subtitle: 'Chiêm bái tượng Đức Phật Thích Ca nhập Niết Bàn dài 32m trong khu vườn phía sau Chánh điện, gần Bảo Tháp Thất Phật 7 tầng.',
     ritualType: 'hoi_huong'
   }
 ];
