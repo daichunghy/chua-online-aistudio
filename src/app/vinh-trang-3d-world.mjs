@@ -1313,11 +1313,11 @@ export class VinhTrang3DWorld {
         roughness: 0.62
       }),
       statueWhite: new THREE.MeshStandardMaterial({
-        color: 0xF4EFE6,
+        color: 0xEFE9DD,
         bumpMap: this.stoneBumpTex,
-        bumpScale: 0.012,
-        roughness: 0.46,
-        metalness: 0.03
+        bumpScale: 0.02,
+        roughness: 0.78,
+        metalness: 0.0
       }),
       lotusBlue: new THREE.MeshStandardMaterial({ color: 0x4E86A8, roughness: 0.5 }),
       pedestalRed: new THREE.MeshStandardMaterial({ color: 0x8A4A3A, roughness: 0.62 }),
@@ -3217,7 +3217,7 @@ export class VinhTrang3DWorld {
     this.exteriorGroup.add(giangDuong);
     this.addRectObstacle(39, 49, -28, -8);
 
-    // 7-Tier Terracotta Bảo Tháp directly behind Standing Phật A Di Đà at North Central Head (image_97204806.png!)
+    // 7-Tier Terracotta Bảo Tháp in the rear garden near the reclining Buddha.
     const stupa = this.buildSevenTierStupa();
     stupa.position.set(-8.0, 0, -37.0);
     this.exteriorGroup.add(stupa);
@@ -3292,9 +3292,9 @@ export class VinhTrang3DWorld {
     this.lotusBloomState.burstRing = bloomRing;
 
     const burnerAdida = this.buildIncenseBurner(0.75);
-    burnerAdida.position.set(-8.0, 0, -17.5);
+    burnerAdida.position.set(23.0, 0, 36.0);
     this.exteriorGroup.add(burnerAdida);
-    this.addObstacle(-8.0, -17.5, 0.9);
+    this.addObstacle(23.0, 36.0, 0.9);
 
     // Incense burner centered at Di Lặc stepped staircase
     const burnerDiLac = this.buildIncenseBurner(0.78);
@@ -3310,7 +3310,7 @@ export class VinhTrang3DWorld {
     const cushionCoords = [
       [21.4, 13.4, Math.PI],
       [24.6, 13.4, Math.PI],
-      [-8.0, -16.0, Math.PI],
+      [23.0, 38.5, Math.PI],
       [-24.5, 21.8, Math.PI],
       [35.2, 22.5, -Math.PI / 2]
     ];
@@ -4735,69 +4735,83 @@ export class VinhTrang3DWorld {
   buildStatuePedestals() {
     const M = this.MAT;
 
-    // 1. Đại Tượng Phật A Di Đà (North head of Central Avenue in front of 7-tier Bảo Tháp, facing South!)
+    // 1. Đại tượng Phật A Di Đà — hoa viên phía trước Chánh điện, hướng mặt ra cổng.
+    // Tư liệu thực tế: thân tượng 18m, đài sen/bệ 6m, tổng chiều cao khoảng 24m.
     this.adidaGroup = new THREE.Group();
-    this.adidaGroup.position.set(-8.0, 0, -25.0);
-    const adidaTerrace = new THREE.Mesh(
-      new THREE.CylinderGeometry(6.8, 7.4, 0.36, 16),
+    this.adidaGroup.position.set(23.0, 0, 27.0);
+    const adidaPlaza = new THREE.Mesh(
+      new THREE.CylinderGeometry(9.4, 9.8, 0.18, 32),
       M.stoneLight
     );
-    adidaTerrace.position.y = 0.18;
+    adidaPlaza.position.y = 0.09;
+    adidaPlaza.receiveShadow = true;
+    this.adidaGroup.add(adidaPlaza);
+    const adidaTerrace = new THREE.Mesh(
+      new THREE.CylinderGeometry(6.8, 7.4, 0.42, 24),
+      M.stoneDark
+    );
+    adidaTerrace.position.y = 0.21;
     adidaTerrace.receiveShadow = true;
     this.adidaGroup.add(adidaTerrace);
 
     const adidaFrontSign = new THREE.Mesh(
-      new THREE.BoxGeometry(4.6, 0.85, 0.16),
+      new THREE.BoxGeometry(5.8, 0.78, 0.16),
       new THREE.MeshStandardMaterial({
-        map: makeTextTex('ĐẠI TƯỢNG PHẬT A DI ĐÀ (CAO 24M)', { w: 1024, h: 200, size: 52 })
+        map: makeTextTex('PHẬT A DI ĐÀ · TƯỢNG 18M · BỆ 6M', { w: 1400, h: 200, size: 48 })
       })
     );
-    adidaFrontSign.position.set(0, 0.85, 5.4);
+    adidaFrontSign.position.set(0, 0.82, 5.55);
     this.adidaGroup.add(adidaFrontSign);
 
-    for (let i = -2; i <= 2; i++) {
-      const ang = i * 0.35;
-      const tx = Math.sin(ang) * 7.6;
-      const tz = -Math.cos(ang) * 7.6;
+    // Four tropical shade trees frame the flower garden without hiding the statue silhouette.
+    for (let i = 0; i < 4; i++) {
+      const ang = (i / 4) * Math.PI * 2 + Math.PI / 4;
+      const tx = Math.sin(ang) * 10.4;
+      const tz = -Math.cos(ang) * 10.4;
       const t = new THREE.Group();
-      const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.42, 4.8, 8), M.trunk);
-      trunk.position.y = 2.4;
+      const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.34, 3.8, 10), M.trunk);
+      trunk.position.y = 1.9;
       t.add(trunk);
-      const crown = new THREE.Mesh(new THREE.SphereGeometry(2.4, 12, 10), M.foliageDark);
-      crown.position.y = 5.4;
-      crown.scale.set(1.12, 1.08, 1.12);
+      const crown = new THREE.Mesh(new THREE.SphereGeometry(1.9, 16, 12), M.foliageDark);
+      crown.position.y = 4.0;
+      crown.scale.set(1.18, 0.92, 1.12);
       t.add(crown);
       t.position.set(tx, 0, tz);
       this.adidaGroup.add(t);
     }
     this.exteriorGroup.add(this.adidaGroup);
-    this.addObstacle(-8.0, -25.0, 5.4);
+    this.addObstacle(23.0, 27.0, 7.6);
 
-    // 2. Đại Tượng Phật Di Lặc (Seated on West Terrace facing South onto the wide Arhat Garden Plaza)
+    // 2. Đại tượng Phật Di Lặc — công viên bên tay phải chùa khi nhìn từ trong ra.
+    // Tượng thực tế dài 27m, rộng 18m, cao 20m; khối đế là công trình kiến trúc bên dưới tượng.
     this.dilacGroup = new THREE.Group();
     this.dilacGroup.position.set(-24.5, 0, 4.0);
-    const dilacTerrace = new THREE.Mesh(new THREE.BoxGeometry(16.8, 4.1, 18.2), M.stoneLight);
-    dilacTerrace.position.set(0, 2.05, 1.8);
+    const dilacTerrace = new THREE.Mesh(new THREE.BoxGeometry(27.0, 4.8, 18.2), M.stoneDark);
+    dilacTerrace.position.set(0, 2.4, 1.8);
     dilacTerrace.receiveShadow = true;
     dilacTerrace.castShadow = true;
     this.dilacGroup.add(dilacTerrace);
+    const dilacCap = new THREE.Mesh(new THREE.BoxGeometry(27.4, 0.22, 18.6), M.stoneLight);
+    dilacCap.position.set(0, 4.81, 1.8);
+    dilacCap.receiveShadow = true;
+    this.dilacGroup.add(dilacCap);
 
     for (let st = 0; st < 7; st++) {
       const step = new THREE.Mesh(
-        new THREE.BoxGeometry(11.6, 0.25, 0.48),
+        new THREE.BoxGeometry(15.0, 0.25, 0.48),
         st % 2 === 0 ? M.stoneLight : M.creamTrim
       );
       step.position.set(0, 0.125 + st * 0.25, 16.5 - st * 0.42);
       step.receiveShadow = true;
       this.dilacGroup.add(step);
     }
-    const stairLanding = new THREE.Mesh(new THREE.BoxGeometry(16.0, 1.72, 3.6), M.creamTrim);
+    const stairLanding = new THREE.Mesh(new THREE.BoxGeometry(18.0, 1.72, 3.6), M.creamTrim);
     stairLanding.position.set(0, 0.86, 12.3);
     stairLanding.receiveShadow = true;
     this.dilacGroup.add(stairLanding);
 
-    const railMetal = new THREE.MeshStandardMaterial({ color: 0xD8DCE2, metalness: 0.85, roughness: 0.18 });
-    for (const hx of [-5.6, 5.6]) {
+    const railMetal = new THREE.MeshStandardMaterial({ color: 0xD8DCE2, metalness: 0.72, roughness: 0.32 });
+    for (const hx of [-7.0, 7.0]) {
       const postBot = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.9, 8), railMetal);
       postBot.position.set(hx, 0.45, 16.6);
       this.dilacGroup.add(postBot);
@@ -4811,41 +4825,41 @@ export class VinhTrang3DWorld {
     }
 
     const dilacBlackBand = new THREE.Mesh(
-      new THREE.BoxGeometry(16.0, 1.25, 0.34),
+      new THREE.BoxGeometry(25.5, 1.25, 0.34),
       new THREE.MeshStandardMaterial({
         map: makeTextTex('當 來 彌 勒 大 佛', {
-          w: 1400,
+          w: 1800,
           h: 190,
           bg: '#1C1E21',
           border: '#3C3E42',
           color: '#E7B448',
           size: 86
         }),
-        roughness: 0.38
+        roughness: 0.82
       })
     );
     dilacBlackBand.position.set(0, 3.55, 11.02);
     this.dilacGroup.add(dilacBlackBand);
 
     const dilacRedBand = new THREE.Mesh(
-      new THREE.BoxGeometry(16.0, 1.0, 0.38),
+      new THREE.BoxGeometry(25.5, 1.0, 0.38),
       new THREE.MeshStandardMaterial({
         map: makeTextTex('NAM MÔ ĐƯƠNG LAI DI LẶC TÔN PHẬT', {
-          w: 1500,
+          w: 1800,
           h: 170,
           bg: '#A6432B',
           border: '#7E2B19',
           color: '#FFD76E',
           size: 56
         }),
-        roughness: 0.56
+        roughness: 0.72
       })
     );
     dilacRedBand.position.set(0, 2.42, 11.05);
     this.dilacGroup.add(dilacRedBand);
 
     this.exteriorGroup.add(this.dilacGroup);
-    this.addRectObstacle(-33.0, -16.0, -2.5, 16.2);
+    this.addRectObstacle(-38.5, -10.5, -4.5, 21.0);
 
     // West Arhat Garden Plaza Statues & Manicured Round Shrubs flanking Di Lặc Courtyard (image_97204806.png left)
     for (const wx of [-36.2, -13.2]) {
@@ -4873,19 +4887,20 @@ export class VinhTrang3DWorld {
       }
     }
 
-    // 3. Đại Tượng Phật Niết Bàn (North-Right Garden behind Monastic Hall, facing South — image_97204806.png)
+    // 3. Đại tượng Phật Thích Ca nhập Niết Bàn — khu vườn phía sau Chánh điện.
+    // Tượng dài 32m, cao 10m; bệ kiến trúc thực tế dài 35m, ngang 18m, cao khoảng 7m.
     this.nietBanGroup = new THREE.Group();
-    this.nietBanGroup.position.set(12, 0, -38);
-    const nbTerrace = new THREE.Mesh(new THREE.BoxGeometry(29.5, 0.36, 11.2), M.stoneLight);
+    this.nietBanGroup.position.set(12, 0, -43.0);
+    const nbTerrace = new THREE.Mesh(new THREE.BoxGeometry(35.0, 0.36, 18.0), M.stoneLight);
     nbTerrace.position.y = 0.18;
     nbTerrace.receiveShadow = true;
     this.nietBanGroup.add(nbTerrace);
 
     const nbSign = new THREE.Mesh(
-      new THREE.BoxGeometry(10.5, 1.15, 0.18),
+      new THREE.BoxGeometry(12.5, 1.15, 0.18),
       new THREE.MeshStandardMaterial({
         map: makeTextTex('NAM MÔ BỔN SƯ THÍCH CA MÂU NI PHẬT', {
-          w: 1400,
+          w: 1600,
           h: 200,
           bg: '#4E5054',
           border: '#C9962E',
@@ -4894,10 +4909,10 @@ export class VinhTrang3DWorld {
         })
       })
     );
-    nbSign.position.set(0, 1.1, 5.75);
+    nbSign.position.set(0, 1.1, 9.15);
     this.nietBanGroup.add(nbSign);
     this.exteriorGroup.add(this.nietBanGroup);
-    this.addRectObstacle(-2.0, 26.0, -43.5, -32.5);
+    this.addRectObstacle(-5.5, 29.5, -52.0, -34.0);
 
     // 4. Đài Quán Thế Âm Bồ Tát (Beside RIGHT bougainvillea side pathway at (32.8, 0, 22.5) facing +X!)
     this.quanAmGroup = new THREE.Group();
@@ -7543,13 +7558,16 @@ export class VinhTrang3DWorld {
           if (o.geometry.getAttribute('color')) {
             o.material.vertexColors = true;
           }
-          // Preserve embedded FeatureShadow, lotus blue, pedestal, and gold plaque colors while adding stone bump
+          // Keep the cast-concrete finish matte and lightly weathered; preserve lotus and inscription colors.
           const matName = (o.material.name || '').toLowerCase();
           if (/white|statue|body|robe|skin/i.test(matName) || !matName) {
             o.material.bumpMap = this.stoneBumpTex;
-            o.material.bumpScale = 0.01;
+            o.material.bumpScale = 0.018;
+            o.material.roughness = Math.max(0.72, o.material.roughness ?? 0.78);
+            o.material.metalness = 0.0;
+          } else {
+            o.material.roughness = Math.min(0.78, Math.max(0.34, o.material.roughness ?? 0.58));
           }
-          o.material.roughness = Math.min(0.58, Math.max(0.28, o.material.roughness ?? 0.45));
         }
       }
     });
@@ -7567,46 +7585,47 @@ export class VinhTrang3DWorld {
       this.loadGLB(STATUE_GLB_PATHS.bantho)
     ]);
 
-    // 1. Đại Tượng Phật A Di Đà (North head of Central Avenue facing straight South (+Z) down the avenue)
+    // 1. Đại tượng Phật A Di Đà in the front flower garden (18m statue + 6m lotus/pedestal = 24m total).
     if (adidaGltf?.scene) {
       const s = this.cleanStatueScene(adidaGltf.scene, null);
       const box = new THREE.Box3().setFromObject(s);
       const h = Math.max(0.1, box.max.y - box.min.y);
-      const scale = 22.5 / h;
+      const scale = 24.0 / h;
       s.scale.setScalar(scale);
       const box2 = new THREE.Box3().setFromObject(s);
       s.position.set(
         -(box2.min.x + box2.max.x) / 2,
-        0.34 - box2.min.y,
+        0.42 - box2.min.y,
         -(box2.min.z + box2.max.z) / 2
       );
       s.rotation.y = 0;
       this.adidaGroup.add(s);
     }
 
-    // 2. Đại Tượng Phật Di Lặc (Monumental ~19.5m seated cleanly atop stepped granite staircase & red/black inscription bands)
+    // 2. Đại tượng Phật Di Lặc — scale independently to the documented 27 × 18 × 20m envelope.
     if (dilacGltf?.scene) {
       const s = this.cleanStatueScene(dilacGltf.scene, null);
       const box = new THREE.Box3().setFromObject(s);
+      const w = Math.max(0.1, box.max.x - box.min.x);
       const h = Math.max(0.1, box.max.y - box.min.y);
-      const scale = 19.5 / h;
-      s.scale.setScalar(scale);
+      const d = Math.max(0.1, box.max.z - box.min.z);
+      s.scale.set(27.0 / w, 20.0 / h, 18.0 / d);
       const box2 = new THREE.Box3().setFromObject(s);
       s.position.set(
         -(box2.min.x + box2.max.x) / 2,
-        1.55 - box2.min.y,
+        2.15 - box2.min.y,
         -(box2.min.z + box2.max.z) / 2 - 2.4
       );
-      s.rotation.y = Math.PI * 0.78;
+      s.rotation.y = 0;
       this.dilacGroup.add(s);
     }
 
-    // 3. Đại Tượng Phật Niết Bàn (Total GLB length 32.0m — includes its sculpted pedestal)
+    // 3. Đại tượng Phật nhập Niết Bàn — fit the 32m body to the 35m plinth.
     if (phatNamGltf?.scene) {
       const s = this.cleanStatueScene(phatNamGltf.scene, null);
       const box = new THREE.Box3().setFromObject(s);
       const w = Math.max(0.1, box.max.x - box.min.x, box.max.z - box.min.z);
-      const scale = 31.5 / w;
+      const scale = 32.0 / w;
       s.scale.setScalar(scale);
       const box2 = new THREE.Box3().setFromObject(s);
       s.position.set(
@@ -8674,7 +8693,7 @@ export class VinhTrang3DWorld {
         pts: [
           wp(-2.0, 19.0, 'pass'),
           wp(-2.0, -5.0, 'pass'),
-          wp(-7.8, -14.5, 'chap_tay', 3.8, -8.0, -25.0),
+          wp(23.0, 38.0, 'chap_tay', 3.8, 23.0, 27.0),
           wp(-2.5, 6.0, 'pass')
         ]
       },
@@ -8754,7 +8773,7 @@ export class VinhTrang3DWorld {
         pts: [
           wp(22.0, -47.5, 'chap_tay', 3.4, 22.0, -58.0),
           wp(36.0, -45.5, 'pass'),
-          wp(12.0, -24.5, 'chap_tay', 3.2, 12.0, -38.0),
+          wp(12.0, -29.5, 'chap_tay', 3.2, 12.0, -43.0),
           wp(4.0, -45.5, 'pass')
         ]
       },
@@ -9610,13 +9629,13 @@ export class VinhTrang3DWorld {
     const isAdidaPlaza =
       !this.inInterior &&
       (this.currentStationId === 2 ||
-        Math.hypot(this.playerState.x - -8.0, this.playerState.z - -15.5) < 9.5);
+        Math.hypot(this.playerState.x - 23.0, this.playerState.z - 37.0) < 9.5);
     const isMonumental =
       !this.inInterior &&
       ([2, 3, 8].includes(this.currentStationId) ||
         isAdidaPlaza ||
         Math.hypot(this.playerState.x - -24.5, this.playerState.z - 22.0) < 8.0 ||
-        Math.hypot(this.playerState.x - 12.0, this.playerState.z - -27.5) < 8.5);
+        Math.hypot(this.playerState.x - 12.0, this.playerState.z - -31.0) < 8.5);
 
     const transitionPull = this.interiorTransition?.phase === 'climb_side_door' ? 2.1 : 0;
     const camDist = this.inInterior
@@ -9628,7 +9647,7 @@ export class VinhTrang3DWorld {
     const lookY = this.inInterior
       ? 2.45 + (this.playerElevationY || 0) * 0.85
       : isAdidaPlaza
-      ? 10.2
+      ? 12.0
       : isMonumental
       ? 7.6
       : 3.65;
