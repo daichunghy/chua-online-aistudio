@@ -3411,9 +3411,9 @@ export class VinhTrang3DWorld {
 
     // Incense burner at the visitor approach to the reclining Buddha.
     const burnerNietBan = this.buildIncenseBurner(0.68);
-    burnerNietBan.position.set(12.0, 0, -31.8);
+    burnerNietBan.position.set(-24.5, 0, -13.5);
     this.exteriorGroup.add(burnerNietBan);
-    this.addObstacle(12.0, -31.8, 0.82);
+    this.addObstacle(-24.5, -13.5, 0.82);
 
     // Incense burner beside Đài Quán Thế Âm on the RIGHT side pathway
     const burnerQuanAm = this.buildIncenseBurner(0.62);
@@ -3427,7 +3427,7 @@ export class VinhTrang3DWorld {
       [23.0, 38.5, Math.PI],
       [-24.5, 21.8, Math.PI],
       [35.2, 22.5, -Math.PI / 2],
-      [12.0, -27.5, Math.PI]
+      [-24.5, -10.5, 0]
     ];
     for (const [kx, kz, kyaw] of cushionCoords) {
       const c = this.makeKneelingCushion();
@@ -5102,7 +5102,7 @@ export class VinhTrang3DWorld {
     // 3. Đại tượng Phật Thích Ca nhập Niết Bàn — khu vườn phía sau Chánh điện.
     // Tượng dài 32m, cao 10m; bệ kiến trúc thực tế dài 35m, ngang 18m, cao khoảng 7m.
     this.nietBanGroup = new THREE.Group();
-    this.nietBanGroup.position.set(12, 0, -43.0);
+    this.nietBanGroup.position.set(-24.5, 0, -24.0);
     const nbTerrace = new THREE.Mesh(new THREE.BoxGeometry(35.0, 0.36, 18.0), M.stoneLight);
     nbTerrace.position.y = 0.18;
     nbTerrace.receiveShadow = true;
@@ -5124,7 +5124,7 @@ export class VinhTrang3DWorld {
     nbSign.position.set(0, 1.1, 9.15);
     this.nietBanGroup.add(nbSign);
     this.exteriorGroup.add(this.nietBanGroup);
-    this.addRectObstacle(-5.5, 29.5, -52.0, -34.0);
+    this.addRectObstacle(-42.0, -7.0, -33.0, -15.0);
 
     // 4. Đài Quán Thế Âm Bồ Tát (Beside RIGHT bougainvillea side pathway at (32.8, 0, 22.5) facing +X!)
     this.quanAmGroup = new THREE.Group();
@@ -8133,7 +8133,7 @@ export class VinhTrang3DWorld {
       new THREE.Vector3(23.0, 1.15, 36.0),
       new THREE.Vector3(-24.5, 2.85, 17.2),
       new THREE.Vector3(34.5, 0.98, 22.5),
-      new THREE.Vector3(12.0, 0.98, -31.8)
+      new THREE.Vector3(-24.5, 0.98, -13.5)
     ];
     for (const orig of origins) {
       const sc = new SmokeColumn(orig, 42, 0.26, 3.4);
@@ -8686,7 +8686,7 @@ export class VinhTrang3DWorld {
       { charKey: 'nu', x: 23.0, z: 38.5, yaw: Math.PI, tint: [0.80, 0.72, 0.62] },
       { charKey: 'nam', x: -24.5, z: 17.5, yaw: Math.PI, monkTone: 1 },
       { charKey: 'nu', x: 35.2, z: 22.5, yaw: -Math.PI / 2, tint: [0.85, 0.70, 0.76] },
-      { charKey: 'nam', x: 12.0, z: -27.5, yaw: 0, monkTone: 2 },
+      { charKey: 'nam', x: -24.5, z: -10.5, yaw: 0, monkTone: 2 },
       { charKey: 'nu', x: 22.0, z: -49.5, yaw: Math.PI, tint: [0.68, 0.76, 0.84] }
     ];
     for (const ks of kneelSpots) {
@@ -8988,8 +8988,11 @@ export class VinhTrang3DWorld {
         pts: [
           wp(22.0, -47.5, 'chap_tay', 3.4, 22.0, -58.0),
           wp(36.0, -45.5, 'pass'),
-          wp(12.0, -29.5, 'chap_tay', 3.2, 12.0, -43.0),
-          wp(4.0, -45.5, 'pass')
+          wp(0.0, -45.5, 'pass'),
+          wp(0.0, -10.5, 'pass'),
+          wp(-24.5, -10.5, 'chap_tay', 3.2, -24.5, -24.0),
+          wp(-46.0, -10.5, 'pass'),
+          wp(-46.0, -45.5, 'pass')
         ]
       },
       {
@@ -9850,7 +9853,7 @@ export class VinhTrang3DWorld {
       ([2, 3, 8].includes(this.currentStationId) ||
         isAdidaPlaza ||
         Math.hypot(this.playerState.x - -24.5, this.playerState.z - 22.0) < 8.0 ||
-        Math.hypot(this.playerState.x - 12.0, this.playerState.z - -31.0) < 8.5);
+        Math.hypot(this.playerState.x - -24.5, this.playerState.z - -10.5) < 8.5);
 
     const transitionPull = this.interiorTransition?.phase === 'climb_side_door' ? 2.1 : 0;
     const camDist = this.inInterior
