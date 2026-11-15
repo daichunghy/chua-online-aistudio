@@ -8768,10 +8768,11 @@ export class VinhTrang3DWorld {
         hand: 'nhang',
         speed: 1.02,
         pts: [
-          wp(-22.0, -47.5, 'pass'),
+          wp(-50.0, -47.5, 'pass'),
+          wp(-50.0, -27.5, 'pass'),
           wp(-30.5, -27.5, 'chap_tay', 3.2, -30.5, -38.0),
-          wp(-42.0, -45.5, 'pass'),
-          wp(-20.0, -45.5, 'pass')
+          wp(-30.5, -20.0, 'pass'),
+          wp(-50.0, -20.0, 'pass')
         ]
       },
       {
