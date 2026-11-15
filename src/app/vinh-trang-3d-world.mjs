@@ -3292,9 +3292,9 @@ export class VinhTrang3DWorld {
     this.lotusBloomState.burstRing = bloomRing;
 
     const burnerAdida = this.buildIncenseBurner(0.75);
-    burnerAdida.position.set(-8.0, 0, 25.2);
+    burnerAdida.position.set(-5.0, 0, 25.2);
     this.exteriorGroup.add(burnerAdida);
-    this.addObstacle(-8.0, 25.2, 0.9);
+    this.addObstacle(-5.0, 25.2, 0.9);
 
     // Incense burner centered at Di Lặc stepped staircase
     const burnerDiLac = this.buildIncenseBurner(0.78);
@@ -3316,7 +3316,7 @@ export class VinhTrang3DWorld {
     const cushionCoords = [
       [21.4, 13.4, Math.PI],
       [24.6, 13.4, Math.PI],
-      [-8.0, 30.5, Math.PI],
+      [-5.0, 30.5, Math.PI],
       [-24.5, 21.8, Math.PI],
       [35.2, 22.5, -Math.PI / 2],
       [-30.5, -27.5, Math.PI]
@@ -4744,7 +4744,7 @@ export class VinhTrang3DWorld {
 
     // 1. Đại Tượng Phật A Di Đà — front garden on the west side of the main approach, facing South toward Tam Quan.
     this.adidaGroup = new THREE.Group();
-    this.adidaGroup.position.set(-8.0, 0, 16.5);
+    this.adidaGroup.position.set(0, 0, 16.5);
     const adidaTerrace = new THREE.Mesh(
       new THREE.CylinderGeometry(6.8, 7.4, 0.36, 16),
       M.stoneLight
@@ -4778,7 +4778,7 @@ export class VinhTrang3DWorld {
       this.adidaGroup.add(t);
     }
     this.exteriorGroup.add(this.adidaGroup);
-    this.addObstacle(-8.0, 16.5, 6.2);
+    this.addObstacle(0, 16.5, 6.2);
 
     // 2. Đại Tượng Phật Di Lặc (Seated on West Terrace facing South onto the wide Arhat Garden Plaza)
     this.dilacGroup = new THREE.Group();
@@ -7907,7 +7907,7 @@ export class VinhTrang3DWorld {
   initSmokeColumns() {
     const origins = [
       new THREE.Vector3(23.0, 1.32, 12.0),
-      new THREE.Vector3(-8.0, 1.15, 25.2),
+      new THREE.Vector3(-5.0, 1.15, 25.2),
       new THREE.Vector3(-24.5, 2.85, 17.2),
       new THREE.Vector3(34.5, 0.98, 22.5),
       new THREE.Vector3(-30.5, 0.98, -29.8)
@@ -8460,7 +8460,7 @@ export class VinhTrang3DWorld {
     const kneelSpots = [
       { charKey: 'nu', x: 21.4, z: 13.4, yaw: Math.PI, tint: [0.76, 0.64, 0.72] },
       { charKey: 'nam', x: 24.6, z: 13.4, yaw: Math.PI, monkTone: 0 },
-      { charKey: 'nu', x: -8.0, z: 30.5, yaw: Math.PI, tint: [0.80, 0.72, 0.62] },
+      { charKey: 'nu', x: -5.0, z: 30.5, yaw: Math.PI, tint: [0.80, 0.72, 0.62] },
       { charKey: 'nam', x: -24.5, z: 17.5, yaw: Math.PI, monkTone: 1 },
       { charKey: 'nu', x: 35.2, z: 22.5, yaw: -Math.PI / 2, tint: [0.85, 0.70, 0.76] },
       { charKey: 'nam', x: -30.5, z: -27.5, yaw: Math.PI, monkTone: 2 },
@@ -8683,9 +8683,8 @@ export class VinhTrang3DWorld {
         hand: 'beads',
         speed: 0.96,
         pts: [
-          wp(-2.0, 19.0, 'pass'),
-          wp(12.0, 28.0, 'pass'),
-          wp(-7.8, 28.0, 'chap_tay', 3.8, -8.0, 16.5),
+          wp(-7.8, 19.0, 'pass'),
+          wp(-5.0, 28.0, 'chap_tay', 3.8, 0.0, 16.5),
           wp(-2.5, 6.0, 'pass')
         ]
       },
@@ -9621,7 +9620,7 @@ export class VinhTrang3DWorld {
     const isAdidaPlaza =
       !this.inInterior &&
       (this.currentStationId === 2 ||
-        Math.hypot(this.playerState.x - -8.0, this.playerState.z - 27.5) < 9.5);
+        Math.hypot(this.playerState.x - -5.0, this.playerState.z - 27.5) < 9.5);
     const isMonumental =
       !this.inInterior &&
       ([2, 3, 8].includes(this.currentStationId) ||
