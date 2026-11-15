@@ -130,11 +130,42 @@ function makeTextTex(text, opts = {}) {
 }
 
 function makeHippedRoofMesh(width, depth, height, material) {
-  const geom = new THREE.ConeGeometry(1, height, 4);
-  geom.rotateY(Math.PI / 4);
-  const m = new THREE.Mesh(geom, material);
-  m.scale.set(width / Math.SQRT2, 1, depth / Math.SQRT2);
-  return m;
+  // Four true roof planes meeting at a short ridge, rather than a square pyramid.
+  // The ridge follows the longer side; square roofs naturally collapse toward a compact hip.
+  const geometry = new THREE.BufferGeometry();
+  const positions = [];
+  const uvs = [];
+  const longAxisIsZ = depth > width;
+  const longHalf = Math.max(width, depth) * 0.5;
+  const shortHalf = Math.min(width, depth) * 0.5;
+  const ridgeHalf = Math.max(0.025, longHalf - shortHalf * 0.9);
+  const baseY = -height * 0.5;
+  const ridgeY = height * 0.5;
+  const mapPoint = (p) => longAxisIsZ ? [p[2], p[1], -p[0]] : p;
+  const pushPoint = (p) => {
+    const v = mapPoint(p);
+    positions.push(v[0], v[1], v[2]);
+    uvs.push(v[0] / width + 0.5, v[2] / depth + 0.5);
+  };
+  const triangle = (a, b, c) => { pushPoint(a); pushPoint(b); pushPoint(c); };
+  const quad = (a, b, c, d) => { triangle(a, b, c); triangle(a, c, d); };
+  const ridgeL = [-ridgeHalf, ridgeY, 0];
+  const ridgeR = [ridgeHalf, ridgeY, 0];
+  const frontL = [-longHalf, baseY, shortHalf];
+  const frontR = [longHalf, baseY, shortHalf];
+  const backL = [-longHalf, baseY, -shortHalf];
+  const backR = [longHalf, baseY, -shortHalf];
+  quad(frontL, frontR, ridgeR, ridgeL);
+  quad(backR, backL, ridgeL, ridgeR);
+  triangle(backL, frontL, ridgeL);
+  triangle(frontR, backR, ridgeR);
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+  geometry.computeVertexNormals();
+  const mesh = new THREE.Mesh(geometry, material);
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  return mesh;
 }
 
 class SmokeColumn {
@@ -2872,11 +2903,10 @@ export class VinhTrang3DWorld {
 
       // 2. Covered West & East Perimeter Corridors ("Hành lang bao quanh chữ Quốc")
       for (const sideX of [15.8, 34.2]) {
-        const hallStrip = new THREE.Mesh(new THREE.BoxGeometry(3.8, 4.3, 24.4), M.goldLight);
-        hallStrip.position.set(sideX, 3.1, -18.4);
-        hallStrip.castShadow = true;
-        hallStrip.receiveShadow = true;
-        comp.add(hallStrip);
+        const corridorFloor = new THREE.Mesh(new THREE.BoxGeometry(3.8, 0.22, 24.4), M.stoneLight);
+        corridorFloor.position.set(sideX, 1.05, -18.4);
+        corridorFloor.receiveShadow = true;
+        comp.add(corridorFloor);
 
         const stripRoof = makeHippedRoofMesh(4.6, 25.0, 1.45, M.roofTile);
         stripRoof.position.set(sideX, 5.95, -18.4);
@@ -2884,9 +2914,29 @@ export class VinhTrang3DWorld {
         comp.add(stripRoof);
 
         for (let cz = -29.2; cz <= -7.0; cz += 3.7) {
-          const innerCol = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.16, 4.2, 8), M.redColumn);
-          innerCol.position.set(sideX < 25 ? sideX + 2.0 : sideX - 2.0, 3.05, cz);
-          comp.add(innerCol);
+          for (const edge of [-1, 1]) {
+            const colX = sideX + edge * 1.55;
+            const colBase = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.22, 0.46), M.creamTrim);
+            colBase.position.set(colX, 1.28, cz);
+            comp.add(colBase);
+            const column = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.18, 3.85, 12), M.redColumn);
+            column.position.set(colX, 3.3, cz);
+            column.castShadow = true;
+            comp.add(column);
+            const capital = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.2, 0.5), M.goldAccent);
+            capital.position.set(colX, 5.25, cz);
+            comp.add(capital);
+          }
+        }
+        for (const edge of [-1, 1]) {
+          const rail = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.72, 23.0), M.creamTrim);
+          rail.position.set(sideX + edge * 1.55, 1.7, -18.4);
+          comp.add(rail);
+          for (let cz = -28.2; cz <= -8.6; cz += 1.8) {
+            const baluster = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.045, 0.62, 6), M.creamTrim);
+            baluster.position.set(sideX + edge * 1.55, 1.68, cz);
+            comp.add(baluster);
+          }
         }
       }
 
@@ -4043,6 +4093,7 @@ export class VinhTrang3DWorld {
   buildChanhDien13Arches() {
     const M = this.MAT;
     const g = new THREE.Group();
+    const ironwork = new THREE.MeshStandardMaterial({ color: 0x28231F, metalness: 0.68, roughness: 0.4 });
     const W = 26.9;
     const D = 14.3;
 
@@ -4052,35 +4103,39 @@ export class VinhTrang3DWorld {
     plinth.castShadow = true;
     g.add(plinth);
 
-    // Real Vĩnh Tràng facade: central front terrace is BALUSTRADED/CLOSED; pilgrims enter via LEFT & RIGHT SIDE STAIRCASES (cửa hông)
-    const centerBal = new THREE.Mesh(new THREE.BoxGeometry(10.4, 1.05, 0.34), M.creamTrim);
-    centerBal.position.set(0, 1.78, D / 2 + 0.56);
-    g.add(centerBal);
-    const centerRailBar = new THREE.Mesh(new THREE.BoxGeometry(10.6, 0.16, 0.42), M.goldAccent);
-    centerRailBar.position.set(0, 2.34, D / 2 + 0.56);
-    g.add(centerRailBar);
-    const velvetRope = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.055, 0.055, 4.2, 10),
-      M.redColumn
-    );
-    velvetRope.rotation.z = Math.PI / 2;
-    velvetRope.position.set(0, 2.46, D / 2 + 0.65);
-    g.add(velvetRope);
-
-    const sideHintTex = makeTextTex('LỐI VÀO CỬA HÔNG PHẢI →', {
-      w: 1024,
-      h: 180,
-      bg: '#4B2212',
-      border: '#FFD875',
-      color: '#FFF6E5',
-      size: 54
-    });
-    const sideHintBoard = new THREE.Mesh(
-      new THREE.BoxGeometry(3.8, 0.56, 0.14),
-      new THREE.MeshStandardMaterial({ map: sideHintTex, roughness: 0.42 })
-    );
-    sideHintBoard.position.set(0, 1.72, D / 2 + 0.85);
-    g.add(sideHintBoard);
+    // Broad central stone staircase, matching the real front approach visible in site photographs.
+    const stairWidth = 8.6;
+    const stairRun = 0.48;
+    const stairRise = 0.18;
+    for (let s = 0; s < 7; s++) {
+      const step = new THREE.Mesh(
+        new THREE.BoxGeometry(stairWidth, stairRise, stairRun),
+        s % 2 === 0 ? M.stoneLight : M.creamTrim
+      );
+      step.position.set(0, stairRise * (s + 0.5), D / 2 + 4.05 - s * stairRun);
+      step.receiveShadow = true;
+      step.castShadow = true;
+      g.add(step);
+    }
+    for (const side of [-1, 1]) {
+      const railX = side * 4.62;
+      const railBase = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.9, 3.55), M.creamTrim);
+      railBase.position.set(railX, 0.88, D / 2 + 2.65);
+      g.add(railBase);
+      for (let i = 0; i < 6; i++) {
+        const baluster = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.07, 0.72, 8), M.creamTrim);
+        baluster.position.set(railX, 0.92, D / 2 + 4.05 - i * 0.56);
+        g.add(baluster);
+      }
+      const handrail = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.16, 3.8), M.goldAccent);
+      handrail.position.set(railX, 1.42, D / 2 + 2.65);
+      g.add(handrail);
+      for (const endZ of [D / 2 + 0.8, D / 2 + 4.5]) {
+        const finial = new THREE.Mesh(new THREE.SphereGeometry(0.16, 10, 8), M.goldAccent);
+        finial.position.set(railX, 1.55, endZ);
+        g.add(finial);
+      }
+    }
 
     // East Wing Side Porch & Iconic Blue Sign "TỔ ĐÌNH VĨNH TRÀNG" facing Right Pathway (image_97204806.png)
     const eastPorchRoof = makeHippedRoofMesh(4.4, 5.2, 1.35, M.roofTile);
@@ -4091,23 +4146,13 @@ export class VinhTrang3DWorld {
       pCol.position.set(W / 2 + 3.4, 2.0, pz);
       g.add(pCol);
     }
-    const eastBlueSign = new THREE.Mesh(
-      new THREE.BoxGeometry(0.24, 0.86, 4.4),
-      new THREE.MeshStandardMaterial({
-        map: makeTextTex('TỔ ĐÌNH VĨNH TRÀNG', {
-          w: 1024,
-          h: 210,
-          bg: '#1D4E9E',
-          border: '#FFFFFF',
-          color: '#FFFFFF',
-          size: 74
-        }),
-        roughness: 0.36
-      })
+    const eastSideDoorHit = new THREE.Mesh(
+      new THREE.BoxGeometry(2.4, 3.3, 1.0),
+      new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false })
     );
-    eastBlueSign.position.set(W / 2 + 3.55, 4.15, 2.4);
-    g.add(eastBlueSign);
-    this.sideDoorClickTargets.push(eastBlueSign);
+    eastSideDoorHit.position.set(W / 2 + 2.0, 2.0, 2.4);
+    g.add(eastSideDoorHit);
+    this.sideDoorClickTargets.push(eastSideDoorHit);
 
     // Two side staircases (cửa hông trái x=-7.2 & phải x=+7.2) leading up onto the porch terrace
     for (const sx of [-7.2, 7.2]) {
@@ -4128,30 +4173,24 @@ export class VinhTrang3DWorld {
         ball.position.set(rx, 1.62, D / 2 + 2.65);
         g.add(ball);
       }
-      const doorPlaque = new THREE.Mesh(
-        new THREE.BoxGeometry(1.9, 0.44, 0.12),
-        new THREE.MeshStandardMaterial({
-          map: makeTextTex(sx > 0 ? 'CỬA HÔNG PHẢI' : 'CỬA HÔNG', {
-            w: 512,
-            h: 140,
-            bg: '#1C5A34',
-            border: '#FFD875',
-            color: '#FFF6E5',
-            size: 56
-          }),
-          roughness: 0.4
-        })
+      const sideDoor = new THREE.Mesh(new THREE.BoxGeometry(1.55, 2.75, 0.09), M.darkWood);
+      sideDoor.position.set(sx, 2.72, D / 2 + 0.22);
+      g.add(sideDoor);
+      const doorSeam = new THREE.Mesh(new THREE.BoxGeometry(0.035, 2.5, 0.045), M.goldAccent);
+      doorSeam.position.set(sx, 2.72, D / 2 + 0.29);
+      g.add(doorSeam);
+      for (const hx of [sx - 0.18, sx + 0.18]) {
+        const handle = new THREE.Mesh(new THREE.SphereGeometry(0.055, 8, 6), M.goldAccent);
+        handle.position.set(hx, 2.62, D / 2 + 0.34);
+        g.add(handle);
+      }
+      const doorHit = new THREE.Mesh(
+        new THREE.BoxGeometry(2.0, 3.2, 0.8),
+        new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false })
       );
-      doorPlaque.position.set(sx, 4.35, D / 2 + 0.42);
-      g.add(doorPlaque);
-
-      const portalGlow = new THREE.Mesh(
-        new THREE.PlaneGeometry(2.1, 3.1),
-        new THREE.MeshBasicMaterial({ color: 0xFFE3A6 })
-      );
-      portalGlow.position.set(sx, 2.8, D / 2 + 0.12);
-      g.add(portalGlow);
-      this.sideDoorClickTargets.push(portalGlow, doorPlaque);
+      doorHit.position.set(sx, 2.8, D / 2 + 0.18);
+      g.add(doorHit);
+      this.sideDoorClickTargets.push(doorHit);
     }
 
     const bodyH = 6.2;
@@ -4169,20 +4208,34 @@ export class VinhTrang3DWorld {
     const colXs = [-13.0, -11.0, -9.0, -7.0, -5.0, -3.2, -1.65, 1.65, 3.2, 5.0, 7.0, 9.0, 11.0, 13.0];
     for (let i = 0; i < colXs.length; i++) {
       const x = colXs[i];
-      const col = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.25, 4.3, 14), M.redColumn);
+      const col = new THREE.Mesh(new THREE.CylinderGeometry(0.19, 0.24, 4.3, 18), M.redColumn);
       col.position.set(x, 3.4, fz);
       col.castShadow = true;
       g.add(col);
-
-      const base = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.55, 0.62), M.goldAccent);
-      base.position.set(x, 1.52, fz);
-      g.add(base);
-
-      const cap = new THREE.Mesh(new THREE.BoxGeometry(0.64, 0.4, 0.64), M.goldAccent);
-      cap.position.set(x, 5.55, fz);
-      g.add(cap);
-
-      const pil = new THREE.Mesh(new THREE.BoxGeometry(0.3, 1.5, 0.3), M.goldLight);
+      const baseLower = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.2, 0.72), M.creamTrim);
+      baseLower.position.set(x, 1.38, fz);
+      g.add(baseLower);
+      const baseUpper = new THREE.Mesh(new THREE.CylinderGeometry(0.29, 0.34, 0.16, 16), M.goldAccent);
+      baseUpper.position.set(x, 1.56, fz);
+      g.add(baseUpper);
+      const baseCap = new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.12, 0.56), M.goldLight);
+      baseCap.position.set(x, 1.7, fz);
+      g.add(baseCap);
+      const capital = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.25, 0.24, 16), M.goldAccent);
+      capital.position.set(x, 5.58, fz);
+      g.add(capital);
+      const capitalTop = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.16, 0.72), M.creamTrim);
+      capitalTop.position.set(x, 5.78, fz);
+      g.add(capitalTop);
+      const capitalAbacus = new THREE.Mesh(new THREE.BoxGeometry(0.84, 0.12, 0.84), M.goldAccent);
+      capitalAbacus.position.set(x, 5.92, fz);
+      g.add(capitalAbacus);
+      for (let flute = -1; flute <= 1; flute++) {
+        const groove = new THREE.Mesh(new THREE.BoxGeometry(0.025, 3.35, 0.025), M.goldLight);
+        groove.position.set(x + flute * 0.075, 3.4, fz + 0.225);
+        g.add(groove);
+      }
+      const pil = new THREE.Mesh(new THREE.BoxGeometry(0.28, 1.35, 0.3), M.goldLight);
       pil.position.set(x, 6.62, fz - 0.12);
       g.add(pil);
 
@@ -4190,38 +4243,75 @@ export class VinhTrang3DWorld {
         const nextX = colXs[i + 1];
         const span = nextX - x;
         const cx = (x + nextX) / 2;
-        const archR = span * 0.47;
+        const openingW = Math.max(0.95, span - 0.42);
+        const openingR = openingW * 0.5;
+        const openingBase = 2.05;
+        const springY = 2.42;
         const isSideDoor = Math.abs(Math.abs(cx) - 8.0) < 0.35;
-
+        const isMainDoor = Math.abs(cx) < 0.2;
+        const archShape = new THREE.Shape();
+        archShape.moveTo(-openingR, 0);
+        archShape.lineTo(openingR, 0);
+        archShape.lineTo(openingR, springY);
+        archShape.absarc(0, springY, openingR, 0, Math.PI, false);
+        archShape.closePath();
+        const opening = new THREE.Mesh(new THREE.ShapeGeometry(archShape), M.darkOpening);
+        opening.position.set(cx, openingBase, fz - 0.18);
+        g.add(opening);
         const archOuter = new THREE.Mesh(
-          new THREE.TorusGeometry(archR, 0.16, 10, 20, Math.PI),
+          new THREE.TorusGeometry(openingR + 0.07, 0.11, 10, 28, Math.PI),
           M.creamTrim
         );
-        archOuter.position.set(cx, 4.65, fz);
+        archOuter.position.set(cx, openingBase + springY, fz + 0.035);
         g.add(archOuter);
-
         const archInner = new THREE.Mesh(
-          new THREE.TorusGeometry(archR - 0.17, 0.1, 8, 18, Math.PI),
-          M.redColumn
+          new THREE.TorusGeometry(Math.max(0.3, openingR - 0.08), 0.045, 8, 24, Math.PI),
+          M.goldAccent
         );
-        archInner.position.set(cx, 4.65, fz + 0.04);
+        archInner.position.set(cx, openingBase + springY, fz + 0.075);
         g.add(archInner);
-
-        if (!isSideDoor) {
-          const recess = new THREE.Mesh(
-            new THREE.BoxGeometry(span - 0.32, 3.2, 0.25),
-            M.darkOpening
-          );
-          recess.position.set(cx, 3.55, fz - 0.35);
-          g.add(recess);
-
-          const bal = new THREE.Mesh(new THREE.BoxGeometry(span - 0.18, 0.95, 0.32), M.creamTrim);
-          bal.position.set(cx, 1.78, fz - 0.05);
-          g.add(bal);
-          for (let gIdx = -0.45; gIdx <= 0.45; gIdx += 0.3) {
-            const bar = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 2.3, 6), M.goldAccent);
-            bar.position.set(cx + gIdx, 3.5, fz - 0.18);
+        for (const side of [-1, 1]) {
+          const jamb = new THREE.Mesh(new THREE.BoxGeometry(0.16, springY, 0.22), M.creamTrim);
+          jamb.position.set(cx + side * (openingR + 0.035), openingBase + springY * 0.5, fz + 0.03);
+          g.add(jamb);
+        }
+        if (isSideDoor || isMainDoor) {
+          const door = new THREE.Mesh(new THREE.ShapeGeometry(archShape.clone()), M.darkWood);
+          door.position.set(cx, openingBase, fz - 0.085);
+          g.add(door);
+          const seam = new THREE.Mesh(new THREE.BoxGeometry(0.045, 2.35, 0.055), M.goldAccent);
+          seam.position.set(cx, openingBase + 1.18, fz + 0.015);
+          g.add(seam);
+          for (const side of [-1, 1]) {
+            const panel = new THREE.Mesh(new THREE.BoxGeometry(openingR * 0.62, 1.35, 0.045), M.darkWood);
+            panel.position.set(cx + side * openingR * 0.48, openingBase + 1.28, fz + 0.02);
+            g.add(panel);
+            const handle = new THREE.Mesh(new THREE.SphereGeometry(0.055, 8, 6), M.goldAccent);
+            handle.position.set(cx + side * 0.13, openingBase + 1.12, fz + 0.09);
+            g.add(handle);
+          }
+        } else {
+          for (let barIndex = 0; barIndex < 5; barIndex++) {
+            const bx = cx - openingR * 0.72 + barIndex * (openingR * 1.44 / 4);
+            const bar = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 2.25, 6), ironwork);
+            bar.position.set(bx, openingBase + 1.22, fz + 0.055);
             g.add(bar);
+          }
+          for (let row = 0; row < 4; row++) {
+            const bar = new THREE.Mesh(new THREE.BoxGeometry(openingW * 0.84, 0.045, 0.055), ironwork);
+            bar.position.set(cx, openingBase + 0.5 + row * 0.54, fz + 0.06);
+            g.add(bar);
+          }
+          const grilleRosette = new THREE.Mesh(new THREE.TorusGeometry(0.17, 0.028, 6, 18), M.goldAccent);
+          grilleRosette.position.set(cx, openingBase + 1.7, fz + 0.09);
+          g.add(grilleRosette);
+          const sill = new THREE.Mesh(new THREE.BoxGeometry(openingW + 0.22, 0.16, 0.38), M.creamTrim);
+          sill.position.set(cx, 1.94, fz + 0.12);
+          g.add(sill);
+          for (let bal = -2; bal <= 2; bal++) {
+            const baluster = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.035, 0.46, 6), M.creamTrim);
+            baluster.position.set(cx + bal * (openingW / 5.2), 1.7, fz + 0.12);
+            g.add(baluster);
           }
         }
       }
@@ -4260,73 +4350,109 @@ export class VinhTrang3DWorld {
     cornice2.position.set(0, 7.95, 0);
     g.add(cornice2);
 
-    // Ornate Ceramic Mosaic Relief Panels across the bays (bright cream + pastel ceramic sky-blue + gold)
-    const pastelCeramic = new THREE.MeshStandardMaterial({ color: 0x5282B8, roughness: 0.45 });
-    for (let bi = -3; bi <= 3; bi++) {
-      const bx = bi * 3.5;
-      const frame = new THREE.Mesh(new THREE.BoxGeometry(2.85, 0.92, 0.34), M.creamTrim);
+    // Recessed ceramic panels with small rosettes, inspired by the real sành-sứ and coloured-tile work.
+    const pastelCeramic = new THREE.MeshStandardMaterial({ color: 0x4D879E, roughness: 0.42, metalness: 0.08 });
+    const jadeCeramic = new THREE.MeshStandardMaterial({ color: 0x3F7865, roughness: 0.44, metalness: 0.06 });
+    for (let bi = -4; bi <= 4; bi++) {
+      const bx = bi * 2.9;
+      const frame = new THREE.Mesh(new THREE.BoxGeometry(2.48, 0.94, 0.34), M.creamTrim);
       frame.position.set(bx, 6.65, fz + 0.25);
       g.add(frame);
-      const inlay = new THREE.Mesh(new THREE.BoxGeometry(2.45, 0.64, 0.38), pastelCeramic);
-      inlay.position.set(bx, 6.65, fz + 0.27);
+      const inlay = new THREE.Mesh(new THREE.BoxGeometry(2.12, 0.66, 0.12), bi % 2 === 0 ? pastelCeramic : jadeCeramic);
+      inlay.position.set(bx, 6.65, fz + 0.46);
       g.add(inlay);
-      const floral = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.32, 0.42), M.goldAccent);
-      floral.position.set(bx, 6.65, fz + 0.29);
-      g.add(floral);
+      const rosette = new THREE.Mesh(new THREE.TorusGeometry(0.25, 0.055, 8, 20), M.goldAccent);
+      rosette.position.set(bx, 6.65, fz + 0.55);
+      g.add(rosette);
+      const core = new THREE.Mesh(new THREE.SphereGeometry(0.12, 10, 8), M.creamTrim);
+      core.scale.set(1, 1, 0.28);
+      core.position.set(bx, 6.65, fz + 0.57);
+      g.add(core);
+      for (let petal = 0; petal < 8; petal++) {
+        const angle = petal * Math.PI / 4;
+        const leaf = new THREE.Mesh(new THREE.SphereGeometry(0.085, 8, 6), M.goldAccent);
+        leaf.scale.set(0.62, 1.55, 0.32);
+        leaf.position.set(bx + Math.cos(angle) * 0.31, 6.65 + Math.sin(angle) * 0.31, fz + 0.56);
+        leaf.rotation.z = angle - Math.PI / 2;
+        g.add(leaf);
+      }
+    }
+    for (let tile = -13; tile <= 13; tile++) {
+      const diamond = new THREE.Mesh(
+        new THREE.BoxGeometry(0.28, 0.28, 0.09),
+        tile % 3 === 0 ? jadeCeramic : tile % 3 === 1 ? pastelCeramic : M.mosaicRed
+      );
+      diamond.rotation.z = Math.PI / 4;
+      diamond.position.set(tile * 1.0, 7.55, fz + 0.48);
+      g.add(diamond);
     }
 
-    // Refined traditional gold-on-crimson plaque tucked above central archway
-    const mainSignTex = makeTextTex('CHÙA VĨNH TRÀNG', {
-      w: 1536,
-      h: 320,
-      bg: '#5C1610',
-      border: '#FFD86B',
-      color: '#FFF2B2',
-      size: 130
-    });
-    const mainSign = new THREE.Mesh(
-      new THREE.BoxGeometry(3.2, 0.66, 0.36),
-      new THREE.MeshStandardMaterial({
-        map: mainSignTex,
-        roughness: 0.28,
-        emissive: 0x3A1808,
-        emissiveIntensity: 0.22
-      })
-    );
-    mainSign.position.set(0, 5.42, fz + 0.36);
-    g.add(mainSign);
-
-    // 3 Stepped Baroque-Khmer Pediment Towers (Left [-8.5], Center [0], Right [8.5])
-    for (const [gx, gw, gh, tiers] of [
-      [-8.5, 5.4, 2.8, 2],
-      [0, 7.8, 4.2, 3],
-      [8.5, 5.4, 2.8, 2]
+    // Three sculpted gables: a taller central crown and two lower side crowns.
+    for (const [gx, gw, gh] of [
+      [-8.5, 5.4, 2.8],
+      [0, 7.8, 4.2],
+      [8.5, 5.4, 2.8]
     ]) {
-      for (let t = 0; t < tiers; t++) {
-        const tw = gw * (1 - t * 0.24);
-        const th = (gh / tiers) * 1.05;
-        const ty = 8.2 + t * (gh / tiers) + th / 2;
-        const ped = new THREE.Mesh(new THREE.BoxGeometry(tw, th, 1.15 - t * 0.12), M.goldLight);
-        ped.position.set(gx, ty, D / 2 - 0.3);
-        g.add(ped);
+      const baseY = 8.2;
+      const faceZ = D / 2 - 0.28;
+      const pedimentShape = new THREE.Shape();
+      pedimentShape.moveTo(-gw / 2, 0);
+      pedimentShape.lineTo(-gw / 2 + 0.38, gh * 0.54);
+      pedimentShape.quadraticCurveTo(0, gh * 1.16, gw / 2 - 0.38, gh * 0.54);
+      pedimentShape.lineTo(gw / 2, 0);
+      pedimentShape.closePath();
+      const pediment = new THREE.Mesh(new THREE.ShapeGeometry(pedimentShape), M.goldLight);
+      pediment.position.set(gx, baseY, faceZ);
+      pediment.castShadow = true;
+      g.add(pediment);
 
-        const trim = new THREE.Mesh(
-          new THREE.BoxGeometry(tw + 0.45, 0.26, 1.28 - t * 0.1),
-          M.creamTrim
-        );
-        trim.position.set(gx, ty + th / 2, D / 2 - 0.3);
-        g.add(trim);
+      const innerShape = new THREE.Shape();
+      innerShape.moveTo(-gw * 0.34, 0.18);
+      innerShape.lineTo(-gw * 0.28, gh * 0.48);
+      innerShape.quadraticCurveTo(0, gh * 0.96, gw * 0.28, gh * 0.48);
+      innerShape.lineTo(gw * 0.34, 0.18);
+      innerShape.closePath();
+      const inlay = new THREE.Mesh(new THREE.ShapeGeometry(innerShape), pastelCeramic);
+      inlay.position.set(gx, baseY + 0.04, faceZ + 0.045);
+      g.add(inlay);
 
-        const inl = new THREE.Mesh(
-          new THREE.BoxGeometry(tw * 0.56, th * 0.48, 1.22 - t * 0.1),
-          pastelCeramic
+      const crestCurve = new THREE.CatmullRomCurve3([
+        new THREE.Vector3(gx - gw / 2, baseY + 0.02, faceZ + 0.11),
+        new THREE.Vector3(gx - gw / 2 + 0.38, baseY + gh * 0.54, faceZ + 0.11),
+        new THREE.Vector3(gx, baseY + gh * 1.16, faceZ + 0.11),
+        new THREE.Vector3(gx + gw / 2 - 0.38, baseY + gh * 0.54, faceZ + 0.11),
+        new THREE.Vector3(gx + gw / 2, baseY + 0.02, faceZ + 0.11)
+      ]);
+      const crestTrim = new THREE.Mesh(new THREE.TubeGeometry(crestCurve, 36, 0.075, 8, false), M.creamTrim);
+      g.add(crestTrim);
+
+      const medallion = new THREE.Mesh(
+        new THREE.TorusGeometry(gx === 0 ? 0.62 : 0.38, 0.075, 8, 24),
+        M.goldAccent
+      );
+      medallion.position.set(gx, baseY + gh * 0.47, faceZ + 0.16);
+      g.add(medallion);
+      const medallionCore = new THREE.Mesh(
+        new THREE.SphereGeometry(gx === 0 ? 0.25 : 0.16, 12, 10),
+        jadeCeramic
+      );
+      medallionCore.scale.set(1, 1, 0.28);
+      medallionCore.position.copy(medallion.position);
+      g.add(medallionCore);
+      for (let petal = 0; petal < 8; petal++) {
+        const angle = petal * Math.PI / 4;
+        const leaf = new THREE.Mesh(new THREE.SphereGeometry(0.11, 8, 6), M.goldAccent);
+        leaf.scale.set(0.62, 1.5, 0.32);
+        leaf.position.set(
+          gx + Math.cos(angle) * (gx === 0 ? 0.42 : 0.25),
+          baseY + gh * 0.47 + Math.sin(angle) * (gx === 0 ? 0.42 : 0.25),
+          faceZ + 0.18
         );
-        inl.position.set(gx, ty, D / 2 - 0.28);
-        g.add(inl);
+        leaf.rotation.z = angle - Math.PI / 2;
+        g.add(leaf);
       }
-
-      const spire = new THREE.Mesh(new THREE.ConeGeometry(0.42, 1.45, 8), M.goldAccent);
-      spire.position.set(gx, 8.2 + gh + 0.75, D / 2 - 0.3);
+      const spire = new THREE.Mesh(new THREE.ConeGeometry(gx === 0 ? 0.28 : 0.2, gx === 0 ? 1.0 : 0.72, 10), M.goldAccent);
+      spire.position.set(gx, baseY + gh + (gx === 0 ? 0.5 : 0.36), faceZ);
       g.add(spire);
     }
 
@@ -4339,6 +4465,26 @@ export class VinhTrang3DWorld {
     roof2.position.set(0, 11.2, -0.5);
     roof2.castShadow = true;
     g.add(roof2);
+
+    const ridgeMaterial = new THREE.MeshStandardMaterial({ color: 0x783D30, roughness: 0.72 });
+    const lowerRidge = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, W + 1.0, 12), ridgeMaterial);
+    lowerRidge.rotation.z = Math.PI / 2;
+    lowerRidge.position.set(0, 10.72, -0.3);
+    g.add(lowerRidge);
+    const upperRidge = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, W - 4.8, 12), ridgeMaterial);
+    upperRidge.rotation.z = Math.PI / 2;
+    upperRidge.position.set(0, 12.34, -0.5);
+    g.add(upperRidge);
+    for (const side of [-1, 1]) {
+      for (const roofZ of [-D / 2 - 0.65, D / 2 + 0.65]) {
+        const eaveFinial = new THREE.Mesh(new THREE.SphereGeometry(0.17, 10, 8), M.goldAccent);
+        eaveFinial.position.set(side * (W / 2 + 0.8), 9.85, roofZ);
+        g.add(eaveFinial);
+        const finialTip = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.52, 8), M.goldAccent);
+        finialTip.position.set(side * (W / 2 + 0.8), 10.18, roofZ);
+        g.add(finialTip);
+      }
+    }
 
     for (const tx of [-15.6, 15.6]) {
       const tBase = new THREE.Mesh(new THREE.BoxGeometry(3.6, 7.6, 3.6), M.goldWall);
