@@ -2764,7 +2764,7 @@ export class VinhTrang3DWorld {
     const buildMainTempleCompound = () => {
       const comp = new THREE.Group();
       const centerX = 25.0;
-      const frontZ = 11.6;
+      const frontZ = 7.15;
       const rearZ = -82.0;
       const totalDepth = frontZ - rearZ;
       const centerZ = (frontZ + rearZ) * 0.5;
@@ -2806,7 +2806,7 @@ export class VinhTrang3DWorld {
 
       // The east and west covered galleries run beside all four halls and both skywells.
       const galleryZones = [
-        { z: -5.3, depth: 33.8 },
+        { z: -7.525, depth: 29.35 },
         { z: -30.5, depth: 16.6 },
         { z: -45.9, depth: 14.2 },
         { z: -60.75, depth: 15.5 },
@@ -2833,7 +2833,7 @@ export class VinhTrang3DWorld {
         // Timber columns at both gallery edges, spaced along the whole longitudinal axis.
         for (const edge of [-1, 1]) {
           const colX = sideX + edge * 1.55;
-          for (let z = 8.0; z >= -80.0; z -= 4.0) {
+          for (let z = 6.0; z >= -80.0; z -= 4.0) {
             const base = new THREE.Mesh(
               new THREE.BoxGeometry(0.46, 0.22, 0.46), M.creamTrim
             );
@@ -2863,7 +2863,7 @@ export class VinhTrang3DWorld {
         );
         rail.position.set(edgeX, 1.55, centerZ);
         comp.add(rail);
-        for (let z = 8.0; z >= -78.0; z -= 2.0) {
+        for (let z = 6.0; z >= -78.0; z -= 2.0) {
           const baluster = new THREE.Mesh(
             new THREE.CylinderGeometry(0.035, 0.045, 0.54, 6), M.creamTrim
           );
