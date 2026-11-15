@@ -13,8 +13,8 @@
  *    - Self-generated procedural canvas textures (<=1024px): stone paving with mortar lines, terracotta roof tiles,
  *      leaf clusters, Buddhist 5-stripe flag, and high-DPI plaques ("CHÙA VĨNH TRÀNG").
  * 2. SỬA MẶT TIỀN & TƯỢNG:
- *    - 13-arch Chánh Điện at (23, 0, -1) with red columns, golden lattice grilles, upper cream frieze,
- *      cobalt mosaic band, 2-tier #7C4030 roof, 5-step staircase, two bell/drum towers, and bonsai pots.
+ *    - 13-arch Chánh Điện with Roman arches, iron grilles, carved red columns, ceramic mosaic gables,
+ *      hipped terracotta roofs, a 7-step central stair, side entries, two bell/drum towers, and bonsai pots.
  *    - Real sculpted GLB Buddha statues from /Mô hình 3D Vĩnh Tràng/Tượng/ (NEVER primitive spheres/cones):
  *      phat-dung-adida.glb, di-lac.glb, phat-nam.glb, phat-ngoi-ban-tho.glb (with 300x300 "Ground" removed).
  * 3. SỬA DI CHUYỂN & SANSA AUTO-WALK:
@@ -4137,7 +4137,7 @@ export class VinhTrang3DWorld {
       }
     }
 
-    // East Wing Side Porch & Iconic Blue Sign "TỔ ĐÌNH VĨNH TRÀNG" facing Right Pathway (image_97204806.png)
+    // East Wing Side Porch and unobtrusive side-door access facing the right courtyard path.
     const eastPorchRoof = makeHippedRoofMesh(4.4, 5.2, 1.35, M.roofTile);
     eastPorchRoof.position.set(W / 2 + 1.85, 4.65, 2.4);
     g.add(eastPorchRoof);
@@ -4317,7 +4317,7 @@ export class VinhTrang3DWorld {
       }
     }
 
-    // Center sanctuary shuttered traditional doors (veneration niche visible behind balustrades)
+    // Center sanctuary double-leaf timber doors with a recessed veneration niche behind them.
     const innerGlow = new THREE.Mesh(
       new THREE.PlaneGeometry(3.6, 4.0),
       new THREE.MeshBasicMaterial({ color: 0x6A3A14 })
@@ -4512,9 +4512,10 @@ export class VinhTrang3DWorld {
       g.add(b);
     }
 
-    this.addRectObstacle(9.5, 13.8, -6.5, 8.2);
-    this.addRectObstacle(17.8, 28.2, -6.5, 8.2);
-    this.addRectObstacle(32.2, 36.5, -6.5, 8.2);
+    // Keep the front stair landings walkable; colliders begin behind the lowest stair tread.
+    this.addRectObstacle(9.5, 13.8, -6.5, 7.75);
+    this.addRectObstacle(17.8, 28.2, -6.5, 7.75);
+    this.addRectObstacle(32.2, 36.5, -6.5, 7.75);
     this.addRectObstacle(9.5, 36.5, -6.5, 0.5);
     return g;
   }
