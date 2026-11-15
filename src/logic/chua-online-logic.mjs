@@ -104,7 +104,7 @@ export const PILGRIMAGE_STATIONS = [
     mapCoord: { x: 32, y: 62 },
     lookAt: { x: -24.5, y: 9.0, z: 4.0 },
     audio: 's4_dilac.mp3',
-    subtitle: 'Đại tượng Phật Di Lặc an tọa nơi công viên bên hông phía Tây, hướng mặt ra quảng trường cây kiểng và bệ đá bậc thang.',
+    subtitle: 'Tượng Phật Di Lặc cao 20m, dáng ngồi uy nghi trên đài cao; khu tượng nằm bên hông phía Tây, hướng ra quảng trường cây kiểng và bậc thang rộng.',
     ritualType: 'le_phat'
   },
   {
