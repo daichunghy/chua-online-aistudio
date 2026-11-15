@@ -8689,9 +8689,10 @@ export class VinhTrang3DWorld {
         hand: 'beads',
         speed: 0.96,
         pts: [
-          wp(-7.8, 19.0, 'pass'),
+          wp(-8.0, 42.0, 'pass'),
           wp(-5.0, 28.0, 'chap_tay', 3.8, 0.0, 16.5),
-          wp(-2.5, 6.0, 'pass')
+          wp(-8.0, 28.0, 'pass'),
+          wp(-8.0, 6.0, 'pass')
         ]
       },
       {
