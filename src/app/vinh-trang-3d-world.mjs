@@ -3292,14 +3292,20 @@ export class VinhTrang3DWorld {
     this.lotusBloomState.burstRing = bloomRing;
 
     const burnerAdida = this.buildIncenseBurner(0.75);
-    burnerAdida.position.set(-8.0, 0, -17.5);
+    burnerAdida.position.set(-8.0, 0, 25.2);
     this.exteriorGroup.add(burnerAdida);
-    this.addObstacle(-8.0, -17.5, 0.9);
+    this.addObstacle(-8.0, 25.2, 0.9);
 
     // Incense burner centered at Di Lặc stepped staircase
     const burnerDiLac = this.buildIncenseBurner(0.78);
     burnerDiLac.position.set(-24.5, 1.72, 17.2);
     this.exteriorGroup.add(burnerDiLac);
+
+    // Incense burner in front of the reclining Buddha's inscribed granite terrace.
+    const burnerNietBan = this.buildIncenseBurner(0.68);
+    burnerNietBan.position.set(-30.5, 0, -29.8);
+    this.exteriorGroup.add(burnerNietBan);
+    this.addObstacle(-30.5, -29.8, 0.82);
 
     // Incense burner beside Đài Quán Thế Âm on the RIGHT side pathway
     const burnerQuanAm = this.buildIncenseBurner(0.62);
@@ -3310,9 +3316,10 @@ export class VinhTrang3DWorld {
     const cushionCoords = [
       [21.4, 13.4, Math.PI],
       [24.6, 13.4, Math.PI],
-      [-8.0, -16.0, Math.PI],
+      [-8.0, 30.5, Math.PI],
       [-24.5, 21.8, Math.PI],
-      [35.2, 22.5, -Math.PI / 2]
+      [35.2, 22.5, -Math.PI / 2],
+      [-30.5, -27.5, Math.PI]
     ];
     for (const [kx, kz, kyaw] of cushionCoords) {
       const c = this.makeKneelingCushion();
@@ -4735,9 +4742,9 @@ export class VinhTrang3DWorld {
   buildStatuePedestals() {
     const M = this.MAT;
 
-    // 1. Đại Tượng Phật A Di Đà (North head of Central Avenue in front of 7-tier Bảo Tháp, facing South!)
+    // 1. Đại Tượng Phật A Di Đà — front garden on the west side of the main approach, facing South toward Tam Quan.
     this.adidaGroup = new THREE.Group();
-    this.adidaGroup.position.set(-8.0, 0, -25.0);
+    this.adidaGroup.position.set(-8.0, 0, 16.5);
     const adidaTerrace = new THREE.Mesh(
       new THREE.CylinderGeometry(6.8, 7.4, 0.36, 16),
       M.stoneLight
@@ -4749,7 +4756,7 @@ export class VinhTrang3DWorld {
     const adidaFrontSign = new THREE.Mesh(
       new THREE.BoxGeometry(4.6, 0.85, 0.16),
       new THREE.MeshStandardMaterial({
-        map: makeTextTex('ĐẠI TƯỢNG PHẬT A DI ĐÀ (CAO 24M)', { w: 1024, h: 200, size: 52 })
+        map: makeTextTex('ĐẠI TƯỢNG PHẬT A DI ĐÀ · 25M', { w: 1024, h: 200, size: 52 })
       })
     );
     adidaFrontSign.position.set(0, 0.85, 5.4);
@@ -4771,12 +4778,13 @@ export class VinhTrang3DWorld {
       this.adidaGroup.add(t);
     }
     this.exteriorGroup.add(this.adidaGroup);
-    this.addObstacle(-8.0, -25.0, 5.4);
+    this.addObstacle(-8.0, 16.5, 6.2);
 
     // 2. Đại Tượng Phật Di Lặc (Seated on West Terrace facing South onto the wide Arhat Garden Plaza)
     this.dilacGroup = new THREE.Group();
     this.dilacGroup.position.set(-24.5, 0, 4.0);
-    const dilacTerrace = new THREE.Mesh(new THREE.BoxGeometry(16.8, 4.1, 18.2), M.stoneLight);
+    const dilacTerraceMat = new THREE.MeshStandardMaterial({ color: 0x9B4B35, roughness: 0.82 });
+    const dilacTerrace = new THREE.Mesh(new THREE.BoxGeometry(29.0, 4.1, 20.0), dilacTerraceMat);
     dilacTerrace.position.set(0, 2.05, 1.8);
     dilacTerrace.receiveShadow = true;
     dilacTerrace.castShadow = true;
@@ -4784,34 +4792,34 @@ export class VinhTrang3DWorld {
 
     for (let st = 0; st < 7; st++) {
       const step = new THREE.Mesh(
-        new THREE.BoxGeometry(11.6, 0.25, 0.48),
+        new THREE.BoxGeometry(18.0, 0.48, 0.62),
         st % 2 === 0 ? M.stoneLight : M.creamTrim
       );
-      step.position.set(0, 0.125 + st * 0.25, 16.5 - st * 0.42);
+      step.position.set(0, 0.24 + st * 0.55, 16.5 - st * 0.42);
       step.receiveShadow = true;
       this.dilacGroup.add(step);
     }
-    const stairLanding = new THREE.Mesh(new THREE.BoxGeometry(16.0, 1.72, 3.6), M.creamTrim);
-    stairLanding.position.set(0, 0.86, 12.3);
+    const stairLanding = new THREE.Mesh(new THREE.BoxGeometry(24.0, 0.6, 3.6), M.creamTrim);
+    stairLanding.position.set(0, 3.8, 12.3);
     stairLanding.receiveShadow = true;
     this.dilacGroup.add(stairLanding);
 
     const railMetal = new THREE.MeshStandardMaterial({ color: 0xD8DCE2, metalness: 0.85, roughness: 0.18 });
-    for (const hx of [-5.6, 5.6]) {
+    for (const hx of [-8.5, 8.5]) {
       const postBot = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.9, 8), railMetal);
-      postBot.position.set(hx, 0.45, 16.6);
+      postBot.position.set(hx, 0.58, 16.6);
       this.dilacGroup.add(postBot);
       const postTop = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.9, 8), railMetal);
-      postTop.position.set(hx, 2.15, 13.7);
+      postTop.position.set(hx, 3.55, 12.8);
       this.dilacGroup.add(postTop);
-      const railBar = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 3.45, 8), railMetal);
-      railBar.position.set(hx, 1.65, 15.15);
-      railBar.rotation.x = Math.PI / 2 - 0.5;
+      const railBar = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 4.65, 8), railMetal);
+      railBar.position.set(hx, 2.05, 14.7);
+      railBar.rotation.x = Math.PI / 2 - 0.62;
       this.dilacGroup.add(railBar);
     }
 
     const dilacBlackBand = new THREE.Mesh(
-      new THREE.BoxGeometry(16.0, 1.25, 0.34),
+      new THREE.BoxGeometry(26.0, 1.25, 0.34),
       new THREE.MeshStandardMaterial({
         map: makeTextTex('當 來 彌 勒 大 佛', {
           w: 1400,
@@ -4828,7 +4836,7 @@ export class VinhTrang3DWorld {
     this.dilacGroup.add(dilacBlackBand);
 
     const dilacRedBand = new THREE.Mesh(
-      new THREE.BoxGeometry(16.0, 1.0, 0.38),
+      new THREE.BoxGeometry(26.0, 1.0, 0.38),
       new THREE.MeshStandardMaterial({
         map: makeTextTex('NAM MÔ ĐƯƠNG LAI DI LẶC TÔN PHẬT', {
           w: 1500,
@@ -4845,7 +4853,7 @@ export class VinhTrang3DWorld {
     this.dilacGroup.add(dilacRedBand);
 
     this.exteriorGroup.add(this.dilacGroup);
-    this.addRectObstacle(-33.0, -16.0, -2.5, 16.2);
+    this.addRectObstacle(-39.0, -10.0, -4.5, 16.2);
 
     // West Arhat Garden Plaza Statues & Manicured Round Shrubs flanking Di Lặc Courtyard (image_97204806.png left)
     for (const wx of [-36.2, -13.2]) {
@@ -4873,16 +4881,16 @@ export class VinhTrang3DWorld {
       }
     }
 
-    // 3. Đại Tượng Phật Niết Bàn (North-Right Garden behind Monastic Hall, facing South — image_97204806.png)
+    // 3. Đại Tượng Phật Niết Bàn — rear-west garden, beside the seven-tier stupa and near Di Lặc.
     this.nietBanGroup = new THREE.Group();
-    this.nietBanGroup.position.set(12, 0, -38);
-    const nbTerrace = new THREE.Mesh(new THREE.BoxGeometry(29.5, 0.36, 11.2), M.stoneLight);
+    this.nietBanGroup.position.set(-30.5, 0, -38);
+    const nbTerrace = new THREE.Mesh(new THREE.BoxGeometry(33.0, 0.36, 13.5), M.stoneDark);
     nbTerrace.position.y = 0.18;
     nbTerrace.receiveShadow = true;
     this.nietBanGroup.add(nbTerrace);
 
     const nbSign = new THREE.Mesh(
-      new THREE.BoxGeometry(10.5, 1.15, 0.18),
+      new THREE.BoxGeometry(30.0, 1.15, 0.18),
       new THREE.MeshStandardMaterial({
         map: makeTextTex('NAM MÔ BỔN SƯ THÍCH CA MÂU NI PHẬT', {
           w: 1400,
@@ -4894,10 +4902,10 @@ export class VinhTrang3DWorld {
         })
       })
     );
-    nbSign.position.set(0, 1.1, 5.75);
+    nbSign.position.set(0, 1.1, 6.9);
     this.nietBanGroup.add(nbSign);
     this.exteriorGroup.add(this.nietBanGroup);
-    this.addRectObstacle(-2.0, 26.0, -43.5, -32.5);
+    this.addRectObstacle(-47.0, -14.0, -44.8, -31.2);
 
     // 4. Đài Quán Thế Âm Bồ Tát (Beside RIGHT bougainvillea side pathway at (32.8, 0, 22.5) facing +X!)
     this.quanAmGroup = new THREE.Group();
@@ -6669,20 +6677,21 @@ export class VinhTrang3DWorld {
       const bLotus = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.56, 0.36, 14), M.redColumn);
       bLotus.position.y = 0.18;
       bGroup.add(bLotus);
-      const bRobe = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.42, 1.85, 12), goldLeafMat);
-      bRobe.position.y = 1.28;
+      const bRobe = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.36, 1.35, 16), goldLeafMat);
+      bRobe.position.y = 1.0;
       bGroup.add(bRobe);
-      const bHead = new THREE.Mesh(new THREE.SphereGeometry(0.21, 12, 10), goldLeafMat);
-      bHead.position.y = 2.42;
+      const bHead = new THREE.Mesh(new THREE.SphereGeometry(0.18, 16, 12), goldLeafMat);
+      bHead.scale.set(0.92, 1.12, 0.92);
+      bHead.position.y = 1.92;
       bGroup.add(bHead);
-      const bCrown = new THREE.Mesh(new THREE.ConeGeometry(0.14, 0.28, 8), new THREE.MeshStandardMaterial({ color: crownCol, metalness: 0.6, roughness: 0.25 }));
-      bCrown.position.y = 2.72;
+      const bCrown = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.2, 10), new THREE.MeshStandardMaterial({ color: crownCol, metalness: 0.6, roughness: 0.25 }));
+      bCrown.position.y = 2.16;
       bGroup.add(bCrown);
       const bHalo = new THREE.Mesh(
         new THREE.RingGeometry(0.32, 0.4, 20),
         new THREE.MeshBasicMaterial({ color: 0xFFE684, side: THREE.DoubleSide })
       );
-      bHalo.position.set(0, 2.44, -0.14);
+      bHalo.position.set(0, 1.95, -0.14);
       bGroup.add(bHalo);
       this.tamBaoAltarGroup.add(bGroup);
     }
@@ -7572,7 +7581,7 @@ export class VinhTrang3DWorld {
       const s = this.cleanStatueScene(adidaGltf.scene, null);
       const box = new THREE.Box3().setFromObject(s);
       const h = Math.max(0.1, box.max.y - box.min.y);
-      const scale = 22.5 / h;
+      const scale = 25.0 / h;
       s.scale.setScalar(scale);
       const box2 = new THREE.Box3().setFromObject(s);
       s.position.set(
@@ -7589,12 +7598,12 @@ export class VinhTrang3DWorld {
       const s = this.cleanStatueScene(dilacGltf.scene, null);
       const box = new THREE.Box3().setFromObject(s);
       const h = Math.max(0.1, box.max.y - box.min.y);
-      const scale = 19.5 / h;
+      const scale = 20.0 / h;
       s.scale.setScalar(scale);
       const box2 = new THREE.Box3().setFromObject(s);
       s.position.set(
         -(box2.min.x + box2.max.x) / 2,
-        1.55 - box2.min.y,
+        4.15 - box2.min.y,
         -(box2.min.z + box2.max.z) / 2 - 2.4
       );
       s.rotation.y = Math.PI * 0.78;
@@ -7606,7 +7615,7 @@ export class VinhTrang3DWorld {
       const s = this.cleanStatueScene(phatNamGltf.scene, null);
       const box = new THREE.Box3().setFromObject(s);
       const w = Math.max(0.1, box.max.x - box.min.x, box.max.z - box.min.z);
-      const scale = 31.5 / w;
+      const scale = 32.0 / w;
       s.scale.setScalar(scale);
       const box2 = new THREE.Box3().setFromObject(s);
       s.position.set(
@@ -7623,7 +7632,7 @@ export class VinhTrang3DWorld {
       const s = this.cleanStatueScene(banThoGltf.scene, null);
       const box = new THREE.Box3().setFromObject(s);
       const h = Math.max(0.1, box.max.y - box.min.y);
-      const scale = 4.8 / h;
+      const scale = 2.6 / h;
       s.scale.setScalar(scale);
       const box2 = new THREE.Box3().setFromObject(s);
       s.position.set(
@@ -7898,9 +7907,10 @@ export class VinhTrang3DWorld {
   initSmokeColumns() {
     const origins = [
       new THREE.Vector3(23.0, 1.32, 12.0),
-      new THREE.Vector3(-8.0, 1.15, -17.5),
+      new THREE.Vector3(-8.0, 1.15, 25.2),
       new THREE.Vector3(-24.5, 2.85, 17.2),
-      new THREE.Vector3(34.5, 0.98, 22.5)
+      new THREE.Vector3(34.5, 0.98, 22.5),
+      new THREE.Vector3(-30.5, 0.98, -29.8)
     ];
     for (const orig of origins) {
       const sc = new SmokeColumn(orig, 42, 0.26, 3.4);
@@ -8450,9 +8460,10 @@ export class VinhTrang3DWorld {
     const kneelSpots = [
       { charKey: 'nu', x: 21.4, z: 13.4, yaw: Math.PI, tint: [0.76, 0.64, 0.72] },
       { charKey: 'nam', x: 24.6, z: 13.4, yaw: Math.PI, monkTone: 0 },
-      { charKey: 'nu', x: -8.0, z: -16.0, yaw: Math.PI, tint: [0.80, 0.72, 0.62] },
+      { charKey: 'nu', x: -8.0, z: 30.5, yaw: Math.PI, tint: [0.80, 0.72, 0.62] },
       { charKey: 'nam', x: -24.5, z: 17.5, yaw: Math.PI, monkTone: 1 },
       { charKey: 'nu', x: 35.2, z: 22.5, yaw: -Math.PI / 2, tint: [0.85, 0.70, 0.76] },
+      { charKey: 'nam', x: -30.5, z: -27.5, yaw: Math.PI, monkTone: 2 },
       { charKey: 'nu', x: 22.0, z: -49.5, yaw: Math.PI, tint: [0.68, 0.76, 0.84] }
     ];
     for (const ks of kneelSpots) {
@@ -8673,8 +8684,8 @@ export class VinhTrang3DWorld {
         speed: 0.96,
         pts: [
           wp(-2.0, 19.0, 'pass'),
-          wp(-2.0, -5.0, 'pass'),
-          wp(-7.8, -14.5, 'chap_tay', 3.8, -8.0, -25.0),
+          wp(12.0, 28.0, 'pass'),
+          wp(-7.8, 28.0, 'chap_tay', 3.8, -8.0, 16.5),
           wp(-2.5, 6.0, 'pass')
         ]
       },
@@ -8752,10 +8763,10 @@ export class VinhTrang3DWorld {
         hand: 'nhang',
         speed: 1.02,
         pts: [
-          wp(22.0, -47.5, 'chap_tay', 3.4, 22.0, -58.0),
-          wp(36.0, -45.5, 'pass'),
-          wp(12.0, -24.5, 'chap_tay', 3.2, 12.0, -38.0),
-          wp(4.0, -45.5, 'pass')
+          wp(-22.0, -47.5, 'pass'),
+          wp(-30.5, -27.5, 'chap_tay', 3.2, -30.5, -38.0),
+          wp(-42.0, -45.5, 'pass'),
+          wp(-20.0, -45.5, 'pass')
         ]
       },
       {
@@ -9610,13 +9621,13 @@ export class VinhTrang3DWorld {
     const isAdidaPlaza =
       !this.inInterior &&
       (this.currentStationId === 2 ||
-        Math.hypot(this.playerState.x - -8.0, this.playerState.z - -15.5) < 9.5);
+        Math.hypot(this.playerState.x - -8.0, this.playerState.z - 27.5) < 9.5);
     const isMonumental =
       !this.inInterior &&
       ([2, 3, 8].includes(this.currentStationId) ||
         isAdidaPlaza ||
         Math.hypot(this.playerState.x - -24.5, this.playerState.z - 22.0) < 8.0 ||
-        Math.hypot(this.playerState.x - 12.0, this.playerState.z - -27.5) < 8.5);
+        Math.hypot(this.playerState.x - -30.5, this.playerState.z - -27.5) < 8.5);
 
     const transitionPull = this.interiorTransition?.phase === 'climb_side_door' ? 2.1 : 0;
     const camDist = this.inInterior
