@@ -200,10 +200,16 @@ export function applyCharacterOutfit(model, outfitId = 'ao_trang_phat_tu', fallb
   const bounds = new THREE.Box3().setFromObject(model);
   const size = new THREE.Vector3();
   bounds.getSize(size);
-  const height = Math.max(0.2, size.y);
-  const baseY = bounds.min.y - model.position.y;
-  const frontZ = Math.max(0.06 * (height / 1.65), (bounds.max.z - model.position.z) * 0.78);
-  const details = makeOutfitDetails(preset, height, baseY, frontZ);
+  const worldHeight = Math.max(0.2, size.y);
+  const scaleY = Math.max(0.001, Math.abs(model.scale?.y || 1));
+  const scaleZ = Math.max(0.001, Math.abs(model.scale?.z || 1));
+  const localHeight = worldHeight / scaleY;
+  const baseY = (bounds.min.y - model.position.y) / scaleY;
+  const frontZ = Math.max(
+    0.06 * (localHeight / 1.65),
+    ((bounds.max.z - model.position.z) / scaleZ) * 0.78
+  );
+  const details = makeOutfitDetails(preset, localHeight, baseY, frontZ);
   model.add(details);
   return preset;
 }
