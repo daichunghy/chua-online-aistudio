@@ -711,6 +711,17 @@ export class VinhTrang3DWorld {
     }
   }
 
+  disposeRoadTrafficVehicle(vehicle) {
+    if (!vehicle?.group) return;
+    this.exteriorGroup.remove(vehicle.group);
+    vehicle.group.traverse((obj) => {
+      if (obj.isMesh && obj.geometry) obj.geometry.dispose();
+    });
+    for (const material of vehicle.group.userData.ownedMaterials || []) {
+      material.dispose();
+    }
+  }
+
   stepRoadTraffic(dt = 0.016) {
     if (!this.trafficVehicleRecords) return;
 
@@ -798,10 +809,7 @@ export class VinhTrang3DWorld {
             vehicle.dwellTimer = 7.5;
             this.spawnVisitorConvoyPassengers();
           } else {
-            this.exteriorGroup.remove(vehicle.group);
-            vehicle.group.traverse((obj) => {
-              if (obj.isMesh && obj.geometry) obj.geometry.dispose();
-            });
+            this.disposeRoadTrafficVehicle(vehicle);
             this.trafficVehicleRecords.splice(i, 1);
             this.activeVisitorShuttle = null;
             continue;
@@ -826,10 +834,7 @@ export class VinhTrang3DWorld {
       } else {
         pos.x += vehicle.direction * vehicle.speed * dt;
         if ((vehicle.direction > 0 && pos.x > 132) || (vehicle.direction < 0 && pos.x < -112)) {
-          this.exteriorGroup.remove(vehicle.group);
-          vehicle.group.traverse((obj) => {
-            if (obj.isMesh && obj.geometry) obj.geometry.dispose();
-          });
+          this.disposeRoadTrafficVehicle(vehicle);
           this.trafficVehicleRecords.splice(i, 1);
           continue;
         }
@@ -2276,6 +2281,7 @@ export class VinhTrang3DWorld {
       mg.position.set(mx, 0, mz);
       mg.rotation.y = yaw;
       mg.userData.wheelGroups = wheelGroups;
+      mg.userData.ownedMaterials = [paintMat, darkPaintMat, seatMat];
       this.exteriorGroup.add(mg);
       return mg;
     };
@@ -2440,6 +2446,7 @@ export class VinhTrang3DWorld {
       cg.position.set(cx, 0, cz);
       cg.rotation.y = yaw;
       cg.userData.wheelGroups = wheelGroups;
+      cg.userData.ownedMaterials = [bodyMat];
       this.exteriorGroup.add(cg);
       return cg;
     };
