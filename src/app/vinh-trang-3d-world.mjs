@@ -68,6 +68,12 @@ const STATUE_GLB_PATHS = {
   bantho: '/Mô hình 3D Vĩnh Tràng/Tượng/phat-ngoi-ban-tho.glb'
 };
 
+const ARHAT_GLB_PATHS = {
+  kyTuong: '/Mô hình 3D Vĩnh Tràng/Tượng/ky-tuong-la-han.glb',
+  toaLoc: '/Mô hình 3D Vĩnh Tràng/Tượng/toa-loc-la-han.glb',
+  phucHo: '/Mô hình 3D Vĩnh Tràng/Tượng/phuc-ho-la-han.glb'
+};
+
 const PROP_GLB_PATHS = {
   ban_tho: '/Thiết kế giao diện/Vật phẩm 3D/fixed/bat_nhang_tram.glb',
   non_la: '/Thiết kế giao diện/Vật phẩm 3D/models/non_la_theu_sen_v3.glb',
@@ -6380,209 +6386,6 @@ export class VinhTrang3DWorld {
       return lt;
     };
 
-    // Helper: 18 Visually Distinct Arhat Sculptures + Companion Animals/Props ("Mười tám vị La Hán")
-    const buildUniqueArhatStatue = (idx) => {
-      const ag = new THREE.Group();
-      const beastWoodMat = new THREE.MeshStandardMaterial({ color: 0x7A4B24, roughness: 0.48, metalness: 0.2 });
-      const tigerMat = new THREE.MeshStandardMaterial({ color: 0xD4822A, roughness: 0.48 });
-      const dragonGreenMat = new THREE.MeshStandardMaterial({ color: 0x2F7E58, metalness: 0.35, roughness: 0.34 });
-      const waveBlueMat = new THREE.MeshStandardMaterial({ color: 0x4888B0, roughness: 0.35 });
-      const leafMat = new THREE.MeshStandardMaterial({ color: 0x3C7D3E, roughness: 0.55 });
-      const whiteBeastMat = new THREE.MeshStandardMaterial({ color: 0xF1ECE0, roughness: 0.44 });
-
-      // Variant poses & companion beast / attribute per index 0..17
-      const isStanding = idx === 5 || idx === 15;
-      const bodyTiltZ = idx === 11 ? 0.14 : idx === 16 ? -0.1 : 0;
-      const bodyMat = idx % 3 === 1 ? bronzePatinaMat : goldLeafMat;
-
-      // Sculpted lotus/rock base or animal companion
-      const lotusBase = new THREE.Mesh(new THREE.CylinderGeometry(0.36, 0.42, 0.22, 14), M.redColumn);
-      lotusBase.position.y = 0.11;
-      ag.add(lotusBase);
-
-      // Unique Beast/Mount/Prop Feature per Arhat (0..17)
-      if (idx === 0) {
-        // 1. Tọa Lộc La Hán — riding deer (hươu)
-        const deerBody = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.28, 0.62), beastWoodMat);
-        deerBody.position.set(0, 0.36, 0.05);
-        ag.add(deerBody);
-        const deerHead = new THREE.Mesh(new THREE.SphereGeometry(0.11, 8, 8), beastWoodMat);
-        deerHead.position.set(0.24, 0.54, 0.24);
-        ag.add(deerHead);
-        for (const ax of [0.2, 0.28]) {
-          const antler = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.02, 0.24, 5), ivoryMat);
-          antler.position.set(ax, 0.72, 0.24);
-          ag.add(antler);
-        }
-      } else if (idx === 4) {
-        // 5. Tĩnh Tọa La Hán — rocky peak throne
-        const rockSeat = new THREE.Mesh(new THREE.DodecahedronGeometry(0.38, 0), M.stoneDark);
-        rockSeat.scale.set(1.1, 0.72, 1.0);
-        rockSeat.position.y = 0.35;
-        ag.add(rockSeat);
-      } else if (idx === 5) {
-        // 6. Quá Giang La Hán — surging waves & river crossing staff
-        for (let w = -1; w <= 1; w++) {
-          const wave = new THREE.Mesh(new THREE.TorusGeometry(0.2, 0.06, 6, 12, Math.PI), waveBlueMat);
-          wave.position.set(w * 0.22, 0.26, 0.1);
-          ag.add(wave);
-        }
-      } else if (idx === 6) {
-        // 7. Kỵ Tượng La Hán — seated atop sculpted White Elephant (voi trắng)
-        const elBody = new THREE.Mesh(new THREE.SphereGeometry(0.3, 12, 10), whiteBeastMat);
-        elBody.scale.set(0.95, 0.85, 1.35);
-        elBody.position.set(0, 0.42, 0.06);
-        ag.add(elBody);
-        const elTrunk = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.06, 0.34, 8), whiteBeastMat);
-        elTrunk.position.set(0, 0.38, 0.48);
-        elTrunk.rotation.x = 0.45;
-        ag.add(elTrunk);
-        for (const tx of [-0.1, 0.1]) {
-          const tusk = new THREE.Mesh(new THREE.ConeGeometry(0.025, 0.18, 6), goldLeafMat);
-          tusk.rotation.x = Math.PI / 2;
-          tusk.position.set(tx, 0.36, 0.42);
-          ag.add(tusk);
-        }
-      } else if (idx === 7) {
-        // 8. Tiếu Sư La Hán — playful lion cub beside knee
-        const lionBody = new THREE.Mesh(new THREE.SphereGeometry(0.18, 10, 8), goldLeafMat);
-        lionBody.position.set(0.28, 0.36, 0.24);
-        ag.add(lionBody);
-        const mane = new THREE.Mesh(new THREE.TorusGeometry(0.11, 0.04, 6, 10), M.redColumn);
-        mane.position.set(0.28, 0.48, 0.36);
-        ag.add(mane);
-      } else if (idx === 13) {
-        // 14. Ba Tiêu La Hán — arching banana leaves behind seat
-        for (const lx of [-0.26, 0.26]) {
-          const leaf = new THREE.Mesh(new THREE.ConeGeometry(0.18, 1.05, 5), leafMat);
-          leaf.position.set(lx, 0.95, -0.18);
-          leaf.rotation.z = lx < 0 ? 0.25 : -0.25;
-          ag.add(leaf);
-        }
-      } else if (idx === 16) {
-        // 17. Hàng Long La Hán — emerald coiled dragon rising alongside
-        const dTail = new THREE.Mesh(new THREE.TorusGeometry(0.26, 0.06, 8, 16, Math.PI * 1.45), dragonGreenMat);
-        dTail.position.set(-0.24, 0.68, 0.16);
-        dTail.rotation.y = 0.5;
-        ag.add(dTail);
-        const dPearl = new THREE.Mesh(new THREE.SphereGeometry(0.075, 8, 8), new THREE.MeshBasicMaterial({ color: 0xFFE985 }));
-        dPearl.position.set(0.24, 1.15, 0.22);
-        ag.add(dPearl);
-      } else if (idx === 17) {
-        // 18. Phục Hổ La Hán — crouching striped tiger companion
-        const tBody = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.22, 0.52), tigerMat);
-        tBody.position.set(0.28, 0.34, 0.18);
-        ag.add(tBody);
-        const tHead = new THREE.Mesh(new THREE.SphereGeometry(0.11, 8, 8), tigerMat);
-        tHead.position.set(0.28, 0.44, 0.42);
-        ag.add(tHead);
-      }
-
-      // Main Sculpted Arhat Figure (seated / standing / open-chest / belly / long eyebrows)
-      const seatOffsetY = idx === 0 || idx === 6 ? 0.52 : idx === 4 ? 0.54 : 0.24;
-      const fig = new THREE.Group();
-      fig.position.y = seatOffsetY;
-      fig.rotation.z = bodyTiltZ;
-
-      const legs = new THREE.Mesh(
-        new THREE.CylinderGeometry(isStanding ? 0.22 : 0.3, isStanding ? 0.28 : 0.36, isStanding ? 0.55 : 0.26, 12),
-        bodyMat
-      );
-      legs.position.y = isStanding ? 0.28 : 0.13;
-      fig.add(legs);
-
-      const torsoRadius = idx === 12 ? 0.29 : 0.22; // Bố Đại has broad joyful belly!
-      const torso = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.19, torsoRadius, isStanding ? 0.66 : 0.58, 12),
-        bodyMat
-      );
-      torso.position.y = isStanding ? 0.85 : 0.52;
-      fig.add(torso);
-
-      const head = new THREE.Mesh(new THREE.SphereGeometry(0.165, 12, 10), bodyMat);
-      head.position.y = isStanding ? 1.3 : 0.94;
-      fig.add(head);
-
-      // Unique Hand & Face Attributes
-      if (idx === 1) {
-        // 2. Khánh Hỷ — temple hand chime/bell
-        const bell = new THREE.Mesh(new THREE.ConeGeometry(0.08, 0.16, 8), goldLeafMat);
-        bell.position.set(0.26, 0.72, 0.22);
-        fig.add(bell);
-      } else if (idx === 2) {
-        // 3. Cử Bát — raised alms bowl
-        const bowl = new THREE.Mesh(new THREE.SphereGeometry(0.15, 12, 8, 0, Math.PI * 2, Math.PI * 0.45, Math.PI * 0.55), bronzePatinaMat);
-        bowl.position.set(0, 0.84, 0.24);
-        fig.add(bowl);
-      } else if (idx === 3) {
-        // 4. Thác Tháp — 3-tier golden pagoda held on palm
-        const pag = new THREE.Mesh(new THREE.ConeGeometry(0.11, 0.36, 6), goldLeafMat);
-        pag.position.set(0.26, 0.86, 0.18);
-        fig.add(pag);
-      } else if (idx === 5 || idx === 15) {
-        // 6. Quá Giang or 16. Khán Môn — tall staff/paddle
-        const staff = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 1.38, 8), bronzePatinaMat);
-        staff.position.set(0.28, 0.72, 0.16);
-        fig.add(staff);
-        const topRing = new THREE.Mesh(new THREE.TorusGeometry(0.08, 0.015, 6, 12), goldLeafMat);
-        topRing.position.set(0.28, 1.42, 0.16);
-        fig.add(topRing);
-      } else if (idx === 8) {
-        // 9. Khai Tâm — parted chest showing radiant Buddha emblem
-        const emblem = new THREE.Mesh(
-          new THREE.CircleGeometry(0.1, 14),
-          new THREE.MeshBasicMaterial({ color: 0xFFE680 })
-        );
-        emblem.position.set(0, 0.56, 0.23);
-        fig.add(emblem);
-      } else if (idx === 9) {
-        // 10. Thám Thủ — both arms stretched skyward
-        for (const ax of [-0.2, 0.2]) {
-          const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.045, 0.52, 8), bodyMat);
-          arm.position.set(ax, 1.05, 0.04);
-          arm.rotation.z = ax < 0 ? 0.18 : -0.18;
-          fig.add(arm);
-        }
-      } else if (idx === 10) {
-        // 11. Trầm Tư — resting chin on arm
-        const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.045, 0.36, 8), bodyMat);
-        arm.position.set(0.14, 0.78, 0.16);
-        arm.rotation.z = 0.55;
-        fig.add(arm);
-      } else if (idx === 11) {
-        // 12. Khoái Nhĩ — playful hand raised near ear
-        const hand = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.04, 0.34, 8), bodyMat);
-        hand.position.set(0.2, 0.9, 0.1);
-        hand.rotation.z = 0.45;
-        fig.add(hand);
-      } else if (idx === 12) {
-        // 13. Bố Đại — large cloth sack beside shoulder
-        const sack = new THREE.Mesh(new THREE.SphereGeometry(0.24, 10, 8), M.mosaicRed);
-        sack.scale.set(1.1, 1.25, 0.9);
-        sack.position.set(-0.28, 0.46, 0.05);
-        fig.add(sack);
-      } else if (idx === 14) {
-        // 15. Trường Mi — twin cascading long white-gold eyebrows
-        for (const bx of [-0.07, 0.07]) {
-          const brow = new THREE.Mesh(new THREE.BoxGeometry(0.032, 0.46, 0.03), ivoryMat);
-          brow.position.set(bx, 0.72, 0.17);
-          brow.rotation.z = bx < 0 ? 0.16 : -0.16;
-          fig.add(brow);
-        }
-      }
-
-      const halo = new THREE.Mesh(
-        new THREE.RingGeometry(0.22, 0.28, 18),
-        new THREE.MeshBasicMaterial({ color: 0xFFD875, side: THREE.DoubleSide })
-      );
-      halo.position.set(0, isStanding ? 1.32 : 0.96, -0.12);
-      fig.add(halo);
-
-      ag.add(fig);
-      ag.userData.arhatIndex = idx;
-      return ag;
-    };
-
     // =========================================================================
     // CONTINUOUS FLOOR & COVERED PERIMETER CORRIDORS ("Bố cục Chữ Quốc (國)")
     // x = -14.0..+14.0 (Corridors x = -14..-11.4 & +11.4..+14; Halls x = -11.4..+11.4)
@@ -7003,33 +6806,9 @@ export class VinhTrang3DWorld {
       g.add(archSign);
     }
 
-    // 18 UNIQUELY SCULPTED LA HÁN STATUES along West & East walls (9 per side = 18 unique Arhats)
+    // Three selected high-detail Arhat GLBs are loaded asynchronously below.
+    // Keep both side aisles readable; do not fill them with eighteen primitive stand-ins.
     this.arhatGroups = [];
-    const arhatZs = [8.4, 5.2, -3.2, -6.0, -8.8, -11.6, -14.4, -17.2, -20.0];
-    let arhatCounter = 0;
-    for (const ax of [-9.8, 9.8]) {
-      for (const az of arhatZs) {
-        const ped = new THREE.Mesh(new THREE.BoxGeometry(1.22, 1.05, 1.22), M.redColumn);
-        ped.position.set(ax, 0.525, az);
-        g.add(ped);
-        const trim = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.14, 1.3), goldLeafMat);
-        trim.position.set(ax, 1.06, az);
-        g.add(trim);
-
-        const arhatGroup = buildUniqueArhatStatue(arhatCounter);
-        arhatGroup.position.set(ax, 1.14, az);
-        arhatGroup.rotation.y = ax < 0 ? Math.PI / 2 : -Math.PI / 2;
-        g.add(arhatGroup);
-        this.arhatGroups.push(arhatGroup);
-        this.interiorRectObstacles.push({
-          minX: ax - 0.72,
-          maxX: ax + 0.72,
-          minZ: az - 0.72,
-          maxZ: az + 0.72
-        });
-        arhatCounter += 1;
-      }
-    }
 
     // =========================================================================
     // 3. SÂN THIÊN TỈNH 1 (Giếng Trời 1, z: -22.2 .. -38.8) + HÒN NON BỘ 1
@@ -7744,11 +7523,11 @@ export class VinhTrang3DWorld {
     });
   }
 
-  cleanStatueScene(gltfScene, matOverride = null) {
+  cleanStatueScene(gltfScene, matOverride = null, preserveGround = false) {
     const root = gltfScene.clone(true);
     const toRemove = [];
     root.traverse((o) => {
-      if (/ground|plane|floor|shadow/i.test(o.name || '')) {
+      if (!preserveGround && /ground|plane|floor|shadow/i.test(o.name || '')) {
         toRemove.push(o);
         return;
       }
@@ -7791,11 +7570,14 @@ export class VinhTrang3DWorld {
   }
 
   async loadAllGLBAssets() {
-    const [adidaGltf, dilacGltf, phatNamGltf, banThoGltf] = await Promise.all([
+    const [adidaGltf, dilacGltf, phatNamGltf, banThoGltf, kyTuongGltf, toaLocGltf, phucHoGltf] = await Promise.all([
       this.loadGLB(STATUE_GLB_PATHS.adida),
       this.loadGLB(STATUE_GLB_PATHS.dilac),
       this.loadGLB(STATUE_GLB_PATHS.phatnam),
-      this.loadGLB(STATUE_GLB_PATHS.bantho)
+      this.loadGLB(STATUE_GLB_PATHS.bantho),
+      this.loadGLB(ARHAT_GLB_PATHS.kyTuong),
+      this.loadGLB(ARHAT_GLB_PATHS.toaLoc),
+      this.loadGLB(ARHAT_GLB_PATHS.phucHo)
     ]);
 
     // 1. Đại tượng Phật A Di Đà in the front flower garden (18m statue + 7m lotus/pedestal = 25m total).
@@ -7878,6 +7660,33 @@ export class VinhTrang3DWorld {
         porchBuddha.rotation.y = Math.PI;
         this.chanhDienPorchAltar.add(porchBuddha);
       }
+    }
+
+    // Three representative La Hán sculptures: Kỵ Tượng, Tọa Lộc and Phục Hổ.
+    // Their GLBs include their own low stone plinths, so they sit directly on the temple floor.
+    const arhatPlacements = [
+      { gltf: toaLocGltf, x: -9.8, z: -4.8, facing: Math.PI / 2, index: 0, title: 'Tọa Lộc La Hán' },
+      { gltf: kyTuongGltf, x: 9.8, z: -9.8, facing: -Math.PI / 2, index: 6, title: 'Kỵ Tượng La Hán' },
+      { gltf: phucHoGltf, x: -9.8, z: -15.8, facing: Math.PI / 2, index: 17, title: 'Phục Hổ La Hán' }
+    ];
+    for (const item of arhatPlacements) {
+      if (!item.gltf?.scene) continue;
+      const statue = this.cleanStatueScene(item.gltf.scene, null, true);
+      const initialBounds = new THREE.Box3().setFromObject(statue);
+      const height = Math.max(0.1, initialBounds.max.y - initialBounds.min.y);
+      statue.scale.setScalar(1.22 / height);
+      statue.rotation.y = item.facing;
+      const bounds = new THREE.Box3().setFromObject(statue);
+      statue.position.set(
+        item.x - (bounds.min.x + bounds.max.x) / 2,
+        -bounds.min.y,
+        item.z - (bounds.min.z + bounds.max.z) / 2
+      );
+      statue.userData.arhatIndex = item.index;
+      statue.userData.arhatTitle = item.title;
+      this.interiorGroup.add(statue);
+      this.arhatGroups.push(statue);
+      this.interiorObstacles.push({ x: item.x, z: item.z, r: 0.82 });
     }
 
     const initialKey = this.playerState.charKey || 'nu';
