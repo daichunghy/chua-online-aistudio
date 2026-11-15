@@ -1313,11 +1313,11 @@ export class VinhTrang3DWorld {
         roughness: 0.62
       }),
       statueWhite: new THREE.MeshStandardMaterial({
-        color: 0xF4EFE6,
+        color: 0xF2EEE6,
         bumpMap: this.stoneBumpTex,
-        bumpScale: 0.012,
-        roughness: 0.46,
-        metalness: 0.03
+        bumpScale: 0.018,
+        roughness: 0.78,
+        metalness: 0.0
       }),
       lotusBlue: new THREE.MeshStandardMaterial({ color: 0x4E86A8, roughness: 0.5 }),
       pedestalRed: new THREE.MeshStandardMaterial({ color: 0x8A4A3A, roughness: 0.62 }),
@@ -7552,13 +7552,19 @@ export class VinhTrang3DWorld {
           if (o.geometry.getAttribute('color')) {
             o.material.vertexColors = true;
           }
-          // Preserve embedded FeatureShadow, lotus blue, pedestal, and gold plaque colors while adding stone bump
+          // Keep the carved white concrete matte and subtly weathered; preserve lotus, pedestal and gold finishes.
           const matName = (o.material.name || '').toLowerCase();
-          if (/white|statue|body|robe|skin/i.test(matName) || !matName) {
+          const matColor = o.material.color;
+          const paleUnlabelledStone = !matName && matColor && matColor.r > 0.72 && matColor.g > 0.68 && matColor.b > 0.62;
+          const isWhiteStone = /white|statue|body|robe|skin|stone|concrete/i.test(matName) || paleUnlabelledStone;
+          if (isWhiteStone) {
             o.material.bumpMap = this.stoneBumpTex;
-            o.material.bumpScale = 0.01;
+            o.material.bumpScale = 0.018;
+            o.material.roughness = 0.78;
+            o.material.metalness = 0.0;
+          } else {
+            o.material.roughness = Math.min(0.72, Math.max(0.34, o.material.roughness ?? 0.5));
           }
-          o.material.roughness = Math.min(0.58, Math.max(0.28, o.material.roughness ?? 0.45));
         }
       }
     });
