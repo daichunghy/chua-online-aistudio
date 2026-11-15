@@ -7576,7 +7576,7 @@ export class VinhTrang3DWorld {
       this.loadGLB(STATUE_GLB_PATHS.bantho)
     ]);
 
-    // 1. Đại Tượng Phật A Di Đà (North head of Central Avenue facing straight South (+Z) down the avenue)
+    // 1. Đại Tượng Phật A Di Đà — front garden west of the main approach, facing South toward Tam Quan.
     if (adidaGltf?.scene) {
       const s = this.cleanStatueScene(adidaGltf.scene, null);
       const box = new THREE.Box3().setFromObject(s);
@@ -7593,7 +7593,7 @@ export class VinhTrang3DWorld {
       this.adidaGroup.add(s);
     }
 
-    // 2. Đại Tượng Phật Di Lặc (Monumental ~19.5m seated cleanly atop stepped granite staircase & red/black inscription bands)
+    // 2. Đại Tượng Phật Di Lặc — 20m seated figure on the raised red-brick service base and broad front staircase.
     if (dilacGltf?.scene) {
       const s = this.cleanStatueScene(dilacGltf.scene, null);
       const box = new THREE.Box3().setFromObject(s);
@@ -7627,7 +7627,7 @@ export class VinhTrang3DWorld {
       this.nietBanGroup.add(s);
     }
 
-    // 4. Tượng Phật Bàn Thờ Tam Bảo (4.8m tall on main altar + golden Buddha visible in porch)
+    // 4. Tượng Phật Bàn Thờ Tam Bảo (2.6m central figure on the main altar + smaller golden Buddha visible in the porch)
     if (banThoGltf?.scene) {
       const s = this.cleanStatueScene(banThoGltf.scene, null);
       const box = new THREE.Box3().setFromObject(s);
@@ -8456,7 +8456,7 @@ export class VinhTrang3DWorld {
   }
 
   spawnMonksAndPilgrimsV8() {
-    // 1. Real rigged GLB kneeling worshippers at Flag Courtyard, A Di Đà, Di Lặc, Đài Quán Thế Âm & Nhà Tổ
+    // 1. Real rigged GLB kneeling worshippers at Flag Courtyard, A Di Đà, Di Lặc, Niết Bàn, Đài Quán Thế Âm & Nhà Tổ
     const kneelSpots = [
       { charKey: 'nu', x: 21.4, z: 13.4, yaw: Math.PI, tint: [0.76, 0.64, 0.72] },
       { charKey: 'nam', x: 24.6, z: 13.4, yaw: Math.PI, monkTone: 0 },
