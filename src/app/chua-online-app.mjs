@@ -1850,10 +1850,10 @@ export class ChuaOnlineApp {
   triggerLePhat(opts = {}) {
     const pos = this.world3d?.playerPos || this.playerPos;
     const nearOutdoorStatue =
-      Math.hypot((pos?.x || 0) - -8.0, (pos?.z || 0) - -8.5) < 11.5 ||
+      Math.hypot((pos?.x || 0) - 23.0, (pos?.z || 0) - 39.0) < 11.5 ||
       Math.hypot((pos?.x || 0) - -24.5, (pos?.z || 0) - 22.0) < 8.5 ||
       Math.hypot((pos?.x || 0) - 35.2, (pos?.z || 0) - 22.5) < 5.5 ||
-      Math.hypot((pos?.x || 0) - 12.0, (pos?.z || 0) - -22.5) < 8.5;
+      Math.hypot((pos?.x || 0) - 12.0, (pos?.z || 0) - -28.0) < 8.5;
 
     if (!opts.skipWalk && this.world3d && !this.world3d.insideInterior && !nearOutdoorStatue) {
       this.toggleInteriorHallIn3D(true, () => {
