@@ -339,6 +339,12 @@ export class VinhTrang3DWorld {
       lookCurve: null
     };
     this.vendorNpcRecords = [];
+    this.trafficVehicleRecords = [];
+    this.trafficSpawnQueue = [];
+    this.trafficSpawnTimer = 8 + Math.random() * 9;
+    this.visitorConvoyTimer = 48 + Math.random() * 28;
+    this.activeVisitorShuttle = null;
+    this.visitorGroupSequence = 0;
     this.sunbeamMeshes = [];
     this.pigeons = [];
     this.smokeColumns = [];
@@ -645,7 +651,193 @@ export class VinhTrang3DWorld {
     this.updateAutoWalk(dt);
     this.stepEntranceTour(dt);
     this.stepLotusBloom(dt);
+    this.stepRoadTraffic(dt);
     this.checkStationProximity();
+  }
+
+  spawnVisitorConvoyPassengers() {
+    if (!this.charDataCache.nu || !this.charDataCache.nam) return;
+    const convoyId = ++this.visitorGroupSequence;
+    const visitors = [
+      { charKey: 'nu', tint: [0.84, 0.70, 0.76], hat: true, bag: 'tui_sen', hand: 'hoa_sen', offset: -1.05, speed: 0.98 },
+      { charKey: 'nam', tint: [0.54, 0.62, 0.72], scarf: true, hand: 'nhang', offset: -0.32, speed: 0.94 },
+      { charKey: 'tre_em', tint: [0.92, 0.78, 0.62], offset: 0.36, speed: 1.08 },
+      { charKey: 'nu', tint: [0.76, 0.82, 0.70], hat: true, bag: 'gio_may', hand: 'quat', offset: 1.08, speed: 0.92 }
+    ];
+
+    for (let i = 0; i < visitors.length; i++) {
+      const spec = visitors[i];
+      const height = CHAR_HEIGHTS[spec.charKey] || 1.64;
+      const rec = this.cloneAnimatedCharacter(spec.charKey, height);
+      if (!rec) continue;
+      if (spec.tint) this.recolorPastelDress(rec.root, spec.tint);
+      this.equipNpcProps(rec, spec.charKey, height, spec);
+
+      const startX = 65.1 + (i % 2) * 0.28;
+      const startZ = 50.6 + spec.offset;
+      const zOffset = spec.offset;
+      const pts = [
+        { x: startX, z: startZ, action: 'pass', wait: 0, lookX: null, lookZ: null },
+        { x: 53.0, z: 50.6 + zOffset, action: 'pass', wait: 0, lookX: null, lookZ: null },
+        { x: 42.0, z: 47.0 + zOffset * 0.42, action: 'pass', wait: 0, lookX: null, lookZ: null },
+        { x: 41.0, z: 41.5 + zOffset * 0.25, action: 'pass', wait: 0, lookX: null, lookZ: null },
+        { x: 38.6, z: 34.2 + zOffset * 0.16, action: 'pass', wait: 0, lookX: null, lookZ: null },
+        { x: 36.1, z: 23.5 + zOffset * 0.12, action: 'dung', wait: 3.2, lookX: 32.5, lookZ: 22.5 }
+      ];
+      const first = pts[0];
+      const next = pts[1];
+      const yaw = Math.atan2(next.x - first.x, next.z - first.z);
+      rec.root.position.set(startX, rec.baseY, startZ);
+      rec.root.rotation.y = yaw;
+      this.playClipCrossfade(rec, 'Dung', 0.12, false);
+      this.exteriorGroup.add(rec.root);
+      this.riggedNpcRecords.push({
+        rec,
+        pts,
+        idx: 1,
+        speed: spec.speed,
+        pauseTimer: 0.75 + i * 0.34,
+        yaw,
+        state: 'Dung',
+        pauseClip: 'Dung',
+        lookX: null,
+        lookZ: null,
+        temporary: true,
+        removeAfterPause: false,
+        convoyId
+      });
+    }
+  }
+
+  stepRoadTraffic(dt = 0.016) {
+    if (!this.trafficVehicleRecords) return;
+
+    // Light local traffic: usually one vehicle, occasionally a pair with a natural following gap.
+    this.trafficSpawnTimer -= dt;
+    if (this.trafficSpawnTimer <= 0) {
+      const direction = Math.random() < 0.5 ? 1 : -1;
+      const count = Math.random() < 0.24 ? 2 : 1;
+      for (let i = 0; i < count; i++) {
+        const kindRoll = Math.random();
+        const kind = kindRoll < 0.48 ? 'bike' : kindRoll < 0.9 ? 'sedan' : 'van';
+        this.trafficSpawnQueue.push({
+          wait: i === 0 ? 0 : 2.2 + Math.random() * 1.0,
+          direction,
+          kind
+        });
+      }
+      this.trafficSpawnTimer = 25 + Math.random() * 28;
+    }
+
+    for (let i = this.trafficSpawnQueue.length - 1; i >= 0; i--) {
+      const queued = this.trafficSpawnQueue[i];
+      queued.wait -= dt;
+      if (queued.wait > 0) continue;
+      const direction = queued.direction;
+      const kind = queued.kind;
+      const colors = kind === 'bike'
+        ? [0x9C2C26, 0x254E8A, 0x3D434A, 0xB89342, 0xE6E1D6]
+        : [0xD2D8D9, 0xAEB9C1, 0x6E7D88, 0xB7A58B, 0xF0EEE8];
+      const color = colors[Math.floor(Math.random() * colors.length)];
+      const laneZ = direction > 0 ? 55.25 : 59.75;
+      const startX = direction > 0 ? -114 : 134;
+      const speed = kind === 'bike'
+        ? 5.8 + Math.random() * 1.45
+        : 6.4 + Math.random() * 1.55;
+      const record = this.spawnRoadTrafficVehicle({
+        kind, x: startX, z: laneZ, direction, speed, color
+      });
+      this.trafficVehicleRecords.push(record);
+      this.trafficSpawnQueue.splice(i, 1);
+    }
+
+    // A small passenger shuttle arrives only occasionally, pauses at the pull-in, then leaves.
+    this.visitorConvoyTimer -= dt;
+    if (
+      this.visitorConvoyTimer <= 0 &&
+      !this.activeVisitorShuttle &&
+      !this.inInterior &&
+      this.charDataCache.nu &&
+      this.charDataCache.nam
+    ) {
+      const group = this.spawnRoadTrafficVehicle({
+        kind: 'van',
+        x: 138,
+        z: 59.6,
+        direction: -1,
+        speed: 6.0,
+        color: 0xD9DEE0
+      });
+      group.kind = 'visitor_shuttle';
+      group.state = 'arriving';
+      group.path = [{ x: 63.0, z: 59.6 }, { x: 63.0, z: 50.6 }];
+      group.pathIndex = 0;
+      group.dwellTimer = 0;
+      this.activeVisitorShuttle = group;
+      this.trafficVehicleRecords.push(group);
+      this.visitorConvoyTimer = 92 + Math.random() * 48;
+    }
+
+    for (let i = this.trafficVehicleRecords.length - 1; i >= 0; i--) {
+      const vehicle = this.trafficVehicleRecords[i];
+      const pos = vehicle.group.position;
+
+      if (vehicle.state === 'arriving' || vehicle.state === 'departing') {
+        if (vehicle.state === 'parked') continue;
+        const target = vehicle.path[vehicle.pathIndex];
+        const dx = target.x - pos.x;
+        const dz = target.z - pos.z;
+        const distance = Math.hypot(dx, dz);
+        if (distance < 0.38) {
+          if (vehicle.pathIndex < vehicle.path.length - 1) {
+            vehicle.pathIndex += 1;
+          } else if (vehicle.state === 'arriving') {
+            vehicle.state = 'parked';
+            vehicle.dwellTimer = 7.5;
+            this.spawnVisitorConvoyPassengers();
+          } else {
+            this.exteriorGroup.remove(vehicle.group);
+            vehicle.group.traverse((obj) => {
+              if (obj.isMesh && obj.geometry) obj.geometry.dispose();
+            });
+            this.trafficVehicleRecords.splice(i, 1);
+            this.activeVisitorShuttle = null;
+            continue;
+          }
+        } else {
+          const dirX = dx / distance;
+          const dirZ = dz / distance;
+          const step = Math.min(distance, vehicle.speed * dt);
+          pos.x += dirX * step;
+          pos.z += dirZ * step;
+          const targetYaw = Math.atan2(dirX, dirZ);
+          vehicle.group.rotation.y = this.lerpAngle(vehicle.group.rotation.y, targetYaw, Math.min(1, dt * 3.8));
+        }
+      } else if (vehicle.state === 'parked') {
+        vehicle.dwellTimer -= dt;
+        if (vehicle.dwellTimer <= 0) {
+          vehicle.state = 'departing';
+          vehicle.path = [{ x: 63.0, z: 59.6 }, { x: 138, z: 59.6 }];
+          vehicle.pathIndex = 0;
+          vehicle.speed = 6.8;
+        }
+      } else {
+        pos.x += vehicle.direction * vehicle.speed * dt;
+        if ((vehicle.direction > 0 && pos.x > 132) || (vehicle.direction < 0 && pos.x < -112)) {
+          this.exteriorGroup.remove(vehicle.group);
+          vehicle.group.traverse((obj) => {
+            if (obj.isMesh && obj.geometry) obj.geometry.dispose();
+          });
+          this.trafficVehicleRecords.splice(i, 1);
+          continue;
+        }
+      }
+
+      const rollingDirection = vehicle.state === 'departing' ? 1 : vehicle.direction;
+      for (const wheel of vehicle.wheelGroups || []) {
+        wheel.rotation.x -= (rollingDirection * vehicle.speed * dt) / Math.max(0.1, vehicle.wheelRadius);
+      }
+    }
   }
 
   renderFrame() {
@@ -1931,34 +2123,37 @@ export class VinhTrang3DWorld {
       const darkPaintMat = new THREE.MeshStandardMaterial({ color: 0x34383B, roughness: 0.48, metalness: 0.16 });
       const seatMat = new THREE.MeshStandardMaterial({ color: 0x211F1D, roughness: 0.76 });
       const wheelRadius = 0.265;
+      const wheelGroups = [];
 
       const addWheel = (wheelZ) => {
+        const wheelGroup = new THREE.Group();
+        wheelGroup.position.set(0, wheelRadius + 0.015, wheelZ);
+        mg.add(wheelGroup);
+        wheelGroups.push(wheelGroup);
+
         const tire = new THREE.Mesh(new THREE.TorusGeometry(wheelRadius - 0.015, 0.048, 9, 22), vehicleTireMat);
         tire.rotation.y = Math.PI / 2;
-        tire.position.set(0, wheelRadius + 0.015, wheelZ);
         tire.castShadow = true;
-        mg.add(tire);
+        wheelGroup.add(tire);
 
         const rim = new THREE.Mesh(new THREE.CylinderGeometry(0.178, 0.178, 0.145, 18), vehicleRimMat);
         rim.rotation.z = Math.PI / 2;
-        rim.position.set(0, wheelRadius + 0.015, wheelZ);
-        mg.add(rim);
+        wheelGroup.add(rim);
 
         const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.065, 0.17, 12), vehicleChromeMat);
         hub.rotation.z = Math.PI / 2;
-        hub.position.set(0, wheelRadius + 0.015, wheelZ);
-        mg.add(hub);
+        wheelGroup.add(hub);
 
         for (const side of [-1, 1]) {
           for (let spoke = 0; spoke < 8; spoke++) {
             const angle = (spoke / 8) * Math.PI * 2;
-            const a = new THREE.Vector3(side * 0.09, wheelRadius + 0.015, wheelZ);
+            const a = new THREE.Vector3(side * 0.09, 0, 0);
             const b = new THREE.Vector3(
               side * 0.09,
-              wheelRadius + 0.015 + Math.cos(angle) * 0.135,
-              wheelZ + Math.sin(angle) * 0.135
+              Math.cos(angle) * 0.135,
+              Math.sin(angle) * 0.135
             );
-            addVehicleBeam(mg, a, b, 0.009, vehicleRimMat, 5);
+            addVehicleBeam(wheelGroup, a, b, 0.009, vehicleRimMat, 5);
           }
         }
       };
@@ -2077,7 +2272,9 @@ export class VinhTrang3DWorld {
 
       mg.position.set(mx, 0, mz);
       mg.rotation.y = yaw;
+      mg.userData.wheelGroups = wheelGroups;
       this.exteriorGroup.add(mg);
+      return mg;
     };
 
     // Compact sedan / passenger van with separate cabin, glazing, alloy wheels and road lights.
@@ -2136,21 +2333,24 @@ export class VinhTrang3DWorld {
       cg.add(cabin);
 
       const axleZ = isVan ? 1.82 : 1.52;
+      const wheelGroups = [];
       for (const side of [-1, 1]) {
         for (const wheelZ of [-axleZ, axleZ]) {
+          const wheelGroup = new THREE.Group();
+          wheelGroup.position.set(side * (bodyWidth / 2 + 0.015), 0.405, wheelZ);
+          cg.add(wheelGroup);
+          wheelGroups.push(wheelGroup);
+
           const tire = new THREE.Mesh(new THREE.CylinderGeometry(0.365, 0.365, 0.25, 20), vehicleTireMat);
           tire.rotation.z = Math.PI / 2;
-          tire.position.set(side * (bodyWidth / 2 + 0.015), 0.405, wheelZ);
           tire.castShadow = true;
-          cg.add(tire);
+          wheelGroup.add(tire);
           const rim = new THREE.Mesh(new THREE.CylinderGeometry(0.235, 0.235, 0.265, 18), vehicleRimMat);
           rim.rotation.z = Math.PI / 2;
-          rim.position.copy(tire.position);
-          cg.add(rim);
+          wheelGroup.add(rim);
           const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.28, 12), vehicleChromeMat);
           hub.rotation.z = Math.PI / 2;
-          hub.position.copy(tire.position);
-          cg.add(hub);
+          wheelGroup.add(hub);
         }
       }
 
@@ -2236,7 +2436,26 @@ export class VinhTrang3DWorld {
 
       cg.position.set(cx, 0, cz);
       cg.rotation.y = yaw;
+      cg.userData.wheelGroups = wheelGroups;
       this.exteriorGroup.add(cg);
+      return cg;
+    };
+
+    // Shared vehicle factory: normal road traffic passes through; visitor shuttles use a separate pull-in route.
+    this.spawnRoadTrafficVehicle = ({ kind = 'sedan', x, z, direction = 1, speed = 7, color = 0xAEB9C1 }) => {
+      const yaw = direction > 0 ? Math.PI / 2 : -Math.PI / 2;
+      const group = kind === 'bike'
+        ? buildParkedMotorbike(x, z, yaw, color)
+        : buildRoadCar(x, z, yaw, color, kind === 'van' ? 'van' : 'sedan');
+      return {
+        group,
+        kind,
+        direction,
+        speed,
+        wheelRadius: kind === 'bike' ? 0.265 : 0.365,
+        wheelGroups: group.userData.wheelGroups || [],
+        state: 'passing'
+      };
     };
 
     // Small paved lay-by on the pagoda side of Nguyễn Trung Trực; keep both gates unobstructed.
@@ -2256,6 +2475,21 @@ export class VinhTrang3DWorld {
     // The real frontage is represented by a parked passenger van and a private sedan, not a 29-seat coach.
     buildRoadCar(-18.0, 52.2, -Math.PI / 2, 0xD2D8D9, 'van');
     buildRoadCar(-10.0, 52.2, -Math.PI / 2, 0xAEB9C1, 'sedan');
+
+    // Occasional visitor-shuttle pull-in on the far east end of the frontage; does not block either gate.
+    const visitorDropoffPad = new THREE.Mesh(
+      new THREE.BoxGeometry(6.4, 0.07, 5.2),
+      new THREE.MeshStandardMaterial({ map: this.pavingTex, color: 0xC8BFAE, roughness: 0.9 })
+    );
+    visitorDropoffPad.position.set(63.0, 0.026, 50.6);
+    visitorDropoffPad.receiveShadow = true;
+    this.exteriorGroup.add(visitorDropoffPad);
+    const dropoffEdge = new THREE.Mesh(
+      new THREE.BoxGeometry(5.8, 0.025, 0.08),
+      new THREE.MeshBasicMaterial({ color: 0xE9E4D8 })
+    );
+    dropoffEdge.position.set(63.0, 0.07, 48.05);
+    this.exteriorGroup.add(dropoffEdge);
 
     // Motorbike parking sits beyond the right-side entrance and grocery/souvenir frontage, inside the pagoda grounds.
     const motorbikeParkingPad = new THREE.Mesh(
@@ -9879,6 +10113,7 @@ export class VinhTrang3DWorld {
     // Damped Entrance Camera Tour along Tam Quan -> Yellow Banner & Vietnamese Stalls -> Right Bougainvillea Path
     const tourStep = this.isSoftwareGl ? Math.max(dt, 0.14) : dt;
     this.stepEntranceTour(tourStep);
+    this.stepRoadTraffic(dt);
 
     if (this.activePlayerRecord) {
       if (this.playerState.moving) {
@@ -9911,6 +10146,12 @@ export class VinhTrang3DWorld {
         const pos = npc.rec.root.position;
         if (npc.pauseTimer > 0) {
           npc.pauseTimer -= dt;
+          if (npc.pauseTimer <= 0 && npc.temporary && npc.removeAfterPause) {
+            this.exteriorGroup.remove(npc.rec.root);
+            this.riggedNpcRecords.splice(ni, 1);
+            ni -= 1;
+            continue;
+          }
           const desiredClip = npc.pauseClip === 'Chắp tay' ? 'Chắp tay' : 'Dung';
           if (npc.state !== desiredClip) {
             npc.state = desiredClip;
@@ -9930,6 +10171,23 @@ export class VinhTrang3DWorld {
         const dz = target.z - pos.z;
         const d = Math.hypot(dx, dz);
         if (d < 0.42) {
+          if (npc.temporary && npc.idx >= npc.pts.length - 1) {
+            if (target.wait > 0) {
+              npc.pauseTimer = target.wait;
+              npc.pauseClip = target.action === 'chap_tay' ? 'Chắp tay' : 'Dung';
+              npc.lookX = target.lookX;
+              npc.lookZ = target.lookZ;
+              npc.removeAfterPause = true;
+              npc.state = npc.pauseClip;
+              this.playClipCrossfade(npc.rec, npc.pauseClip, 0.24, false);
+              npc.rec.mixer.update(dt);
+            } else {
+              this.exteriorGroup.remove(npc.rec.root);
+              this.riggedNpcRecords.splice(ni, 1);
+              ni -= 1;
+            }
+            continue;
+          }
           npc.idx = (npc.idx + 1) % npc.pts.length;
           if (target.wait > 0 && target.action !== 'pass') {
             npc.pauseTimer = target.wait;
@@ -10070,6 +10328,8 @@ export class VinhTrang3DWorld {
         this.autoWalkWaypoints.length > 0 ||
         this.entranceTour.active ||
         this.lotusBloomState.active ||
+        this.trafficVehicleRecords.some((vehicle) => vehicle.state !== 'passing' || vehicle.group.position.x > -100 && vehicle.group.position.x < 120) ||
+        this.riggedNpcRecords.some((npc) => npc.temporary && npc.state === 'walk') ||
         Boolean(
           this.activePlayerRecord?.activeAction && !this.activePlayerRecord.activeAction.paused
         );
