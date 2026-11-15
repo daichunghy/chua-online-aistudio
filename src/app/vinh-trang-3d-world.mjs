@@ -423,7 +423,7 @@ export class VinhTrang3DWorld {
     if (!this.entranceTour.posCurve) {
       // Tour path matching exact Vĩnh Tràng visitor arrival in image_bb72a8b0.png & image_97204806.png:
       // 1) Quiet closed Cổng Chính -> 2) Busy wide-open ceramic mosaic Cổng Phụ ("Tịnh Độ Huyền Môn")
-      // -> 3) Glide in through Cổng Phụ past Nhà Tạp Hóa Vĩnh Tràng & Yellow Welcome Banner
+      // -> 3) Glide in through Cổng Phụ past the welcome banner and into the quiet temple garden
       // -> 4) Bougainvillea right side path past Đài Quán Thế Âm -> settle behind player at entrance plaza
       this.entranceTour.posCurve = new THREE.CatmullRomCurve3([
         new THREE.Vector3(24.5, 3.0, 54.5),
@@ -1459,267 +1459,15 @@ export class VinhTrang3DWorld {
       this.exteriorGroup.add(hg);
     };
 
-    // Bustling Vietnamese Pilgrimage Market Street ("Con đường vào chùa rộn ràng hàng quán hành hương")
-    const marketPalette = [
-      { bg: '#9E2A20', roof: 0x336791, text: '#FFE27A', accent: 0xD94B3D },
-      { bg: '#1F6A40', roof: 0x2F7064, text: '#FFF2B2', accent: 0x2F855A },
-      { bg: '#8B501E', roof: 0x924438, text: '#FFE8A3', accent: 0xD9822B },
-      { bg: '#2B4C7E', roof: 0x336791, text: '#FFF6D6', accent: 0x3A6EA5 },
-      { bg: '#6E324B', roof: 0x7F8891, text: '#FFE2D1', accent: 0xC95D7A }
-    ];
-    const lotusPetalMat = new THREE.MeshStandardMaterial({ color: 0xEC6C9A, roughness: 0.45 });
-    const fruitPomeloMat = new THREE.MeshStandardMaterial({ color: 0x6AA84F, roughness: 0.52 });
-    const fruitOrangeMat = new THREE.MeshStandardMaterial({ color: 0xF08B2D, roughness: 0.48 });
-    const cakeYellowMat = new THREE.MeshStandardMaterial({ color: 0xF5D25B, roughness: 0.56 });
-    const hatStrawMat = new THREE.MeshStandardMaterial({ color: 0xE6D3A3, roughness: 0.72, side: THREE.DoubleSide });
-    const clothRackColors = [0x9A8F99, 0x7E96AC, 0xDF8DA8, 0xE7D5AE, 0x6B8E76, 0xC69A64];
+    // Keep the approach road open: no rows of kiosks, temporary stalls, or roadside carts.
+    // Family homes and small home-based eateries are built separately beside the east-side lane.
 
-    const addPilgrimageStreetShop = (sx, sz, rotY, cfg) => {
-      const sg = new THREE.Group();
-      const pal = marketPalette[cfg.palIdx % marketPalette.length];
-      const w = cfg.w || 4.8;
-      const d = cfg.d || 3.4;
-      const h = 2.95;
-
-      // Raised concrete shop platform
-      const plinth = new THREE.Mesh(
-        new THREE.BoxGeometry(w + 0.5, 0.14, d + 1.8),
-        new THREE.MeshStandardMaterial({ color: 0xC9BEB0, roughness: 0.85 })
-      );
-      plinth.position.set(0, 0.07, 0.55);
-      plinth.receiveShadow = true;
-      sg.add(plinth);
-
-      // Rear timber/lime shop kiosk walls
-      const backWall = new THREE.Mesh(
-        new THREE.BoxGeometry(w, h, 0.24),
-        new THREE.MeshStandardMaterial({ map: this.limeWallTex, color: 0xF2E7CF, roughness: 0.84 })
-      );
-      backWall.position.set(0, h / 2 + 0.12, -d * 0.45);
-      backWall.castShadow = true;
-      sg.add(backWall);
-
-      for (const px of [-w * 0.46, w * 0.46]) {
-        const sideWall = new THREE.Mesh(
-          new THREE.BoxGeometry(0.18, h, d * 0.9),
-          new THREE.MeshStandardMaterial({ map: this.limeWallTex, color: 0xEAE0C8, roughness: 0.84 })
-        );
-        sideWall.position.set(px, h / 2 + 0.12, 0);
-        sg.add(sideWall);
-        const frontPost = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.075, h + 0.1, 8), woodPostMat);
-        frontPost.position.set(px, (h + 0.1) / 2, d * 0.52);
-        sg.add(frontPost);
-      }
-
-      // Sloped corrugated tin roof + striped extended market canvas ("bạt che sạp chợ chùa")
-      const tinRoof = new THREE.Mesh(
-        new THREE.BoxGeometry(w + 0.65, 0.08, d + 1.15),
-        new THREE.MeshStandardMaterial({ map: this.tinRoofTex, color: pal.roof, roughness: 0.54, metalness: 0.22 })
-      );
-      tinRoof.position.set(0, h + 0.25, 0.15);
-      tinRoof.rotation.x = 0.18;
-      tinRoof.castShadow = true;
-      sg.add(tinRoof);
-
-      const frontTarp = new THREE.Mesh(
-        new THREE.BoxGeometry(w + 0.5, 0.04, 1.55),
-        stripedAwningMat
-      );
-      frontTarp.position.set(0, 2.55, d * 0.5 + 0.72);
-      frontTarp.rotation.x = 0.32;
-      sg.add(frontTarp);
-
-      // Vibrant shop signboard
-      const sign = new THREE.Mesh(
-        new THREE.BoxGeometry(w * 0.92, 0.68, 0.1),
-        new THREE.MeshStandardMaterial({
-          map: makeTextTex(cfg.sign, { w: 1024, h: 170, bg: pal.bg, border: '#FFE082', color: pal.text, size: 42 }),
-          roughness: 0.42
-        })
-      );
-      sign.position.set(0, 2.98, d * 0.52);
-      sg.add(sign);
-
-      // Warm hanging string bulbs under eaves
-      for (let bi = -2; bi <= 2; bi++) {
-        const bulb = new THREE.Mesh(
-          new THREE.SphereGeometry(0.065, 7, 6),
-          new THREE.MeshBasicMaterial({ color: bi % 2 === 0 ? 0xFFE382 : 0xFF9F5A })
-        );
-        bulb.position.set(bi * (w * 0.19), 2.58, d * 0.55);
-        sg.add(bulb);
-      }
-
-      // Display table & themed merchandise
-      const table = new THREE.Mesh(
-        new THREE.BoxGeometry(w * 0.88, 0.76, 1.05),
-        woodPostMat
-      );
-      table.position.set(0, 0.48, d * 0.24);
-      table.castShadow = true;
-      sg.add(table);
-
-      const cloth = new THREE.Mesh(
-        new THREE.BoxGeometry(w * 0.9, 0.08, 1.12),
-        new THREE.MeshStandardMaterial({ color: pal.accent, roughness: 0.78 })
-      );
-      cloth.position.set(0, 0.87, d * 0.24);
-      sg.add(cloth);
-
-      if (cfg.cat === 'huong_hoa') {
-        // Buckets of fresh pink lotus stems, marigolds, incense packs
-        for (let i = -2; i <= 2; i++) {
-          const bucket = new THREE.Mesh(
-            new THREE.CylinderGeometry(0.18, 0.14, 0.36, 10),
-            new THREE.MeshStandardMaterial({ color: i % 2 === 0 ? 0x2D7648 : 0xB83A2E, roughness: 0.55 })
-          );
-          bucket.position.set(i * 0.68, 1.08, d * 0.26);
-          sg.add(bucket);
-          for (let f = 0; f < 4; f++) {
-            const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.36, 5), M.foliageLight);
-            stem.position.set(i * 0.68 + (f - 1.5) * 0.06, 1.32, d * 0.26 + (f % 2) * 0.06);
-            sg.add(stem);
-            const fl = new THREE.Mesh(
-              new THREE.ConeGeometry(0.07, 0.14, 7),
-              i % 2 === 0 ? lotusPetalMat : fruitOrangeMat
-            );
-            fl.position.set(stem.position.x, 1.5, stem.position.z);
-            fl.rotation.x = Math.PI;
-            sg.add(fl);
-          }
-        }
-        // Incense bundles stacked on shelf
-        for (let p = 0; p < 5; p++) {
-          const pack = new THREE.Mesh(
-            new THREE.CylinderGeometry(0.06, 0.06, 0.42, 8),
-            new THREE.MeshStandardMaterial({ color: p % 2 === 0 ? 0xC62828 : 0xD9962E, roughness: 0.6 })
-          );
-          pack.rotation.x = Math.PI / 2;
-          pack.position.set(-1.3 + p * 0.25, 0.96, d * 0.42);
-          sg.add(pack);
-        }
-      } else if (cfg.cat === 'thu_cong') {
-        // Bamboo pole displaying stacked conical nón lá + hanging áo lam garment rail
-        const hatPole = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.035, 2.2, 6), woodPostMat);
-        hatPole.position.set(-w * 0.38, 1.25, d * 0.56);
-        sg.add(hatPole);
-        for (let hi = 0; hi < 5; hi++) {
-          const hat = new THREE.Mesh(new THREE.ConeGeometry(0.24, 0.15, 14, 1, true), hatStrawMat);
-          hat.position.set(-w * 0.38, 1.1 + hi * 0.22, d * 0.56);
-          hat.rotation.x = 0.25;
-          sg.add(hat);
-        }
-        // Horizontal clothing bar with colorful áo lam / áo bà ba
-        const bar = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, w * 0.75, 8), zincMat);
-        bar.rotation.z = Math.PI / 2;
-        bar.position.set(0.25, 2.22, -d * 0.12);
-        sg.add(bar);
-        for (let gi = 0; gi < 5; gi++) {
-          const robe = new THREE.Mesh(
-            new THREE.BoxGeometry(0.38, 0.72, 0.12),
-            new THREE.MeshStandardMaterial({ color: clothRackColors[(gi + cfg.palIdx) % clothRackColors.length], roughness: 0.72 })
-          );
-          robe.position.set(-w * 0.18 + gi * 0.48, 1.78, -d * 0.12);
-          sg.add(robe);
-        }
-        // Rattan baskets & wooden beads trays on counter
-        for (let bi = -1; bi <= 1; bi++) {
-          const bsk = new THREE.Mesh(
-            new THREE.CylinderGeometry(0.26, 0.2, 0.2, 12),
-            new THREE.MeshStandardMaterial({ color: 0xC69A58, roughness: 0.76 })
-          );
-          bsk.position.set(bi * 0.9, 1.0, d * 0.24);
-          sg.add(bsk);
-        }
-      } else {
-        // Glass street food showcase + fruit pyramids (bưởi, cam, dừa xiêm, bánh bò) + ice box + ghế cóc stools
-        const glassCase = new THREE.Mesh(
-          new THREE.BoxGeometry(1.55, 0.65, 0.72),
-          new THREE.MeshStandardMaterial({ color: 0xDCF2F8, roughness: 0.18, transparent: true, opacity: 0.66 })
-        );
-        glassCase.position.set(-0.75, 1.24, d * 0.24);
-        sg.add(glassCase);
-        for (let fi = 0; fi < 5; fi++) {
-          const item = new THREE.Mesh(
-            new THREE.SphereGeometry(0.14, 9, 8),
-            fi % 3 === 0 ? fruitPomeloMat : fi % 3 === 1 ? cakeYellowMat : fruitOrangeMat
-          );
-          item.position.set(0.45 + (fi % 3) * 0.34, 1.04 + Math.floor(fi / 3) * 0.2, d * 0.24);
-          sg.add(item);
-        }
-        const redCooler = new THREE.Mesh(
-          new THREE.BoxGeometry(0.62, 0.48, 0.44),
-          new THREE.MeshStandardMaterial({ color: 0xC6352B, roughness: 0.45 })
-        );
-        redCooler.position.set(w * 0.35, 0.36, d * 0.62);
-        sg.add(redCooler);
-        for (const [stx, col] of [
-          [-0.85, 0xC9382B],
-          [0.05, 0x2867B2],
-          [0.95, 0xC9382B]
-        ]) {
-          const stool = new THREE.Mesh(
-            new THREE.CylinderGeometry(0.19, 0.22, 0.34, 8),
-            new THREE.MeshStandardMaterial({ color: col, roughness: 0.5 })
-          );
-          stool.position.set(stx, 0.22, d * 0.78);
-          sg.add(stool);
-        }
-      }
-
-      sg.userData.stallType = cfg.cat;
-      sg.userData.stallTitle = cfg.title;
-      sg.position.set(sx, 0, sz);
-      sg.rotation.y = rotY;
-      this.exteriorGroup.add(sg);
-      this.stallClickTargets.push(sg);
-      this.stallTriggers.push({
-        x: sx + Math.sin(rotY) * (d * 0.8),
-        z: sz + Math.cos(rotY) * (d * 0.8),
-        radius: 3.8,
-        stallType: cfg.cat,
-        title: cfg.title
-      });
-    };
-
-    // Dense Vietnamese Market Row across Đường Nguyễn Trung Trực (facing North toward pagoda)
-    const southMarketStalls = [
-      { x: -42.0, z: 66.8, cat: 'huong_hoa', palIdx: 0, sign: 'HOA SEN · NHANG ĐÈN', title: 'Sạp Hoa Sen & Nhang Đèn Cô Tư' },
-      { x: -30.5, z: 66.8, cat: 'thu_cong', palIdx: 1, sign: 'ÁO LAM · NÓN LÁ', title: 'Tiệm Áo Lam & Nón Lá Ngọc Mai' },
-      { x: -19.0, z: 66.8, cat: 'am_thuc_chay', palIdx: 2, sign: 'NƯỚC MÍA · DỪA XIÊM', title: 'Quán Nước Mía & Dừa Xiêm Mỹ Tho' },
-      { x: -7.5, z: 66.8, cat: 'am_thuc_chay', palIdx: 3, sign: 'BÁNH BÒ · XÔI CHÈ', title: 'Quầy Bánh Bò · Bánh Da Lợn · Xôi Chè' },
-      { x: 4.5, z: 66.8, cat: 'huong_hoa', palIdx: 4, sign: 'HOA CÚC · ĐÈN CẦY', title: 'Sạp Hoa Cúng & Đèn Hoa Đăng' },
-      { x: 16.5, z: 66.8, cat: 'thu_cong', palIdx: 0, sign: 'TRÀNG HẠT · LƯU NIỆM', title: 'Sạp Tràng Hạt & Quà Lưu Niệm Vĩnh Tràng' },
-      { x: 28.5, z: 66.8, cat: 'am_thuc_chay', palIdx: 1, sign: 'CƠM CHAY · BÁNH MÌ CHAY', title: 'Quán Cơm Chay Tâm An' },
-      { x: 40.5, z: 66.8, cat: 'huong_hoa', palIdx: 2, sign: 'MÂM NGŨ QUẢ · NHANG TRẦM', title: 'Sạp Lễ Phẩm Cổng Chùa' },
-      { x: 52.0, z: 66.8, cat: 'thu_cong', palIdx: 3, sign: 'KHĂN RẰN · GIỎ MÂY', title: 'Quầy Thủ Công Mỹ Nghệ Nam Bộ' },
-      { x: 63.5, z: 66.8, cat: 'am_thuc_chay', palIdx: 4, sign: 'TRÀ ĐÁ · TRÁI CÂY VƯỜN', title: 'Quầy Bưởi Da Xanh & Nước Giải Khát' }
-    ];
-    for (const sm of southMarketStalls) {
-      addPilgrimageStreetShop(sm.x, sm.z, Math.PI, sm);
-    }
-
-    // North-side pagoda frontage street stalls (flanking outside West & East of Tam Quan/Cổng Phụ)
-    const northMarketStalls = [
-      { x: -24.0, z: 48.2, cat: 'thu_cong', palIdx: 1, sign: 'NÓN LÁ · QUẠT NAN', title: 'Sạp Nón Lá & Quạt Nan Dừa', w: 4.4, d: 2.8 },
-      { x: -12.0, z: 48.2, cat: 'huong_hoa', palIdx: 0, sign: 'HOA SEN TƯƠI · NHANG ĐÈN', title: 'Sạp Hoa Sen Trước Cổng Chùa', w: 4.5, d: 2.8 },
-      { x: -0.5, z: 48.2, cat: 'am_thuc_chay', palIdx: 2, sign: 'TRÀ TẮC · SƯƠNG SÁO', title: 'Quán Nước Mát Cô Ba', w: 4.4, d: 2.8 },
-      { x: 50.5, z: 48.2, cat: 'huong_hoa', palIdx: 4, sign: 'HƯƠNG TRẦM · ĐÈN DẦU', title: 'Sạp Nhang Hoa Cạnh Cổng Phụ', w: 4.2, d: 2.8 }
-    ];
-    for (const nm of northMarketStalls) {
-      addPilgrimageStreetShop(nm.x, nm.z, 0, nm);
-    }
-
-    // Deep-background Mekong homes behind street stalls & outer orchard perimeter (clear of expanded -68..68, -72..41.5 temple grounds)
+    // Scattered background homes beyond the sanctuary perimeter; the walkable neighbourhood is built near the east-side lane.
     const sideBackHouses = [
-      [-42, 83.5, 9.8, 7.8, 3.8, Math.PI, 0, 0, false],
-      [-16, 84.5, 10.4, 8.0, 4.0, Math.PI, 1, 2, false],
-      [14, 83.5, 9.6, 7.8, 3.7, Math.PI, 2, 1, false],
-      [44, 84.0, 10.2, 8.0, 3.9, Math.PI, 3, 0, false],
       [-80, 26, 9.5, 8.2, 3.7, Math.PI / 2, 1, 2, false],
-      [-82, -6, 10.8, 8.6, 4.0, Math.PI / 2, 0, 1, true],
+      [-82, -6, 10.8, 8.6, 4.0, Math.PI / 2, 0, 1, false],
       [-80, -38, 9.4, 8.0, 3.6, Math.PI / 2, 3, 2, false],
-      [80, 24, 9.6, 8.0, 3.9, -Math.PI / 2, 0, 0, true],
+      [80, 24, 9.6, 8.0, 3.9, -Math.PI / 2, 0, 0, false],
       [82, -10, 10.8, 8.6, 4.0, -Math.PI / 2, 1, 1, false],
       [80, -42, 9.4, 8.0, 3.6, -Math.PI / 2, 3, 0, false],
       [-30, -84, 10.0, 8.2, 3.6, 0, 2, 2, false],
@@ -1728,101 +1476,8 @@ export class VinhTrang3DWorld {
     ];
     for (const hArgs of sideBackHouses) addMekongCountryHouse(...hArgs);
 
-    // Roadside Mekong "Quán Nước Mía · Dừa Tươi" (Textured sugarcane cart, striped umbrella, thùng đá đỏ & ghế cóc stools)
-    const addRoadsideDrinkStall = (sx, sz, rotY = 0) => {
-      const sg = new THREE.Group();
-      const cartBody = new THREE.Mesh(
-        new THREE.BoxGeometry(1.5, 0.92, 0.82),
-        new THREE.MeshStandardMaterial({ color: 0xC4CCD2, roughness: 0.42, metalness: 0.35 })
-      );
-      cartBody.position.y = 0.62;
-      cartBody.castShadow = true;
-      sg.add(cartBody);
-      // Colorful Vietnamese street cart apron decal ("NƯỚC MÍA SIÊU SẠCH · TRÀ TẮC")
-      const apronDecal = new THREE.Mesh(
-        new THREE.PlaneGeometry(1.42, 0.78),
-        new THREE.MeshBasicMaterial({
-          map: makeTextTex('NƯỚC MÍA · TRÀ TẮC', { bg: '#1F7A46', color: '#FFEA88', border: '#FFFFFF', w: 512, h: 256, size: 42 })
-        })
-      );
-      apronDecal.position.set(0, 0.62, 0.42);
-      sg.add(apronDecal);
-      // Red plastic ice cooler ("thùng đá đỏ") next to the sugarcane cart
-      const iceBox = new THREE.Mesh(
-        new THREE.BoxGeometry(0.56, 0.44, 0.42),
-        new THREE.MeshStandardMaterial({ color: 0xC6352B, roughness: 0.48 })
-      );
-      iceBox.position.set(-0.98, 0.22, 0.08);
-      sg.add(iceBox);
-      const iceLid = new THREE.Mesh(
-        new THREE.BoxGeometry(0.58, 0.06, 0.44),
-        new THREE.MeshStandardMaterial({ color: 0xECE8DF, roughness: 0.45 })
-      );
-      iceLid.position.set(-0.98, 0.46, 0.08);
-      sg.add(iceLid);
+    // No roadside carts or temporary food counters: food is served from family homes along the side lane.
 
-      const glassTop = new THREE.Mesh(
-        new THREE.BoxGeometry(1.42, 0.72, 0.76),
-        new THREE.MeshStandardMaterial({ color: 0xDDF2F8, roughness: 0.16, transparent: true, opacity: 0.68 })
-      );
-      glassTop.position.y = 1.44;
-      sg.add(glassTop);
-      const sign = new THREE.Mesh(
-        new THREE.BoxGeometry(1.48, 0.36, 0.06),
-        new THREE.MeshBasicMaterial({ map: makeTextTex('NƯỚC MÍA · DỪA XIÊM', { bg: '#2C7A47', color: '#FFE57F', border: '#FFF6D6', w: 512, h: 128, size: 36 }) })
-      );
-      sign.position.set(0, 1.98, 0.4);
-      sg.add(sign);
-      // Green sugarcane stalks bundled beside the cart
-      for (let i = 0; i < 6; i++) {
-        const cane = new THREE.Mesh(
-          new THREE.CylinderGeometry(0.032, 0.036, 1.45, 6),
-          new THREE.MeshStandardMaterial({ color: i % 2 === 0 ? 0x6F9B3C : 0x89AD44, roughness: 0.62 })
-        );
-        cane.position.set(0.92 + (i % 3) * 0.07, 0.72, -0.2 + Math.floor(i / 3) * 0.14);
-        cane.rotation.z = -0.14;
-        sg.add(cane);
-      }
-      // Tall striped beach parasol (dù che nắng quán nước)
-      const pPole = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.045, 2.75, 8), zincMat);
-      pPole.position.set(-0.6, 1.38, -0.35);
-      sg.add(pPole);
-      const parasolMat = new THREE.MeshStandardMaterial({ map: stripedAwningTex, color: 0xF5D2B0, roughness: 0.72, side: THREE.DoubleSide });
-      const pTop = new THREE.Mesh(new THREE.ConeGeometry(1.65, 0.58, 12), parasolMat);
-      pTop.position.set(-0.6, 2.76, -0.35);
-      sg.add(pTop);
-      // Low aluminum table & plastic "ghế cóc" stools on the dirt shoulder
-      const tbl = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.05, 0.65), zincMat);
-      tbl.position.set(-0.3, 0.56, 1.15);
-      sg.add(tbl);
-      const tblLeg = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.06, 0.54, 6), zincMat);
-      tblLeg.position.set(-0.3, 0.27, 1.15);
-      sg.add(tblLeg);
-      const stoolCols = [0xC9382B, 0x2867B2, 0xC9382B, 0x2867B2];
-      [
-        [-0.95, 1.15],
-        [0.35, 1.15],
-        [-0.3, 1.72],
-        [-0.3, 0.58]
-      ].forEach(([bx, bz], idx) => {
-        const stool = new THREE.Mesh(
-          new THREE.CylinderGeometry(0.18, 0.22, 0.34, 8),
-          new THREE.MeshStandardMaterial({ color: stoolCols[idx], roughness: 0.52 })
-        );
-        stool.position.set(bx, 0.17, bz);
-        sg.add(stool);
-      });
-      sg.userData.stallType = 'am_thuc_chay';
-      sg.userData.stallTitle = 'Quán Nước Mía · Dừa Xiêm Cổng Chùa';
-      sg.position.set(sx, 0, sz);
-      sg.rotation.y = rotY;
-      this.exteriorGroup.add(sg);
-      this.stallClickTargets.push(sg);
-    };
-    addRoadsideDrinkStall(56.5, 49.4, -0.35);
-    addRoadsideDrinkStall(7.5, 50.6, 0.15);
-
-    // Mekong Alluvial Ditch & Wooden Plank Bridge ("Mương rạch phù sa, lục bình & cầu ván")
     const addMekongCanalDitch = (cx, cz, length = 34, width = 3.2, rotY = 0) => {
       const dg = new THREE.Group();
       const bankMat = new THREE.MeshStandardMaterial({ map: this.dirtRoadTex, color: 0x6F563B, roughness: 0.94 });
@@ -1876,7 +1531,7 @@ export class VinhTrang3DWorld {
     // Street utility poles + sagging overhead power wires outside front fence
     const wirePoleMat = new THREE.MeshStandardMaterial({ color: 0x8F8C84, roughness: 0.78 });
     const wireMat = new THREE.LineBasicMaterial({ color: 0x3A3D42, transparent: true, opacity: 0.58 });
-    const poleXs = [-46, -24, -2, 18, 36, 56, 78];
+    const poleXs = [-46, -24, -2, 18, 36, 56, 68];
     for (let i = 0; i < poleXs.length; i++) {
       const px = poleXs[i];
       const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.19, 8.2, 8), wirePoleMat);
@@ -2309,7 +1964,7 @@ export class VinhTrang3DWorld {
     rightBannerGroup.add(rightBannerBoard);
     this.exteriorGroup.add(rightBannerGroup);
 
-    this.buildVietnameseGroceryHouse();
+    this.buildResidentialFoodHouses();
 
     const chanhDien = this.buildChanhDien13Arches();
     chanhDien.position.set(23, 0, 1.0);
@@ -3843,255 +3498,417 @@ export class VinhTrang3DWorld {
     return g;
   }
 
-  buildVietnameseGroceryHouse() {
-    // Full Vietnamese brick-and-mortar Grocery House ("NHÀ TẠP HÓA VĨNH TRÀNG") beside Cổng Phụ
-    // + Outdoor Sidewalk Ice-Cream / Cold Coconut Cart outside Cổng Phụ (image_bb72a8b0.png!)
+  buildResidentialFoodHouses() {
     const M = this.MAT;
-    const house = new THREE.Group();
-    house.position.set(48.6, 0, 36.0);
-    house.rotation.y = -Math.PI * 0.5; // Front open shutter faces -X onto the Cổng Phụ entry road
-    house.userData.stallType = 'am_thuc_chay';
-    house.userData.stallTitle = 'Nhà Tạp Hóa Cổng Chùa Vĩnh Tràng';
+    const asphaltMat = new THREE.MeshStandardMaterial({ color: 0x5B5C57, roughness: 0.96 });
+    const pavementMat = new THREE.MeshStandardMaterial({ color: 0xBDB6A8, roughness: 0.9 });
+    const curbMat = new THREE.MeshStandardMaterial({ color: 0x8E8A80, roughness: 0.92 });
+    const drainMat = new THREE.MeshStandardMaterial({ color: 0x4B514A, roughness: 0.98 });
+    const timberMat = new THREE.MeshStandardMaterial({ map: this.woodGrainTex, color: 0x69452D, roughness: 0.78 });
+    const darkTimberMat = new THREE.MeshStandardMaterial({ color: 0x3D2A20, roughness: 0.84 });
+    const glassMat = new THREE.MeshStandardMaterial({ color: 0x9DB5B2, roughness: 0.2, metalness: 0.12 });
+    const shutterMat = new THREE.MeshStandardMaterial({ color: 0x3E6A50, roughness: 0.76 });
+    const bowlMat = new THREE.MeshStandardMaterial({ color: 0xE9E1D0, roughness: 0.36 });
+    const foodMat = new THREE.MeshStandardMaterial({ color: 0xD8B96F, roughness: 0.72 });
 
-    const masonryMat = new THREE.MeshStandardMaterial({ color: 0xEFE1B8, map: this.limeWallTex, roughness: 0.72 });
-    const trimMat = new THREE.MeshStandardMaterial({ color: 0xD7C192, roughness: 0.68 });
-    const floorMat = new THREE.MeshStandardMaterial({ color: 0xCFC5B4, roughness: 0.45 });
-    const awningMat = new THREE.MeshStandardMaterial({ color: 0x1E6A4E, roughness: 0.42, metalness: 0.22 });
-    const shutterMat = new THREE.MeshStandardMaterial({ color: 0x8F99A3, roughness: 0.36, metalness: 0.55 });
-    const woodMat = new THREE.MeshStandardMaterial({ color: 0x7A4824, map: this.woodGrainTex, roughness: 0.65 });
+    // A narrow neighbourhood lane branches from the Nguyễn Trung Trực approach.
+    // It is intentionally modest: patched asphalt, shallow drains, concrete footpath and overhead wires.
+    const junction = new THREE.Mesh(new THREE.BoxGeometry(19, 0.12, 8.4), asphaltMat);
+    junction.position.set(73.5, 0.015, 50.4);
+    junction.receiveShadow = true;
+    this.exteriorGroup.add(junction);
 
-    // 1. Raised tiled concrete floor slab + solid masonry side/back walls (W=9.4m storefront, D=4.4m room depth)
-    const floor = new THREE.Mesh(new THREE.BoxGeometry(9.6, 0.22, 6.2), floorMat);
-    floor.position.set(0, 0.11, 0.7);
-    floor.receiveShadow = true;
-    house.add(floor);
+    const lane = new THREE.Mesh(new THREE.BoxGeometry(7.2, 0.12, 62), asphaltMat);
+    lane.position.set(77.5, 0.02, 81);
+    lane.receiveShadow = true;
+    this.exteriorGroup.add(lane);
 
-    const backWall = new THREE.Mesh(new THREE.BoxGeometry(9.4, 3.65, 0.35), masonryMat);
-    backWall.position.set(0, 1.92, -2.0);
-    backWall.castShadow = true;
-    house.add(backWall);
+    const westCurb = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.2, 62), curbMat);
+    westCurb.position.set(73.75, 0.08, 81);
+    this.exteriorGroup.add(westCurb);
+    const eastCurb = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.2, 62), curbMat);
+    eastCurb.position.set(81.25, 0.08, 81);
+    this.exteriorGroup.add(eastCurb);
 
-    for (const sx of [-4.55, 4.55]) {
-      const sideWall = new THREE.Mesh(new THREE.BoxGeometry(0.35, 3.65, 4.4), masonryMat);
-      sideWall.position.set(sx, 1.92, 0.05);
-      sideWall.castShadow = true;
-      house.add(sideWall);
-      const frontPier = new THREE.Mesh(new THREE.BoxGeometry(0.5, 3.7, 0.5), trimMat);
-      frontPier.position.set(sx, 1.95, 2.05);
-      house.add(frontPier);
+    const footpath = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.12, 62), pavementMat);
+    footpath.position.set(82.7, 0.04, 81);
+    footpath.receiveShadow = true;
+    this.exteriorGroup.add(footpath);
+
+    const drain = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.18, 61.5), drainMat);
+    drain.position.set(72.95, 0.03, 81);
+    this.exteriorGroup.add(drain);
+    for (let z = 53; z <= 109; z += 2.4) {
+      const grate = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.04, 0.08), curbMat);
+      grate.position.set(72.95, 0.14, z);
+      this.exteriorGroup.add(grate);
     }
 
-    // Main pitched terracotta-red Vietnamese shophouse roof + rolled-up silver shutter box above open storefront
-    const mainRoof = makeHippedRoofMesh(10.2, 5.2, 1.55, M.roofTile);
-    mainRoof.position.set(0, 4.45, -0.05);
-    mainRoof.castShadow = true;
-    house.add(mainRoof);
-
-    const shutterBox = new THREE.Mesh(new THREE.BoxGeometry(8.8, 0.55, 0.42), shutterMat);
-    shutterBox.position.set(0, 3.35, 2.05);
-    house.add(shutterBox);
-
-    // 2. Protruding Slanted Corrugated Tôn Veranda Awning ("Mái hiên nhà tạp hóa") + metal veranda posts
-    const awning = new THREE.Mesh(new THREE.BoxGeometry(9.9, 0.1, 3.0), awningMat);
-    awning.position.set(0, 2.9, 3.25);
-    awning.rotation.x = 0.2;
-    awning.castShadow = true;
-    house.add(awning);
-
-    const steelPostMat = new THREE.MeshStandardMaterial({ color: 0xD2D8E0, metalness: 0.68, roughness: 0.28 });
-    for (const px of [-4.4, 0, 4.4]) {
-      const vPost = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.065, 2.65, 8), steelPostMat);
-      vPost.position.set(px, 1.325, 4.48);
-      house.add(vPost);
+    // Faded edge marks, not a modern multilane road.
+    const edgeMarkMat = new THREE.MeshBasicMaterial({ color: 0xC8C3B7, transparent: true, opacity: 0.48 });
+    for (const x of [74.0, 81.0]) {
+      const mark = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.015, 60), edgeMarkMat);
+      mark.position.set(x, 0.09, 81);
+      this.exteriorGroup.add(mark);
     }
 
-    // 3. Large Glowing Glass-Door Beverage Cooler Fridge ("Tủ mát nước giải khát") inside storefront
-    const fridgeBody = new THREE.Mesh(
-      new THREE.BoxGeometry(1.5, 2.15, 0.85),
-      new THREE.MeshStandardMaterial({ color: 0xEFF4F8, roughness: 0.3 })
-    );
-    fridgeBody.position.set(-3.3, 1.25, -1.25);
-    house.add(fridgeBody);
-    const fridgeGlow = new THREE.Mesh(
-      new THREE.PlaneGeometry(1.25, 1.65),
-      new THREE.MeshBasicMaterial({ color: 0xBCE8FF })
-    );
-    fridgeGlow.position.set(-3.3, 1.35, -0.81);
-    house.add(fridgeGlow);
-    for (let r = 0; r < 4; r++) {
-      for (let b = 0; b < 5; b++) {
-        const bottle = new THREE.Mesh(
-          new THREE.CylinderGeometry(0.045, 0.05, 0.24, 6),
-          new THREE.MeshStandardMaterial({ color: b % 2 === 0 ? 0x269448 : 0xD63E2A, roughness: 0.28 })
-        );
-        bottle.position.set(-3.75 + b * 0.22, 0.72 + r * 0.36, -0.78);
-        house.add(bottle);
+    // Three weathered utility poles and loose overhead service wires.
+    const poleMat = new THREE.MeshStandardMaterial({ color: 0x817C70, roughness: 0.88 });
+    const wireMat = new THREE.LineBasicMaterial({ color: 0x303538, transparent: true, opacity: 0.62 });
+    const poleZs = [57, 78, 99];
+    for (const pz of poleZs) {
+      const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.17, 7.6, 8), poleMat);
+      pole.position.set(72.25, 3.8, pz);
+      pole.castShadow = true;
+      this.exteriorGroup.add(pole);
+      const crossbar = new THREE.Mesh(new THREE.BoxGeometry(1.45, 0.12, 0.14), poleMat);
+      crossbar.position.set(72.25, 7.25, pz);
+      this.exteriorGroup.add(crossbar);
+    }
+    for (let i = 0; i < poleZs.length - 1; i++) {
+      const z1 = poleZs[i];
+      const z2 = poleZs[i + 1];
+      for (const x of [71.85, 72.25, 72.65]) {
+        const pts = [
+          new THREE.Vector3(x, 7.25, z1),
+          new THREE.Vector3(x + 0.08, 6.72, (z1 + z2) * 0.5),
+          new THREE.Vector3(x, 7.25, z2)
+        ];
+        this.exteriorGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), wireMat));
       }
     }
 
-    // 4. Wall-to-wall 3-tier Grocery Shelving ("Kệ hàng tạp hóa") filled with incense boxes, snacks, water packs
-    const shelfMat = new THREE.MeshStandardMaterial({ color: 0x4E5B6B, metalness: 0.4, roughness: 0.55 });
-    for (const sy of [0.85, 1.55, 2.25]) {
-      const plank = new THREE.Mesh(new THREE.BoxGeometry(5.6, 0.08, 0.62), shelfMat);
-      plank.position.set(0.85, sy, -1.42);
-      house.add(plank);
-      for (let gi = 0; gi < 9; gi++) {
-        const boxCol = gi % 3 === 0 ? 0xC63428 : gi % 3 === 1 ? 0xE6B038 : 0x2A784C;
-        const pkg = new THREE.Mesh(
-          new THREE.BoxGeometry(0.38, 0.32, 0.32),
-          new THREE.MeshStandardMaterial({ color: boxCol, roughness: 0.5 })
+    const addPotPlant = (parent, x, z, flowerColor = 0xE783A8) => {
+      const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.22, 0.48, 12), M.terracottaPot);
+      pot.position.set(x, 0.24, z);
+      parent.add(pot);
+      const soil = new THREE.Mesh(new THREE.CylinderGeometry(0.23, 0.23, 0.035, 10), darkTimberMat);
+      soil.position.set(x, 0.49, z);
+      parent.add(soil);
+      for (let i = 0; i < 5; i++) {
+        const angle = (i / 5) * Math.PI * 2;
+        const leaf = new THREE.Mesh(
+          new THREE.SphereGeometry(0.22, 8, 7),
+          i % 2 === 0 ? M.foliageLight : M.foliageMid
         );
-        pkg.position.set(-1.5 + gi * 0.58, sy + 0.2, -1.4);
-        house.add(pkg);
+        leaf.scale.set(0.72, 0.42, 1.35);
+        leaf.position.set(x + Math.cos(angle) * 0.2, 0.82 + (i % 2) * 0.12, z + Math.sin(angle) * 0.2);
+        parent.add(leaf);
       }
-    }
+      const bloom = new THREE.Mesh(new THREE.SphereGeometry(0.12, 8, 7), new THREE.MeshStandardMaterial({ color: flowerColor, roughness: 0.55 }));
+      bloom.position.set(x + 0.05, 1.0, z);
+      parent.add(bloom);
+    };
 
-    // 5. Front Shopkeeper Wooden-Glass Counter + Conical Hats, Incense Bundles & Fresh Lotus Buckets
-    const counter = new THREE.Mesh(new THREE.BoxGeometry(5.6, 1.02, 0.88), woodMat);
-    counter.position.set(-0.8, 0.68, 1.35);
-    counter.castShadow = true;
-    house.add(counter);
-
-    const glassTop = new THREE.Mesh(
-      new THREE.BoxGeometry(5.64, 0.06, 0.92),
-      new THREE.MeshStandardMaterial({ color: 0xD9F0F8, roughness: 0.16, metalness: 0.18 })
-    );
-    glassTop.position.set(-0.8, 1.21, 1.35);
-    house.add(glassTop);
-
-    for (let hi = 0; hi < 4; hi++) {
-      const hat = new THREE.Mesh(
-        new THREE.ConeGeometry(0.28, 0.16, 16),
-        new THREE.MeshStandardMaterial({ color: 0xEAD6AA, roughness: 0.78 })
-      );
-      hat.position.set(-2.6 + hi * 0.72, 1.38, 1.35);
-      house.add(hat);
-    }
-    const lotusBucket = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.24, 0.19, 0.42, 12),
-      new THREE.MeshStandardMaterial({ color: 0x2F7E56, roughness: 0.42 })
-    );
-    lotusBucket.position.set(1.25, 1.42, 1.35);
-    house.add(lotusBucket);
-    for (let li = -1; li <= 1; li++) {
-      const fl = this.makeLotusFlower3D(false);
-      fl.scale.setScalar(0.95);
-      fl.position.set(1.25 + li * 0.12, 1.68, 1.35);
-      house.add(fl);
-    }
-
-    // 6. Red "Thùng Đá" Ice Chest + Plastic Tea Tables & Stools under the Veranda Shade
-    const iceChest = new THREE.Mesh(
-      new THREE.BoxGeometry(0.95, 0.62, 0.58),
-      new THREE.MeshStandardMaterial({ color: 0xC83226, roughness: 0.34 })
-    );
-    iceChest.position.set(2.9, 0.52, 2.35);
-    house.add(iceChest);
-
-    for (const tz of [-1.8, 1.6]) {
-      const pTable = new THREE.Mesh(
-        new THREE.BoxGeometry(0.95, 0.5, 0.68),
-        new THREE.MeshStandardMaterial({ color: 0x266BC4, roughness: 0.35 })
-      );
-      pTable.position.set(tz, 0.44, 3.45);
-      house.add(pTable);
-      for (const [ox, oz, cHex] of [
-        [-0.65, 0, 0xD33A2C],
-        [0.65, 0, 0x266BC4]
-      ]) {
-        const stool = new THREE.Mesh(
-          new THREE.BoxGeometry(0.3, 0.3, 0.3),
-          new THREE.MeshStandardMaterial({ color: cHex, roughness: 0.35 })
-        );
-        stool.position.set(tz + ox, 0.34, 3.45 + oz);
-        house.add(stool);
+    const buildDiningTable = (parent, tx, tz, tableColor = 0x785236) => {
+      const tableMat = new THREE.MeshStandardMaterial({ color: tableColor, map: this.woodGrainTex, roughness: 0.76 });
+      const top = new THREE.Mesh(new THREE.BoxGeometry(1.55, 0.12, 0.95), tableMat);
+      top.position.set(tx, 0.9, tz);
+      top.castShadow = true;
+      parent.add(top);
+      for (const dx of [-0.66, 0.66]) {
+        for (const dz of [-0.36, 0.36]) {
+          const leg = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.82, 0.09), tableMat);
+          leg.position.set(tx + dx, 0.45, tz + dz);
+          parent.add(leg);
+        }
       }
-    }
+      for (const dx of [-1.05, 1.05]) {
+        const bench = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.42, 0.86), timberMat);
+        bench.position.set(tx + dx, 0.35, tz);
+        parent.add(bench);
+        const benchLegA = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.32, 0.07), timberMat);
+        benchLegA.position.set(tx + dx, 0.16, tz - 0.3);
+        parent.add(benchLegA);
+        const benchLegB = benchLegA.clone();
+        benchLegB.position.z = tz + 0.3;
+        parent.add(benchLegB);
+      }
+    };
 
-    // 7. Bold Storefront Signboard across veranda eaves + Interactive Trigger Ring
-    const signBoard = new THREE.Mesh(
-      new THREE.BoxGeometry(8.6, 0.88, 0.14),
-      new THREE.MeshStandardMaterial({
-        map: makeTextTex('NHÀ TẠP HÓA VĨNH TRÀNG · NƯỚC GIẢI KHÁT · NHANG ĐÈN', {
-          w: 1600,
-          h: 180,
-          bg: '#FFF3D4',
-          border: '#1C5A34',
-          color: '#9E241C',
-          size: 46
-        }),
-        roughness: 0.38
-      })
-    );
-    signBoard.position.set(0, 2.95, 4.55);
-    house.add(signBoard);
+    const addBowl = (parent, x, y, z, foodColor = 0xD7BD7B) => {
+      const bowl = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.17, 0.11, 14), bowlMat);
+      bowl.position.set(x, y, z);
+      parent.add(bowl);
+      const food = new THREE.Mesh(new THREE.CircleGeometry(0.16, 12), new THREE.MeshStandardMaterial({ color: foodColor, roughness: 0.82 }));
+      food.rotation.x = -Math.PI / 2;
+      food.position.set(x, y + 0.062, z);
+      parent.add(food);
+      for (let i = 0; i < 3; i++) {
+        const herb = new THREE.Mesh(new THREE.SphereGeometry(0.035, 6, 5), M.foliageLight);
+        herb.position.set(x - 0.06 + i * 0.06, y + 0.09, z + (i % 2) * 0.05);
+        parent.add(herb);
+      }
+    };
 
-    const trigRing = new THREE.Mesh(
-      new THREE.RingGeometry(0.75, 1.05, 28),
-      new THREE.MeshBasicMaterial({ color: 0xFFD166, side: THREE.DoubleSide, transparent: true, opacity: 0.68 })
-    );
-    trigRing.rotation.x = -Math.PI / 2;
-    trigRing.position.set(0, 0.05, 5.4);
-    house.add(trigRing);
+    const buildFamilyEatery = (id, title, x, z, variant = 'hut_tieu') => {
+      const g = new THREE.Group();
+      g.position.set(x, 0, z);
+      g.rotation.y = -Math.PI / 2;
+      g.userData.stallType = 'local_eatery';
+      g.userData.stallTitle = title;
+      g.userData.eateryId = id;
+      g.userData.localEateryId = id;
 
-    this.exteriorGroup.add(house);
-    this.stallAnchors.push(house);
-    this.stallClickTargets.push(counter, awning, signBoard, fridgeBody, trigRing, mainRoof);
+      const wallColor = variant === 'hut_tieu' ? 0xE9DFC9 : 0xE6E7D7;
+      const wallMat = new THREE.MeshStandardMaterial({ map: this.limeWallTex, color: wallColor, roughness: 0.88 });
+      const floorMat = new THREE.MeshStandardMaterial({ map: this.pavingTex, color: 0xD9D0C0, roughness: 0.88 });
+      const roofMat = new THREE.MeshStandardMaterial({ map: this.tinRoofTex, color: variant === 'hut_tieu' ? 0x8C4435 : 0x426B5A, roughness: 0.72, metalness: 0.08 });
+      const trimMat = new THREE.MeshStandardMaterial({ color: variant === 'hut_tieu' ? 0xB88D5C : 0xB5A27E, roughness: 0.8 });
 
-    // Physical house footprint collider (leaves x < 45.2 roadway completely open!)
-    this.addRectObstacle(45.6, 53.2, 30.8, 41.0);
+      const floor = new THREE.Mesh(new THREE.BoxGeometry(10.0, 0.18, 10.8), floorMat);
+      floor.position.set(0, 0.09, 0.25);
+      floor.receiveShadow = true;
+      g.add(floor);
 
-    // Secondary authentic ice-cream / cold-drinks cart just outside Cổng Phụ (image_bb72a8b0.png right edge!)
-    const cart = new THREE.Group();
-    cart.position.set(46.2, 0, 44.8);
-    cart.rotation.y = -Math.PI * 0.5;
-    cart.userData.stallType = 'am_thuc_chay';
-    cart.userData.stallTitle = 'Quầy Nước Mát · Cà Rem Cổng Phụ';
-    const cartBox = new THREE.Mesh(
-      new THREE.BoxGeometry(1.9, 1.05, 1.05),
-      new THREE.MeshStandardMaterial({ color: 0xF5EFE2, roughness: 0.4 })
-    );
-    cartBox.position.y = 0.72;
-    cart.add(cartBox);
-    const cartSign = new THREE.Mesh(
-      new THREE.BoxGeometry(1.65, 0.65, 0.08),
-      new THREE.MeshStandardMaterial({
-        map: makeTextTex('CÀ REM MỸ THO · DỪA XIÊM', {
-          w: 640,
-          h: 220,
-          bg: '#FFF8EC',
-          border: '#C9382B',
-          color: '#B8251C',
-          size: 46
+      const backWall = new THREE.Mesh(new THREE.BoxGeometry(9.6, 3.3, 0.24), wallMat);
+      backWall.position.set(0, 1.76, -4.7);
+      backWall.castShadow = true;
+      g.add(backWall);
+
+      for (const sx of [-4.7, 4.7]) {
+        const sideWall = new THREE.Mesh(new THREE.BoxGeometry(0.24, 3.3, 9.4), wallMat);
+        sideWall.position.set(sx, 1.76, 0);
+        sideWall.castShadow = true;
+        g.add(sideWall);
+      }
+
+      // The front remains open like a family dining room; there is no market counter or street-facing stall.
+      for (const sx of [-4.05, 4.05]) {
+        const frontPier = new THREE.Mesh(new THREE.BoxGeometry(1.3, 3.25, 0.28), trimMat);
+        frontPier.position.set(sx, 1.72, 4.62);
+        g.add(frontPier);
+      }
+      for (const sx of [-4.55, 0, 4.55]) {
+        const column = new THREE.Mesh(new THREE.BoxGeometry(0.2, 3.05, 0.2), timberMat);
+        column.position.set(sx, 1.55, 5.25);
+        g.add(column);
+      }
+
+      const roof = makeHippedRoofMesh(11.1, 12.0, 1.8, roofMat);
+      roof.position.set(0, 4.0, 0.15);
+      roof.castShadow = true;
+      g.add(roof);
+      const eaveBeam = new THREE.Mesh(new THREE.BoxGeometry(10.3, 0.16, 0.18), timberMat);
+      eaveBeam.position.set(0, 3.12, 4.72);
+      g.add(eaveBeam);
+      const porchRoof = new THREE.Mesh(new THREE.BoxGeometry(10.6, 0.12, 2.55), roofMat);
+      porchRoof.position.set(0, 3.0, 5.75);
+      porchRoof.rotation.x = 0.08;
+      porchRoof.castShadow = true;
+      g.add(porchRoof);
+
+      // Open wooden double doors and modest front windows.
+      for (const sx of [-1.05, 1.05]) {
+        const door = new THREE.Mesh(new THREE.BoxGeometry(1.85, 2.3, 0.12), timberMat);
+        door.position.set(sx, 1.22, 4.55);
+        door.rotation.y = sx < 0 ? -0.18 : 0.18;
+        g.add(door);
+      }
+      for (const sx of [-3.75, 3.75]) {
+        const windowFrame = new THREE.Mesh(new THREE.BoxGeometry(1.65, 1.3, 0.16), darkTimberMat);
+        windowFrame.position.set(sx, 1.9, 4.7);
+        g.add(windowFrame);
+        const windowGlass = new THREE.Mesh(new THREE.BoxGeometry(1.38, 1.04, 0.08), glassMat);
+        windowGlass.position.set(sx, 1.92, 4.79);
+        g.add(windowGlass);
+        for (const side of [-1, 1]) {
+          const shutter = new THREE.Mesh(new THREE.BoxGeometry(0.12, 1.18, 0.12), shutterMat);
+          shutter.position.set(sx + side * 0.82, 1.9, 4.76);
+          g.add(shutter);
+        }
+      }
+
+      // A small hand-painted wooden name board, attached to the house rather than a freestanding stall.
+      const sign = new THREE.Mesh(
+        new THREE.BoxGeometry(3.55, 0.56, 0.12),
+        new THREE.MeshStandardMaterial({
+          map: makeTextTex(variant === 'hut_tieu' ? 'HỦ TIẾU MỸ THO' : 'BÁNH BÈO · CHÈ NHÀ',
+            { w: 900, h: 150, bg: '#60452E', border: '#C9AD7A', color: '#F4E6C7', size: 48 }),
+          roughness: 0.78
         })
-      })
-    );
-    cartSign.position.set(0, 0.74, 0.54);
-    cart.add(cartSign);
-    this.exteriorGroup.add(cart);
-    this.stallClickTargets.push(cartBox, cartSign);
-    this.addRectObstacle(45.2, 47.4, 43.4, 46.2);
+      );
+      sign.position.set(0, 3.05, 6.55);
+      g.add(sign);
 
-    this.stallTriggers.push(
-      {
-        x: 43.2,
-        z: 36.0,
-        radius: 6.5,
-        stallType: 'am_thuc_chay',
-        title: 'Nhà Tạp Hóa Cổng Chùa Vĩnh Tràng',
-        ring: trigRing
-      },
-      {
-        x: 43.6,
-        z: 44.8,
-        radius: 4.5,
-        stallType: 'am_thuc_chay',
-        title: 'Quầy Nước Mát · Cà Rem Cổng Phụ',
-        ring: trigRing
+      const kitchenCounter = new THREE.Mesh(new THREE.BoxGeometry(4.5, 0.86, 0.85), timberMat);
+      kitchenCounter.position.set(0, 0.58, -3.45);
+      g.add(kitchenCounter);
+      const kitchenBack = new THREE.Mesh(new THREE.BoxGeometry(4.6, 1.15, 0.12), wallMat);
+      kitchenBack.position.set(0, 1.48, -4.12);
+      g.add(kitchenBack);
+
+      // A compact family kitchen visible through the open front.
+      const stove = new THREE.Mesh(new THREE.BoxGeometry(0.92, 0.56, 0.8), darkTimberMat);
+      stove.position.set(2.75, 0.42, -3.25);
+      g.add(stove);
+      const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.29, 0.42, 12), new THREE.MeshStandardMaterial({ color: 0x8E9897, metalness: 0.52, roughness: 0.42 }));
+      pot.position.set(2.75, 0.92, -3.25);
+      g.add(pot);
+      const potLid = new THREE.Mesh(new THREE.CylinderGeometry(0.31, 0.31, 0.045, 12), curbMat);
+      potLid.position.set(2.75, 1.15, -3.25);
+      g.add(potLid);
+
+      buildDiningTable(g, -2.05, 0.6, variant === 'hut_tieu' ? 0x765037 : 0x73573A);
+      buildDiningTable(g, 2.05, 0.6, variant === 'hut_tieu' ? 0x765037 : 0x73573A);
+      if (variant === 'hut_tieu') {
+        addBowl(g, -2.05, 1.02, 0.6, 0xD7B66C);
+        addBowl(g, 2.05, 1.02, 0.6, 0xD7B66C);
+      } else {
+        for (const [bx, bz] of [[-2.25, 0.55], [-1.85, 0.55], [1.85, 0.55], [2.25, 0.55]]) {
+          const tray = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.15, 0.06, 12), bowlMat);
+          tray.position.set(bx, 1.0, bz);
+          g.add(tray);
+          const cake = new THREE.Mesh(new THREE.CylinderGeometry(0.105, 0.105, 0.08, 10), foodMat);
+          cake.position.set(bx, 1.07, bz);
+          g.add(cake);
+        }
       }
-    );
-  }
 
+      const ceilingLamp = new THREE.Mesh(new THREE.SphereGeometry(0.12, 8, 7), new THREE.MeshBasicMaterial({ color: 0xFFE2A8 }));
+      ceilingLamp.position.set(0, 2.75, 0.1);
+      g.add(ceilingLamp);
+      const warmLight = new THREE.PointLight(0xFFD99B, 0.48, 13);
+      warmLight.position.set(0, 2.55, -0.2);
+      g.add(warmLight);
+
+      addPotPlant(g, -4.1, 5.9, 0xE985A7);
+      addPotPlant(g, 4.1, 5.9, 0xE8B36F);
+      const waterJar = new THREE.Mesh(new THREE.SphereGeometry(0.34, 12, 10), M.terracottaPot);
+      waterJar.scale.set(0.95, 1.15, 0.95);
+      waterJar.position.set(-4.2, 0.43, 4.55);
+      g.add(waterJar);
+
+      this.exteriorGroup.add(g);
+      this.stallClickTargets.push(g);
+      this.stallTriggers.push({
+        x: x - 5.6,
+        z,
+        radius: 5.6,
+        stallType: 'local_eatery',
+        eateryId: id,
+        title
+      });
+
+      // Axis-aligned collision around the side and back walls; the wide front doorway stays walkable.
+      this.addRectObstacle(x + 4.45, x + 4.95, z - 4.7, z + 4.7);
+      this.addRectObstacle(x - 4.85, x + 4.45, z - 4.95, z - 4.45);
+      this.addRectObstacle(x - 4.85, x + 4.45, z + 4.45, z + 4.95);
+      this.addRectObstacle(x - 4.95, x - 4.45, z - 4.7, z - 2.85);
+      this.addRectObstacle(x - 4.95, x - 4.45, z + 2.85, z + 4.7);
+
+      // A short concrete apron links the house veranda to the footpath.
+      const apron = new THREE.Mesh(new THREE.BoxGeometry(3.1, 0.08, 5.6), pavementMat);
+      apron.position.set(x - 6.05, 0.035, z);
+      apron.receiveShadow = true;
+      this.exteriorGroup.add(apron);
+    };
+
+    buildFamilyEatery('hut_tieu_co_ba', 'Nhà Cô Ba · Hủ tiếu Mỹ Tho', 91, 60, 'hut_tieu');
+    buildFamilyEatery('banh_beo_di_sau', 'Bếp Dì Sáu · Bánh bèo & chè', 91, 80, 'banh_beo');
+
+    // An ordinary family home completes the short lane: closed timber doors, a tiny garden and a clothesline.
+    const home = new THREE.Group();
+    home.position.set(91, 0, 100);
+    home.rotation.y = -Math.PI / 2;
+    const homeWall = new THREE.MeshStandardMaterial({ map: this.limeWallTex, color: 0xE6E1D2, roughness: 0.9 });
+    const homeRoofMat = new THREE.MeshStandardMaterial({ map: this.tinRoofTex, color: 0x536F78, roughness: 0.76, metalness: 0.1 });
+    const homeFloor = new THREE.Mesh(new THREE.BoxGeometry(9.8, 0.18, 10.4), pavementMat);
+    homeFloor.position.set(0, 0.09, 0.2);
+    home.add(homeFloor);
+    const homeBody = new THREE.Mesh(new THREE.BoxGeometry(9.2, 3.25, 8.8), homeWall);
+    homeBody.position.set(0, 1.72, -0.1);
+    home.add(homeBody);
+    const homeRoof = makeHippedRoofMesh(10.8, 11.3, 1.7, homeRoofMat);
+    homeRoof.position.set(0, 3.95, 0);
+    home.add(homeRoof);
+    const homePorch = new THREE.Mesh(new THREE.BoxGeometry(10.0, 0.12, 2.3), homeRoofMat);
+    homePorch.position.set(0, 3.0, 5.15);
+    homePorch.rotation.x = 0.08;
+    home.add(homePorch);
+    for (const sx of [-4.2, 0, 4.2]) {
+      const post = new THREE.Mesh(new THREE.BoxGeometry(0.18, 2.8, 0.18), timberMat);
+      post.position.set(sx, 1.45, 5.7);
+      home.add(post);
+    }
+    const frontDoor = new THREE.Mesh(new THREE.BoxGeometry(1.7, 2.2, 0.12), timberMat);
+    frontDoor.position.set(0, 1.2, 4.35);
+    home.add(frontDoor);
+    for (const sx of [-3.0, 3.0]) {
+      const window = new THREE.Mesh(new THREE.BoxGeometry(1.35, 1.15, 0.12), glassMat);
+      window.position.set(sx, 1.85, 4.4);
+      home.add(window);
+      const shutter = new THREE.Mesh(new THREE.BoxGeometry(1.48, 1.28, 0.12), shutterMat);
+      shutter.position.set(sx, 1.85, 4.48);
+      home.add(shutter);
+    }
+    addPotPlant(home, -4.1, 5.9, 0xE58D9C);
+    addPotPlant(home, 4.1, 5.9, 0xD7A75D);
+    const clothesPoleA = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.05, 2.8, 7), timberMat);
+    clothesPoleA.position.set(-5.4, 1.4, -1.8);
+    home.add(clothesPoleA);
+    const clothesPoleB = clothesPoleA.clone();
+    clothesPoleB.position.x = 5.4;
+    home.add(clothesPoleB);
+    const clothesLine = new THREE.Line(
+      new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-5.4, 2.65, -1.8), new THREE.Vector3(5.4, 2.65, -1.8)]),
+      new THREE.LineBasicMaterial({ color: 0x6D6A61 })
+    );
+    home.add(clothesLine);
+    for (let i = 0; i < 4; i++) {
+      const cloth = new THREE.Mesh(
+        new THREE.BoxGeometry(0.9, 0.75, 0.05),
+        new THREE.MeshStandardMaterial({ color: [0xE6D8C1, 0xA7C3B4, 0xD9A0A1, 0xE6C76C][i], roughness: 0.86, side: THREE.DoubleSide })
+      );
+      cloth.position.set(-3.2 + i * 1.9, 2.05, -1.8);
+      home.add(cloth);
+    }
+    this.exteriorGroup.add(home);
+    this.addRectObstacle(95.45, 95.95, 95.4, 104.6);
+    this.addRectObstacle(86.05, 95.45, 95.0, 95.5);
+    this.addRectObstacle(86.05, 95.45, 104.5, 105.0);
+
+    // Two parked motorbikes and a few household objects make the lane feel lived-in, not commercial.
+    const addNeighbourMotorbike = (mx, mz, color) => {
+      const bike = new THREE.Group();
+      const rubber = new THREE.MeshStandardMaterial({ color: 0x202225, roughness: 0.88 });
+      const paint = new THREE.MeshStandardMaterial({ color, roughness: 0.42, metalness: 0.12 });
+      for (const wz of [-0.58, 0.58]) {
+        const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.23, 0.23, 0.1, 12), rubber);
+        wheel.rotation.z = Math.PI / 2;
+        wheel.position.set(0, 0.24, wz);
+        bike.add(wheel);
+      }
+      const body = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.42, 0.92), paint);
+      body.position.set(0, 0.55, 0);
+      bike.add(body);
+      const seat = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.13, 0.58), darkTimberMat);
+      seat.position.set(0, 0.82, -0.1);
+      bike.add(seat);
+      const handle = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.06, 0.08), curbMat);
+      handle.position.set(0, 1.0, 0.43);
+      bike.add(handle);
+      bike.position.set(mx, 0, mz);
+      bike.rotation.y = Math.PI / 2;
+      this.exteriorGroup.add(bike);
+    };
+    addNeighbourMotorbike(84.4, 64.2, 0x8D2D27);
+    addNeighbourMotorbike(84.4, 84.1, 0x345C83);
+
+    // Low garden tree and banana clump soften the edge of the residential lane.
+    const tree = new THREE.Group();
+    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.25, 3.2, 8), M.trunk);
+    trunk.position.y = 1.6;
+    tree.add(trunk);
+    for (let i = 0; i < 7; i++) {
+      const crown = new THREE.Mesh(new THREE.DodecahedronGeometry(1.45, 1), i % 2 ? M.foliageLight : M.foliageMid);
+      crown.scale.set(1.15, 0.72, 1.1);
+      crown.position.set(Math.cos(i * 0.9) * 0.72, 3.15 + (i % 3) * 0.25, Math.sin(i * 0.9) * 0.72);
+      tree.add(crown);
+    }
+    tree.position.set(84.2, 0, 94.0);
+    this.exteriorGroup.add(tree);
+  }
   makeBonsai72(scale = 1) {
     const M = this.MAT;
     const g = new THREE.Group();
@@ -8001,15 +7818,11 @@ export class VinhTrang3DWorld {
       this.kneelingRecords.push(rec);
     }
 
-    // 2. Rigged GLB Vietnamese Shopkeepers inside Nhà Tạp Hóa & across Bustling Market Street Stalls
+    // 2. Local residents and family eatery keepers on the east-side residential lane.
     const vendorSpecs = [
-      { x: 47.0, z: 36.2, yaw: -Math.PI * 0.5, charKey: 'nu', tint: [0.86, 0.66, 0.54], hat: false, bag: null, hand: 'quat' },
-      { x: 47.2, z: 33.4, yaw: -Math.PI * 0.5, charKey: 'nam', tint: [0.58, 0.48, 0.36], hat: false, scarf: true },
-      { x: -12.0, z: 48.0, yaw: 0, charKey: 'nu', tint: [0.88, 0.72, 0.78], hat: true, hand: 'hoa_sen' },
-      { x: 7.4, z: 49.6, yaw: 0, charKey: 'nam', tint: [0.54, 0.64, 0.72], hat: false, scarf: true },
-      { x: -7.5, z: 65.8, yaw: Math.PI, charKey: 'nu', tint: [0.82, 0.76, 0.56], hat: true, hand: 'quat' },
-      { x: 16.5, z: 65.8, yaw: Math.PI, charKey: 'nu', tint: [0.64, 0.72, 0.80], hat: false, bag: 'tui_sen' },
-      { x: 40.5, z: 65.8, yaw: Math.PI, charKey: 'nam', tint: [0.60, 0.52, 0.40], hat: true, hand: 'nhang' }
+      { x: 85.6, z: 60.0, yaw: -Math.PI * 0.5, charKey: 'nu', tint: [0.86, 0.66, 0.54], hat: false, bag: null, hand: 'quat' },
+      { x: 85.6, z: 80.0, yaw: -Math.PI * 0.5, charKey: 'nam', tint: [0.58, 0.48, 0.36], hat: false, scarf: true },
+      { x: 85.8, z: 100.0, yaw: -Math.PI * 0.5, charKey: 'nu', tint: [0.88, 0.72, 0.78], hat: false, hand: 'hoa_sen' }
     ];
     for (const vs of vendorSpecs) {
       const h = CHAR_HEIGHTS[vs.charKey] || 1.64;
@@ -8027,7 +7840,7 @@ export class VinhTrang3DWorld {
     // 3. Richly Dressed, Logically Animated Pilgrims & Monks (22 active routes with contextual poses & obstacle-clear paths)
     const wp = (x, z, action = 'pass', wait = 0, lookX = null, lookZ = null) => ({ x, z, action, wait, lookX, lookZ });
     const routes = [
-      // --- A. Bustling Market Street & Coach Arrival (Outside Gates z = 44..64) ---
+      // --- A. Visitor approach and neighbourhood lane (outside the temple gates) ---
       {
         charKey: 'nu',
         tint: [0.78, 0.66, 0.78],
@@ -9368,16 +9181,22 @@ export class VinhTrang3DWorld {
         if (hits.length > 0) {
           let cur = hits[0].object;
           let stallType = 'huong_hoa';
-          let stallTitle = 'Nhà Tạp Hóa Cổng Chùa Vĩnh Tràng';
+          let stallTitle = 'Cửa hàng trong khuôn viên chùa';
+          let eateryId = null;
           while (cur) {
             if (cur.userData && cur.userData.stallType) {
               stallType = cur.userData.stallType;
               stallTitle = cur.userData.stallTitle || stallTitle;
+              eateryId = cur.userData.eateryId || cur.userData.localEateryId || null;
               break;
             }
             cur = cur.parent;
           }
-          this.onObjectClick('OPEN_MARKET_STALL', { category: stallType, title: stallTitle });
+          if (stallType === 'local_eatery' && eateryId) {
+            this.onObjectClick('OPEN_LOCAL_EATERY', { eateryId, title: stallTitle });
+          } else {
+            this.onObjectClick('OPEN_MARKET_STALL', { category: stallType, title: stallTitle });
+          }
           return;
         }
       }
