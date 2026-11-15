@@ -80,16 +80,16 @@ export const PILGRIMAGE_STATIONS = [
   {
     id: 2,
     key: 'phat_adida',
-    name: 'Tượng Phật A Di Đà (cao 24m)',
-    zoneCode: 'Sân Bắc phía trước Bảo Tháp',
+    name: 'Tượng Phật A Di Đà (cao 25m)',
+    zoneCode: 'Công viên phía trước Chánh điện',
     pinLabel: 'Tượng Phật A Di Đà',
-    pos: { x: -8.0, z: -25.0 },
-    standPos: { x: -8.0, z: -14.2 },
-    via: [[10.0, 18.0], [-4.0, -4.0], [-8.0, -14.2]],
-    mapCoord: { x: 44, y: 40 },
-    lookAt: { x: -8.0, y: 11.5, z: -25.0 },
+    pos: { x: -8.0, z: 16.5 },
+    standPos: { x: -8.0, z: 28.0 },
+    via: [[12.0, 42.0], [12.0, 28.0], [-8.0, 28.0]],
+    mapCoord: { x: 44, y: 64 },
+    lookAt: { x: -8.0, y: 12.0, z: 16.5 },
     audio: 's1_adida.mp3',
-    subtitle: 'Đại tượng Phật A Di Đà cao 24m đứng trang nghiêm giữa rặng cây xanh phía trước Bảo Tháp 7 tầng.',
+    subtitle: 'Tượng Phật A Di Đà cao 18m, đặt trên đài sen và bệ cao 7m, trong công viên phía trước Chánh điện.',
     ritualType: 'niem_phat'
   },
   {
@@ -173,13 +173,13 @@ export const PILGRIMAGE_STATIONS = [
     name: 'Phật Niết Bàn (32m) & Bảo Tháp 7 Tầng',
     zoneCode: 'Khu vực phía sau (Bắc)',
     pinLabel: 'Phật Niết Bàn & Bảo Tháp',
-    pos: { x: 12.0, z: -38.0 },
-    standPos: { x: 10.0, z: -27.5 },
-    via: [[10.0, 20.0], [10.0, 0.0], [10.0, -18.0], [10.0, -27.5]],
-    mapCoord: { x: 59, y: 28 },
-    lookAt: { x: 12.0, y: 4.5, z: -38.0 },
+    pos: { x: -30.5, z: -38.0 },
+    standPos: { x: -30.5, z: -27.5 },
+    via: [[-12.0, 20.0], [-22.0, -12.0], [-30.5, -27.5]],
+    mapCoord: { x: 28, y: 28 },
+    lookAt: { x: -30.5, y: 4.5, z: -38.0 },
     audio: 's5_nirvana.mp3',
-    subtitle: 'Chiêm bái đại tượng Đức Phật Thích Ca nhập Niết Bàn dài 32m uy nghi bên cạnh Bảo Tháp Thất Phật 7 tầng (cao 35m).',
+    subtitle: 'Chiêm bái tượng Đức Phật Thích Ca nhập Niết Bàn dài 32m, cao 10m, trong vườn phía sau và gần công viên Di Lặc; Bảo Tháp Thất Phật nằm kế bên.',
     ritualType: 'hoi_huong'
   }
 ];
@@ -318,7 +318,7 @@ export const DISCOVERY_ZONES = [
     via: [[10.0, 20.0], [-14.0, -14.0], [-13.8, -33.0]],
     lookAt: { x: -8.0, y: 9.0, z: -37.0 },
     audio: 's5_nirvana.mp3',
-    subtitle: 'Bảo tháp 7 tầng cao 35m đứng uy nghiêm ngay phía sau tượng Phật A Di Đà và cạnh tượng Phật Niết Bàn.',
+    subtitle: 'Bảo tháp 7 tầng cao 35m nằm trong sân Bắc phía sau Chánh điện, gần tượng Phật A Di Đà và cạnh khu tượng Phật Niết Bàn.',
     ritualType: 'hoi_huong'
   }
 ];
