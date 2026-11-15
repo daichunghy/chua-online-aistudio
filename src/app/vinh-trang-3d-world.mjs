@@ -6825,124 +6825,129 @@ export class VinhTrang3DWorld {
       }
     }
 
-    // Centerpiece 1: HÒN NON BỘ SÂN THIÊN TỈNH 1 (0, 0, -30.5)
+    // HÒN NON BỘ CHÍNH — Sân Thiên Tỉnh 1, dựng theo ảnh thực tế Chùa Vĩnh Tràng.
     const innerNonBo = new THREE.Group();
     innerNonBo.position.set(0, 0, -30.5);
-    const nbBasinOuter = new THREE.Mesh(new THREE.BoxGeometry(8.2, 0.68, 6.8), M.stoneDark);
-    nbBasinOuter.position.y = 0.34;
-    innerNonBo.add(nbBasinOuter);
-    const nbWater = new THREE.Mesh(new THREE.BoxGeometry(7.5, 0.52, 6.1), M.water);
-    nbWater.position.y = 0.46;
-    innerNonBo.add(nbWater);
-
-    const innerRockMat = new THREE.MeshStandardMaterial({ color: 0x5E6660, roughness: 0.94, flatShading: true });
-    const innerMossMat = new THREE.MeshStandardMaterial({ color: 0x3A7839, roughness: 0.84 });
-    for (const [rx, ry, rz, sx, sy, sz, rotY] of [
-      [0.0, 2.05, -0.6, 1.45, 2.65, 1.3, 0.4],
-      [-1.55, 1.35, 0.35, 1.15, 1.6, 1.05, 1.1],
-      [1.65, 1.45, 0.25, 1.2, 1.8, 1.05, 2.1],
-      [-0.65, 1.0, 1.25, 0.9, 0.95, 0.85, 0.8],
-      [0.85, 1.05, 1.15, 0.9, 1.05, 0.85, 1.7]
-    ]) {
-      const rock = new THREE.Mesh(new THREE.DodecahedronGeometry(1.0, 0), innerRockMat);
-      rock.scale.set(sx, sy, sz);
-      rock.rotation.set(0.12, rotY, -0.08);
-      rock.position.set(rx, ry, rz);
-      innerNonBo.add(rock);
-      const moss = new THREE.Mesh(new THREE.SphereGeometry(0.48, 8, 6), innerMossMat);
-      moss.scale.set(sx * 0.65, 0.32, sz * 0.65);
-      moss.position.set(rx, ry + sy * 0.58, rz);
-      innerNonBo.add(moss);
-    }
-    const bonsaiTrunk = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.1, 0.65, 6), M.darkWood);
-    bonsaiTrunk.position.set(1.65, 2.65, 0.25);
-    bonsaiTrunk.rotation.z = -0.25;
-    innerNonBo.add(bonsaiTrunk);
-    const bonsaiLeaf = new THREE.Mesh(new THREE.SphereGeometry(0.42, 8, 6), innerMossMat);
-    bonsaiLeaf.scale.set(1.3, 0.55, 1.1);
-    bonsaiLeaf.position.set(1.78, 3.0, 0.25);
-    innerNonBo.add(bonsaiLeaf);
-
-    const innerWaterfall = new THREE.Mesh(
-      new THREE.PlaneGeometry(0.88, 2.25),
-      new THREE.MeshBasicMaterial({ color: 0xBDEFFB, transparent: true, opacity: 0.84, side: THREE.DoubleSide })
-    );
-    innerWaterfall.position.set(0.0, 1.65, 0.65);
-    innerWaterfall.rotation.x = 0.14;
-    innerNonBo.add(innerWaterfall);
-
-    for (const [lx, lz] of [[-2.5, -1.6], [-2.2, 1.9], [2.5, -1.7], [2.6, 1.8], [0.2, 2.3]]) {
-      const pad = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.36, 0.36, 0.03, 14),
-        new THREE.MeshStandardMaterial({ color: 0x357A38, roughness: 0.75 })
-      );
-      pad.position.set(lx, 0.73, lz);
-      innerNonBo.add(pad);
-      const bloom = new THREE.Mesh(
-        new THREE.ConeGeometry(0.18, 0.26, 7),
-        new THREE.MeshStandardMaterial({ color: 0xF579A8, roughness: 0.45 })
-      );
-      bloom.rotation.x = Math.PI;
-      bloom.position.set(lx, 0.88, lz);
-      innerNonBo.add(bloom);
-    }
-
-    // Swimming Koi inside Thiên Tỉnh 1 basin
-    for (let ki = 0; ki < 6; ki++) {
-      const kColor = ki % 2 === 0 ? 0xFF6B2B : 0xFFD166;
-      const koiGroup = new THREE.Group();
-      const bodyPivot = new THREE.Group();
-      const kbody = new THREE.Mesh(
-        new THREE.SphereGeometry(0.11, 10, 8),
-        new THREE.MeshStandardMaterial({ color: kColor, roughness: 0.3 })
-      );
-      kbody.scale.set(0.75, 0.65, 2.1);
-      bodyPivot.add(kbody);
-      const tailPivot = new THREE.Group();
-      tailPivot.position.set(0, 0, -0.22);
-      const tailMesh = new THREE.Mesh(
-        new THREE.ConeGeometry(0.08, 0.16, 4),
-        new THREE.MeshStandardMaterial({ color: 0xFFF3E0, roughness: 0.4 })
-      );
-      tailMesh.rotation.x = Math.PI / 2;
-      tailPivot.add(tailMesh);
-      bodyPivot.add(tailPivot);
-      koiGroup.add(bodyPivot);
-      innerNonBo.add(koiGroup);
-
-      const ctrl = [];
-      const a0 = (ki / 6) * Math.PI * 2;
-      for (let p = 0; p < 6; p++) {
-        const th = a0 + (p / 6) * Math.PI * 2;
-        ctrl.push(new THREE.Vector3(Math.cos(th) * 2.8, 0.65, Math.sin(th) * 2.25));
+    const nbOchre = new THREE.MeshStandardMaterial({color:0xD5A24D,roughness:0.84});
+    const nbGold = new THREE.MeshStandardMaterial({color:0xE4BD72,roughness:0.82});
+    const nbStone = new THREE.MeshStandardMaterial({color:0x4A4B48,roughness:0.98,flatShading:true});
+    const nbStone2 = new THREE.MeshStandardMaterial({color:0x5A5953,roughness:0.98,flatShading:true});
+    const nbMoss = new THREE.MeshStandardMaterial({color:0x405B3D,roughness:0.96});
+    const nbWood = new THREE.MeshStandardMaterial({color:0x762D20,roughness:0.76});
+    const nbRoof = new THREE.MeshStandardMaterial({color:0xB98239,roughness:0.82});
+    const nbIvory = new THREE.MeshStandardMaterial({color:0xE9E2D2,roughness:0.84});
+    // Octagonal ochre plinth and raised rim.
+    const foot = new THREE.Mesh(new THREE.CylinderGeometry(4.25,4.38,0.2,8),nbOchre);
+    foot.rotation.y=-Math.PI/8; foot.position.y=0.1; foot.castShadow=true; innerNonBo.add(foot);
+    const basin = new THREE.Mesh(new THREE.CylinderGeometry(4.18,4.3,0.65,8),nbOchre);
+    basin.rotation.y=-Math.PI/8; basin.position.y=0.51; basin.castShadow=true; innerNonBo.add(basin);
+    const rim = new THREE.Mesh(new THREE.CylinderGeometry(4.25,4.15,0.16,8),nbGold);
+    rim.rotation.y=-Math.PI/8; rim.position.y=0.91; innerNonBo.add(rim);
+    for(let i=0;i<8;i++){
+      const angle=Math.PI/4+i*Math.PI/4, panel=new THREE.Group();
+      panel.position.set(Math.cos(angle)*4.12,0.5,Math.sin(angle)*4.12);
+      panel.rotation.y=Math.PI/2-angle;
+      const plaque=new THREE.Mesh(new THREE.BoxGeometry(1.75,0.4,0.05),nbGold); panel.add(plaque);
+      for(const yy of [-0.13,0.13]){
+        const line=new THREE.Mesh(new THREE.BoxGeometry(1.42,0.035,0.035),nbOchre);
+        line.position.set(0,yy,0.05); panel.add(line);
       }
-      this.koiList.push({
-        mesh: koiGroup,
-        bodyPivot,
-        tail: tailPivot,
-        curve: new THREE.CatmullRomCurve3(ctrl, true, 'catmullrom', 0.5),
-        speed: 0.048 + (ki % 3) * 0.01,
-        phase: (ki * 0.16) % 1
-      });
+      const diamond=new THREE.Mesh(new THREE.BoxGeometry(0.28,0.28,0.045),nbOchre);
+      diamond.rotation.z=Math.PI/4; diamond.position.z=0.06; panel.add(diamond); innerNonBo.add(panel);
     }
-    const nonBoPlaque = new THREE.Mesh(
-      new THREE.BoxGeometry(3.8, 0.48, 0.14),
-      new THREE.MeshStandardMaterial({
-        map: makeTextTex('SÂN THIÊN TỈNH 1 · HÒN NON BỘ', {
-          w: 960,
-          h: 130,
-          bg: '#1C5A34',
-          border: '#FFD875',
-          color: '#FFF6E5',
-          size: 40
-        })
-      })
-    );
-    nonBoPlaque.position.set(0, 0.52, 3.45);
-    innerNonBo.add(nonBoPlaque);
+    const gravel=new THREE.Mesh(new THREE.CylinderGeometry(4.02,4.02,0.1,8),new THREE.MeshStandardMaterial({color:0xA99B83,roughness:1}));
+    gravel.rotation.y=-Math.PI/8; gravel.position.y=0.99; gravel.receiveShadow=true; innerNonBo.add(gravel);
+    // Jagged, irregular rock peaks. Slightly distorted icosahedra create a natural silhouette.
+    const makePeak=(seed,x,y,z,sx,sy,sz,mat)=>{
+      const geo=new THREE.IcosahedronGeometry(1,2),p=geo.getAttribute('position'); let state=seed>>>0;
+      const rnd=()=>{state=(state*1664525+1013904223)>>>0;return state/4294967296;};
+      for(let j=0;j<p.count;j++){const f=0.78+rnd()*0.48;p.setXYZ(j,p.getX(j)*f,p.getY(j)*(0.82+rnd()*0.42),p.getZ(j)*f);}
+      p.needsUpdate=true;geo.computeVertexNormals();
+      const rock=new THREE.Mesh(geo,mat);rock.position.set(x,y,z);rock.scale.set(sx,sy,sz);rock.castShadow=true;rock.receiveShadow=true;innerNonBo.add(rock);
+    };
+    [
+      [101,-0.1,2.0,-0.65,1.55,1.95,1.22,nbStone],
+      [102,-0.15,3.75,-0.72,1.0,1.75,0.95,nbStone2],
+      [103,-0.2,5.15,-0.72,0.7,1.15,0.66,nbStone],
+      [104,-1.55,2.0,-0.35,1.05,1.7,0.95,nbStone2],
+      [105,-1.7,3.35,-0.5,0.68,1.12,0.65,nbStone],
+      [106,1.55,2.0,-0.3,1.05,1.62,0.95,nbStone],
+      [107,1.72,3.35,-0.5,0.68,1.12,0.65,nbStone2],
+      [108,-2.35,1.35,-0.5,1.2,0.9,0.86,nbStone],
+      [109,2.3,1.3,-0.55,1.2,0.9,0.86,nbStone2],
+      [110,-0.9,1.25,0.9,0.92,0.82,0.72,nbStone2],
+      [111,0.9,1.25,0.9,0.92,0.82,0.72,nbStone],
+      [112,0,1.35,1.35,0.72,0.85,0.6,nbStone2],
+      [113,-0.9,2.45,-1.3,0.8,0.9,0.7,nbStone],
+      [114,0.9,2.4,-1.25,0.8,0.9,0.7,nbStone2]
+    ].forEach(v=>makePeak(...v));
+    for(const [x,y,z,sx,sz] of [[-1.45,3.0,-0.1,.7,.35],[1.45,2.85,-.05,.65,.32],[-.5,4.45,-.5,.5,.25],[.95,3.7,-.55,.45,.22],[-2.3,1.9,-.1,.5,.28],[2.25,1.85,-.1,.55,.3]]){
+      const moss=new THREE.Mesh(new THREE.DodecahedronGeometry(1,1),nbMoss);
+      moss.scale.set(sx,.075,sz);moss.position.set(x,y,z);innerNonBo.add(moss);
+    }
+    // Miniature open-sided Vietnamese shrine with red posts, layered tiled roofs and Buddha.
+    const shrine=new THREE.Group();shrine.position.set(0,2.2,.55);
+    const platform=new THREE.Mesh(new THREE.BoxGeometry(2.3,.18,1.6),nbIvory);platform.position.y=.1;shrine.add(platform);
+    for(const x of [-.82,.82])for(const z of [-.5,.5]){
+      const post=new THREE.Mesh(new THREE.CylinderGeometry(.055,.075,1.15,8),nbWood);post.position.set(x,.8,z);shrine.add(post);
+    }
+    const roofLayer=(w,d,y,h)=>{
+      const eave=new THREE.Mesh(new THREE.BoxGeometry(w,.1,d),nbRoof);eave.position.y=y;shrine.add(eave);
+      const roof=new THREE.Mesh(new THREE.ConeGeometry(Math.max(w,d)*.49,h,4),nbRoof);
+      roof.rotation.y=Math.PI/4;roof.scale.z=d/w;roof.position.y=y+h*.5;shrine.add(roof);
+    };
+    roofLayer(2.6,1.9,1.42,.5);roofLayer(1.9,1.35,2.08,.38);
+    const finial=new THREE.Mesh(new THREE.ConeGeometry(.1,.32,8),nbGold);finial.position.y=2.48;shrine.add(finial);
+    const buddha=new THREE.Group();
+    const seat=new THREE.Mesh(new THREE.CylinderGeometry(.22,.26,.12,10),nbGold);seat.position.y=.28;buddha.add(seat);
+    const body=new THREE.Mesh(new THREE.CylinderGeometry(.12,.19,.34,10),nbIvory);body.position.y=.51;buddha.add(body);
+    const head=new THREE.Mesh(new THREE.SphereGeometry(.11,10,8),nbIvory);head.position.y=.75;buddha.add(head);
+    const halo=new THREE.Mesh(new THREE.TorusGeometry(.16,.018,6,18),nbGold);halo.position.set(0,.75,-.03);buddha.add(halo);
+    buddha.position.set(0,.2,-.15);shrine.add(buddha);innerNonBo.add(shrine);
+    // Seven stone steps lead down from the shrine terrace toward the visitor side.
+    for(let i=0;i<7;i++){
+      const step=new THREE.Mesh(new THREE.BoxGeometry(.9,.13,.24),nbIvory);
+      step.position.set(0,1.02+i*.16,2.9-i*.24);step.castShadow=true;innerNonBo.add(step);
+    }
+    // Small arched bridge and two dark cave openings in the lower rock face.
+    const bridge=new THREE.Group();
+    for(let i=0;i<=8;i++){
+      const t=-1+i/4,block=new THREE.Mesh(new THREE.BoxGeometry(.19,.09,.4),nbIvory);
+      block.position.set(t*.72,.15+.26*(1-t*t),0);bridge.add(block);
+    }
+    bridge.position.set(-2.25,1.08,.8);innerNonBo.add(bridge);
+    const caveMat=new THREE.MeshBasicMaterial({color:0x171715,side:THREE.DoubleSide});
+    for(const [x,y,z,w,h] of [[-2.08,1.35,1.12,.45,.34],[2.02,1.32,1.08,.38,.3]]){
+      const cave=new THREE.Mesh(new THREE.CircleGeometry(1,20),caveMat);cave.position.set(x,y,z);cave.scale.set(w,h,1);innerNonBo.add(cave);
+    }
+    // White ceramic planters with feathered cycad fronds, matching the photographed flanking plants.
+    const makeCycad=()=>{
+      const plant=new THREE.Group(),potMat=new THREE.MeshStandardMaterial({color:0xE9E7DE,roughness:.35});
+      const pot=new THREE.Mesh(new THREE.CylinderGeometry(.52,.42,.75,20),potMat);pot.position.y=.38;plant.add(pot);
+      const trunk=new THREE.Mesh(new THREE.CylinderGeometry(.1,.14,.5,10),nbRoof);trunk.position.y=.98;plant.add(trunk);
+      const leafMat=new THREE.MeshStandardMaterial({color:0x35623A,roughness:.86,side:THREE.DoubleSide});
+      for(let i=0;i<15;i++){
+        const angle=i/15*Math.PI*2,frond=new THREE.Group();
+        const stem=new THREE.Mesh(new THREE.CylinderGeometry(.018,.025,1.55,5),leafMat);
+        stem.rotation.x=Math.PI/2-.25;stem.position.z=.75;frond.add(stem);
+        for(let k=2;k<11;k++){
+          const t=k/12;
+          for(const side of [-1,1]){
+            const leaflet=new THREE.Mesh(new THREE.ConeGeometry(.035,.28,4),leafMat);
+            leaflet.position.set(side*.11*t,-.15*t,.16+1.35*t);
+            leaflet.rotation.z=side*-.8;frond.add(leaflet);
+          }
+        }
+        frond.position.y=1.25;frond.rotation.y=angle;plant.add(frond);
+      }
+      return plant;
+    };
+    const leftCycad=makeCycad();leftCycad.position.set(-5.25,0,1.0);innerNonBo.add(leftCycad);
+    const rightCycad=makeCycad();rightCycad.position.set(5.25,0,1.0);innerNonBo.add(rightCycad);
     g.add(innerNonBo);
     this.interiorNonBoClickTargets.push(innerNonBo);
-    this.interiorRectObstacles.push({ minX: -4.3, maxX: 4.3, minZ: -34.1, maxZ: -26.9 });
+    this.interiorRectObstacles.push({minX:-4.3,maxX:4.3,minZ:-34.1,maxZ:-26.9});
+    this.interiorObstacles.push({x:-5.25,z:-29.5,r:.62},{x:5.25,z:-29.5,r:.62});
 
     // Courtyard corner bonsai pots matching Sân Thiên Tỉnh reference photos
     for (const [bx, bz] of [[-6.8, -26.0], [6.8, -26.0], [-6.8, -35.0], [6.8, -35.0]]) {
@@ -7124,7 +7129,7 @@ export class VinhTrang3DWorld {
     }
 
     // =========================================================================
-    // 5. SÂN THIÊN TỈNH 2 (Giếng Trời 2, z: -53.0 .. -68.5) + HÒN NON BỘ 2
+    // 5. SÂN THIÊN TỈNH 2 (Giếng Trời 2, z: -53.0 .. -68.5) — SÂN MỞ
     // =========================================================================
     addTripleArchPartition(-53.0, 'SÂN THIÊN TỈNH 2 · ĐẾN NHÀ HẬU');
 
@@ -7157,60 +7162,7 @@ export class VinhTrang3DWorld {
       }
     }
 
-    // Centerpiece 2: HÒN NON BỘ SÂN THIÊN TỈNH 2 (0, 0, -60.8)
-    const nonBo2 = new THREE.Group();
-    nonBo2.position.set(0, 0, -60.8);
-    const nb2Outer = new THREE.Mesh(new THREE.BoxGeometry(7.8, 0.65, 6.2), M.stoneDark);
-    nb2Outer.position.y = 0.325;
-    nonBo2.add(nb2Outer);
-    const nb2Water = new THREE.Mesh(new THREE.BoxGeometry(7.1, 0.5, 5.5), M.water);
-    nb2Water.position.y = 0.44;
-    nonBo2.add(nb2Water);
-    for (const [rx, ry, rz, sx, sy, sz, rotY] of [
-      [-1.0, 1.7, -0.4, 1.25, 2.2, 1.15, 0.7],
-      [1.1, 1.85, -0.3, 1.3, 2.4, 1.2, 1.9],
-      [0.05, 1.2, 0.9, 1.05, 1.15, 0.95, 1.2]
-    ]) {
-      const rock = new THREE.Mesh(new THREE.DodecahedronGeometry(1.0, 0), innerRockMat);
-      rock.scale.set(sx, sy, sz);
-      rock.rotation.set(0.1, rotY, -0.06);
-      rock.position.set(rx, ry, rz);
-      nonBo2.add(rock);
-      const moss = new THREE.Mesh(new THREE.SphereGeometry(0.42, 8, 6), innerMossMat);
-      moss.scale.set(sx * 0.65, 0.32, sz * 0.65);
-      moss.position.set(rx, ry + sy * 0.56, rz);
-      nonBo2.add(moss);
-    }
-    const miniPagoda = new THREE.Mesh(new THREE.ConeGeometry(0.28, 0.95, 6), M.stoneLight);
-    miniPagoda.position.set(-1.0, 3.05, -0.4);
-    nonBo2.add(miniPagoda);
-    const nb2Waterfall = new THREE.Mesh(
-      new THREE.PlaneGeometry(0.85, 2.0),
-      new THREE.MeshBasicMaterial({ color: 0xBDEFFB, transparent: true, opacity: 0.82, side: THREE.DoubleSide })
-    );
-    nb2Waterfall.position.set(1.1, 1.55, 0.42);
-    nb2Waterfall.rotation.x = 0.16;
-    nonBo2.add(nb2Waterfall);
-
-    const nb2Plaque = new THREE.Mesh(
-      new THREE.BoxGeometry(3.8, 0.48, 0.14),
-      new THREE.MeshStandardMaterial({
-        map: makeTextTex('SÂN THIÊN TỈNH 2 · NON BỘ & CẢNH THIỀN', {
-          w: 960,
-          h: 130,
-          bg: '#1C5A34',
-          border: '#FFD875',
-          color: '#FFF6E5',
-          size: 38
-        })
-      })
-    );
-    nb2Plaque.position.set(0, 0.5, 3.16);
-    nonBo2.add(nb2Plaque);
-    g.add(nonBo2);
-    this.interiorNonBoClickTargets.push(nonBo2);
-    this.interiorRectObstacles.push({ minX: -4.15, maxX: 4.15, minZ: -64.05, maxZ: -57.55 });
-
+    // Sân Thiên Tỉnh 2 được giữ thoáng, không dựng thêm một hòn non bộ trùng lặp.
     for (const [bx, bz] of [[-6.8, -56.5], [6.8, -56.5], [-6.8, -65.0], [6.8, -65.0]]) {
       const pot = this.makeBonsai72(0.74);
       pot.position.set(bx, 0, bz);
@@ -9815,7 +9767,7 @@ export class VinhTrang3DWorld {
         if (hits.length > 0) {
           this.onObjectClick('TOAST', {
             title: '🪨 Sân Thiên Tỉnh · Hòn Non Bộ Giữa Chùa',
-            desc: 'Hai khoảng giếng trời thông thoáng đón nắng gió tự nhiên, kết nối Chánh điện với Nhà Tổ và Nhà Hậu qua hành lang chữ Quốc.'
+            desc: 'Hòn non bộ chính nằm giữa sân Thiên Tỉnh nối Chánh điện với Nhà Tổ: bệ đá bát giác màu vàng đất, cụm núi đá sẫm màu nhiều đỉnh, tiểu đình mái ngói, bậc thang đá, cầu nhỏ và hai chậu vạn tuế hai bên.'
           });
           return;
         }
