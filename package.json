@@ -1,0 +1,16 @@
+{
+  "name": "chua-online",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Chua Online — trai nghiem web 3D chua Vinh Trang",
+  "scripts": {
+    "dev": "node server.mjs",
+    "serve": "node server.mjs",
+    "start": "node server.mjs",
+    "build": "node --check server.mjs && node --check src/logic/chua-online-logic.mjs && node --check src/app/vinh-trang-3d-world.mjs && node --check src/app/chua-online-app.mjs",
+    "lint": "node --test src/logic/chua-online-logic.test.mjs"
+  },
+  "dependencies": {
+    "serve": "^14.2.4"
+  }
+}

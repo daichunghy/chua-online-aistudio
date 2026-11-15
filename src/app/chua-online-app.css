@@ -1,0 +1,2595 @@
+/* ==========================================================================
+   Chùa Online | Chùa Vĩnh Tràng — Master Stylesheet
+   Faithful to Reference Images 1, 2, 3, 4 + Lesson Study Card Design
+   ========================================================================== */
+
+:root {
+  /* Perceptual OKLCH & OKLab Heritage Design Tokens (meodai/skill.color-expert) */
+  --oklch-jade-deep: oklch(0.39 0.082 152);      /* #1C5A34 Xanh rêu đậm */
+  --oklch-cream-base: oklch(0.97 0.024 84);      /* #FFF6E5 Nền kem ấm */
+  --oklch-walnut-ink: oklch(0.34 0.048 52);      /* #4A3222 Chữ nâu ấm */
+  --oklch-gold-ochre: oklch(0.71 0.132 78);      /* #C9962E Điểm vàng */
+  --oklch-lotus-pink: oklch(0.73 0.148 352);     /* #EE7FAE Hồng sen */
+  --oklch-terracotta: oklch(0.61 0.128 42);      /* #C96F4A Cam đất */
+
+  --green-deep: #1b432c;
+  --green-pill: color-mix(in oklab, var(--oklch-jade-deep) 88%, #0f291a);
+  --green-btn: #1C5A34;
+  --green-btn-dark: color-mix(in oklab, #1C5A34 78%, #091f12);
+  --green-dpad-bg: rgba(28, 72, 46, 0.94);
+  --green-dpad-well: #163020;
+  --brown-action-top: color-mix(in oklab, #784e2a 92%, var(--oklch-gold-ochre));
+  --brown-action-bot: color-mix(in oklab, #54341a 90%, #241409);
+  --brown-action-border: rgba(232, 196, 148, 0.46);
+  --cream-sheet: #FFF6E5;
+  --cream-card: color-mix(in oklab, #FFF6E5 65%, #ffffff);
+  --tan-pill: color-mix(in oklab, #FFF6E5 78%, #d6ab70);
+  --walnut-text: #4A3222;
+  --dark-ink: #241409;
+  --terracotta-top: color-mix(in oklab, #C96F4A 88%, #f08b58);
+  --terracotta-bot: color-mix(in oklab, #C96F4A 78%, #7e2a10);
+  --lecture-bar: rgba(44, 25, 14, 0.88);
+  --gold-pill: #C9962E;
+  --ao-lam: #9a8f99;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #14261c;
+  font-family: 'Be Vietnam Pro', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: #fff;
+}
+
+button,
+input,
+textarea,
+select {
+  font-family: inherit;
+}
+
+/* ==========================================================================
+   1. MAIN VIEWPORT & COURTYARD SCENE (Reference Image 1: image_dbddfac8.png)
+   ========================================================================== */
+
+#app-root {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background: #1a3324;
+}
+
+#scene-stage {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+#courtyard-backdrop {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: none;
+}
+
+#fx-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 3;
+}
+
+/* Primary Live Walkable 3D World Fullscreen Canvas (Default Viewport) */
+#world3d-container {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: block;
+  background: linear-gradient(180deg, #6ab2e8 0%, #cbe5f8 55%, #d6cbb5 100%);
+}
+
+#world3d-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  cursor: grab;
+}
+
+#world3d-canvas:active {
+  cursor: grabbing;
+}
+
+/* Smooth Golden Transition Veil when walking gradually into/out of Chánh điện */
+#temple-transition-veil {
+  position: fixed;
+  inset: 0;
+  z-index: 65;
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(circle at 50% 45%, rgba(255, 246, 224, 0.88) 0%, rgba(217, 164, 65, 0.94) 100%);
+  transition: opacity 0.36s ease;
+}
+
+#temple-transition-veil.active {
+  opacity: 1;
+}
+
+/* Quick-Walk 3D Landmark Bar (Walk to Lotus Pond, Buddha Statues, Main Hall, Interior, Shop, Lecture) */
+.quick-walk-bar {
+  position: absolute;
+  top: 76px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 26;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(20, 48, 31, 0.92);
+  border: 1.5px solid rgba(242, 206, 134, 0.42);
+  border-radius: 999px;
+  padding: 5px 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  max-width: calc(100vw - 28px);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.quick-walk-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.walk-chip-btn {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 232, 185, 0.28);
+  border-radius: 999px;
+  padding: 4px 10px;
+  color: #fff8eb;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.12s ease, border-color 0.15s ease;
+  white-space: nowrap;
+}
+
+.walk-chip-btn:hover,
+.walk-chip-btn.active {
+  background: linear-gradient(180deg, #e5b24c 0%, #c68624 100%);
+  color: #231205;
+  border-color: #fff2cc;
+  transform: translateY(-1px);
+}
+
+/* Milestone-Unlocked UGC Check-in Pill in Courtyard HUD */
+.ugc-milestone-pill {
+  position: absolute;
+  left: 184px;
+  bottom: 28px;
+  z-index: 26;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 440px;
+  padding: 9px 14px;
+  border-radius: 16px;
+  font-size: 13px;
+  font-weight: 800;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  transition: transform 0.16s ease, box-shadow 0.16s ease;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.38);
+}
+
+.ugc-milestone-pill.locked {
+  background: rgba(29, 58, 40, 0.94);
+  border: 1.5px solid rgba(255, 255, 255, 0.28);
+  color: rgba(255, 248, 235, 0.88);
+}
+
+.ugc-milestone-pill.unlocked {
+  background: linear-gradient(180deg, #d96b27 0%, #9e3810 100%);
+  border: 2px solid #fbe09c;
+  color: #ffffff;
+}
+
+.ugc-milestone-pill:hover {
+  transform: translateY(-2px);
+}
+
+.ugc-upload-dropzone {
+  border: 2px dashed #165632;
+  background: linear-gradient(180deg, #f3fbf6 0%, #e6f5ec 100%);
+  border-radius: 16px;
+  padding: 12px 14px;
+  text-align: center;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.ugc-upload-dropzone:hover {
+  background: #dcfce7;
+  border-color: #0f3d22;
+}
+
+/* ==========================================================================
+   TOP NAVIGATION BAR (Matches Reference Image 1 & 2)
+   ========================================================================== */
+
+.top-hud-bar {
+  position: absolute;
+  top: 16px;
+  left: 18px;
+  right: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  z-index: 30;
+  pointer-events: none;
+}
+
+.brand-pill {
+  pointer-events: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  background: linear-gradient(180deg, #275e3e 0%, #1C5A34 55%, #164427 100%);
+  border: 2px solid rgba(255, 246, 229, 0.38);
+  border-radius: 999px;
+  padding: 10px 24px 10px 18px;
+  box-shadow: 0 10px 24px rgba(17, 41, 26, 0.32), inset 0 2px 3px rgba(255, 246, 229, 0.25);
+  color: #FFF6E5;
+  cursor: pointer;
+  transition: transform 0.16s ease, box-shadow 0.16s ease;
+}
+
+.brand-pill:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.36);
+}
+
+.brand-pill .lotus-logo {
+  width: 34px;
+  height: 26px;
+  flex-shrink: 0;
+}
+
+.brand-pill .brand-main {
+  font-size: 21px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+.brand-pill .brand-divider {
+  width: 1.5px;
+  height: 22px;
+  background: rgba(255, 255, 255, 0.45);
+}
+
+.brand-pill .brand-sub {
+  font-size: 18px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.96);
+}
+
+.top-nav-group {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.nav-pill-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(180deg, #275e3e 0%, #1C5A34 55%, #164427 100%);
+  border: 2px solid rgba(255, 246, 229, 0.36);
+  border-radius: 999px;
+  padding: 10px 18px;
+  color: #FFF6E5;
+  font-size: 15.5px;
+  font-weight: 700;
+  white-space: nowrap;
+  flex-shrink: 0;
+  cursor: pointer;
+  box-shadow: 0 8px 20px rgba(17, 41, 26, 0.28), inset 0 2px 3px rgba(255, 246, 229, 0.24);
+  transition: transform 0.16s ease, background 0.16s ease, box-shadow 0.16s ease;
+}
+
+.nav-pill-btn.nav-merit-btn {
+  background: linear-gradient(180deg, #8F5E24 0%, #6E4518 65%, #553411 100%);
+  border-color: rgba(255, 222, 146, 0.72);
+  color: #FFF6E5;
+}
+
+.nav-pill-btn.nav-merit-btn strong {
+  font-variant-numeric: tabular-nums;
+  color: #FFD875;
+  font-weight: 800;
+  margin-left: 2px;
+}
+
+.nav-pill-btn:hover,
+.nav-pill-btn.active {
+  background: linear-gradient(180deg, #32744e 0%, #22663c 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 11px 24px rgba(17, 41, 26, 0.34), inset 0 2px 4px rgba(255, 246, 229, 0.32);
+}
+
+.nav-pill-btn svg {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+/* ==========================================================================
+   FLOATING SCENE PINS (📍 Chánh điện + Interactive Hotspots)
+   ========================================================================== */
+
+#scene-pins-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 15;
+}
+
+.scene-pin {
+  pointer-events: auto;
+  position: absolute;
+  transform: translate(-50%, -50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: linear-gradient(180deg, #285738 0%, #1c4129 100%);
+  border: 1.5px solid rgba(255, 255, 255, 0.45);
+  border-radius: 999px;
+  padding: 7px 16px 7px 12px;
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+  transition: transform 0.18s ease, background 0.18s ease;
+}
+
+.scene-pin:hover {
+  transform: translate(-50%, -54%) scale(1.05);
+  background: linear-gradient(180deg, #316b45 0%, #224f32 100%);
+}
+
+.scene-pin::after {
+  content: '';
+  position: absolute;
+  bottom: -9px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-top: 9px solid #ffffff;
+}
+
+.scene-pin.secondary-pin {
+  background: rgba(34, 72, 48, 0.88);
+  font-size: 13.5px;
+  padding: 6px 13px;
+  opacity: 0.92;
+}
+
+/* Interactive Character Hotspot & Equipped Badge Overlay in Courtyard */
+#protagonist-hotspot {
+  position: absolute;
+  left: 44%;
+  top: 63%;
+  width: 100px;
+  height: 210px;
+  transform: translate(-50%, -50%);
+  z-index: 14;
+  cursor: pointer;
+}
+
+.equipped-floating-tags {
+  position: absolute;
+  bottom: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.equip-tag-chip {
+  background: rgba(27, 67, 44, 0.88);
+  border: 1px solid rgba(255, 232, 185, 0.52);
+  color: #fff6e0;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 9px;
+  border-radius: 999px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.28);
+}
+
+/* ==========================================================================
+   BOTTOM-LEFT D-PAD ("Di chuyển" — Matches Reference Image 1)
+   ========================================================================== */
+
+.dpad-card {
+  position: absolute;
+  left: 20px;
+  bottom: 24px;
+  width: 154px;
+  height: 170px;
+  background: linear-gradient(180deg, rgba(44, 92, 62, 0.96) 0%, rgba(28, 66, 43, 0.98) 100%);
+  border: 2px solid rgba(255, 246, 229, 0.34);
+  border-radius: 26px;
+  box-shadow: 0 14px 32px rgba(16, 36, 24, 0.38), inset 0 2px 4px rgba(255, 246, 229, 0.22);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px 12px 12px;
+  z-index: 25;
+}
+
+.dpad-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 6px;
+  letter-spacing: 0.01em;
+}
+
+.dpad-grid {
+  position: relative;
+  width: 124px;
+  height: 124px;
+}
+
+.dpad-btn {
+  position: absolute;
+  width: 38px;
+  height: 38px;
+  background: #173021;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 10px;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.08), 0 3px 8px rgba(0, 0, 0, 0.35);
+  transition: background 0.12s ease, transform 0.1s ease;
+}
+
+.dpad-btn:hover {
+  background: #224932;
+}
+
+.dpad-btn:active,
+.dpad-btn.pressed {
+  background: #2e6645;
+  transform: scale(0.93);
+}
+
+.dpad-btn svg {
+  width: 16px;
+  height: 16px;
+  fill: currentColor;
+}
+
+.dpad-up {
+  top: 0;
+  left: 43px;
+}
+
+.dpad-left {
+  top: 43px;
+  left: 0;
+}
+
+.dpad-right {
+  top: 43px;
+  right: 0;
+}
+
+.dpad-down {
+  bottom: 0;
+  left: 43px;
+}
+
+/* ==========================================================================
+   BOTTOM-RIGHT 4 SPIRITUAL ACTION BUTTONS (Matches Reference Image 1)
+   ========================================================================== */
+
+.spiritual-actions-bar {
+  position: absolute;
+  right: 18px;
+  bottom: 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  z-index: 25;
+}
+
+.action-square-btn {
+  width: 114px;
+  height: 112px;
+  background: linear-gradient(180deg, #8b5c34 0%, #684220 55%, #513216 100%);
+  border: 2px solid rgba(255, 236, 200, 0.52);
+  border-radius: 26px;
+  color: #FFF6E5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  box-shadow: 0 12px 26px rgba(34, 18, 8, 0.36), inset 0 2px 4px rgba(255, 244, 222, 0.32), inset 0 -3px 6px rgba(36, 20, 9, 0.25);
+  transition: transform 0.16s ease, box-shadow 0.16s ease, filter 0.16s ease;
+  position: relative;
+}
+
+.action-square-btn:hover {
+  transform: translateY(-3px);
+  filter: brightness(1.08);
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.46), inset 0 1px 2px rgba(255, 232, 198, 0.35);
+}
+
+.action-square-btn:active {
+  transform: translateY(0) scale(0.97);
+}
+
+.action-square-btn .action-icon {
+  width: 48px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.action-square-btn .action-label {
+  font-size: 16px;
+  font-weight: 700;
+  color: #fff9ef;
+  letter-spacing: -0.01em;
+}
+
+.action-badge-count {
+  position: absolute;
+  top: 7px;
+  right: 8px;
+  background: rgba(230, 178, 74, 0.95);
+  color: #2b1708;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 999px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+/* ==========================================================================
+   SUBTLE RITUAL TOAST / CHÚ TIỂU AN NARRATION BANNER
+   ========================================================================== */
+
+#ritual-toast {
+  position: absolute;
+  right: 20px;
+  top: 122px;
+  transform: translateY(-10px);
+  width: 340px;
+  max-width: calc(100vw - 40px);
+  background: rgba(26, 56, 38, 0.94);
+  border: 1.5px solid rgba(240, 206, 146, 0.55);
+  border-radius: 18px;
+  padding: 10px 16px;
+  color: #fff8eb;
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.42);
+  z-index: 28;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  text-align: left;
+}
+
+#ritual-toast.visible {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+#ritual-toast .toast-title {
+  font-size: 16px;
+  font-weight: 800;
+  color: #f9d47e;
+  margin-bottom: 4px;
+}
+
+#ritual-toast .toast-desc {
+  font-size: 14.5px;
+  line-height: 1.45;
+  color: #fff6e6;
+}
+
+/* ==========================================================================
+   2. CỬA HÀNG LƯU NIỆM & VẬT PHẨM 3D (Matches Reference Image 2: image_43ca3fb3.png)
+   ========================================================================== */
+
+#shop-screen {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  display: none;
+  flex-direction: column;
+  background: #1d3c29;
+  overflow: hidden;
+}
+
+#shop-screen.open {
+  display: flex;
+}
+
+/* Upper Kiosk Scene from Reference Image 2 (cropped below baked top bar) */
+.shop-kiosk-hero {
+  position: relative;
+  width: 100%;
+  height: 28vh;
+  min-height: 200px;
+  max-height: 265px;
+  background-image: url('/public/assets/aistudio/image_43ca3fb3.png');
+  background-size: 104% auto;
+  background-position: center 9%;
+  background-repeat: no-repeat;
+  flex-shrink: 0;
+}
+
+/* Lower Cream Bottom Sheet with Curved Lotus Crest */
+.shop-sheet-body {
+  position: relative;
+  flex: 1;
+  background: linear-gradient(180deg, #fef7e8 0%, #f8ebd2 100%);
+  border-top-left-radius: 42px;
+  border-top-right-radius: 42px;
+  margin-top: -32px;
+  padding: 8px 28px 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-shadow: 0 -12px 36px rgba(0, 0, 0, 0.28);
+  overflow-y: auto;
+  color: var(--dark-ink);
+}
+
+/* Curved Top Arch Crest for Pink Lotus */
+.shop-lotus-crest {
+  width: 210px;
+  height: 54px;
+  margin-top: -36px;
+  background: #fef7e8;
+  border-radius: 120px 120px 0 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-top: 6px;
+  flex-shrink: 0;
+}
+
+.shop-main-title {
+  font-size: clamp(26px, 3vw, 36px);
+  font-weight: 800;
+  color: #124b2a;
+  letter-spacing: -0.02em;
+  text-align: center;
+  margin-top: 0;
+}
+
+.shop-main-subtitle {
+  font-size: clamp(14px, 1.4vw, 18px);
+  font-weight: 600;
+  color: #5b3a1d;
+  text-align: center;
+  margin-top: 2px;
+  margin-bottom: 10px;
+}
+
+/* 3 Category Pill Tabs */
+.shop-tabs-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  width: 100%;
+  max-width: 960px;
+  margin-bottom: 12px;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.shop-tab-pill {
+  flex: 1;
+  min-width: 200px;
+  max-width: 290px;
+  height: 48px;
+  border-radius: 999px;
+  border: 1.5px solid rgba(138, 96, 54, 0.2);
+  background: #f3dec0;
+  color: #5a391e;
+  font-size: 17px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  box-shadow: 0 4px 12px rgba(90, 57, 30, 0.08);
+}
+
+.shop-tab-pill:hover {
+  background: #ecd1ab;
+}
+
+.shop-tab-pill.active {
+  background: linear-gradient(180deg, #1b5c36 0%, #124427 100%);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.35);
+  box-shadow: 0 8px 20px rgba(18, 68, 39, 0.32);
+}
+
+/* 3-Column Product Grid */
+.shop-products-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(220px, 1fr));
+  gap: 16px;
+  width: 100%;
+  max-width: 960px;
+  margin-bottom: 12px;
+}
+
+.shop-product-card {
+  background: #fffbf2;
+  border: 1.5px solid rgba(168, 126, 81, 0.22);
+  border-radius: 24px;
+  padding: 10px 10px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-shadow: 0 8px 24px rgba(85, 52, 22, 0.09);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.shop-product-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 14px 30px rgba(85, 52, 22, 0.16);
+}
+
+.product-thumb-box {
+  position: relative;
+  width: 100%;
+  height: 178px;
+  border-radius: 16px;
+  overflow: hidden;
+  background: #efe2cb;
+  margin-bottom: 8px;
+}
+
+.product-thumb-crop {
+  width: 100%;
+  height: 100%;
+  background-repeat: no-repeat;
+}
+
+.product-thumb-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.product-price-tag {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(22, 74, 43, 0.92);
+  color: #fff8eb;
+  font-size: 12.5px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+
+.product-card-title {
+  font-size: 19px;
+  font-weight: 800;
+  color: #1f1710;
+  text-align: center;
+  margin-bottom: 4px;
+  line-height: 1.22;
+}
+
+.product-delivery-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: #6b4522;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.product-detail-btn {
+  width: 92%;
+  height: 40px;
+  border-radius: 999px;
+  border: none;
+  background: linear-gradient(180deg, #1b5e38 0%, #124326 100%);
+  color: #ffffff;
+  font-size: 15.5px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 6px 14px rgba(18, 67, 38, 0.28);
+  transition: filter 0.15s ease, transform 0.12s ease;
+}
+
+.product-detail-btn:hover {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+}
+
+/* Bottom Footer Bar of Shop: "🎧 Cần hỗ trợ?" + Large Terracotta "🛒 Giỏ hàng" */
+.shop-footer-bar {
+  position: sticky;
+  bottom: -14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 960px;
+  margin-top: auto;
+  padding: 10px 12px 10px;
+  background: linear-gradient(180deg, rgba(250, 238, 215, 0.96) 0%, #f8ebd2 38%);
+  border-top: 1px solid rgba(168, 126, 81, 0.18);
+  gap: 20px;
+  flex-shrink: 0;
+  z-index: 15;
+}
+
+.shop-support-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  background: transparent;
+  border: none;
+  color: #5b381b;
+  font-size: 17px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 14px;
+}
+
+.shop-support-btn:hover {
+  background: rgba(139, 94, 52, 0.1);
+}
+
+.shop-cart-cta {
+  flex: 1;
+  max-width: 500px;
+  height: 52px;
+  border-radius: 999px;
+  border: 2px solid rgba(255, 224, 192, 0.55);
+  background: linear-gradient(180deg, #dd713c 0%, #a53b16 100%);
+  color: #ffffff;
+  font-size: 20px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  cursor: pointer;
+  box-shadow: 0 10px 26px rgba(165, 59, 22, 0.38);
+  transition: transform 0.15s ease, filter 0.15s ease;
+  margin-right: auto;
+  margin-left: 24px;
+}
+
+.shop-cart-cta:hover {
+  filter: brightness(1.06);
+  transform: translateY(-2px);
+}
+
+.shop-close-pill {
+  background: rgba(25, 68, 42, 0.14);
+  border: 1.5px solid rgba(25, 68, 42, 0.3);
+  color: #16482b;
+  font-size: 14.5px;
+  font-weight: 700;
+  padding: 9px 16px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+/* ==========================================================================
+   3. GIẢNG ĐƯỜNG PHẬT PHÁP (Matches Reference Image 3: image_dc0ddf04.png
+      and Lesson Study View: giang-duong-bai-hoc-v2.png)
+   ========================================================================== */
+
+#lecture-screen {
+  position: absolute;
+  inset: 0;
+  z-index: 45;
+  display: none;
+  flex-direction: column;
+  justify-content: space-between;
+  background-color: #2c180c;
+  background-image: url('/Thiết kế giao diện/giang-duong-khong-gian-chung-v2.png');
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
+  overflow: hidden;
+}
+
+#lecture-screen.open {
+  display: flex;
+}
+
+/* Top Bar of Giảng đường Phật pháp */
+.lecture-top-bar {
+  margin: 14px auto 0;
+  width: calc(100% - 36px);
+  max-width: 1120px;
+  height: 62px;
+  background: linear-gradient(180deg, rgba(48, 28, 16, 0.94) 0%, rgba(34, 19, 11, 0.96) 100%);
+  border: 1.5px solid rgba(235, 192, 132, 0.36);
+  border-radius: 20px;
+  padding: 0 18px 0 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  z-index: 10;
+}
+
+.lecture-top-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.lecture-back-courtyard {
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 224, 178, 0.3);
+  color: #ffefd6;
+  border-radius: 999px;
+  padding: 7px 14px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.lecture-back-courtyard:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.lecture-hall-heading {
+  font-size: clamp(22px, 2.5vw, 30px);
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.01em;
+}
+
+.lecture-audio-gold-btn {
+  background: linear-gradient(180deg, #ecc05b 0%, #d89d33 100%);
+  border: 1px solid rgba(255, 243, 207, 0.65);
+  border-radius: 999px;
+  padding: 9px 22px;
+  color: #2c1808;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+  transition: transform 0.15s ease, filter 0.15s ease;
+}
+
+.lecture-audio-gold-btn:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.06);
+}
+
+/* Center Stage inside Giảng đường (for Nghe giảng / Bài học / Gói học overlays) */
+.lecture-center-stage {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 20px;
+  overflow-y: auto;
+  z-index: 8;
+}
+
+/* Stacked Cream Cards for "Bài học" mode (Matches giang-duong-bai-hoc-v2.png) */
+.lesson-study-stack {
+  width: 100%;
+  max-width: 680px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: auto;
+}
+
+.lesson-cream-card {
+  background: linear-gradient(180deg, #fdf3df 0%, #f5e4c6 100%);
+  border: 1.5px solid rgba(255, 238, 208, 0.65);
+  border-radius: 22px;
+  padding: 14px 22px;
+  color: #251307;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.42);
+}
+
+.lesson-header-card {
+  text-align: center;
+}
+
+.lesson-card-big-title {
+  font-size: clamp(22px, 2.4vw, 29px);
+  font-weight: 800;
+  color: #231106;
+  margin-bottom: 2px;
+}
+
+.lesson-card-meta {
+  font-size: 15px;
+  font-weight: 600;
+  color: #5c3a1e;
+  margin-bottom: 10px;
+}
+
+.lesson-listen-btn {
+  width: 100%;
+  max-width: 440px;
+  height: 46px;
+  margin: 0 auto;
+  border-radius: 999px;
+  border: 1.5px solid rgba(255, 214, 153, 0.45);
+  background: linear-gradient(90deg, #985220 0%, #6d3410 100%);
+  color: #ffffff;
+  font-size: 17.5px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 10px 0 22px;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(82, 36, 10, 0.36);
+}
+
+.lesson-listen-btn .play-circle {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #e9b44c;
+  color: #3a1c08;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+}
+
+.lesson-summary-lead {
+  font-size: clamp(18px, 2vw, 23px);
+  font-weight: 800;
+  line-height: 1.38;
+  color: #231106;
+  margin-bottom: 10px;
+}
+
+.lesson-bullet-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 15px;
+  color: #492c14;
+  margin-bottom: 10px;
+}
+
+.lesson-bullet-list li::before {
+  content: '• ';
+  color: #8f4c1b;
+  font-weight: 800;
+}
+
+.lesson-example-box {
+  background: rgba(154, 104, 54, 0.12);
+  border-left: 4px solid #8c4f20;
+  padding: 9px 14px;
+  border-radius: 10px;
+  font-size: 14px;
+  color: #3f240e;
+  line-height: 1.45;
+}
+
+.lesson-quiz-heading {
+  font-size: 19px;
+  font-weight: 800;
+  color: #231106;
+  margin-bottom: 12px;
+}
+
+.lesson-quiz-options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.lesson-quiz-option {
+  background: #fbf3e4;
+  border: 1.5px solid rgba(130, 92, 54, 0.28);
+  border-radius: 16px;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 16.5px;
+  font-weight: 700;
+  color: #231106;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: left;
+}
+
+.lesson-quiz-option:hover {
+  background: #fff9ef;
+  border-color: #265938;
+}
+
+.lesson-quiz-option.selected {
+  background: #eef7f0;
+  border-color: #1d5733;
+}
+
+.lesson-quiz-option .radio-dot {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid #75583c;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.lesson-quiz-option.selected .radio-dot {
+  border-color: #1d5733;
+}
+
+.lesson-quiz-option.selected .radio-dot::after {
+  content: '';
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #1d5733;
+}
+
+.lesson-next-green-btn {
+  width: 100%;
+  height: 56px;
+  border-radius: 999px;
+  border: 1.5px solid rgba(255, 255, 255, 0.25);
+  background: linear-gradient(180deg, #214e32 0%, #153521 100%);
+  color: #ffffff;
+  font-size: 20px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  cursor: pointer;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.45);
+}
+
+.lesson-next-green-btn:hover {
+  filter: brightness(1.1);
+}
+
+/* Bottom 3-Tab Dock of Giảng đường (Matches Reference Image 3: image_dc0ddf04.png) */
+.lecture-bottom-dock {
+  margin: 0 auto 18px;
+  width: calc(100% - 36px);
+  max-width: 980px;
+  height: 68px;
+  background: linear-gradient(180deg, rgba(50, 30, 18, 0.92) 0%, rgba(35, 20, 12, 0.95) 100%);
+  border: 1.5px solid rgba(235, 192, 132, 0.34);
+  border-radius: 22px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  align-items: center;
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.52);
+  z-index: 10;
+  overflow: hidden;
+}
+
+.lecture-dock-tab {
+  height: 100%;
+  background: transparent;
+  border: none;
+  border-right: 1px solid rgba(255, 218, 168, 0.18);
+  color: rgba(255, 245, 230, 0.88);
+  font-size: clamp(16px, 1.8vw, 21px);
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  cursor: pointer;
+  transition: background 0.16s ease, color 0.16s ease;
+}
+
+.lecture-dock-tab:last-child {
+  border-right: none;
+}
+
+.lecture-dock-tab:hover,
+.lecture-dock-tab.active {
+  background: rgba(230, 174, 72, 0.18);
+  color: #ffffff;
+}
+
+.lecture-dock-tab svg {
+  width: 24px;
+  height: 24px;
+}
+
+/* ==========================================================================
+   4. SHARED MODALS (Product 3D Detail, Cart/Checkout, Niệm Phật 108,
+      Dâng Hương 4 Bước, Khám Phá 9 Trạm & 18 La Hán, Tài Khoản & Nhân Vật 3D)
+   ========================================================================== */
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(12, 24, 17, 0.72);
+  z-index: 80;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.modal-backdrop.open {
+  display: flex;
+}
+
+.modal-card {
+  width: 100%;
+  max-width: 880px;
+  max-height: 90vh;
+  background: linear-gradient(180deg, #fef7e8 0%, #f6e7cb 100%);
+  border: 2px solid rgba(176, 132, 78, 0.45);
+  border-radius: 28px;
+  color: #241409;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.modal-header {
+  padding: 18px 24px;
+  background: linear-gradient(180deg, #1b4d2e 0%, #143a22 100%);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.modal-header h3 {
+  font-size: 21px;
+  font-weight: 800;
+}
+
+.modal-close-x {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.modal-body {
+  padding: 22px 24px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+/* 3D Viewer Stage inside Product Detail & Wardrobe Modal */
+.viewer3d-stage {
+  position: relative;
+  width: 100%;
+  height: 290px;
+  background: radial-gradient(circle at 50% 40%, #fffdf9 0%, #e7d5b8 100%);
+  border: 1.5px solid rgba(154, 112, 66, 0.3);
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+.viewer3d-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* Mala 108 Beads Visual Ring */
+.mala-ring-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 0;
+}
+
+.mala-counter-circle {
+  width: 164px;
+  height: 164px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #305f3e 0%, #173422 100%);
+  border: 4px solid #e2ae48;
+  color: #fff8eb;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+  transition: transform 0.1s ease;
+}
+
+.mala-counter-circle:active {
+  transform: scale(0.95);
+}
+
+.mala-big-num {
+  font-size: 42px;
+  font-weight: 800;
+  color: #f8ce6f;
+  line-height: 1;
+}
+
+.mala-sub-label {
+  font-size: 13.5px;
+  color: rgba(255, 255, 255, 0.85);
+  margin-top: 4px;
+}
+
+/* ==========================================================================
+   DAILY DHARMA PARCHMENT SCROLL UNROLL ANIMATION + 9-TAB CỬA HÀNG DRAWER
+   ========================================================================== */
+@keyframes scrollParchmentUnroll {
+  0% {
+    opacity: 0;
+    transform: translateY(-18px) scaleY(0.14) scaleX(0.95);
+    filter: drop-shadow(0 6px 12px rgba(74, 50, 34, 0.2));
+  }
+  55% {
+    opacity: 1;
+    transform: translateY(2px) scaleY(1.02) scaleX(1.0);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scaleY(1) scaleX(1);
+    filter: drop-shadow(0 22px 48px rgba(42, 24, 12, 0.45));
+  }
+}
+
+.modal-card.scroll-modal {
+  position: relative;
+  max-width: 680px;
+  background: linear-gradient(180deg, #FFF6E5 0%, #F7E8C9 52%, #EEDAB4 100%);
+  border: 2.5px solid #C9962E;
+  border-radius: 24px;
+  overflow: visible;
+  transform-origin: top center;
+  animation: scrollParchmentUnroll 0.72s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.modal-card.scroll-modal::before,
+.modal-card.scroll-modal::after {
+  content: '';
+  position: absolute;
+  left: -18px;
+  right: -18px;
+  height: 22px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #9c6838 0%, #6d421e 55%, #4A3222 100%);
+  border: 2px solid #E8C472;
+  box-shadow: 0 6px 16px rgba(36, 20, 9, 0.38), inset 0 2px 3px rgba(255, 242, 210, 0.35);
+  z-index: 5;
+  pointer-events: none;
+}
+
+.modal-card.scroll-modal::before {
+  top: -12px;
+}
+
+.modal-card.scroll-modal::after {
+  bottom: -12px;
+}
+
+.modal-card.scroll-modal .modal-header {
+  border-radius: 21px 21px 0 0;
+  padding-top: 22px;
+}
+
+.modal-card.scroll-modal .modal-body {
+  padding: 22px 26px 28px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .modal-card.scroll-modal {
+    animation: none;
+  }
+}
+
+/* Daily Dharma Card ("Lời Phật dạy hôm nay") */
+.daily-dharma-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 6px 4px;
+}
+
+.daily-dharma-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  align-self: flex-start;
+  background: rgba(28, 90, 52, 0.11);
+  color: #1C5A34;
+  border: 1.5px solid rgba(28, 90, 52, 0.25);
+  border-radius: 999px;
+  padding: 6px 15px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.daily-dharma-quote-box {
+  background: #FFFDF8;
+  border: 2px solid rgba(201, 150, 46, 0.48);
+  border-left: 6px solid #C9962E;
+  border-radius: 22px;
+  padding: 20px 22px;
+  box-shadow: 0 8px 20px rgba(74, 50, 34, 0.08);
+}
+
+.daily-dharma-quote {
+  font-size: 20px;
+  line-height: 1.55;
+  font-weight: 700;
+  color: #4A3222;
+}
+
+.daily-dharma-source {
+  margin-top: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #1C5A34;
+}
+
+.daily-dharma-reflection {
+  background: rgba(255, 246, 229, 0.9);
+  border: 1.5px solid rgba(154, 112, 66, 0.24);
+  border-radius: 18px;
+  padding: 13px 16px;
+  font-size: 14.5px;
+  line-height: 1.5;
+  color: #4A3222;
+}
+
+.daily-dharma-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+.daily-dharma-secondary-btn {
+  height: 44px;
+  padding: 0 18px;
+  border-radius: 999px;
+  border: 1.5px solid rgba(28, 90, 52, 0.35);
+  background: #fffdf8;
+  color: #1C5A34;
+  font-size: 14.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.daily-dharma-secondary-btn:hover {
+  background: #eef7f1;
+}
+
+.daily-dharma-primary-btn {
+  height: 44px;
+  padding: 0 24px;
+  border-radius: 999px;
+  border: none;
+  background: linear-gradient(180deg, #1f643a 0%, #1C5A34 55%, #16492a 100%);
+  color: #FFF6E5;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 6px 16px rgba(22, 73, 42, 0.28);
+}
+
+.daily-dharma-primary-btn:hover {
+  filter: brightness(1.06);
+}
+
+/* ==========================================================================
+   9-TAB CỬA HÀNG OVERLAY (Matches Reference Screenshots 1 & 2 + Live 3D Try-On)
+   ========================================================================== */
+.modal-backdrop.store-mode {
+  background: rgba(18, 30, 22, 0.22);
+  justify-content: flex-start;
+  align-items: stretch;
+  padding: 16px;
+}
+
+.modal-card.store-modal-card {
+  width: min(565px, calc(100vw - 32px));
+  max-width: 565px;
+  max-height: calc(100vh - 32px);
+  background: linear-gradient(180deg, #FFF6E5 0%, #FAF0DB 100%);
+  border: 2px solid rgba(201, 150, 46, 0.42);
+  border-radius: 28px;
+  box-shadow: 0 22px 54px rgba(36, 20, 9, 0.42);
+}
+
+.modal-card.store-modal-card .modal-header {
+  background: #FFF6E5;
+  color: #35281C;
+  border-bottom: 1.5px solid rgba(168, 126, 81, 0.18);
+  padding: 16px 20px 12px;
+}
+
+.modal-card.store-modal-card .modal-header h3 {
+  font-size: 24px;
+  font-weight: 800;
+  color: #35281C;
+}
+
+.modal-card.store-modal-card .modal-close-x {
+  background: #EFE3CD;
+  color: #4A3222;
+  border: 1.5px solid rgba(168, 126, 81, 0.25);
+}
+
+.modal-card.store-modal-card .modal-body {
+  padding: 12px 18px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow: hidden;
+}
+
+.store-currency-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.store-wallet-pills {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.store-wallet-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: #EFE3CD;
+  color: #4A3222;
+  border: 1px solid rgba(168, 126, 81, 0.25);
+  border-radius: 999px;
+  padding: 5px 12px;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.store-physical-btn {
+  background: #C96F4A;
+  color: #FFF6E5;
+  border: none;
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(201, 111, 74, 0.28);
+}
+
+.store-physical-btn:hover {
+  filter: brightness(1.06);
+}
+
+.store-tabs-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.store-cat-pill {
+  border: 1px solid rgba(168, 126, 81, 0.2);
+  background: #EFE3CD;
+  color: #4A3222;
+  border-radius: 999px;
+  padding: 7px 14px;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, transform 0.12s ease;
+}
+
+.store-cat-pill:hover {
+  background: #E5D4B6;
+}
+
+.store-cat-pill.active {
+  background: #35281C;
+  color: #FFF6E5;
+  border-color: #35281C;
+  box-shadow: 0 4px 12px rgba(53, 40, 28, 0.24);
+}
+
+.store-items-scroll {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-right: 4px;
+}
+
+.store-item-card {
+  background: #FFFDF8;
+  border: 1.5px solid rgba(168, 126, 81, 0.22);
+  border-radius: 20px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 4px 14px rgba(74, 50, 34, 0.06);
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+
+.store-item-card.previewing {
+  border-color: #C9962E;
+  box-shadow: 0 6px 18px rgba(201, 150, 46, 0.22);
+}
+
+.store-item-thumb {
+  width: 74px;
+  height: 74px;
+  border-radius: 16px;
+  background: radial-gradient(circle at 50% 35%, #4A3222 0%, #24160D 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;
+  position: relative;
+}
+
+.store-item-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.store-swatch-badge {
+  position: relative;
+  width: 48px;
+  height: 54px;
+  border-radius: 14px 14px 18px 18px;
+  border: 2px solid rgba(255, 246, 229, 0.72);
+  box-shadow: inset 0 3px 6px rgba(255, 255, 255, 0.35), 0 4px 10px rgba(0, 0, 0, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+}
+
+.store-item-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.store-item-title-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+
+.store-item-name {
+  font-size: 16px;
+  font-weight: 800;
+  color: #35281C;
+}
+
+.store-owned-count {
+  font-size: 13px;
+  font-weight: 700;
+  color: #6B5340;
+}
+
+.store-rare-badge {
+  background: #F4E6C3;
+  color: #7C5818;
+  border: 1px solid rgba(201, 150, 46, 0.45);
+  border-radius: 999px;
+  padding: 2px 9px;
+  font-size: 11.5px;
+  font-weight: 800;
+}
+
+.store-item-desc {
+  font-size: 13px;
+  line-height: 1.42;
+  color: #5C4330;
+}
+
+.store-level-lock {
+  margin-top: 2px;
+  font-size: 12.5px;
+  font-weight: 800;
+  color: #A34224;
+}
+
+.store-item-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex-shrink: 0;
+  width: 108px;
+}
+
+.store-try-btn {
+  height: 33px;
+  border-radius: 999px;
+  border: 1.5px solid rgba(168, 126, 81, 0.28);
+  background: #F3ECDE;
+  color: #35281C;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.store-try-btn.active {
+  background: #1C5A34;
+  color: #FFF6E5;
+  border-color: #1C5A34;
+}
+
+.store-price-btn {
+  height: 36px;
+  border-radius: 999px;
+  border: 1.5px solid rgba(168, 126, 81, 0.25);
+  background: #EFE7D6;
+  color: #35281C;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+
+.store-price-btn.lotus-locked {
+  background: #F4E9CF;
+  color: #927A58;
+}
+
+.store-price-btn.owned-equipped {
+  background: #1C5A34;
+  color: #FFF6E5;
+  border-color: #1C5A34;
+}
+
+.store-price-btn:hover:not(:disabled) {
+  filter: brightness(0.97);
+}
+
+/* ========================================================================
+   MARKETPLACE STALL MODAL (SẠP HÀNG CỔNG CHÙA)
+   ======================================================================== */
+.market-stall-banner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 14px 16px;
+  margin-bottom: 14px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #FFF6E5 0%, #F7E8C9 100%);
+  border: 1.5px solid rgba(201, 150, 46, 0.35);
+  box-shadow: 0 6px 18px rgba(74, 50, 34, 0.08);
+}
+
+.market-wallet-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 12px;
+  border-radius: 999px;
+  background: #FFFDF8;
+  border: 1.5px solid rgba(201, 150, 46, 0.45);
+  color: #4A3222;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.market-cart-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 14px;
+  border-radius: 999px;
+  border: none;
+  background: #C96F4A;
+  color: #FFF6E5;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(201, 111, 74, 0.25);
+  transition: transform 0.15s ease, filter 0.15s ease;
+}
+
+.market-cart-pill:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.04);
+}
+
+.market-secondary-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 13px;
+  border-radius: 999px;
+  border: 1.5px solid rgba(28, 90, 52, 0.32);
+  background: #FFFDF8;
+  color: #1C5A34;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.market-secondary-pill:hover {
+  background: #EDF5EE;
+}
+
+.market-tabs-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.market-tab-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 15px;
+  border-radius: 999px;
+  border: 1.5px solid rgba(168, 126, 81, 0.28);
+  background: #FFFDF8;
+  color: #4A3222;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.market-tab-pill:hover {
+  background: #F6ECDA;
+}
+
+.market-tab-pill.active {
+  background: #1C5A34;
+  color: #FFF6E5;
+  border-color: #1C5A34;
+  box-shadow: 0 4px 12px rgba(28, 90, 52, 0.22);
+}
+
+.market-items-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.market-item-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 20px;
+  background: #FFFDF8;
+  border: 1.5px solid rgba(168, 126, 81, 0.24);
+  box-shadow: 0 6px 16px rgba(74, 50, 34, 0.06);
+  transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+}
+
+.market-item-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(201, 150, 46, 0.55);
+  box-shadow: 0 10px 22px rgba(74, 50, 34, 0.1);
+}
+
+.market-item-top {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+
+.market-item-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  background: linear-gradient(145deg, #FFF3D8 0%, #F4E0B5 100%);
+  border: 1.5px solid rgba(201, 150, 46, 0.38);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.market-item-thumb-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.market-item-title {
+  font-size: 14.5px;
+  font-weight: 800;
+  color: #4A3222;
+  line-height: 1.25;
+}
+
+.market-item-prices {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+  flex-wrap: wrap;
+}
+
+.market-price-vnd {
+  font-size: 12.5px;
+  font-weight: 800;
+  color: #C96F4A;
+}
+
+.market-price-lotus {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #FFF3DC;
+  border: 1px solid rgba(201, 150, 46, 0.35);
+  font-size: 12px;
+  font-weight: 800;
+  color: #8A5E14;
+}
+
+.market-item-desc {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: #6B4F3A;
+}
+
+.market-item-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.market-btn-use {
+  flex: 1;
+  min-height: 36px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: none;
+  background: #1C5A34;
+  color: #FFF6E5;
+  font-size: 12.5px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: filter 0.15s ease;
+}
+
+.market-btn-use:hover {
+  filter: brightness(1.08);
+}
+
+.market-btn-cart {
+  padding: 6px 12px;
+  min-height: 36px;
+  border-radius: 999px;
+  border: 1.5px solid rgba(201, 111, 74, 0.45);
+  background: #FFF6E5;
+  color: #A84D28;
+  font-size: 12.5px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.market-btn-cart:hover {
+  background: #FCE8DC;
+}
+
+/* ==========================================================================
+   VIETNAMESE STALL PROXIMITY PROMPT & ENTRANCE CAMERA TOUR BANNER
+   ========================================================================== */
+.stall-proximity-prompt {
+  position: absolute;
+  left: 50%;
+  bottom: 138px;
+  transform: translateX(-50%);
+  z-index: 29;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 18px;
+  border-radius: 999px;
+  background: #FFF6E5;
+  border: 2px solid #1C5A34;
+  color: #1C5A34;
+  font-size: 14.5px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 10px 26px rgba(17, 41, 26, 0.34);
+  transition: transform 0.16s ease, background 0.16s ease;
+}
+
+.stall-proximity-prompt:hover {
+  background: #FFFDF8;
+  transform: translateX(-50%) translateY(-2px);
+}
+
+.stall-proximity-key {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 7px;
+  border-radius: 8px;
+  background: #1C5A34;
+  color: #FFF6E5;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.entrance-tour-banner {
+  position: fixed;
+  top: 78px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 27;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  max-width: calc(100vw - 32px);
+  padding: 7px 14px 7px 18px;
+  border-radius: 999px;
+  background: #1C5A34;
+  border: 1.5px solid #E6B84C;
+  color: #FFF6E5;
+  font-size: 13.5px;
+  font-weight: 700;
+  box-shadow: 0 8px 22px rgba(17, 41, 26, 0.35);
+}
+
+.entrance-tour-skip-btn {
+  padding: 4px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 246, 229, 0.45);
+  background: #C96F4A;
+  color: #FFF6E5;
+  font-size: 12.5px;
+  font-weight: 800;
+  white-space: nowrap;
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: filter 0.15s ease;
+}
+
+.entrance-tour-skip-btn:hover {
+  filter: brightness(1.08);
+}
+
+/* Responsive adjustments */
+@media (max-width: 900px) {
+  .shop-products-grid {
+    grid-template-columns: repeat(2, minmax(180px, 1fr));
+  }
+  .action-square-btn {
+    width: 92px;
+    height: 92px;
+  }
+  .brand-pill .brand-main {
+    font-size: 17px;
+  }
+  .brand-pill .brand-sub {
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 640px) {
+  .shop-products-grid,
+  .market-items-grid {
+    grid-template-columns: 1fr;
+  }
+  .top-hud-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+  .top-nav-group {
+    justify-content: center;
+  }
+  .dpad-card {
+    width: 126px;
+    height: 142px;
+    left: 10px;
+    bottom: 14px;
+  }
+  .dpad-grid {
+    width: 104px;
+    height: 104px;
+  }
+  .dpad-btn {
+    width: 32px;
+    height: 32px;
+  }
+  .dpad-up,
+  .dpad-down {
+    left: 36px;
+  }
+  .dpad-left,
+  .dpad-right {
+    top: 36px;
+  }
+  .spiritual-actions-bar {
+    right: 10px;
+    bottom: 14px;
+    gap: 6px;
+  }
+  .action-square-btn {
+    width: 68px;
+    height: 76px;
+    border-radius: 16px;
+  }
+  .action-square-btn .action-label {
+    font-size: 12px;
+  }
+}
+
+/* ==========================================================================
+   SỔ CÔNG ĐỨC THỰC HÀNH MODAL
+   ========================================================================== */
+.merit-summary-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.merit-hero-banner {
+  background: linear-gradient(135deg, #1C5A34 0%, #143D24 100%);
+  border: 1.5px solid #E6B84C;
+  border-radius: 20px;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.merit-total-num {
+  font-size: 32px;
+  font-weight: 800;
+  color: #FFD875;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.15;
+  margin-top: 2px;
+}
+
+.merit-breakdown-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.merit-stat-card {
+  background: #FFFDF8;
+  border: 1.5px solid rgba(168, 126, 81, 0.28);
+  border-radius: 20px;
+  padding: 16px 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 6px;
+  box-shadow: 0 6px 16px rgba(74, 50, 34, 0.06);
+}
+
+.merit-stat-icon {
+  font-size: 30px;
+}
+
+.merit-stat-val {
+  font-size: 28px;
+  font-weight: 800;
+  color: #1C5A34;
+  font-variant-numeric: tabular-nums;
+}
+
+.merit-stat-label {
+  font-size: 15px;
+  font-weight: 800;
+  color: #4A3222;
+}
+
+.merit-stat-sub {
+  font-size: 12px;
+  color: #7A5C43;
+}
+
+.merit-quick-btn {
+  margin-top: 6px;
+  width: 100%;
+  height: 36px;
+  border-radius: 999px;
+  border: none;
+  background: #1C5A34;
+  color: #FFF6E5;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.merit-quick-btn:hover {
+  filter: brightness(1.08);
+}
+
+@media (max-width: 640px) {
+  .merit-breakdown-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ==========================================================================
+   HỒ SƠ & TRANG PHỤC ĐI CHÙA (Redesigned Profile Modal + 3D Character Stage)
+   ========================================================================== */
+.profile-modal-layout {
+  display: grid;
+  grid-template-columns: 310px minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.profile-stage-card {
+  background: #FFFDF8;
+  border: 1.5px solid rgba(140, 100, 60, 0.28);
+  border-radius: 22px;
+  padding: 14px;
+  text-align: center;
+  box-shadow: 0 8px 22px rgba(74, 50, 34, 0.08);
+}
+
+.profile-3d-viewport {
+  position: relative;
+  height: 292px;
+  border-radius: 18px;
+  overflow: hidden;
+  background: radial-gradient(circle at 50% 34%, #FFFBF2 0%, #EFE2C6 65%, #DFC89E 100%);
+  border: 1.5px solid rgba(190, 148, 72, 0.35);
+  cursor: grab;
+}
+
+.profile-3d-viewport:active {
+  cursor: grabbing;
+}
+
+.profile-3d-viewport canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.profile-stage-hint {
+  position: absolute;
+  left: 10px;
+  top: 8px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: rgba(34, 21, 12, 0.58);
+  color: #FFF6E5;
+  font-size: 11px;
+  font-weight: 700;
+  pointer-events: none;
+}
+
+.profile-pose-pills {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  display: flex;
+  gap: 4px;
+}
+
+.profile-pose-btn {
+  padding: 4px 9px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 246, 229, 0.65);
+  background: rgba(28, 90, 52, 0.82);
+  color: #FFF6E5;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.profile-pose-btn.active {
+  background: #E6B84C;
+  color: #241409;
+  border-color: #7E2A22;
+}
+
+.profile-char-name {
+  font-size: 16.5px;
+  font-weight: 800;
+  color: #144929;
+  margin-top: 10px;
+}
+
+.profile-char-sub {
+  font-size: 12.5px;
+  color: #5b3a1d;
+  margin-top: 3px;
+  line-height: 1.4;
+}
+
+.profile-char-switch-row {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 11px;
+}
+
+.char-switch-btn {
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1.5px solid #165632;
+  background: #fff;
+  color: #165632;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.char-switch-btn.active {
+  background: #165632;
+  color: #fff;
+}
+
+.profile-right-col {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+.profile-stats-banner {
+  background: linear-gradient(135deg, #184229 0%, #11321E 100%);
+  color: #fff8ea;
+  padding: 14px 16px;
+  border-radius: 18px;
+  border: 1.5px solid rgba(230, 184, 76, 0.45);
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  text-align: center;
+}
+
+.profile-stat-val {
+  font-size: 21px;
+  font-weight: 800;
+  color: #f6cd72;
+  font-variant-numeric: tabular-nums;
+}
+
+.profile-stat-lbl {
+  font-size: 12px;
+  opacity: 0.92;
+  margin-top: 2px;
+}
+
+.profile-wardrobe-heading {
+  font-size: 15px;
+  font-weight: 800;
+  color: #144929;
+  margin-bottom: 8px;
+}
+
+.profile-wardrobe-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.profile-wardrobe-card {
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1.5px solid rgba(130, 90, 50, 0.28);
+  background: #fffdf8;
+  color: #241409;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  transition: border-color 0.15s ease, background 0.15s ease, transform 0.12s ease;
+}
+
+.profile-wardrobe-card:hover {
+  transform: translateY(-1px);
+  border-color: #165632;
+}
+
+.profile-wardrobe-card.active {
+  border-color: #165632;
+  background: #e6f5ec;
+}
+
+.profile-wardrobe-name {
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.32;
+  color: #241409;
+  min-width: 0;
+}
+
+.profile-wardrobe-status {
+  flex-shrink: 0;
+  white-space: nowrap;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 800;
+  background: rgba(138, 98, 60, 0.11);
+  color: #7c522c;
+}
+
+.profile-wardrobe-card.active .profile-wardrobe-status {
+  background: #165632;
+  color: #FFF6E5;
+}
+
+.profile-cta-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+@media (max-width: 820px) {
+  .profile-modal-layout {
+    grid-template-columns: 1fr;
+  }
+  .profile-wardrobe-grid,
+  .profile-cta-row {
+    grid-template-columns: 1fr;
+  }
+  .profile-stats-banner {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* ==========================================================================
+   AMBIENT NATURE AUDIO TOGGLE & INTERIOR 4-ZONE BAR
+   ========================================================================== */
+.nav-ambient-btn {
+  background: linear-gradient(180deg, #276442 0%, #194d2f 100%);
+  border-color: rgba(255, 224, 150, 0.45);
+}
+
+.nav-ambient-btn.muted {
+  background: linear-gradient(180deg, #4b3d32 0%, #31261e 100%);
+  border-color: rgba(255, 246, 229, 0.25);
+  color: rgba(255, 246, 229, 0.78);
+}
+
+.interior-zone-bar {
+  position: absolute;
+  top: 76px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 28;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(34, 18, 10, 0.92);
+  border: 1.5px solid rgba(255, 216, 117, 0.52);
+  border-radius: 999px;
+  padding: 5px 10px;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.42);
+  max-width: calc(100vw - 24px);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.interior-zone-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.interior-exit-chip {
+  background: rgba(158, 36, 28, 0.85);
+  border-color: rgba(255, 216, 117, 0.55);
+}
+
+.interior-exit-chip:hover {
+  background: #b83226;
+  color: #fff6e5;
+}
