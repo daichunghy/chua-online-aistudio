@@ -359,9 +359,12 @@ test('Temple Entrance Grocery House & continuous Chữ Quốc walkway routing wo
 });
 
 test('Expanded pagoda exploration zones, Chữ Quốc 6-zone order, and scholarly comparison notes are accurate', () => {
-  assert.ok(WORLD_BOUNDS.maxX - WORLD_BOUNDS.minX >= 130);
-  assert.ok(WORLD_BOUNDS.maxZ - WORLD_BOUNDS.minZ >= 150);
-  assert.ok(DISCOVERY_ZONES.length >= 8);
+  assert.ok(WORLD_BOUNDS.maxX - WORLD_BOUNDS.minX >= 160);
+  assert.ok(WORLD_BOUNDS.maxZ - WORLD_BOUNDS.minZ >= 200);
+  assert.ok(DISCOVERY_ZONES.length >= 11);
+  assert.ok(findAnyTempleDestination('nha_co_ba_hu_tieu'));
+  assert.ok(findAnyTempleDestination('banh_beo_di_sau'));
+  assert.ok(findAnyTempleDestination('hem_nha_vuon'));
   assert.ok(findAnyTempleDestination('vuon_lam_ty_ni'));
   assert.ok(findAnyTempleDestination('non_bo_quan_am'));
   assert.ok(findAnyTempleDestination('ho_phong_sinh'));
