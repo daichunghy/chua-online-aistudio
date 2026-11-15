@@ -2702,8 +2702,8 @@ export class VinhTrang3DWorld {
 
     this.buildStatuePedestals();
 
-    // Large South-Center Lotus Pond right west of Tam Quan courtyard (matching image_97204806.png bottom-center)
-    const pond1 = this.buildLotusPond(14.5, 16.5, 16, true);
+    // Main lotus pond: shallow natural water, low coping, sparse lotus clusters and a garden-side ochre rail.
+    const pond1 = this.buildAuthenticLotusPond(14.5, 16.5);
     pond1.position.set(3.5, 0, 33.0);
     this.exteriorGroup.add(pond1);
     this.addRectObstacle(-4.2, 11.2, 24.4, 41.6);
@@ -4593,6 +4593,236 @@ export class VinhTrang3DWorld {
     const geo = new THREE.ShapeGeometry(shape, 18);
     geo.rotateX(-Math.PI / 2);
     return geo;
+  }
+
+  buildAuthenticLotusPond(w, d) {
+    const M = this.MAT;
+    const g = new THREE.Group();
+    const waterY = 0.28;
+    const curbH = 0.34;
+    const curbT = 0.28;
+
+    // Low, plain stone coping: the real pond reads as a shallow garden basin,
+    // not a raised ornamental tank with tall walls and finials.
+    const copingMat = new THREE.MeshStandardMaterial({
+      color: 0xAFA58F,
+      bumpMap: this.stoneBumpTex,
+      bumpScale: 0.012,
+      roughness: 0.88
+    });
+    const bedMat = new THREE.MeshStandardMaterial({ color: 0x263F30, roughness: 0.96 });
+    const walkMat = new THREE.MeshStandardMaterial({ color: 0x92513C, roughness: 0.9 });
+    const walkAltMat = new THREE.MeshStandardMaterial({ color: 0xA96349, roughness: 0.92 });
+    const railMat = new THREE.MeshStandardMaterial({ color: 0xB3914E, roughness: 0.7, metalness: 0.08 });
+    const hedgeMat = new THREE.MeshStandardMaterial({ color: 0x315B35, roughness: 0.9 });
+    const flowerMat = new THREE.MeshStandardMaterial({ color: 0xD85D88, roughness: 0.76 });
+
+    const bed = new THREE.Mesh(new THREE.BoxGeometry(w - 0.36, 0.14, d - 0.36), bedMat);
+    bed.position.y = 0.07;
+    bed.receiveShadow = true;
+    g.add(bed);
+
+    for (const z of [-(d / 2 + curbT / 2), d / 2 + curbT / 2]) {
+      const edge = new THREE.Mesh(new THREE.BoxGeometry(w + curbT * 2, curbH, curbT), copingMat);
+      edge.position.set(0, curbH / 2, z);
+      edge.receiveShadow = true;
+      g.add(edge);
+    }
+    for (const x of [-(w / 2 + curbT / 2), w / 2 + curbT / 2]) {
+      const edge = new THREE.Mesh(new THREE.BoxGeometry(curbT, curbH, d), copingMat);
+      edge.position.set(x, curbH / 2, 0);
+      edge.receiveShadow = true;
+      g.add(edge);
+    }
+    // A narrow worn coping strip softens the top edge without making a high wall.
+    for (const z of [-(d / 2 + curbT / 2), d / 2 + curbT / 2]) {
+      const cap = new THREE.Mesh(new THREE.BoxGeometry(w + curbT * 2, 0.055, curbT + 0.035), M.creamTrim);
+      cap.position.set(0, curbH - 0.015, z);
+      g.add(cap);
+    }
+    for (const x of [-(w / 2 + curbT / 2), w / 2 + curbT / 2]) {
+      const cap = new THREE.Mesh(new THREE.BoxGeometry(curbT + 0.035, 0.055, d), M.creamTrim);
+      cap.position.set(x, curbH - 0.015, 0);
+      g.add(cap);
+    }
+
+    // Natural olive-green water with restrained surface ripples.
+    if (!this.vinhTrangPondWaterTex) {
+      this.vinhTrangPondWaterTex = makeCanvasTex(
+        (ctx, tw, th) => {
+          const grad = ctx.createLinearGradient(0, 0, tw, th);
+          grad.addColorStop(0, '#657A50');
+          grad.addColorStop(0.48, '#4D6848');
+          grad.addColorStop(1, '#314F3B');
+          ctx.fillStyle = grad;
+          ctx.fillRect(0, 0, tw, th);
+          ctx.strokeStyle = 'rgba(211, 220, 184, 0.16)';
+          ctx.lineWidth = 1.4;
+          for (let i = 0; i < 30; i++) {
+            ctx.beginPath();
+            ctx.arc((i * 71) % tw, (i * 43) % th, 8 + (i % 11) * 2.1, 0, Math.PI * 2);
+            ctx.stroke();
+          }
+          ctx.strokeStyle = 'rgba(31, 58, 38, 0.16)';
+          for (let i = 0; i < 22; i++) {
+            ctx.beginPath();
+            ctx.moveTo((i * 37) % tw, (i * 59) % th);
+            ctx.quadraticCurveTo((i * 53 + 30) % tw, (i * 29 + 15) % th, (i * 83 + 65) % tw, (i * 47 + 40) % th);
+            ctx.stroke();
+          }
+        },
+        512,
+        512,
+        2,
+        2
+      );
+    }
+    const waterMat = new THREE.MeshPhysicalMaterial({
+      map: this.vinhTrangPondWaterTex,
+      color: 0xE3E8D7,
+      roughness: 0.28,
+      metalness: 0.015,
+      clearcoat: 0.32,
+      clearcoatRoughness: 0.24,
+      side: THREE.DoubleSide
+    });
+    const waterGeo = new THREE.PlaneGeometry(w - 0.48, d - 0.48, 42, 42);
+    const waterPos = waterGeo.attributes.position;
+    for (let i = 0; i < waterPos.count; i++) {
+      const x = waterPos.getX(i);
+      const z = waterPos.getY(i);
+      waterPos.setZ(i, 0.006 * Math.sin(x * 1.25 + z * 0.7) * Math.cos(z * 1.1 - x * 0.35));
+    }
+    waterGeo.computeVertexNormals();
+    const water = new THREE.Mesh(waterGeo, waterMat);
+    water.rotation.x = -Math.PI / 2;
+    water.position.y = waterY;
+    water.renderOrder = 2;
+    g.add(water);
+
+    // A short terracotta walking strip on the visitor-facing edge.
+    for (let i = 0; i < 17; i++) {
+      const tile = new THREE.Mesh(
+        new THREE.BoxGeometry(0.78, 0.075, 0.72),
+        i % 4 === 0 ? walkAltMat : walkMat
+      );
+      tile.position.set(-w * 0.48 + i * (w * 0.96 / 16), 0.045, d / 2 + 0.64);
+      tile.receiveShadow = true;
+      g.add(tile);
+    }
+
+    // One low ochre balustrade on the garden side, not a fence of stone posts around every edge.
+    const railZ = -d / 2 - 0.48;
+    const railW = w - 0.5;
+    const postCount = 19;
+    for (let i = 0; i < postCount; i++) {
+      const x = -railW / 2 + (railW / (postCount - 1)) * i;
+      const post = new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.72, 0.075), railMat);
+      post.position.set(x, 0.52, railZ);
+      g.add(post);
+    }
+    for (const y of [0.28, 0.78]) {
+      const rail = new THREE.Mesh(new THREE.BoxGeometry(railW + 0.2, 0.075, 0.085), railMat);
+      rail.position.set(0, y, railZ);
+      g.add(rail);
+    }
+    for (let i = 0; i < 36; i++) {
+      const x = -railW / 2 + (railW / 35) * i;
+      const baluster = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.43, 0.045), railMat);
+      baluster.position.set(x, 0.53, railZ);
+      g.add(baluster);
+    }
+
+    // Clipped green border and restrained bougainvillea colour behind the rail.
+    for (let i = 0; i < 11; i++) {
+      const x = -w * 0.46 + i * (w * 0.092);
+      const shrub = new THREE.Mesh(new THREE.SphereGeometry(0.62, 10, 8), hedgeMat);
+      shrub.scale.set(1.25, 0.72, 0.72);
+      shrub.position.set(x, 0.48, railZ - 0.76);
+      g.add(shrub);
+      if (i % 2 === 0) {
+        for (let j = 0; j < 3; j++) {
+          const blossom = new THREE.Mesh(new THREE.SphereGeometry(0.105, 8, 6), flowerMat);
+          blossom.position.set(x - 0.28 + j * 0.25, 0.88 + (j % 2) * 0.08, railZ - 0.86);
+          g.add(blossom);
+        }
+      }
+    }
+
+    // Broad, notched lotus leaves in irregular clusters; keep open water visible.
+    const padMats = [
+      new THREE.MeshStandardMaterial({ map: this.lotusPadTex, color: 0x4D713D, roughness: 0.82, side: THREE.DoubleSide }),
+      new THREE.MeshStandardMaterial({ map: this.lotusPadTex, color: 0x668448, roughness: 0.84, side: THREE.DoubleSide }),
+      new THREE.MeshStandardMaterial({ map: this.lotusPadTex, color: 0x385F36, roughness: 0.86, side: THREE.DoubleSide })
+    ];
+    if (!this._vinhTrangPadGeo) this._vinhTrangPadGeo = this.makeNotchedLilyPadGeo(1.0);
+    const clusters = [
+      [-w * 0.30, -d * 0.22],
+      [w * 0.28, -d * 0.19],
+      [-w * 0.23, d * 0.24],
+      [w * 0.27, d * 0.22],
+      [-w * 0.02, d * 0.02]
+    ];
+    let padIndex = 0;
+    for (let cIdx = 0; cIdx < clusters.length; cIdx++) {
+      const [cx, cz] = clusters[cIdx];
+      const count = cIdx === 4 ? 5 : 7;
+      for (let i = 0; i < count; i++) {
+        const angle = (i / count) * Math.PI * 2 + cIdx * 0.73;
+        const seed = (Math.sin((padIndex + 1) * 12.9898) * 43758.5453) % 1;
+        const distance = 0.42 + Math.abs(seed) * 0.9;
+        const lx = THREE.MathUtils.clamp(cx + Math.cos(angle) * distance, -w / 2 + 0.75, w / 2 - 0.75);
+        const lz = THREE.MathUtils.clamp(cz + Math.sin(angle) * distance, -d / 2 + 0.75, d / 2 - 0.75);
+        const radius = 0.38 + ((padIndex * 7) % 5) * 0.065;
+        const pad = new THREE.Mesh(this._vinhTrangPadGeo, padMats[padIndex % padMats.length]);
+        pad.position.set(lx, waterY + 0.018, lz);
+        pad.scale.set(radius, 1, radius * (0.9 + (padIndex % 3) * 0.05));
+        pad.rotation.y = angle * 1.4;
+        g.add(pad);
+
+        // Only some leaves carry a blossom; the rest remain broad and quiet.
+        if (padIndex % 3 === 0 || padIndex === 17) {
+          const lotusPivot = new THREE.Group();
+          const stemH = 0.18 + (padIndex % 3) * 0.055;
+          lotusPivot.position.set(lx + 0.05, waterY + 0.018, lz - 0.04);
+          const stem = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.014, 0.021, stemH, 7),
+            M.lotusLeaf
+          );
+          stem.position.y = stemH / 2;
+          lotusPivot.add(stem);
+          const flower = this.makeLotusFlower3D(padIndex % 5 === 0, true);
+          flower.position.y = stemH;
+          flower.scale.setScalar(0.72 + (padIndex % 3) * 0.08);
+          lotusPivot.add(flower);
+          g.add(lotusPivot);
+          this.lotusSwayGroups.push({ group: lotusPivot, phase: padIndex * 0.83 + cIdx });
+        }
+        padIndex++;
+      }
+    }
+
+    // A few unopened buds add variation without turning the pond into a flower bed.
+    for (let i = 0; i < 4; i++) {
+      const x = -w * 0.28 + i * (w * 0.19);
+      const z = (i % 2 === 0 ? -1 : 1) * d * 0.29;
+      const stemH = 0.32;
+      const budGroup = new THREE.Group();
+      budGroup.position.set(x, waterY + 0.015, z);
+      const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.02, stemH, 7), M.lotusLeaf);
+      stem.position.y = stemH / 2;
+      budGroup.add(stem);
+      const bud = new THREE.Mesh(
+        new THREE.ConeGeometry(0.075, 0.25, 9),
+        new THREE.MeshStandardMaterial({ color: 0xE98AA9, roughness: 0.55 })
+      );
+      bud.position.y = stemH + 0.12;
+      bud.rotation.z = 0.12 * (i % 2 ? 1 : -1);
+      budGroup.add(bud);
+      g.add(budGroup);
+    }
+
+    return g;
   }
 
   buildLotusPond(w, d, koiCount = 12, showPalmFlagDecor = false) {
