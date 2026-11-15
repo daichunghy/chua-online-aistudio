@@ -287,8 +287,9 @@ test('9-category Store catalog, live try-on, level gating, and Tam Quan South->N
   assert.equal(phatAdida.pos.z, 27);
   assert.ok(phatAdida.pos.z < tamQuan.pos.z);
   assert.equal(chanhDien.pos.x, 23);
-  assert.equal(nietBan.pos.x, 12);
-  assert.ok(nietBan.pos.z < -30); // Rear garden behind Chùa Cổ
+  assert.equal(nietBan.pos.x, -24.5);
+  assert.ok(nietBan.pos.z < -15); // Rear-west garden behind Chánh điện
+  assert.equal(nietBan.pos.x, phatDiLac.pos.x); // Near the Di Lặc garden
 
   assert.equal(STORE_CATEGORIES.length, 9);
   assert.deepEqual(
