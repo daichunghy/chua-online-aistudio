@@ -1,0 +1,75 @@
+name: Import Vinh Trang Arhat Models
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/import-meshy-arhats.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  import-models:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Download 18 textured GLB statues
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p models/arhats
+          curl --fail --location --retry 3 --retry-delay 2 --connect-timeout 30 --max-time 600 'https://assets.meshy.ai/uploads/converted/01a1e10e-533c-7604-a0df-6b5ecce0aed3/01a1e10f-7e12-74a8-aa6e-774a481485af/Meshy_AI_Single_complete_3D_st_1115211411_texture.glb?Expires=1794873600&Signature=LfUK1ZNcDoPgZfl4rQNWOTRfetXPTXKxauF3cqVmhLGKyCN5Qqr2xhNal6oOERHdNcutIKsHFuFdWV-iEWmiONVPbTq2~ECdxN-J5Rm~R5DunKOVYGYa-Ac1rPVme9IlPxlWnvrdZOwGLdlkRXKlbiA2AQyZ4AgPq~Qu64xybeabNf0MrJ8hi-1UDneBZzrlYggSZd~ApnJ03rc6zKE--m6aJxWsLmwKAG6CzW49ymVqjXkvr1-bkiGMoOKHSFAmDcKs7HUu1t4msjz7yhK8vrh~ckle6~e1iCBXCJiWq6GwAqGho-3tutL333VJBWo7rCow9qorYtsN~zF3reIWAQ__&Key-Pair-Id=K1VGYTHIYLM9UM' --output 'models/arhats/01-tan-dau-lo-phuc-ho.glb'
+          curl --fail --location --retry 3 --retry-delay 2 --connect-timeout 30 --max-time 600 'https://assets.meshy.ai/uploads/converted/01a1e115-015f-72f1-ad39-a97f50defe78/01a1e115-fe8e-726b-aac9-9daf3c25b90e/Meshy_AI_Single_complete_Vinh__1115212117_texture.glb?Expires=1794873600&Signature=hiqDYuh53wg~kfHtGJTBcgZ7-9vlkJeURuybScWH1X97X5TbW4vewOet1LZipxNows5HQm1WK2ag4AiM739uuj6XHYFP5lF2BDv~BvrCILF33g8Yg0MzmAHVmLi1tjD-OGIlLCbWz1KuAROsS~039YOFnK1OafmEkOyXQFODYPp4zS1VbxagE7UlEOC9ZQA~KCmJi0PeQLq4xTV9-quXFlPb2OqRu6ebQfW~mjuBX2smNMJ85rT1R00DBdY60kGBYABDmKCNq6UysGnItgPweHYb~OQNqftltmYVoymSwF9-xLVPVHYaqERzIffmsGWW7K124mrhgy-CBrk5GzPesw__&Key-Pair-Id=K1VGYTHIYLM9UM' --output 'models/arhats/02-phat-na-ba-tu-son-huou-cao-co.glb'
+          curl --fail --location --retry 3 --retry-delay 2 --connect-timeout 30 --max-time 600 'https://assets.meshy.ai/uploads/converted/01a1e116-eb0c-7626-a917-42840913f32a/01a1e117-8191-7254-85bf-474594a5b46a/Meshy_AI_Single_complete_Vinh__1115212256_texture.glb?Expires=1794873600&Signature=cmdPfenEqX3SiV77a1RQ604~FZSJCjcLDAdY4OCWO0a4CsrmdJbd9BNPy3qO7m2bsENQtA4mn1ei6WWDmsh1MX6CkU-Orw5uSma3ulvgxGB3T6dV3lCfBOxOihG9JtIAn9G26bUdCc89ylj6g~l-jK7NYK3PE-DLis1e4BbyJdHddwH1Mq1ykfmXQad75UEMahnKTGf3iREXQl2umHwZ5EfpkFcvnpCbvMrEHGlebMYZmRNEVKH5tKayGD5H7OE8tELjsvjPYxpV4cxwVVHFlROoZ1ZSiFCLP--l0Ctv~AXIqIGOMHJv7OVNjQGgp5~oVOyZGkwjooxgp2whOL36ZA__&Key-Pair-Id=K1VGYTHIYLM9UM' --output 'models/arhats/03-nhuan-yet-da-bo-dai.glb'
+          curl --fail --location --retry 3 --retry-delay 2 --connect-timeout 30 --max-time 600 'https://assets.meshy.ai/uploads/converted/01a1e117-9e36-733a-9a4b-d7298e36f4ca/01a1e118-3318-73a2-b0fd-3e3efab8cf2e/Meshy_AI_Single_complete_Vinh__1115212341_texture.glb?Expires=1794873600&Signature=DDR2lZazjfUj~gn2edSgJJvxHLMB-u0SoYp-rSeCLe16AnypGoUcmozjV-V7JDAu6j82~X2oW1SCLOM7klqaSxlFifcTg6xmV4i0Q53LNMqMq3O36bTXnUxGQ~tle~J48KInfWBUXsn7ETgxZcYkp~7Alu60DicklPC-dviuo~qhiK~X8bgI8JLx4HODjwBZjTcaR2dRQDGN~3YfYd-26pG3CvGB0fIP62UVFbi6O-i8iYeoaycuw8u8EA99na5dmMiZXQSZAWF-BFwAYjEuOFSj5NSFSaDTwHfpG6V6rVkqFmUu9HhqEpEav4mpHCTht6o35tGj60C6-OVhGzoNOA__&Key-Pair-Id=K1VGYTHIYLM9UM' --output 'models/arhats/04-gia-luc-gia-khai-tam.glb'
+          curl --fail --location --retry 3 --retry-delay 2 --connect-timeout 30 --max-time 600 'https://assets.meshy.ai/uploads/converted/01a1e116-1b3e-75b6-98bf-ffb76ded6fce/01a1e116-cd6b-7334-a9ba-8448cd881bf5/Meshy_AI_Single_complete_Vinh__1115212210_texture.glb?Expires=1794873600&Signature=eWaf8Lgs3bTGjWq-W1GLU4TqKwSefZjTkI9W4kMaDl7Yvb4L-SlKV3ncSPnlQL3dSypQFsl4R-8gQrIFuidC6TalFqGenp8a8ltiRLGX2HTHKbnXYGaUthYkREH9z47c-6IIGoNERB0uRcZXVNm62vm-DakU-d8krShBsd0lD4fCM5k0h9ZdsXXnVHh9N0NQBuEECC46hS26PGF8ipySU3OJGxMjJZcvTjq3on3zZVXlkQ4Jpg64QxOLGhUIafBq7LZkBZzI5iyEJf9eFr3iaVeQG4fgv6OoyInHAZnTIMLgpJns9vEGWIoEyBCSY~rGVTb989DJ1g83~MdPbS-ZnQ__&Key-Pair-Id=K1VGYTHIYLM9UM' --output 'models/arhats/05-ba-da-thu-ra-kim-hau.glb'
+          curl --fail --location --retry 3 --retry-delay 2 --connect-timeout 30 --max-time 600 'https://assets.meshy.ai/uploads/converted/01a1e118-500f-7160-97b1-602123aa0211/01a1e118-ee16-7036-b0c2-96e4af6a351c/Meshy_AI_Single_complete_Vinh__1115212429_texture.glb?Expires=1794873600&Signature=AainAkbqzz-o4gDHGOsAI9Sg90MsoicNgkOO8vW2jCYfLHAYa3e1Ikl1yrXB6J4i-~b5nmyqMwUoH0PT9UHYwEZ9u09Sfv639c7YndX8TbIxCz3OKg0xwWHvAP5dS7z810aTcR8AA588vrGKmJq9vGR-zRpRZ9h4E2mB1u30TpF5iBFAudW4sqBif-UTgc-oeGKe9qAAj5gqkmvsXmuLeGps1zE-pmC2-2JABQSPudo4goLjIxutnpfkkU~HcXXkMLpy-175SmOeISyVQtuDLER15tXS~aL713Fymhi8SV88TpDh7ddCPHa3MIT9DzDcWUjP60CP-MJzG8SbD8qsrQ__&Key-Pair-Id=K1VGYTHIYLM9UM' --output 'models/arhats/06-bat-da-la-son-duong.glb'
+          curl --fail --location --retry 3 --retry-delay 2 --connect-timeout 30 --max-time 600 'https://assets.meshy.ai/uploads/converted/01a1e119-0a23-7109-b4b8-231095684c80/01a1e11a-5359-7568-9a2d-b9d2257d92e1/Meshy_AI_Single_complete_Vinh__1115212601_texture.glb?Expires=1794873600&Signature=bOzXVpkhN10LxlkdQ3QD~B1aK-USEgfz4pw68jMzuYbjPJr2iWuscctUvBguU7DtnBdrIC7oYmKjTjooj1USjrJ~WOlejkZdMZ-ECYi0gEXO-tvtfGanGqwGJYpsojPZNk8HG2lBRmv4pPahxOYRngPc5Esz87bxWY0CotbBCepJrHuElEJ2kNeDdEDdI~Vh4xhL3YdZEoFkOI9K6rQ480VXJDWIWXKNt7qexIpXv3gHyRPK3Zmkt717~Iph8q5PhUa4~Oi8LShB1GyHojt2a-GXO8DfJvG54753aJNhMAAXhsI~vg4qwzhtZXaUIYs6fmcIiL25bYJPUR7UiH~h-A__&Key-Pair-Id=K1VGYTHIYLM9UM' --output 'models/arhats/07-noc-cu-la-sao-nguu.glb'
+          curl --fail --location --retry 3 --retry-delay 2 --connect-timeout 30 --max-time 600 'https://assets.meshy.ai/uploads/converted/01a1e11a-6d48-77ed-b45d-3e6227500f1e/01a1e11b-2a96-77d1-8f4a-dd9cef9a5f5e/Meshy_AI_Single_complete_Vinh__1115212656_texture.glb?Expires=1794873600&Signature=pdIP3Ie9ZcxfsdyVeiikldXYetKy-~~DzDq2p4mTXaqos3O~LNSwURJ8Z881zJWK93ogE2Vm-VhGPdciKdAFNraCEcSIDbFiG84WiB0ioBCXHW3kqTmnnce8zK4yXTuGfJgA5Cdk~ViIj16JKRaBGj3xZbuwJLyfnU77RXbyHwWvvdkFRf4JFiH0uGghgMPR6lxAxlnmRn2ehY0cw90-PE2A~dg~PddhXxF9~u7uPHj0aSD98C10HI4uyTHuxq3LNg6Hs8zx~hXBCKls5P05OYpR0b3rvQxnL68gWwuvxS1q3n2s8I9NQYQt9NjnK2TjtbdR-z3M3SjgMrhsZGZeEg__&Key-Pair-Id=K1VGYTHIYLM9UM' --output 'models/arhats/08-ca-nac-ca-phat-sa-te-giac.glb'
+          curl --fail --location --retry 3 --retry-delay 2 --connect-timeout 30 --max-time 600 'https://assets.meshy.ai/uploads/converted/01a1e11b-622f-7414-83f6-84c3f22845e7/01a1e11b-fb33-772a-9ea7-4e573c33d8c6/Meshy_AI_Single_complete_Vinh__1115212749_texture.glb?Expires=1794873600&Signature=HiZ46Dsx-83ZW5nF~uJu8Sdz~YhOsXEbao1y-umigmUmyCZEkiJo~aeu6ghZbdg4V2MxXg-jiI9HPhf9Vuv8IbwrSjVvGVyqw64-xqgXyfCdo9rSsRi3HibACrUT6WwoRoqp1X01jWpRqiu9sirX083786TFCk1L-tyZ~fGhY9FWOMXPscsO-cDXn-c10JnxHMiJt5rYVSOnbIdQT8Ntnt9ZK3NkKc22nVRLq0zf2wUuugWfOleP39plX3tOMAE~WAUEAXH86GIOPLJaVBATNB1myeDxHcURRRwWFhgffkHJSjERaZKOtvz2fED0G3gC6M4UD-G5FAo9gEDS3UDtAQ__&Key-Pair-Id=K1VGYTHIYLM9UM' --output 'models/arhats/09-ban-thac-ca-bach-ma.glb'
+          curl --fail --location --retry 3 --retry-delay 2 --connect-timeout 30 --max-time 600 'https://assets.meshy.ai/uploads/converted/01a1e11c-17d8-744f-883d-4608d3ebc184/01a1e11c-c6f7-732d-9bda-fe8a936dfe91/Meshy_AI_Single_complete_Vinh__1115212841_texture.glb?Expires=1794873600&Signature=o6cL7CX6rLRgz~JQDusAMi~5G9~~YtJWQQI1PYgBoEUAQpB9DBIGYV7QStqJW7te4HtaWSNQSCzpoLPZ0sYCfOEQ9PGHydmNMlC9cacP5H-SeIlXlowvGd9ddFAwCSZl~zKDZOw7T3HcilUmEU3k98Dkwu5DPM92RUMgLpqHAUwa3cOTcCanhTdmryprOoVOP8UAy3NYP24P8PvsbQtThukjXGZL~VBv99fp4LIr3jd5ctlPd8xBzovq0RTowLycCp-2ZBSSQOyn7nADgMM-~SM7eYCFrlJKaK5oyn0ubuhBtvPiMyKR0YoOlN7skQal4oY7NfM3CiDJ1NdY7Qcipw__&Key-Pair-Id=K1VGYTHIYLM9UM' --output 'models/arhats/10-do-la-bat-la-noa-xa-doc-giac.glb'
+          curl --fail --location --retry 3 --retry-delay 2 --connect-timeout 30 --max-time 600 'https://assets.meshy.ai/uploads/converted/01a1e11c-e66f-7796-a7b7-85c0d1f0c2bc/01a1e11d-87cd-7092-8142-567d6a77889c/Meshy_AI_Single_complete_Vinh__1115212931_texture.glb?Expires=1794873600&Signature=UdnHRLCjfDGpTBJpa8mOU-z0gUW0j6fOKodwnNc3MIncmjAyNkK1StA96I8B4nk1fMcIWyWS3P4uPjoWmMSRDBvXCV5TiPL1ydvX8UEh58GFgG44NQNvmtDEidyJg878Dm-pCSkGNr7zx6iVaZ7gfc~~L4k-0nSKBrHN62FGca0kFmdIkc1eZqivqu1WTg7qWtLhQAP5EIcEZc8uUtbaeyK3UI-Ckd65Kxe8a5B3iN2EA-lOodHXrYf5GWLqryfl2zuBuHdS9yw2BoaUpffxkW7XasM0aG1HUpCiLnYCZ0hoCFfSWrepajNZqRcXhdLCuuC2AvllzA73oteT9b5NMA__&Key-Pair-Id=K1VGYTHIYLM9UM' --output 'models/arhats/11-phat-xa-la-phat-da-la-thanh-su.glb'
+          curl --fail --location --retry 3 --retry-delay 2 --connect-timeout 30 --max-time 600 'https://assets.meshy.ai/uploads/converted/01a1e11d-a316-7421-9b2e-39af79db19cb/01a1e11e-42dd-7193-94c5-c9e26ff472a5/Meshy_AI_Single_complete_Vinh__1115213019_texture.glb?Expires=1794873600&Signature=QnjLJ2PG3b1FsUElkZ7W4OGwRiQ0UvdM48bFFPdlFHmU1WREUddrORfJK20TiuIN~fVCuKvcz-anEjeBQWWSdayzudQRE1KzF9yhphJsIMx~yDP5TMdTGwLsgU6qqS60wiDZb3oPP5Tj4i4U3MBUi8ZOkNw99RFuL~jZzD4hSh81qUiHXvIJRBxnGg2-qMTtWNSM-Fs8aoIjcWAIWeqtbY24232CJGfZBqSRfvdnZP9nZOpyDIwnkoGuWye~1hX4iv16030QQrjJTiUPd-Dcnw~uN~ESm--MBbpbhDeKjdGhAEU0yneh6gF5ajdMxB317b8BkNSlCWIxC5so5OZEgw__&Key-Pair-Id=K1VGYTHIYLM9UM' --output 'models/arhats/12-to-tan-da-bach-khuyen.glb'
+          curl --fail --location --retry 3 --retry-delay 2 --connect-timeout 30 --max-time 600 'https://assets.meshy.ai/uploads/converted/01a1e11e-5e53-70dd-b758-ad6b1b98709a/01a1e11e-fe4a-734e-9bf4-07a9aadf7f5f/Meshy_AI_Single_complete_Vinh__1115213107_texture.glb?Expires=1794873600&Signature=ZWZAoYWcBnf~fBEcH5ZQLdZTBF4wF46lddu7PAOPnjyBchcXZW1PQAsOd36Jpv5bEKL1PvZhQQQ1Qj9MYGioyruXIML0Jn1KCG-B7wMqlDELcln~9eR1yDdlvlHgIOq454sdRDgcVnd9trlMozebaEiLBKZpIByNp9Oj4L5lS-kSqNXpUxphkw-NHBi6xZfoDpdFXsfhoyEpeY1tcVpa1sUXRMMld735BRTraT0mRnArDHMlsjAPQ1~f-SW0So0W808VDlZBRnACjAxJ-ZpiaqCGglF9TBJElb4rJ8WkuWtrz7jyC62rbdsl8voPCRfWuI7OwHiP-YtIux5-Lksnyw__&Key-Pair-Id=K1VGYTHIYLM9UM' --output 'models/arhats/13-la-ho-la-ha-khuyen.glb'
+          curl --fail --location --retry 3 --retry-delay 2 --connect-timeout 30 --max-time 600 'https://assets.meshy.ai/uploads/converted/01a1e11f-1cff-7577-9a9b-6ce27a57374e/01a1e11f-c80c-759b-a556-5db782e9a002/Meshy_AI_Single_complete_Vinh__1115213158_texture.glb?Expires=1794873600&Signature=mjqScMdzmW4h7dDl~Jx5GZEKUvJSlbHh2pm7dCM1ArVDz0Z8QjYK5Cj96dpAxQdYbTnx2WuA1g4-3pzK3ecCe3zs-a-vrGeo3Ikvw5jMTNdcoc0XjI~Hy71HVwH0CgODuK7EpsvTEw5ceGtf9PsA0lgykuRNu8DOCpBCGrwEyGQRZTBJVjzEoEPDHpx7y4aKxqduQwVMUhTEma8lArGZfUsLbjAMYtoGQo0XjujeLR6xz-hwImpjb5tNaq9HLs0ohOERCf15zNLbztywwU~id5HtvJJhBJuacz8hkbYKB-~60puf3WTFmOiTkQvMIArg-5R~aqLYdEKDsZRFGaIrhQ__&Key-Pair-Id=K1VGYTHIYLM9UM' --output 'models/arhats/14-chu-ban-tra-thac-ca-ha-ma.glb'
+          curl --fail --location --retry 3 --retry-delay 2 --connect-timeout 30 --max-time 600 'https://assets.meshy.ai/uploads/converted/01a1e11f-e2c1-74ac-b45b-4e37fcb8deba/01a1e120-9b93-7146-b8a3-362ed0592ca9/Meshy_AI_Single_complete_Vinh__1115213253_texture.glb?Expires=1794873600&Signature=Z5E183lVDkggRFHq8GTXl26neV3Nihj69eNfQojCJRx8zQ3H42Wx3ML6qA5LMYcqX5JlOU-J1u2typggKsknCj2sV-GCSebs9x2xgnZTDfGVoXPzTc-LWsT98Hcq-7kjWVTzxik6CQOh5BPDBb3WL9GFoZJXvIZBg6SYxBcHuIyhDJWk-UncM-OIBpoCCvQ7lO5jmOp3gde6Y~oxSZxxLCxXdH~YUq6-eN0npgZFis2saRU0yK-OqVxyh-SHtFGHDLgzoezhF6HG8R2AiDcVsyfQ1-9ba7JveMjcFuRsANGThYxGcUHRsY2~oZmJU5XTM70FPYSjHCxMzFY8URfVjg__&Key-Pair-Id=K1VGYTHIYLM9UM' --output 'models/arhats/15-ca-ly-ca-son-nguu.glb'
+          curl --fail --location --retry 3 --retry-delay 2 --connect-timeout 30 --max-time 600 'https://assets.meshy.ai/uploads/converted/01a1e120-b9f0-7297-a8ae-c5e916b0f8f4/01a1e121-6073-7078-a7c4-653b013c93f8/Meshy_AI_Single_complete_Vinh__1115213343_texture.glb?Expires=1794873600&Signature=muZZ2lrtfKflMh9EwECbT84Lp6UMNzxVCELSRwD3rRH25bt-6guCq1wIq7Xa2x2PS-zbs-XNuWOjNE2Nhy76pRII2BGIFXFAZ~bvM4Ep2ePXx2-Ok~31~D3m1mDJytpdJcvG87UGgNBHeQgkaoKoZB7ycLJoUiLLCVzk6H-mPeqN3vBEai8uwnYapO3JyBegdjk3fQ4MA0Zf0KjrBu8vxSsB95CLUJyc64bGpYywAl8Xy3cRx1gz7d3XrGRzPkSp~8BkDsqhfKa5IULmopAoAiDHFgW-eH0vkH8EFzR8akaj96XC1v5fMvwQkQduvN7Z2v-6eMApEspByc5dld~SWA__&Key-Pair-Id=K1VGYTHIYLM9UM' --output 'models/arhats/16-thu-bat-ca-gia-nhan.glb'
+          curl --fail --location --retry 3 --retry-delay 2 --connect-timeout 30 --max-time 600 'https://assets.meshy.ai/uploads/converted/01a1e121-7cb6-758b-a6dc-58bb3520ea1b/01a1e122-258c-7043-bf08-9efd0b18dda1/Meshy_AI_Single_complete_Vinh__1115213433_texture.glb?Expires=1794873600&Signature=f3SqPMvuXBc69A9vpq92qKDziJ4t8E4KVRN1NBAYxjAvAn4ypWk54CtsGG3eizwykvrcd04wPJv2j~i7aZIDXtpxxsYXvZIydBmCPjIR-TPosNxuD7L~q3tORlWiO96lNV62-6jjJnSmKyFyAPi3TWFQQh7AcG18G2uPuBch4dhgSf7WoasSE57hag0V4jwlRG3dfJTx0S6u9rJkVNSXz5oLvd37rpnqc8hMgMKDZtaJUarRlXfEwe0Ghz-FRV1ucUU-VbQn0XeigNtPy52cbvEVNpbNGH~7vh8sYxaw7NYKJsSXDeE4zxkoyMIAK8KOUzWnl4QWjBhsSVT-XlvRGg__&Key-Pair-Id=K1VGYTHIYLM9UM' --output 'models/arhats/17-khach-lieu-ton-hang-long.glb'
+          curl --fail --location --retry 3 --retry-delay 2 --connect-timeout 30 --max-time 600 'https://assets.meshy.ai/uploads/converted/01a1e122-446a-7357-a0a8-1d2b79d41375/01a1e123-2e2e-7749-a3f7-a4c4576dda3c/Meshy_AI_Single_complete_Vinh__1115213541_texture.glb?Expires=1794873600&Signature=RHkF6OXYM3BM-m0~IJWL1weYujIwHO9ItCx1DALdJDU9mqL~gVUGaYNZHhCOvKBbFaxY4ZRfMSpaurfdLt3F7zanMhbJVmeKxMEg7XHgGU3IrNy6Z1nc0T7Y15Eo~PZfOFlO8wHxN4DMmSdp2zSUa1j5LNSTEvOxP39XFfpWEoBu8DG~D-Glu7lTwAvPZHpXxMwSVAUb4X5rlF96QfFP83wF1dJnPUj7DKiVsLqgryOuhzhwPuJ7QjzUthXj~7PGoYEyjVTHEzYbQ9NpdYvyemXek2NlYaYntO6oZqEzCMHGUT6q3xwDFvwrQh3UjH0XsP52eg91Et-w__&Key-Pair-Id=K1VGYTHIYLM9UM' --output 'models/arhats/18-a-thi-da-son-nai.glb'
+      - name: Validate GLB files and write asset manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          files = sorted(Path("models/arhats").glob("*.glb"))
+          assert len(files) == 18, f"Expected 18 GLBs, found {len(files)}"
+          for path in files:
+              data = path.read_bytes()
+              assert len(data) > 10000, f"{path} is unexpectedly small"
+              assert data[:4] == b"glTF", f"{path} is not a GLB"
+          print(f"Validated {len(files)} textured GLB models")
+          PY
+          cat > models/arhats/README.md <<'EOF'
+          # Bộ 18 vị La Hán — Chùa Vĩnh Tràng
+
+          18 mô hình GLB được tạo riêng cho game, theo bộ tượng gỗ mít thếp vàng và các linh thú trong tư liệu về chùa Vĩnh Tràng. Mỗi model có hình học tối ưu cho game (meshy-t2, khoảng 6.000 mặt) và vật liệu PBR 2K (meshy-7).
+
+          Thứ tự file khớp với EIGHTEEN_ARHATS và ARHAT_GLB_PATHS trong mã nguồn. Tổng chiều cao trong game được fit về khoảng 0,8 m; plinth thấp nằm trong từng model.
+          EOF
+      - name: Commit model assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/import-meshy-arhats.yml
+          git add models/arhats
+          git commit -m "Add 18 textured Vinh Trang Arhat GLB models"
+          git pull --rebase origin main
+          git push origin HEAD:main
