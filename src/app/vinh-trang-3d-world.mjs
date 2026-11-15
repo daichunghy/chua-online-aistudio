@@ -2884,6 +2884,61 @@ export class VinhTrang3DWorld {
       const rockMat = new THREE.MeshStandardMaterial({ color: 0x676B66, roughness: 0.92, flatShading: true });
       const mossMat = new THREE.MeshStandardMaterial({ color: 0x3D7A3C, roughness: 0.85 });
 
+      // Timber-and-masonry front treatment for the connected worship halls.
+      const decorateCrossHall = (centerZ, width, depth, doorCount = 5) => {
+        const frontZ = centerZ + depth * 0.5 + 0.08;
+        const beam = new THREE.Mesh(new THREE.BoxGeometry(width + 0.5, 0.26, 0.32), darkWoodBeam);
+        beam.position.set(25.0, 5.05, frontZ + 0.04);
+        comp.add(beam);
+
+        for (let i = 0; i <= doorCount; i++) {
+          const x = 25.0 - width * 0.5 + (width / doorCount) * i;
+          const base = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.22, 0.52), M.stoneLight);
+          base.position.set(x, 1.12, frontZ + 0.08);
+          comp.add(base);
+          const column = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.18, 3.72, 12), M.redColumn);
+          column.position.set(x, 3.08, frontZ + 0.08);
+          column.castShadow = true;
+          comp.add(column);
+          const capital = new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.2, 0.56), M.goldAccent);
+          capital.position.set(x, 4.98, frontZ + 0.08);
+          comp.add(capital);
+        }
+
+        for (let i = 0; i < doorCount; i++) {
+          const bayWidth = width / doorCount;
+          const x = 25.0 - width * 0.5 + bayWidth * (i + 0.5);
+          const doorWidth = Math.min(1.8, bayWidth * 0.58);
+          const frame = new THREE.Mesh(new THREE.BoxGeometry(doorWidth + 0.28, 3.05, 0.16), M.creamTrim);
+          frame.position.set(x, 2.62, frontZ + 0.14);
+          comp.add(frame);
+          const leaf = new THREE.Mesh(new THREE.BoxGeometry(doorWidth, 2.72, 0.09), M.darkWood);
+          leaf.position.set(x, 2.58, frontZ + 0.24);
+          comp.add(leaf);
+          for (const panelY of [1.95, 3.12]) {
+            const panel = new THREE.Mesh(new THREE.BoxGeometry(doorWidth * 0.72, 0.72, 0.045), darkWoodBeam);
+            panel.position.set(x, panelY, frontZ + 0.30);
+            comp.add(panel);
+          }
+          const seam = new THREE.Mesh(new THREE.BoxGeometry(0.035, 2.55, 0.04), M.goldAccent);
+          seam.position.set(x, 2.58, frontZ + 0.34);
+          comp.add(seam);
+          for (const side of [-1, 1]) {
+            const handle = new THREE.Mesh(new THREE.SphereGeometry(0.045, 8, 6), M.goldAccent);
+            handle.position.set(x + side * 0.13, 2.55, frontZ + 0.39);
+            comp.add(handle);
+          }
+          const transom = new THREE.Mesh(new THREE.BoxGeometry(doorWidth, 0.42, 0.07), darkWoodBeam);
+          transom.position.set(x, 4.35, frontZ + 0.23);
+          comp.add(transom);
+          for (let bar = -2; bar <= 2; bar++) {
+            const lattice = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.36, 0.035), M.goldAccent);
+            lattice.position.set(x + bar * (doorWidth / 6), 4.35, frontZ + 0.28);
+            comp.add(lattice);
+          }
+        }
+      };
+
       // 1. Raised ~1.0m Heritage Plinth across the rear compound (x = 13.8..36.2, z = -31.2..-5.8)
       const plinthTerrace = new THREE.Mesh(
         new THREE.BoxGeometry(22.4, 0.96, 25.4),
@@ -2945,6 +3000,7 @@ export class VinhTrang3DWorld {
       chanhRearBody.position.set(25.0, 3.55, -7.6);
       chanhRearBody.castShadow = true;
       comp.add(chanhRearBody);
+      decorateCrossHall(-7.6, 19.6, 4.4, 5);
       const chanhRearRoof = makeHippedRoofMesh(21.0, 5.6, 2.35, M.roofTile);
       chanhRearRoof.position.set(25.0, 7.3, -7.6);
       chanhRearRoof.castShadow = true;
@@ -2955,6 +3011,7 @@ export class VinhTrang3DWorld {
       nhaToWing.position.set(25.0, 3.35, -18.2);
       nhaToWing.castShadow = true;
       comp.add(nhaToWing);
+      decorateCrossHall(-18.2, 17.6, 5.0, 5);
       const nhaToRoof = makeHippedRoofMesh(19.2, 6.2, 2.45, M.roofTile);
       nhaToRoof.position.set(25.0, 6.95, -18.2);
       nhaToRoof.castShadow = true;
@@ -2968,6 +3025,7 @@ export class VinhTrang3DWorld {
       nhaHauWing.position.set(25.0, 3.45, -28.4);
       nhaHauWing.castShadow = true;
       comp.add(nhaHauWing);
+      decorateCrossHall(-28.4, 22.2, 5.2, 6);
       const nhaHauRoof = makeHippedRoofMesh(23.6, 6.4, 2.4, M.roofTile);
       nhaHauRoof.position.set(25.0, 7.1, -28.4);
       nhaHauRoof.castShadow = true;
