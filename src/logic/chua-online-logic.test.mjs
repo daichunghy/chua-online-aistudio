@@ -304,11 +304,17 @@ test('9-category Store catalog, live try-on, level gating, and Tam Quan South->N
   assert.equal(treeItems[0].price, 50);
 
   const robeItems = filterStoreItems('ao_trang');
-  assert.equal(robeItems.length, 6);
+  assert.equal(robeItems.length, 12);
   assert.equal(robeItems.find((r) => r.id === 'ao_trang_nau')?.requiredLevel, 1);
   assert.equal(robeItems.find((r) => r.id === 'ao_trang_trang')?.requiredLevel, 1);
   assert.equal(robeItems.find((r) => r.id === 'ao_vu_lan_hong')?.rare, true);
   assert.equal(robeItems.find((r) => r.id === 'ao_vang_nghe')?.requiredLevel, 10);
+  assert.equal(robeItems.find((r) => r.id === 'ao_lam_co_tau')?.swatchHex, '#87949A');
+  assert.equal(robeItems.find((r) => r.id === 'ao_trang_nau_gu')?.slot, 'robe');
+  assert.equal(robeItems.find((r) => r.id === 'ao_trang_lam_nhat')?.tryable, true);
+  assert.equal(robeItems.find((r) => r.id === 'ao_trang_xanh_reu')?.requiredLevel, 3);
+  assert.equal(robeItems.find((r) => r.id === 'ao_trang_tim_khoi')?.rare, true);
+  assert.equal(robeItems.find((r) => r.id === 'ao_trang_vang_dat')?.requiredLevel, 5);
 
   let st = createStoreProfileState({ level: 1, gems: 180, lotusPoints: 250 });
   const tryRes = tryOnStoreItem(st, 'ao_hoa_sen');
