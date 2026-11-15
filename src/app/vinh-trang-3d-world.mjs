@@ -2480,10 +2480,10 @@ export class VinhTrang3DWorld {
 
     // RIGHT (East) Tourist Arrival Road along +X flank (through open Cổng Phụ x=40.5 -> Yellow Banner -> Bougainvillea Side Path)
     const rightArrivalRoad = new THREE.Mesh(
-      new THREE.BoxGeometry(9.2, 0.12, 54),
+      new THREE.BoxGeometry(9.2, 0.12, 32),
       new THREE.MeshStandardMaterial({ map: this.pavingTex, color: 0xE5D8C3, roughness: 0.78 })
     );
-    rightArrivalRoad.position.set(40.5, 0.002, 34);
+    rightArrivalRoad.position.set(40.5, 0.002, 25.5);
     rightArrivalRoad.receiveShadow = true;
     this.exteriorGroup.add(rightArrivalRoad);
 
@@ -2495,17 +2495,17 @@ export class VinhTrang3DWorld {
       roughness: 0.88
     });
     const sideWalkway = new THREE.Mesh(
-      new THREE.BoxGeometry(4.8, 0.13, 29.2),
+      new THREE.BoxGeometry(4.8, 0.13, 24.5),
       sidePathMat
     );
-    sideWalkway.position.set(36.4, 0.006, 20.1);
+    sideWalkway.position.set(36.4, 0.006, 22.25);
     sideWalkway.receiveShadow = true;
     this.exteriorGroup.add(sideWalkway);
 
     const sidePathEdgeMat = new THREE.MeshStandardMaterial({ color: 0x9B6349, roughness: 0.9 });
     for (const edgeX of [34.08, 38.72]) {
-      const edge = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.12, 29.2), sidePathEdgeMat);
-      edge.position.set(edgeX, 0.075, 20.1);
+      const edge = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.12, 24.5), sidePathEdgeMat);
+      edge.position.set(edgeX, 0.075, 22.25);
       edge.receiveShadow = true;
       this.exteriorGroup.add(edge);
     }
@@ -4604,11 +4604,11 @@ export class VinhTrang3DWorld {
     // Shoe and hat storage stays outside the right-side temple stair.
     // It is placed off the walking line so visitors can turn left without blocking one another.
     const shoeArea = new THREE.Group();
-    shoeArea.position.set(33.15, 0, 14.0);
+    shoeArea.position.set(32.55, 0, 14.0);
     shoeArea.rotation.y = Math.PI / 2;
 
     const shoePad = new THREE.Mesh(
-      new THREE.BoxGeometry(2.85, 0.1, 1.45),
+      new THREE.BoxGeometry(2.85, 0.1, 1.25),
       new THREE.MeshStandardMaterial({ color: 0xBDB3A2, map: this.pavingTex, roughness: 0.9 })
     );
     shoePad.position.y = 0.05;
@@ -4670,7 +4670,7 @@ export class VinhTrang3DWorld {
     shoeArea.add(shoeSign);
 
     this.exteriorGroup.add(shoeArea);
-    this.addRectObstacle(32.25, 34.05, 12.55, 15.45);
+    this.addRectObstacle(31.65, 33.45, 12.55, 15.45);
   }
 
   makeBonsai72(scale = 1) {
