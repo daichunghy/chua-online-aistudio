@@ -421,17 +421,18 @@ export class VinhTrang3DWorld {
   startEntranceCameraTour() {
     if (this.inInterior) return;
     if (!this.entranceTour.posCurve) {
-      // Tour path matching exact Vĩnh Tràng visitor arrival in image_bb72a8b0.png & image_97204806.png:
-      // 1) Quiet closed Cổng Chính -> 2) Busy wide-open ceramic mosaic Cổng Phụ ("Tịnh Độ Huyền Môn")
-      // -> 3) Glide in through Cổng Phụ past Nhà Tạp Hóa Vĩnh Tràng & Yellow Welcome Banner
-      // -> 4) Bougainvillea right side path past Đài Quán Thế Âm -> settle behind player at entrance plaza
+      // Visitor route: side gate -> Đài Quán Thế Âm -> souvenir shop -> turn left to the right-side temple door.
+      // The final camera point returns to the outside arrival road before control returns to the player.
       this.entranceTour.posCurve = new THREE.CatmullRomCurve3([
         new THREE.Vector3(24.5, 3.0, 54.5),
         new THREE.Vector3(38.5, 3.6, 51.5),
         new THREE.Vector3(40.5, 3.2, 41.0),
         new THREE.Vector3(40.5, 3.3, 33.0),
-        new THREE.Vector3(36.2, 3.4, 21.5),
-        new THREE.Vector3(34.8, 3.0, 13.0),
+        new THREE.Vector3(36.3, 3.4, 22.5),
+        new THREE.Vector3(36.3, 3.0, 14.5),
+        new THREE.Vector3(40.0, 3.0, 10.4),
+        new THREE.Vector3(34.0, 3.0, 10.4),
+        new THREE.Vector3(30.8, 2.8, 11.0),
         new THREE.Vector3(37.2, 2.5, 57.6)
       ]);
       this.entranceTour.lookCurve = new THREE.CatmullRomCurve3([
@@ -439,8 +440,11 @@ export class VinhTrang3DWorld {
         new THREE.Vector3(40.5, 4.2, 41.5),
         new THREE.Vector3(44.5, 2.8, 35.5),
         new THREE.Vector3(36.0, 2.5, 22.0),
-        new THREE.Vector3(32.5, 3.2, 11.0),
-        new THREE.Vector3(35.5, 3.4, 38.0),
+        new THREE.Vector3(32.8, 4.2, 22.5),
+        new THREE.Vector3(42.1, 3.0, 10.0),
+        new THREE.Vector3(40.0, 2.8, 10.0),
+        new THREE.Vector3(30.2, 3.2, 9.0),
+        new THREE.Vector3(33.1, 2.4, 14.0),
         new THREE.Vector3(36.8, 3.4, 39.5)
       ]);
     }
@@ -2483,14 +2487,45 @@ export class VinhTrang3DWorld {
     rightArrivalRoad.receiveShadow = true;
     this.exteriorGroup.add(rightArrivalRoad);
 
-    // Bougainvillea-Lined Red-Railed Right Side Garden Path -> Southern Terracotta Brick Pavers
+    // East-side visitor route: pale stone paving from Cổng Phụ past Đài Quán Thế Âm.
+    // It ends at a clear L-turn leading left to the right-side stair of the Chánh Điện.
+    const sidePathMat = new THREE.MeshStandardMaterial({
+      map: this.pavingTex,
+      color: 0xE5D9C6,
+      roughness: 0.88
+    });
     const sideWalkway = new THREE.Mesh(
-      new THREE.BoxGeometry(4.4, 0.13, 27.5),
-      new THREE.MeshStandardMaterial({ map: this.sideBrickTex, color: 0xEAD6C0, roughness: 0.8 })
+      new THREE.BoxGeometry(4.8, 0.13, 29.2),
+      sidePathMat
     );
-    sideWalkway.position.set(36.0, 0.006, 20.0);
+    sideWalkway.position.set(36.4, 0.006, 20.1);
     sideWalkway.receiveShadow = true;
     this.exteriorGroup.add(sideWalkway);
+
+    const sidePathEdgeMat = new THREE.MeshStandardMaterial({ color: 0x9B6349, roughness: 0.9 });
+    for (const edgeX of [34.08, 38.72]) {
+      const edge = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.12, 29.2), sidePathEdgeMat);
+      edge.position.set(edgeX, 0.075, 20.1);
+      edge.receiveShadow = true;
+      this.exteriorGroup.add(edge);
+    }
+
+    // The path turns LEFT (west) at its end, directly toward the right-side Chánh Điện staircase.
+    const sideDoorTurn = new THREE.Mesh(
+      new THREE.BoxGeometry(7.8, 0.13, 4.8),
+      sidePathMat
+    );
+    sideDoorTurn.position.set(33.0, 0.006, 10.2);
+    sideDoorTurn.receiveShadow = true;
+    this.exteriorGroup.add(sideDoorTurn);
+
+    const sideDoorLanding = new THREE.Mesh(
+      new THREE.BoxGeometry(4.8, 0.13, 2.6),
+      sidePathMat
+    );
+    sideDoorLanding.position.set(30.2, 0.008, 11.5);
+    sideDoorLanding.receiveShadow = true;
+    this.exteriorGroup.add(sideDoorLanding);
 
     this.buildFenceAndGateWall();
 
@@ -2593,6 +2628,10 @@ export class VinhTrang3DWorld {
     const chanhDien = this.buildChanhDien13Arches();
     chanhDien.position.set(23, 0, 1.0);
     this.exteriorGroup.add(chanhDien);
+
+    // Realistic right-side visitor sequence: souvenir shop at the end of the path,
+    // then shoe/hat storage outside the temple doorway before the stairs.
+    this.buildSideSouvenirShopAndShoeArea();
 
     // West Monastic Hall clear of North A Di Đà & Niết Bàn
     const leftHall = this.buildSideHall(8.4, 14.2, 4.9, M.goldLight);
@@ -4369,6 +4408,269 @@ export class VinhTrang3DWorld {
         ring: trigRing
       }
     );
+  }
+
+
+  buildSideSouvenirShopAndShoeArea() {
+    const M = this.MAT;
+
+    // A modest, permanent shopfront attached to the temple-side service wing.
+    // The real shop is an open, cream-coloured room with several bays, hanging bags,
+    // display tables and baskets — not a temporary market stall.
+    const shop = new THREE.Group();
+    shop.position.set(42.25, 0, 10.1);
+    shop.rotation.y = -Math.PI / 2;
+    shop.userData.stallType = 'thu_cong';
+    shop.userData.stallTitle = 'Cửa hàng lưu niệm Chùa Vĩnh Tràng';
+
+    const wallMat = new THREE.MeshStandardMaterial({
+      color: 0xE9DFC9,
+      map: this.limeWallTex,
+      roughness: 0.84
+    });
+    const baseMat = new THREE.MeshStandardMaterial({ color: 0xA96D4D, roughness: 0.88 });
+    const floorMat = new THREE.MeshStandardMaterial({
+      color: 0xA96A4C,
+      map: this.sideBrickTex,
+      roughness: 0.86
+    });
+    const woodMat = new THREE.MeshStandardMaterial({
+      color: 0x79502F,
+      map: this.woodGrainTex,
+      roughness: 0.72
+    });
+    const shelfMat = new THREE.MeshStandardMaterial({ color: 0x815536, roughness: 0.78 });
+    const roofMat = new THREE.MeshStandardMaterial({ color: 0xD2C6AF, roughness: 0.9 });
+
+    const plinth = new THREE.Mesh(new THREE.BoxGeometry(7.9, 0.34, 5.25), baseMat);
+    plinth.position.y = 0.17;
+    plinth.receiveShadow = true;
+    shop.add(plinth);
+
+    const floor = new THREE.Mesh(new THREE.BoxGeometry(7.65, 0.1, 5.0), floorMat);
+    floor.position.y = 0.38;
+    floor.receiveShadow = true;
+    shop.add(floor);
+
+    const backWall = new THREE.Mesh(new THREE.BoxGeometry(7.65, 3.12, 0.24), wallMat);
+    backWall.position.set(0, 1.99, -2.38);
+    backWall.castShadow = true;
+    shop.add(backWall);
+
+    for (const sx of [-3.72, 3.72]) {
+      const sideWall = new THREE.Mesh(new THREE.BoxGeometry(0.24, 3.12, 4.65), wallMat);
+      sideWall.position.set(sx, 1.99, -0.02);
+      sideWall.castShadow = true;
+      shop.add(sideWall);
+
+      const frontPier = new THREE.Mesh(new THREE.BoxGeometry(0.3, 3.05, 0.34), baseMat);
+      frontPier.position.set(sx, 1.9, 2.35);
+      frontPier.castShadow = true;
+      shop.add(frontPier);
+    }
+
+    // Three broad open bays facing the visitor path.
+    for (const sx of [-1.25, 1.25]) {
+      const pier = new THREE.Mesh(new THREE.BoxGeometry(0.22, 2.85, 0.28), wallMat);
+      pier.position.set(sx, 1.82, 2.35);
+      pier.castShadow = true;
+      shop.add(pier);
+    }
+
+    const frontBeam = new THREE.Mesh(new THREE.BoxGeometry(7.7, 0.36, 0.42), baseMat);
+    frontBeam.position.set(0, 3.28, 2.34);
+    shop.add(frontBeam);
+
+    const roofSlab = new THREE.Mesh(new THREE.BoxGeometry(8.15, 0.22, 5.55), roofMat);
+    roofSlab.position.set(0, 3.52, -0.02);
+    roofSlab.castShadow = true;
+    shop.add(roofSlab);
+
+    const fascia = new THREE.Mesh(new THREE.BoxGeometry(7.9, 0.28, 0.22), wallMat);
+    fascia.position.set(0, 3.3, 2.68);
+    shop.add(fascia);
+
+    const signBoard = new THREE.Mesh(
+      new THREE.BoxGeometry(5.8, 0.72, 0.13),
+      new THREE.MeshStandardMaterial({
+        map: makeTextTex('ĐỒ LƯU NIỆM VĨNH TRÀNG', {
+          w: 1200,
+          h: 190,
+          bg: '#21466A',
+          border: '#E8C77B',
+          color: '#FFF4D9',
+          size: 58
+        }),
+        roughness: 0.42
+      })
+    );
+    signBoard.position.set(0, 3.0, 2.62);
+    shop.add(signBoard);
+
+    // A tiled apron joins the shop entrance to the side walkway.
+    const shopApron = new THREE.Mesh(
+      new THREE.BoxGeometry(7.25, 0.08, 1.15),
+      new THREE.MeshStandardMaterial({ map: this.pavingTex, color: 0xE5D9C6, roughness: 0.88 })
+    );
+    shopApron.position.set(0, 0.39, 3.02);
+    shopApron.receiveShadow = true;
+    shop.add(shopApron);
+
+    // Rear wall shelves with small souvenirs, books and coconut handicrafts.
+    for (const shelfY of [0.95, 1.62, 2.29]) {
+      const shelf = new THREE.Mesh(new THREE.BoxGeometry(5.7, 0.1, 0.56), shelfMat);
+      shelf.position.set(0, shelfY, -1.95);
+      shop.add(shelf);
+
+      for (let i = 0; i < 10; i++) {
+        const packageMat = new THREE.MeshStandardMaterial({
+          color: [0xB84B37, 0xD9B66C, 0x426C58, 0xE7DCC5][i % 4],
+          roughness: 0.7
+        });
+        const packageBox = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.34, 0.28), packageMat);
+        packageBox.position.set(-2.45 + i * 0.54, shelfY + 0.22, -1.83);
+        shop.add(packageBox);
+      }
+    }
+
+    // Low wooden display tables and woven baskets, matching the real shop photograph.
+    const displayTable = new THREE.Mesh(new THREE.BoxGeometry(5.5, 0.14, 0.92), woodMat);
+    displayTable.position.set(0, 0.92, 0.15);
+    displayTable.castShadow = true;
+    shop.add(displayTable);
+
+    for (const [tx, basketColor] of [
+      [-1.75, 0xB63D32],
+      [0, 0x2869A8],
+      [1.75, 0x3D8158]
+    ]) {
+      const basketMat = new THREE.MeshStandardMaterial({ color: basketColor, roughness: 0.78 });
+      const basket = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.31, 0.3, 12), basketMat);
+      basket.position.set(tx, 1.14, 0.12);
+      shop.add(basket);
+
+      for (let gi = 0; gi < 4; gi++) {
+        const item = new THREE.Mesh(
+          new THREE.SphereGeometry(0.09, 8, 7),
+          new THREE.MeshStandardMaterial({ color: [0xE8D8B5, 0xA96A3E, 0xD5B36C, 0x688C71][gi], roughness: 0.78 })
+        );
+        item.position.set(tx - 0.16 + (gi % 2) * 0.22, 1.34, 0.02 + Math.floor(gi / 2) * 0.18);
+        shop.add(item);
+      }
+    }
+
+    // Hanging tote bags on a simple front rail, a distinctive feature of the real shop.
+    const bagRail = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 6.4, 8), woodMat);
+    bagRail.rotation.z = Math.PI / 2;
+    bagRail.position.set(0, 2.55, 2.12);
+    shop.add(bagRail);
+
+    const bagColors = [0xE7DCC8, 0xB6C8C0, 0xD8B8A7, 0xC8D2DF, 0xD9C98C, 0xE8D8D0];
+    for (let i = 0; i < bagColors.length; i++) {
+      const bx = -2.65 + i * 1.06;
+      const bagMat = new THREE.MeshStandardMaterial({ color: bagColors[i], roughness: 0.92 });
+      const bag = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.58, 0.12), bagMat);
+      bag.position.set(bx, 1.98, 2.14);
+      shop.add(bag);
+
+      const handle = new THREE.Mesh(
+        new THREE.TorusGeometry(0.13, 0.022, 6, 12),
+        bagMat
+      );
+      handle.position.set(bx, 2.34, 2.14);
+      shop.add(handle);
+    }
+
+    const shopTriggerRing = new THREE.Mesh(
+      new THREE.RingGeometry(0.78, 1.05, 28),
+      new THREE.MeshBasicMaterial({ color: 0xD7B56D, side: THREE.DoubleSide, transparent: true, opacity: 0.62 })
+    );
+    shopTriggerRing.rotation.x = -Math.PI / 2;
+    shopTriggerRing.position.set(0, 0.45, 3.35);
+    shop.add(shopTriggerRing);
+
+    this.exteriorGroup.add(shop);
+    this.stallAnchors.push(shop);
+    this.stallClickTargets.push(shop, signBoard, displayTable, shopTriggerRing);
+    this.stallTriggers.push({
+      x: 39.0,
+      z: 10.1,
+      radius: 4.4,
+      stallType: 'thu_cong',
+      title: 'Cửa hàng lưu niệm Chùa Vĩnh Tràng',
+      ring: shopTriggerRing
+    });
+
+    // Shoe and hat storage stays outside the right-side temple stair.
+    // It is placed off the walking line so visitors can turn left without blocking one another.
+    const shoeArea = new THREE.Group();
+    shoeArea.position.set(33.15, 0, 14.0);
+    shoeArea.rotation.y = Math.PI / 2;
+
+    const shoePad = new THREE.Mesh(
+      new THREE.BoxGeometry(2.85, 0.1, 1.45),
+      new THREE.MeshStandardMaterial({ color: 0xBDB3A2, map: this.pavingTex, roughness: 0.9 })
+    );
+    shoePad.position.y = 0.05;
+    shoePad.receiveShadow = true;
+    shoeArea.add(shoePad);
+
+    const rackWood = new THREE.MeshStandardMaterial({ color: 0x765037, map: this.woodGrainTex, roughness: 0.78 });
+    for (const sx of [-1.16, 1.16]) {
+      const post = new THREE.Mesh(new THREE.BoxGeometry(0.09, 1.28, 0.09), rackWood);
+      post.position.set(sx, 0.72, 0);
+      shoeArea.add(post);
+    }
+    for (const shelfY of [0.28, 0.66, 1.04]) {
+      const shelf = new THREE.Mesh(new THREE.BoxGeometry(2.42, 0.09, 0.64), rackWood);
+      shelf.position.set(0, shelfY, 0);
+      shelf.castShadow = true;
+      shoeArea.add(shelf);
+    }
+
+    const shoeMats = [
+      new THREE.MeshStandardMaterial({ color: 0x272727, roughness: 0.82 }),
+      new THREE.MeshStandardMaterial({ color: 0x6C4732, roughness: 0.86 }),
+      new THREE.MeshStandardMaterial({ color: 0x334A60, roughness: 0.82 })
+    ];
+    for (let row = 0; row < 3; row++) {
+      for (let pair = 0; pair < 3; pair++) {
+        const px = -0.72 + pair * 0.72;
+        for (let side = 0; side < 2; side++) {
+          const shoe = new THREE.Mesh(new THREE.SphereGeometry(0.16, 10, 8), shoeMats[(row + pair) % shoeMats.length]);
+          shoe.scale.set(1.35, 0.34, 0.72);
+          shoe.position.set(px, 0.38 + row * 0.38, side === 0 ? -0.16 : 0.16);
+          shoeArea.add(shoe);
+        }
+      }
+    }
+
+    const hatMat = new THREE.MeshStandardMaterial({ color: 0xE7D4A7, roughness: 0.88, side: THREE.DoubleSide });
+    for (let i = 0; i < 3; i++) {
+      const hat = new THREE.Mesh(new THREE.ConeGeometry(0.25, 0.15, 16, 1, true), hatMat);
+      hat.position.set(-0.7 + i * 0.7, 1.27, 0);
+      shoeArea.add(hat);
+    }
+
+    const shoeSign = new THREE.Mesh(
+      new THREE.BoxGeometry(2.65, 0.52, 0.12),
+      new THREE.MeshStandardMaterial({
+        map: makeTextTex('ĐỂ GIÀY DÉP · MŨ NÓN', {
+          w: 1000,
+          h: 180,
+          bg: '#4B3A2D',
+          border: '#E7C77A',
+          color: '#FFF4D9',
+          size: 48
+        }),
+        roughness: 0.58
+      })
+    );
+    shoeSign.position.set(0, 1.82, 0.42);
+    shoeArea.add(shoeSign);
+
+    this.exteriorGroup.add(shoeArea);
+    this.addRectObstacle(32.25, 34.05, 12.55, 15.45);
   }
 
   makeBonsai72(scale = 1) {
