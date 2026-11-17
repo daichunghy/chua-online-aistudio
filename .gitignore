@@ -31,3 +31,12 @@ Thumbs.db
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# Multi-AI-Studio & Local Test Hygiene
+.playwright-cli/
+.aistudio/
+bun.lock
+yarn.lock
+pnpm-lock.yaml
+*.tmp
+

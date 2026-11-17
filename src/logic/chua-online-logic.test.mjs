@@ -47,7 +47,21 @@ import {
   findAnyTempleDestination,
   CHU_QUOC_ZONES,
   CHANH_DIEN_HISTORICAL_NOTES,
-  computePilgrimProgress
+  computePilgrimProgress,
+  PILGRIM_RANKS,
+  getPilgrimRankInfo,
+  grantPlayerXp,
+  COURTYARD_LEAF_SPOTS,
+  collectCourtyardTask,
+  TEMPLE_GARDEN_SPECIES,
+  plantGardenTree,
+  waterGardenSlot,
+  harvestGardenSlot,
+  scoreBellRhythmHit,
+  completeBellRhythmSession,
+  HERITAGE_RELICS,
+  discoverHeritageRelic,
+  createActivityHubState
 } from './chua-online-logic.mjs';
 
 test('OKLab/OKLCH perceptual color engine (meodai/skill.color-expert) preserves perceptual lightness and prevents muddy mid-tones', () => {
@@ -304,7 +318,7 @@ test('9-category Store catalog, live try-on, level gating, and Tam Quan South->N
   assert.equal(treeItems[0].price, 50);
 
   const robeItems = filterStoreItems('ao_trang');
-  assert.equal(robeItems.length, 12);
+  assert.equal(robeItems.length, 18);
   assert.equal(robeItems.find((r) => r.id === 'ao_trang_nau')?.requiredLevel, 1);
   assert.equal(robeItems.find((r) => r.id === 'ao_trang_trang')?.requiredLevel, 1);
   assert.equal(robeItems.find((r) => r.id === 'ao_vu_lan_hong')?.rare, true);
@@ -387,6 +401,82 @@ test('Expanded pagoda exploration zones, Chữ Quốc 6-zone order, and scholarl
   );
   assert.equal(CHANH_DIEN_HISTORICAL_NOTES.sources.length, 2);
 });
+
+test('Multi-day replayable gameplay: Pilgrim XP ranks, courtyard leaf sweep, Temple Garden plant/water/harvest, Bell rhythm, and Heritage Stamp Book', () => {
+  assert.equal(PILGRIM_RANKS.length, 5);
+  assert.equal(getPilgrimRankInfo(0).title, 'Thiện Duyên');
+  assert.equal(getPilgrimRankInfo(120).title, 'Hành Giả');
+  assert.equal(getPilgrimRankInfo(700).level, 4);
+
+  let act = createActivityHubState();
+  let prof = createStoreProfileState({ lotusPoints: 200, gems: 20 });
+
+  // Collect 4 Bodhi leaves -> grants +15 lotus each + 1 gem on 4th
+  for (let i = 0; i < 4; i++) {
+    const res = collectCourtyardTask(act, prof, COURTYARD_LEAF_SPOTS[i].id, '2026-05-20');
+    assert.equal(res.ok, true);
+    act = res.activity;
+    prof = res.storeProfile;
+  }
+  assert.equal(prof.lotusPoints, 260);
+  assert.equal(prof.gems, 21);
+  assert.equal(act.dailyMetrics.dailyLeavesSwept, 4);
+  assert.equal(act.xp, 60);
+
+  // Plant, water x2, and harvest Temple Garden slot 0
+  const plantRes = plantGardenTree(act, prof, 0, 'cay_bo_de', '2026-05-20');
+  assert.equal(plantRes.ok, true);
+  act = plantRes.activity;
+  prof = plantRes.storeProfile;
+  assert.equal(prof.lotusPoints, 210);
+
+  const w1 = waterGardenSlot(act, prof, 0, '2026-05-20');
+  assert.equal(w1.ok, true);
+  assert.equal(w1.slot.stage, 2);
+  act = w1.activity;
+  prof = w1.storeProfile;
+
+  const w2 = waterGardenSlot(act, prof, 0, '2026-05-20');
+  assert.equal(w2.ok, true);
+  assert.equal(w2.slot.stage, 3);
+  act = w2.activity;
+  prof = w2.storeProfile;
+
+  const harvestRes = harvestGardenSlot(act, prof, 0, '2026-05-20');
+  assert.equal(harvestRes.ok, true);
+  act = harvestRes.activity;
+  prof = harvestRes.storeProfile;
+  assert.equal(act.templeGarden[0].speciesId, null);
+  assert.equal(act.templeGarden[0].harvestCount, 1);
+  assert.ok(prof.lotusPoints > 300);
+
+  // Bell rhythm hit scoring & session completion
+  assert.equal(scoreBellRhythmHit(35).grade, 'chanh_niem');
+  assert.equal(scoreBellRhythmHit(-140).grade, 'hoa_nhip');
+  assert.equal(scoreBellRhythmHit(250).grade, 'cham_nhip');
+  assert.equal(scoreBellRhythmHit(400).grade, 'miss');
+
+  const hits = [scoreBellRhythmHit(20), scoreBellRhythmHit(40), scoreBellRhythmHit(110), scoreBellRhythmHit(50)];
+  const rhyRes = completeBellRhythmSession(act, prof, hits, '2026-05-20');
+  assert.equal(rhyRes.ok, true);
+  assert.equal(rhyRes.accuracy, 100);
+  act = rhyRes.activity;
+  prof = rhyRes.storeProfile;
+  assert.equal(act.dailyMetrics.dailyRhythmSessions, 1);
+
+  // Heritage Stamp Book discovery
+  assert.equal(HERITAGE_RELICS.length, 10);
+  const rel1 = discoverHeritageRelic(act, prof, 'relic_tam_quan', '2026-05-20');
+  assert.equal(rel1.ok, true);
+  assert.equal(rel1.alreadyDiscovered, false);
+  act = rel1.activity;
+  prof = rel1.storeProfile;
+  assert.equal(act.heritageRelics.length, 1);
+
+  const relDup = discoverHeritageRelic(act, prof, 'relic_tam_quan', '2026-05-20');
+  assert.equal(relDup.alreadyDiscovered, true);
+});
+
 
 
 

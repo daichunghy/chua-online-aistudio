@@ -36,9 +36,12 @@ import {
   DISCOVERY_ZONES,
   findAnyTempleDestination,
   WORLD_BOUNDS,
+  COURTYARD_LEAF_SPOTS,
+  TEMPLE_GARDEN_SLOTS,
   shiftOklch,
   VINH_TRANG_OKLCH_PALETTE
 } from '../logic/chua-online-logic.mjs';
+import { createSculptedGardenArhat } from './sculpted-buddhas.mjs';
 
 // Pre-allocated scratch vectors for zero-GC animation & camera loop
 const _tourPos = new THREE.Vector3();
@@ -49,35 +52,72 @@ const _projVec = new THREE.Vector3();
 const _koiPos = new THREE.Vector3();
 const _koiTan = new THREE.Vector3();
 
+function normalizeAnimKey(name = '') {
+  return String(name)
+    .replace(/_world$/i, '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[đĐ]/g, 'd')
+    .trim()
+    .toLowerCase();
+}
+
 const CHAR_GLB_PATHS = {
   nu: '/Thiết kế giao diện/Nhân vật 3D/Bản chỉnh sửa/nu-phuc-hoi-mau-chuyen-dong.glb',
   nam: '/Thiết kế giao diện/Nhân vật 3D/Chuyển động/nam-chuyen-dong.glb',
-  tre_em: '/Thiết kế giao diện/Nhân vật 3D/Chuyển động/tre-em-chuyen-dong.glb'
+  tre_em: '/Thiết kế giao diện/Nhân vật 3D/Chuyển động/tre-em-chuyen-dong.glb',
+  su_thay: '/Thiết kế giao diện/Nhân vật 3D/meshy_chars/su-thay-ao-vang.glb',
+  nu_ao_lam: '/Thiết kế giao diện/Nhân vật 3D/meshy_chars/nu-ao-lam.glb',
+  nam_ao_nau: '/Thiết kế giao diện/Nhân vật 3D/meshy_chars/nam-ao-nau.glb',
+  du_khach: '/Thiết kế giao diện/Nhân vật 3D/meshy_chars/du-khach-quoc-te.glb'
 };
 
 const CHAR_HEIGHTS = {
   nu: 1.64,
   nam: 1.75,
-  tre_em: 1.18
+  tre_em: 1.18,
+  su_thay: 1.72,
+  nu_ao_lam: 1.63,
+  nam_ao_nau: 1.73,
+  du_khach: 1.76
 };
 
 const STATUE_GLB_PATHS = {
   adida: '/Mô hình 3D Vĩnh Tràng/Tượng/phat-dung-adida.glb',
   dilac: '/Mô hình 3D Vĩnh Tràng/Tượng/di-lac.glb',
   phatnam: '/Mô hình 3D Vĩnh Tràng/Tượng/phat-nam.glb',
-  bantho: '/Mô hình 3D Vĩnh Tràng/Tượng/phat-ngoi-ban-tho.glb'
+  bantho: '/Mô hình 3D Vĩnh Tràng/Tượng/phat-ngoi-ban-tho.glb',
+  quanAm: '/Mô hình 3D Vĩnh Tràng/Tượng/quan-am-nam-hai.glb',
+  hoPhap: '/Mô hình 3D Vĩnh Tràng/Tượng/ho-phap-vi-da.glb',
+  tieuDien: '/Mô hình 3D Vĩnh Tràng/Tượng/tieu-dien-dai-si.glb',
+  toDatMa: '/Mô hình 3D Vĩnh Tràng/Tượng/to-dat-ma.glb'
 };
 
 const ARHAT_GLB_PATHS = {
   kyTuong: '/Mô hình 3D Vĩnh Tràng/Tượng/ky-tuong-la-han.glb',
   toaLoc: '/Mô hình 3D Vĩnh Tràng/Tượng/toa-loc-la-han.glb',
-  phucHo: '/Mô hình 3D Vĩnh Tràng/Tượng/phuc-ho-la-han.glb'
+  phucHo: '/Mô hình 3D Vĩnh Tràng/Tượng/phuc-ho-la-han.glb',
+  hangLong: '/Mô hình 3D Vĩnh Tràng/Tượng/la-han-hang-long.glb',
+  hoanHi: '/Mô hình 3D Vĩnh Tràng/Tượng/la-han-hoan-hi.glb',
+  phucHo2: '/Mô hình 3D Vĩnh Tràng/Tượng/la-han-phuc-ho.glb',
+  thienDinh: '/Mô hình 3D Vĩnh Tràng/Tượng/la-han-thien-dinh.glb'
+};
+
+const ARCH_GLB_PATHS = {
+  mat_tien: '/Mô hình 3D Vĩnh Tràng/Bản dựng mới/mat-tien-vinh-trang.glb',
+  bao_thap: '/Thiết kế giao diện/Vật phẩm 3D/meshy_assets/bao-thap-7-tang.glb',
+  dai_hong_chung: '/Thiết kế giao diện/Vật phẩm 3D/meshy_assets/dai-hong-chung.glb',
+  trong_bat_nha: '/Thiết kế giao diện/Vật phẩm 3D/meshy_assets/trong-bat-nha.glb',
+  long_tru: '/Thiết kế giao diện/Vật phẩm 3D/meshy_assets/long-tru-rong-cuon.glb',
+  bao_lam: '/Thiết kế giao diện/Vật phẩm 3D/meshy_assets/bao-lam-thep-vang.glb',
+  xe_khach: '/Thiết kế giao diện/Vật phẩm 3D/meshy_assets/xe-khach-du-lich.glb',
+  xe_oto: '/Thiết kế giao diện/Vật phẩm 3D/meshy_assets/xe-o-to-gia-dinh.glb'
 };
 
 const PROP_GLB_PATHS = {
   ban_tho: '/Thiết kế giao diện/Vật phẩm 3D/fixed/bat_nhang_tram.glb',
   non_la: '/Thiết kế giao diện/Vật phẩm 3D/models/non_la_theu_sen_v3.glb',
-  tui_sen: '/Thiết kế giao diện/Vật phẩm 3D/models/tui_vai_theu_sen.glb',
+  tui_sen: '/Thiết kế giao diện/Vật phẩm 3D/Bản chỉnh sửa/tui-vai-sen.glb',
   ao_trang: '/Thiết kế giao diện/Vật phẩm 3D/models/ao_trang_phat_tu.glb',
   bo_doan: '/Thiết kế giao diện/Vật phẩm 3D/fixed/bo_doan_dai_sen.glb',
   bo_doan_tron: '/Thiết kế giao diện/Vật phẩm 3D/fixed/bo_doan_tron.glb',
@@ -93,7 +133,13 @@ const PROP_GLB_PATHS = {
   dia_banh_bo: '/Thiết kế giao diện/Vật phẩm 3D/fixed/dia_banh_bo.glb',
   dia_banh_da_lon: '/Thiết kế giao diện/Vật phẩm 3D/fixed/dia_banh_da_lon.glb',
   quat_nan_la_dua: '/Thiết kế giao diện/Vật phẩm 3D/fixed/quat_nan_la_dua.glb',
-  gio_may_tre: '/Thiết kế giao diện/Vật phẩm 3D/fixed/gio_may_tre.glb'
+  gio_may_tre: '/Thiết kế giao diện/Vật phẩm 3D/fixed/gio_may_tre.glb',
+  chim_bo_cau: '/Thiết kế giao diện/Vật phẩm 3D/meshy_assets/chim-bo-cau-3d.glb',
+  khan_ran: '/Thiết kế giao diện/Vật phẩm 3D/meshy_assets/khan-ran-nam-bo-3d.glb',
+  trang_hat: '/Thiết kế giao diện/Vật phẩm 3D/meshy_assets/trang-hat-bo-de-3d.glb',
+  vong_may: '/Thiết kế giao diện/Vật phẩm 3D/meshy_assets/vong-may-ngu-sac-3d.glb',
+  cay_bo_de: '/Thiết kế giao diện/Vật phẩm 3D/meshy_assets/cay-bo-de-non.glb',
+  cay_sala: '/Thiết kế giao diện/Vật phẩm 3D/meshy_assets/cay-sala-hoa.glb'
 };
 
 function makeCanvasTex(draw, w = 512, h = 512, repeatX = 1, repeatY = 1, isColor = true) {
@@ -249,6 +295,7 @@ export class VinhTrang3DWorld {
     this.onInteriorZoneChange = callbacks.onInteriorZoneChange || (() => {});
     this._lastInteriorZone = 'chanh_dien';
     this.onStallProximity = callbacks.onStallProximity || (() => {});
+    this.onInteractProximity = callbacks.onInteractProximity || (() => {});
     this.onEntranceTourChange = callbacks.onEntranceTourChange || (() => {});
 
     this.scene = new THREE.Scene();
@@ -333,6 +380,7 @@ export class VinhTrang3DWorld {
 
     this.charDataCache = {};
     this.propMeshCache = {};
+    this.archMeshCache = {};
     this.playerContainer = new THREE.Group();
     this.scene.add(this.playerContainer);
     this.anCompanion = null;
@@ -352,6 +400,26 @@ export class VinhTrang3DWorld {
     this.stallClickTargets = [];
     this.bellTowerClickTargets = [];
     this.closedMainGateClickTargets = [];
+    this.courtyardLeafMeshes = new Map();
+    this.courtyardLeafClickTargets = [];
+    this.gardenPlotGroups = new Map();
+    this.gardenPlotClickTargets = [];
+    this.nearestInteractPrompt = null;
+    this.stupaGroup = null;
+    this.bellTowerArchAnchors = [];
+    this.drumTowerArchAnchors = [];
+    this.longTruPlaceholders = [];
+    this.baoLamPlaceholders = [];
+    this.hoPhapPlaceholder = null;
+    this.tieuDienPlaceholder = null;
+    this.khuThoAltarGroup = null;
+    this.khuThoPlaceholderParts = [];
+    this.interiorBellAnchor = null;
+    this.interiorDrumAnchor = null;
+    this.parkedVehicleAnchors = [];
+    this.chanhDienFacadeGroup = null;
+    this.chanhDienProceduralShell = null;
+    this.quanAmPlaceholderParts = [];
     this.stallAnchors = [];
     this.stallTriggers = [];
     this.nearestStallTrigger = null;
@@ -2371,12 +2439,54 @@ export class VinhTrang3DWorld {
       return cg;
     };
 
-    // Shared vehicle factory: normal road traffic passes through; visitor shuttles use a separate pull-in route.
+    // Shared vehicle factory: uses Meshy GLB cars/shuttles when loaded, falling back to procedural geometry.
+    const buildGLBRoadVehicle = (sceneObj, cx, cz, yaw, targetLength) => {
+      const wrap = new THREE.Group();
+      const inner = sceneObj.clone(true);
+      inner.traverse((o) => {
+        if (o.isMesh) {
+          o.castShadow = true;
+          o.receiveShadow = true;
+          if (o.geometry && !o.geometry.getAttribute('normal')) {
+            o.geometry.computeVertexNormals();
+          }
+        }
+      });
+      // Meshy vehicle GLBs face along +X; rotate +PI/2 around Y so vehicle length aligns along local Z
+      inner.rotation.y = Math.PI / 2;
+      const box = new THREE.Box3().setFromObject(inner);
+      const sz = new THREE.Vector3();
+      box.getSize(sz);
+      const scale = targetLength / Math.max(0.1, sz.z);
+      inner.scale.setScalar(scale);
+      const box2 = new THREE.Box3().setFromObject(inner);
+      inner.position.set(
+        -(box2.min.x + box2.max.x) * 0.5,
+        -box2.min.y,
+        -(box2.min.z + box2.max.z) * 0.5
+      );
+      wrap.add(inner);
+      wrap.position.set(cx, 0, cz);
+      wrap.rotation.y = yaw;
+      wrap.userData.wheelGroups = [];
+      wrap.userData.ownedMaterials = [];
+      this.exteriorGroup.add(wrap);
+      return wrap;
+    };
+    this.buildGLBRoadVehicle = buildGLBRoadVehicle;
+
     this.spawnRoadTrafficVehicle = ({ kind = 'sedan', x, z, direction = 1, speed = 7, color = 0xAEB9C1 }) => {
       const yaw = direction > 0 ? Math.PI / 2 : -Math.PI / 2;
-      const group = kind === 'bike'
-        ? buildParkedMotorbike(x, z, yaw, color)
-        : buildRoadCar(x, z, yaw, color, kind === 'van' ? 'van' : 'sedan');
+      let group;
+      if (kind === 'bike') {
+        group = buildParkedMotorbike(x, z, yaw, color);
+      } else if (kind === 'van' && this.archMeshCache.xe_khach) {
+        group = buildGLBRoadVehicle(this.archMeshCache.xe_khach, x, z, yaw, 5.8);
+      } else if (kind !== 'van' && this.archMeshCache.xe_oto) {
+        group = buildGLBRoadVehicle(this.archMeshCache.xe_oto, x, z, yaw, 4.45);
+      } else {
+        group = buildRoadCar(x, z, yaw, color, kind === 'van' ? 'van' : 'sedan');
+      }
       return {
         group,
         kind,
@@ -2402,9 +2512,12 @@ export class VinhTrang3DWorld {
       bayLine.position.set(lx, 0.068, 52.2);
       this.exteriorGroup.add(bayLine);
     }
-    // The real frontage is represented by a parked passenger van and a private sedan, not a 29-seat coach.
-    buildRoadCar(-18.0, 52.2, -Math.PI / 2, 0xD2D8D9, 'van');
-    buildRoadCar(-10.0, 52.2, -Math.PI / 2, 0xAEB9C1, 'sedan');
+    const parkedVan = buildRoadCar(-18.0, 52.2, -Math.PI / 2, 0xD2D8D9, 'van');
+    const parkedSedan = buildRoadCar(-10.0, 52.2, -Math.PI / 2, 0xAEB9C1, 'sedan');
+    this.parkedVehicleAnchors.push(
+      { kind: 'van', x: -18.0, z: 52.2, yaw: -Math.PI / 2, targetLength: 5.8, fallback: parkedVan },
+      { kind: 'sedan', x: -10.0, z: 52.2, yaw: -Math.PI / 2, targetLength: 4.45, fallback: parkedSedan }
+    );
 
     // Occasional visitor-shuttle pull-in on the far east end of the frontage; does not block either gate.
     const visitorDropoffPad = new THREE.Mesh(
@@ -3310,10 +3423,10 @@ export class VinhTrang3DWorld {
     // The connected four-hall complex already contains the worship and communal spaces;
     // do not add detached stilt dining or lecture buildings to the historic temple footprint.
 
-    // 7-Tier Terracotta Bảo Tháp in the rear garden near the reclining Buddha.
-    const stupa = this.buildSevenTierStupa();
-    stupa.position.set(-8.0, 0, -37.0);
-    this.exteriorGroup.add(stupa);
+    // 7-Tier Terracotta Bảo Tháp in the rear garden near the reclining Buddha (upgraded with bao-thap-7-tang.glb on load).
+    this.stupaGroup = this.buildSevenTierStupa();
+    this.stupaGroup.position.set(-8.0, 0, -37.0);
+    this.exteriorGroup.add(this.stupaGroup);
     this.addObstacle(-8.0, -37.0, 4.2);
 
     this.buildStatuePedestals();
@@ -3434,6 +3547,8 @@ export class VinhTrang3DWorld {
     this.buildGardensTreesAndFlags();
     this.buildExpandedDiscoveryZones();
     this.buildCourtyardPigeons();
+    this.buildInteractiveCourtyardLeaves();
+    this.buildInteractiveGardenPlots();
   }
 
   buildExpandedDiscoveryZones() {
@@ -3637,12 +3752,14 @@ export class VinhTrang3DWorld {
         const bell = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.85, 1.55, 16), M.bronzeBurner);
         bell.position.y = 6.35;
         tg.add(bell);
+        this.bellTowerArchAnchors.push({ group: tg, placeholder: bell, y: 5.55, targetH: 1.72 });
         this.bellTowerClickTargets.push(tg);
       } else {
         const drum = new THREE.Mesh(new THREE.CylinderGeometry(0.78, 0.78, 1.35, 16), M.mosaicRed);
         drum.rotation.z = Math.PI / 2;
         drum.position.y = 6.25;
         tg.add(drum);
+        this.drumTowerArchAnchors.push({ group: tg, placeholder: drum, y: 5.5, targetH: 1.5 });
       }
       const plaque = new THREE.Mesh(
         new THREE.BoxGeometry(3.8, 0.68, 0.14),
@@ -3810,6 +3927,12 @@ export class VinhTrang3DWorld {
     const pillarPositions = [-5.8, -2.5, 2.5, 5.8];
     const pillarHeights = [6.2, 8.2, 8.2, 6.2];
 
+    const tamQuanMosaicMat = new THREE.MeshStandardMaterial({
+      map: this.makeMosaicShardTex(),
+      roughness: 0.38,
+      metalness: 0.1
+    });
+
     pillarPositions.forEach((px, i) => {
       const h = pillarHeights[i];
       const p = new THREE.Mesh(new THREE.BoxGeometry(1.15, h, 1.15), M.goldWall);
@@ -3817,7 +3940,7 @@ export class VinhTrang3DWorld {
       p.castShadow = true;
       g.add(p);
 
-      const strip = new THREE.Mesh(new THREE.BoxGeometry(0.75, h - 1.2, 1.2), M.mosaicBlue);
+      const strip = new THREE.Mesh(new THREE.BoxGeometry(0.75, h - 1.2, 1.2), tamQuanMosaicMat);
       strip.position.set(px, h / 2, 0);
       g.add(strip);
 
@@ -3956,17 +4079,68 @@ export class VinhTrang3DWorld {
   }
 
   makeMosaicShardTex() {
+    // Antique cream lime-stucco inlaid with organic broken-porcelain floral clusters (khảm sành sứ Vĩnh Tràng)
     return makeCanvasTex(
       (g, w, h) => {
         g.fillStyle = '#E6D6B8';
         g.fillRect(0, 0, w, h);
-        const palette = ['#2B4F8E', '#3A815E', '#B4382A', '#D99E3A', '#F4EFE4', '#5F93B8'];
-        for (let y = 0; y < h; y += 16) {
-          for (let x = 0; x < w; x += 16) {
-            const idx = Math.floor(((Math.sin(x * 13.7 + y * 29.1) * 43758.5) % 1 + 1) * palette.length) % palette.length;
-            g.fillStyle = palette[idx];
-            g.fillRect(x + 2, y + 2, 12, 12);
+
+        // Subtle lime-plaster mottling
+        for (let i = 0; i < 42; i++) {
+          const mx = ((Math.sin(i * 41.3) * 0.5 + 0.5) * w);
+          const my = ((Math.cos(i * 19.7) * 0.5 + 0.5) * h);
+          g.fillStyle = i % 2 === 0 ? 'rgba(210,190,152,0.28)' : 'rgba(252,246,232,0.28)';
+          g.beginPath();
+          g.arc(mx, my, 12 + (i % 16), 0, Math.PI * 2);
+          g.fill();
+        }
+
+        // Porcelain floral medallions & organic irregular ceramic shards
+        const shardColors = ['#2D4C7E', '#3B6E5C', '#9E3E2E', '#D9A441', '#F4EFE4', '#6E91AA'];
+        for (let row = 0; row < 4; row++) {
+          for (let col = 0; col < 4; col++) {
+            const cx = col * 64 + 32;
+            const cy = row * 64 + 32;
+            // Thin gold-cream framing line
+            g.strokeStyle = 'rgba(175, 138, 72, 0.35)';
+            g.lineWidth = 2;
+            g.strokeRect(col * 64 + 4, row * 64 + 4, 56, 56);
+
+            // 5-petal porcelain blossom
+            const petalColor = shardColors[(row + col) % 3];
+            for (let p = 0; p < 5; p++) {
+              const ang = (p / 5) * Math.PI * 2 + row * 0.25;
+              const px = cx + Math.cos(ang) * 12;
+              const py = cy + Math.sin(ang) * 12;
+              g.fillStyle = petalColor;
+              g.beginPath();
+              g.ellipse(px, py, 7.5, 4.5, ang, 0, Math.PI * 2);
+              g.fill();
+              g.strokeStyle = '#E8DEC8';
+              g.lineWidth = 1.2;
+              g.stroke();
+            }
+            // Terracotta / gold pistil center
+            g.fillStyle = '#D9A441';
+            g.beginPath();
+            g.arc(cx, cy, 4.5, 0, Math.PI * 2);
+            g.fill();
           }
+        }
+
+        // Fine broken-porcelain background scatter
+        for (let s = 0; s < 96; s++) {
+          const sx = ((Math.sin(s * 17.9 + 1.2) * 0.5 + 0.5) * (w - 14)) + 7;
+          const sy = ((Math.cos(s * 31.1 + 0.7) * 0.5 + 0.5) * (h - 14)) + 7;
+          const r = 3 + (s % 4);
+          g.fillStyle = shardColors[s % shardColors.length];
+          g.beginPath();
+          g.moveTo(sx - r, sy - r * 0.5);
+          g.lineTo(sx + r * 0.8, sy - r);
+          g.lineTo(sx + r, sy + r * 0.7);
+          g.lineTo(sx - r * 0.6, sy + r * 0.9);
+          g.closePath();
+          g.fill();
         }
       },
       256,
@@ -4020,7 +4194,7 @@ export class VinhTrang3DWorld {
         roughness: 0.4
       })
     );
-    sign4Banh.position.set(-4.35, 0.72, 0.78);
+    sign4Banh.position.set(-5.08, 0.78, 0.56);
     g.add(sign4Banh);
 
     // Arch crown & main mosaic transom beam ("TỊNH ĐỘ HUYỀN MÔN")
@@ -4130,7 +4304,12 @@ export class VinhTrang3DWorld {
     plinth.position.set(0, 0.625, 0);
     plinth.receiveShadow = true;
     plinth.castShadow = true;
-    g.add(plinth);
+
+    const shell = new THREE.Group();
+    this.chanhDienProceduralShell = shell;
+    this.chanhDienFacadeGroup = g;
+    g.add(shell);
+    shell.add(plinth);
 
     // Broad central stone staircase, matching the real front approach visible in site photographs.
     const stairWidth = 8.6;
@@ -4144,36 +4323,36 @@ export class VinhTrang3DWorld {
       step.position.set(0, stairRise * (s + 0.5), D / 2 + 4.05 - s * stairRun);
       step.receiveShadow = true;
       step.castShadow = true;
-      g.add(step);
+      shell.add(step);
     }
     for (const side of [-1, 1]) {
       const railX = side * 4.62;
       const railBase = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.9, 3.55), M.creamTrim);
       railBase.position.set(railX, 0.88, D / 2 + 2.65);
-      g.add(railBase);
+      shell.add(railBase);
       for (let i = 0; i < 6; i++) {
         const baluster = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.07, 0.72, 8), M.creamTrim);
         baluster.position.set(railX, 0.92, D / 2 + 4.05 - i * 0.56);
-        g.add(baluster);
+        shell.add(baluster);
       }
       const handrail = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.16, 3.8), M.goldAccent);
       handrail.position.set(railX, 1.42, D / 2 + 2.65);
-      g.add(handrail);
+      shell.add(handrail);
       for (const endZ of [D / 2 + 0.8, D / 2 + 4.5]) {
         const finial = new THREE.Mesh(new THREE.SphereGeometry(0.16, 10, 8), M.goldAccent);
         finial.position.set(railX, 1.55, endZ);
-        g.add(finial);
+        shell.add(finial);
       }
     }
 
     // East Wing Side Porch and unobtrusive side-door access facing the right courtyard path.
     const eastPorchRoof = makeHippedRoofMesh(4.4, 5.2, 1.35, M.roofTile);
     eastPorchRoof.position.set(W / 2 + 1.85, 4.65, 2.4);
-    g.add(eastPorchRoof);
+    shell.add(eastPorchRoof);
     for (const pz of [0.5, 4.3]) {
       const pCol = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.2, 3.9, 10), M.redColumn);
       pCol.position.set(W / 2 + 3.4, 2.0, pz);
-      g.add(pCol);
+      shell.add(pCol);
     }
     const eastSideDoorHit = new THREE.Mesh(
       new THREE.BoxGeometry(2.4, 3.3, 1.0),
@@ -4192,26 +4371,26 @@ export class VinhTrang3DWorld {
         );
         step.position.set(sx, 0.125 + s * 0.25, D / 2 + 0.8 + (4 - s) * 0.45);
         step.receiveShadow = true;
-        g.add(step);
+        shell.add(step);
       }
       for (const rx of [sx - 1.7, sx + 1.7]) {
         const rail = new THREE.Mesh(new THREE.BoxGeometry(0.28, 1.35, 2.4), M.goldWall);
         rail.position.set(rx, 0.8, D / 2 + 1.55);
-        g.add(rail);
+        shell.add(rail);
         const ball = new THREE.Mesh(new THREE.SphereGeometry(0.2, 10, 8), M.goldAccent);
         ball.position.set(rx, 1.62, D / 2 + 2.65);
-        g.add(ball);
+        shell.add(ball);
       }
       const sideDoor = new THREE.Mesh(new THREE.BoxGeometry(1.55, 2.75, 0.09), M.darkWood);
       sideDoor.position.set(sx, 2.72, D / 2 + 0.22);
-      g.add(sideDoor);
+      shell.add(sideDoor);
       const doorSeam = new THREE.Mesh(new THREE.BoxGeometry(0.035, 2.5, 0.045), M.goldAccent);
       doorSeam.position.set(sx, 2.72, D / 2 + 0.29);
-      g.add(doorSeam);
+      shell.add(doorSeam);
       for (const hx of [sx - 0.18, sx + 0.18]) {
         const handle = new THREE.Mesh(new THREE.SphereGeometry(0.055, 8, 6), M.goldAccent);
         handle.position.set(hx, 2.62, D / 2 + 0.34);
-        g.add(handle);
+        shell.add(handle);
       }
       const doorHit = new THREE.Mesh(
         new THREE.BoxGeometry(2.0, 3.2, 0.8),
@@ -4227,11 +4406,11 @@ export class VinhTrang3DWorld {
     body.position.set(0, 1.25 + bodyH / 2, 0);
     body.castShadow = true;
     body.receiveShadow = true;
-    g.add(body);
+    shell.add(body);
 
     const upperCream = new THREE.Mesh(new THREE.BoxGeometry(W + 0.25, 1.65, 0.85), M.creamTrim);
     upperCream.position.set(0, 1.25 + bodyH - 0.82, D / 2 - 0.1);
-    g.add(upperCream);
+    shell.add(upperCream);
 
     const fz = D / 2 + 0.35;
     const colXs = [-13.0, -11.0, -9.0, -7.0, -5.0, -3.2, -1.65, 1.65, 3.2, 5.0, 7.0, 9.0, 11.0, 13.0];
@@ -4240,33 +4419,33 @@ export class VinhTrang3DWorld {
       const col = new THREE.Mesh(new THREE.CylinderGeometry(0.19, 0.24, 4.3, 18), M.redColumn);
       col.position.set(x, 3.4, fz);
       col.castShadow = true;
-      g.add(col);
+      shell.add(col);
       const baseLower = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.2, 0.72), M.creamTrim);
       baseLower.position.set(x, 1.38, fz);
-      g.add(baseLower);
+      shell.add(baseLower);
       const baseUpper = new THREE.Mesh(new THREE.CylinderGeometry(0.29, 0.34, 0.16, 16), M.goldAccent);
       baseUpper.position.set(x, 1.56, fz);
-      g.add(baseUpper);
+      shell.add(baseUpper);
       const baseCap = new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.12, 0.56), M.goldLight);
       baseCap.position.set(x, 1.7, fz);
-      g.add(baseCap);
+      shell.add(baseCap);
       const capital = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.25, 0.24, 16), M.goldAccent);
       capital.position.set(x, 5.58, fz);
-      g.add(capital);
+      shell.add(capital);
       const capitalTop = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.16, 0.72), M.creamTrim);
       capitalTop.position.set(x, 5.78, fz);
-      g.add(capitalTop);
+      shell.add(capitalTop);
       const capitalAbacus = new THREE.Mesh(new THREE.BoxGeometry(0.84, 0.12, 0.84), M.goldAccent);
       capitalAbacus.position.set(x, 5.92, fz);
-      g.add(capitalAbacus);
+      shell.add(capitalAbacus);
       for (let flute = -1; flute <= 1; flute++) {
         const groove = new THREE.Mesh(new THREE.BoxGeometry(0.025, 3.35, 0.025), M.goldLight);
         groove.position.set(x + flute * 0.075, 3.4, fz + 0.225);
-        g.add(groove);
+        shell.add(groove);
       }
       const pil = new THREE.Mesh(new THREE.BoxGeometry(0.28, 1.35, 0.3), M.goldLight);
       pil.position.set(x, 6.62, fz - 0.12);
-      g.add(pil);
+      shell.add(pil);
 
       if (i < colXs.length - 1) {
         const nextX = colXs[i + 1];
@@ -4286,61 +4465,61 @@ export class VinhTrang3DWorld {
         archShape.closePath();
         const opening = new THREE.Mesh(new THREE.ShapeGeometry(archShape), M.darkOpening);
         opening.position.set(cx, openingBase, fz - 0.18);
-        g.add(opening);
+        shell.add(opening);
         const archOuter = new THREE.Mesh(
           new THREE.TorusGeometry(openingR + 0.07, 0.11, 10, 28, Math.PI),
           M.creamTrim
         );
         archOuter.position.set(cx, openingBase + springY, fz + 0.035);
-        g.add(archOuter);
+        shell.add(archOuter);
         const archInner = new THREE.Mesh(
           new THREE.TorusGeometry(Math.max(0.3, openingR - 0.08), 0.045, 8, 24, Math.PI),
           M.goldAccent
         );
         archInner.position.set(cx, openingBase + springY, fz + 0.075);
-        g.add(archInner);
+        shell.add(archInner);
         for (const side of [-1, 1]) {
           const jamb = new THREE.Mesh(new THREE.BoxGeometry(0.16, springY, 0.22), M.creamTrim);
           jamb.position.set(cx + side * (openingR + 0.035), openingBase + springY * 0.5, fz + 0.03);
-          g.add(jamb);
+          shell.add(jamb);
         }
         if (isSideDoor || isMainDoor) {
           const door = new THREE.Mesh(new THREE.ShapeGeometry(archShape.clone()), M.darkWood);
           door.position.set(cx, openingBase, fz - 0.085);
-          g.add(door);
+          shell.add(door);
           const seam = new THREE.Mesh(new THREE.BoxGeometry(0.045, 2.35, 0.055), M.goldAccent);
           seam.position.set(cx, openingBase + 1.18, fz + 0.015);
-          g.add(seam);
+          shell.add(seam);
           for (const side of [-1, 1]) {
             const panel = new THREE.Mesh(new THREE.BoxGeometry(openingR * 0.62, 1.35, 0.045), M.darkWood);
             panel.position.set(cx + side * openingR * 0.48, openingBase + 1.28, fz + 0.02);
-            g.add(panel);
+            shell.add(panel);
             const handle = new THREE.Mesh(new THREE.SphereGeometry(0.055, 8, 6), M.goldAccent);
             handle.position.set(cx + side * 0.13, openingBase + 1.12, fz + 0.09);
-            g.add(handle);
+            shell.add(handle);
           }
         } else {
           for (let barIndex = 0; barIndex < 5; barIndex++) {
             const bx = cx - openingR * 0.72 + barIndex * (openingR * 1.44 / 4);
             const bar = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 2.25, 6), ironwork);
             bar.position.set(bx, openingBase + 1.22, fz + 0.055);
-            g.add(bar);
+            shell.add(bar);
           }
           for (let row = 0; row < 4; row++) {
             const bar = new THREE.Mesh(new THREE.BoxGeometry(openingW * 0.84, 0.045, 0.055), ironwork);
             bar.position.set(cx, openingBase + 0.5 + row * 0.54, fz + 0.06);
-            g.add(bar);
+            shell.add(bar);
           }
           const grilleRosette = new THREE.Mesh(new THREE.TorusGeometry(0.17, 0.028, 6, 18), M.goldAccent);
           grilleRosette.position.set(cx, openingBase + 1.7, fz + 0.09);
-          g.add(grilleRosette);
+          shell.add(grilleRosette);
           const sill = new THREE.Mesh(new THREE.BoxGeometry(openingW + 0.22, 0.16, 0.38), M.creamTrim);
           sill.position.set(cx, 1.94, fz + 0.12);
-          g.add(sill);
+          shell.add(sill);
           for (let bal = -2; bal <= 2; bal++) {
             const baluster = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.035, 0.46, 6), M.creamTrim);
             baluster.position.set(cx + bal * (openingW / 5.2), 1.7, fz + 0.12);
-            g.add(baluster);
+            shell.add(baluster);
           }
         }
       }
@@ -4352,7 +4531,7 @@ export class VinhTrang3DWorld {
       new THREE.MeshBasicMaterial({ color: 0x6A3A14 })
     );
     innerGlow.position.set(0, 3.3, fz - 1.15);
-    g.add(innerGlow);
+    shell.add(innerGlow);
 
     this.chanhDienPorchAltar = new THREE.Group();
     this.chanhDienPorchAltar.position.set(0, 1.25, fz - 0.52);
@@ -4369,15 +4548,15 @@ export class VinhTrang3DWorld {
 
     const cornice1 = new THREE.Mesh(new THREE.BoxGeometry(W + 1.0, 0.42, D + 1.2), M.goldLight);
     cornice1.position.set(0, 5.85, 0);
-    g.add(cornice1);
+    shell.add(cornice1);
 
     const mosaicBand = new THREE.Mesh(new THREE.BoxGeometry(W + 0.6, 0.48, D + 0.6), M.creamTrim);
     mosaicBand.position.set(0, 7.55, 0);
-    g.add(mosaicBand);
+    shell.add(mosaicBand);
 
     const cornice2 = new THREE.Mesh(new THREE.BoxGeometry(W + 1.3, 0.46, D + 1.4), M.creamTrim);
     cornice2.position.set(0, 7.95, 0);
-    g.add(cornice2);
+    shell.add(cornice2);
 
     // Recessed ceramic panels with small rosettes, inspired by the real sành-sứ and coloured-tile work.
     const pastelCeramic = new THREE.MeshStandardMaterial({ color: 0x4D879E, roughness: 0.42, metalness: 0.08 });
@@ -4386,24 +4565,24 @@ export class VinhTrang3DWorld {
       const bx = bi * 2.9;
       const frame = new THREE.Mesh(new THREE.BoxGeometry(2.48, 0.94, 0.34), M.creamTrim);
       frame.position.set(bx, 6.65, fz + 0.25);
-      g.add(frame);
+      shell.add(frame);
       const inlay = new THREE.Mesh(new THREE.BoxGeometry(2.12, 0.66, 0.12), bi % 2 === 0 ? pastelCeramic : jadeCeramic);
       inlay.position.set(bx, 6.65, fz + 0.46);
-      g.add(inlay);
+      shell.add(inlay);
       const rosette = new THREE.Mesh(new THREE.TorusGeometry(0.25, 0.055, 8, 20), M.goldAccent);
       rosette.position.set(bx, 6.65, fz + 0.55);
-      g.add(rosette);
+      shell.add(rosette);
       const core = new THREE.Mesh(new THREE.SphereGeometry(0.12, 10, 8), M.creamTrim);
       core.scale.set(1, 1, 0.28);
       core.position.set(bx, 6.65, fz + 0.57);
-      g.add(core);
+      shell.add(core);
       for (let petal = 0; petal < 8; petal++) {
         const angle = petal * Math.PI / 4;
         const leaf = new THREE.Mesh(new THREE.SphereGeometry(0.085, 8, 6), M.goldAccent);
         leaf.scale.set(0.62, 1.55, 0.32);
         leaf.position.set(bx + Math.cos(angle) * 0.31, 6.65 + Math.sin(angle) * 0.31, fz + 0.56);
         leaf.rotation.z = angle - Math.PI / 2;
-        g.add(leaf);
+        shell.add(leaf);
       }
     }
     for (let tile = -13; tile <= 13; tile++) {
@@ -4413,7 +4592,7 @@ export class VinhTrang3DWorld {
       );
       diamond.rotation.z = Math.PI / 4;
       diamond.position.set(tile * 1.0, 7.55, fz + 0.48);
-      g.add(diamond);
+      shell.add(diamond);
     }
 
     // Three sculpted gables: a taller central crown and two lower side crowns.
@@ -4433,7 +4612,7 @@ export class VinhTrang3DWorld {
       const pediment = new THREE.Mesh(new THREE.ShapeGeometry(pedimentShape), M.goldLight);
       pediment.position.set(gx, baseY, faceZ);
       pediment.castShadow = true;
-      g.add(pediment);
+      shell.add(pediment);
 
       const innerShape = new THREE.Shape();
       innerShape.moveTo(-gw * 0.34, 0.18);
@@ -4443,7 +4622,7 @@ export class VinhTrang3DWorld {
       innerShape.closePath();
       const inlay = new THREE.Mesh(new THREE.ShapeGeometry(innerShape), pastelCeramic);
       inlay.position.set(gx, baseY + 0.04, faceZ + 0.045);
-      g.add(inlay);
+      shell.add(inlay);
 
       const crestCurve = new THREE.CatmullRomCurve3([
         new THREE.Vector3(gx - gw / 2, baseY + 0.02, faceZ + 0.11),
@@ -4453,21 +4632,21 @@ export class VinhTrang3DWorld {
         new THREE.Vector3(gx + gw / 2, baseY + 0.02, faceZ + 0.11)
       ]);
       const crestTrim = new THREE.Mesh(new THREE.TubeGeometry(crestCurve, 36, 0.075, 8, false), M.creamTrim);
-      g.add(crestTrim);
+      shell.add(crestTrim);
 
       const medallion = new THREE.Mesh(
         new THREE.TorusGeometry(gx === 0 ? 0.62 : 0.38, 0.075, 8, 24),
         M.goldAccent
       );
       medallion.position.set(gx, baseY + gh * 0.47, faceZ + 0.16);
-      g.add(medallion);
+      shell.add(medallion);
       const medallionCore = new THREE.Mesh(
         new THREE.SphereGeometry(gx === 0 ? 0.25 : 0.16, 12, 10),
         jadeCeramic
       );
       medallionCore.scale.set(1, 1, 0.28);
       medallionCore.position.copy(medallion.position);
-      g.add(medallionCore);
+      shell.add(medallionCore);
       for (let petal = 0; petal < 8; petal++) {
         const angle = petal * Math.PI / 4;
         const leaf = new THREE.Mesh(new THREE.SphereGeometry(0.11, 8, 6), M.goldAccent);
@@ -4478,40 +4657,42 @@ export class VinhTrang3DWorld {
           faceZ + 0.18
         );
         leaf.rotation.z = angle - Math.PI / 2;
-        g.add(leaf);
+        shell.add(leaf);
       }
       const spire = new THREE.Mesh(new THREE.ConeGeometry(gx === 0 ? 0.28 : 0.2, gx === 0 ? 1.0 : 0.72, 10), M.goldAccent);
       spire.position.set(gx, baseY + gh + (gx === 0 ? 0.5 : 0.36), faceZ);
-      g.add(spire);
+      shell.add(spire);
     }
 
+    const targetParent = shell;
+    // Note: keep porch altar directly on `g` while procedural architectural shell elements move to `shell`
     const roof1 = makeHippedRoofMesh(W + 2.4, D + 1.6, 2.6, M.roofTile);
     roof1.position.set(0, 9.45, -0.3);
     roof1.castShadow = true;
-    g.add(roof1);
+    targetParent.add(roof1);
 
     const roof2 = makeHippedRoofMesh(W - 4.8, D - 3.2, 2.3, M.roofTile);
     roof2.position.set(0, 11.2, -0.5);
     roof2.castShadow = true;
-    g.add(roof2);
+    targetParent.add(roof2);
 
     const ridgeMaterial = new THREE.MeshStandardMaterial({ color: 0x783D30, roughness: 0.72 });
     const lowerRidge = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, W + 1.0, 12), ridgeMaterial);
     lowerRidge.rotation.z = Math.PI / 2;
     lowerRidge.position.set(0, 10.72, -0.3);
-    g.add(lowerRidge);
+    targetParent.add(lowerRidge);
     const upperRidge = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, W - 4.8, 12), ridgeMaterial);
     upperRidge.rotation.z = Math.PI / 2;
     upperRidge.position.set(0, 12.34, -0.5);
-    g.add(upperRidge);
+    targetParent.add(upperRidge);
     for (const side of [-1, 1]) {
       for (const roofZ of [-D / 2 - 0.65, D / 2 + 0.65]) {
         const eaveFinial = new THREE.Mesh(new THREE.SphereGeometry(0.17, 10, 8), M.goldAccent);
         eaveFinial.position.set(side * (W / 2 + 0.8), 9.85, roofZ);
-        g.add(eaveFinial);
+        targetParent.add(eaveFinial);
         const finialTip = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.52, 8), M.goldAccent);
         finialTip.position.set(side * (W / 2 + 0.8), 10.18, roofZ);
-        g.add(finialTip);
+        targetParent.add(finialTip);
       }
     }
 
@@ -4519,15 +4700,15 @@ export class VinhTrang3DWorld {
       const tBase = new THREE.Mesh(new THREE.BoxGeometry(3.6, 7.6, 3.6), M.goldWall);
       tBase.position.set(tx, 3.8, D / 2 - 1.4);
       tBase.castShadow = true;
-      g.add(tBase);
+      targetParent.add(tBase);
 
       const tTop = new THREE.Mesh(new THREE.BoxGeometry(3.0, 2.8, 3.0), M.goldLight);
       tTop.position.set(tx, 9.0, D / 2 - 1.4);
-      g.add(tTop);
+      targetParent.add(tTop);
 
       const tRoof = makeHippedRoofMesh(3.8, 3.8, 1.8, M.roofTile);
       tRoof.position.set(tx, 11.3, D / 2 - 1.4);
-      g.add(tRoof);
+      targetParent.add(tRoof);
     }
 
     for (const bx of [-5.8, 5.8]) {
@@ -5147,6 +5328,7 @@ export class VinhTrang3DWorld {
     qaRightArm.position.set(0.34, 4.82, 0.22);
     qaRightArm.rotation.set(-0.95, 0, 0.2);
     this.quanAmGroup.add(qaRightArm);
+    this.quanAmPlaceholderParts.push(qaRobeLower, qaTorso, qaHead, qaCrown, qaVeil, qaLeftArm, camLoVase, qaRightArm);
     const qaHalo = new THREE.Mesh(
       new THREE.RingGeometry(0.58, 0.72, 24),
       new THREE.MeshBasicMaterial({ color: 0xFFE296, side: THREE.DoubleSide })
@@ -5709,11 +5891,27 @@ export class VinhTrang3DWorld {
       [38.2, 21.8, 1.22],
       [38.2, 14.5, 1.18],
       [31.0, 13.5, 1.0],
-      [15.0, 10.5, 1.0],
+      [12.4, 10.8, 0.95],
       [-5.5, 16.0, 1.0],
       [-16.5, 19.5, 1.0]
     ];
-    for (const [bx, bz, sc] of bougCoords) {
+    const makeOrganicClusterGeo = (rad, seed) => {
+      const geo = new THREE.IcosahedronGeometry(rad, 2);
+      const pos = geo.attributes.position;
+      for (let vi = 0; vi < pos.count; vi++) {
+        const vx = pos.getX(vi);
+        const vy = pos.getY(vi);
+        const vz = pos.getZ(vi);
+        const j = 0.88 + 0.22 * Math.abs(Math.sin((vx * 4.7 + vy * 3.1 + vz * 5.3 + seed) * 1.9));
+        pos.setXYZ(vi, vx * j, vy * (0.78 + 0.18 * j), vz * j);
+      }
+      geo.computeVertexNormals();
+      return geo;
+    };
+    const bougBlossomMat1 = new THREE.MeshStandardMaterial({ color: 0xD92B7B, roughness: 0.74 });
+    const bougBlossomMat2 = new THREE.MeshStandardMaterial({ color: 0xEF6BA4, roughness: 0.76 });
+    for (let bi = 0; bi < bougCoords.length; bi++) {
+      const [bx, bz, sc] = bougCoords[bi];
       const pot = new THREE.Group();
       const pMesh = new THREE.Mesh(
         new THREE.CylinderGeometry(0.58, 0.38, 0.56, 14),
@@ -5722,27 +5920,47 @@ export class VinhTrang3DWorld {
       pMesh.position.y = 0.28;
       pMesh.castShadow = true;
       pot.add(pMesh);
-      const st = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.12, 1.35, 8), M.trunk);
-      st.position.y = 0.95;
-      pot.add(st);
-      for (const [ox, oy, oz, r] of [
-        [0, 1.85, 0, 0.54],
-        [-0.42, 1.62, 0.2, 0.44],
-        [0.42, 1.68, -0.18, 0.45],
-        [-0.2, 2.15, -0.15, 0.42],
-        [0.22, 2.08, 0.22, 0.4],
-        [0.48, 1.38, 0.16, 0.34]
-      ]) {
-        const crown = new THREE.Mesh(new THREE.SphereGeometry(r, 9, 7), M.foliageMid);
-        crown.scale.set(1.08, 0.74, 1.08);
-        crown.position.set(ox, oy, oz);
-        pot.add(crown);
-        const fl = new THREE.Mesh(
-          new THREE.SphereGeometry(r * 0.84, 8, 6),
-          M.bougainvilleaPink
-        );
-        fl.position.set(ox + 0.07, oy + 0.15, oz + 0.06);
-        pot.add(fl);
+      const soilRim = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.52, 0.52, 0.06, 12),
+        M.trunk
+      );
+      soilRim.position.y = 0.54;
+      pot.add(soilRim);
+      // Twisted woody bougainvillea canes
+      for (const [ang, lean] of [[0, 0.16], [2.1, 0.22], [4.2, 0.18]]) {
+        const cane = new THREE.Mesh(new THREE.CylinderGeometry(0.038, 0.068, 1.35, 6), M.trunk);
+        cane.position.set(Math.cos(ang) * 0.14, 1.12, Math.sin(ang) * 0.14);
+        cane.rotation.z = Math.cos(ang) * lean;
+        cane.rotation.x = Math.sin(ang) * lean;
+        pot.add(cane);
+      }
+      for (const [ci, [ox, oy, oz, r]] of [
+        [0, 1.88, 0, 0.52],
+        [-0.44, 1.66, 0.22, 0.42],
+        [0.44, 1.72, -0.18, 0.43],
+        [-0.2, 2.22, -0.15, 0.38],
+        [0.24, 2.12, 0.22, 0.37],
+        [0.52, 1.36, 0.18, 0.32],
+        [-0.48, 1.32, -0.2, 0.30]
+      ].entries()) {
+        const foliage = new THREE.Mesh(makeOrganicClusterGeo(r, bi * 7 + ci), ci % 2 === 0 ? M.foliageMid : M.foliageDark);
+        foliage.position.set(ox, oy, oz);
+        foliage.castShadow = true;
+        pot.add(foliage);
+        // Cascading bougainvillea flower sprays instead of solid spheres
+        for (let fi = 0; fi < 4; fi++) {
+          const fa = (fi / 4) * Math.PI * 2 + ci * 0.7;
+          const petalCluster = new THREE.Mesh(
+            makeOrganicClusterGeo(r * 0.28, bi * 13 + fi + ci),
+            fi % 2 === 0 ? bougBlossomMat1 : bougBlossomMat2
+          );
+          petalCluster.position.set(
+            ox + Math.cos(fa) * r * 0.55,
+            oy + 0.12 - (fi % 2) * 0.1,
+            oz + Math.sin(fa) * r * 0.55
+          );
+          pot.add(petalCluster);
+        }
       }
       pot.position.set(bx, 0, bz);
       pot.scale.setScalar(sc || 1);
@@ -6044,6 +6262,236 @@ export class VinhTrang3DWorld {
     }
   }
 
+  buildInteractiveCourtyardLeaves() {
+    const leafShape = new THREE.Shape();
+    leafShape.moveTo(0, 0.22);
+    leafShape.quadraticCurveTo(0.16, 0.05, 0.12, -0.14);
+    leafShape.quadraticCurveTo(0.03, -0.22, 0, -0.28);
+    leafShape.quadraticCurveTo(-0.03, -0.22, -0.12, -0.14);
+    leafShape.quadraticCurveTo(-0.16, 0.05, 0, 0.22);
+    const leafGeo = new THREE.ShapeGeometry(leafShape);
+    const leafMatGold = new THREE.MeshStandardMaterial({
+      color: 0xE6AD3A,
+      emissive: 0x6A4408,
+      emissiveIntensity: 0.22,
+      roughness: 0.58,
+      side: THREE.DoubleSide
+    });
+    const leafMatAmber = new THREE.MeshStandardMaterial({
+      color: 0xC98328,
+      roughness: 0.65,
+      side: THREE.DoubleSide
+    });
+    const ringMat = new THREE.MeshBasicMaterial({
+      color: 0xFFE38C,
+      transparent: true,
+      opacity: 0.38,
+      side: THREE.DoubleSide,
+      depthWrite: false
+    });
+
+    for (let i = 0; i < COURTYARD_LEAF_SPOTS.length; i++) {
+      const spot = COURTYARD_LEAF_SPOTS[i];
+      const cluster = new THREE.Group();
+      cluster.position.set(spot.x, 0.025, spot.z);
+      cluster.userData.leafId = spot.id;
+      cluster.userData.phase = i * 0.9;
+
+      const glowRing = new THREE.Mesh(new THREE.RingGeometry(0.42, 0.56, 20), ringMat);
+      glowRing.rotation.x = -Math.PI / 2;
+      glowRing.position.y = 0.006;
+      cluster.add(glowRing);
+
+      for (let j = 0; j < 5; j++) {
+        const ang = (j / 5) * Math.PI * 2 + i * 0.4;
+        const dist = j === 0 ? 0.04 : 0.22;
+        const leaf = new THREE.Mesh(leafGeo, j % 2 === 0 ? leafMatGold : leafMatAmber);
+        leaf.rotation.x = -Math.PI / 2 + (j % 2 === 0 ? 0.08 : -0.06);
+        leaf.rotation.z = ang;
+        leaf.position.set(Math.cos(ang) * dist, 0.02 + j * 0.008, Math.sin(ang) * dist);
+        leaf.scale.setScalar(0.9 + (j % 3) * 0.14);
+        leaf.userData.leafId = spot.id;
+        cluster.add(leaf);
+      }
+
+      const hitDisc = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.75, 0.75, 0.45, 12),
+        new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false })
+      );
+      hitDisc.position.y = 0.22;
+      hitDisc.userData.leafId = spot.id;
+      cluster.add(hitDisc);
+
+      this.exteriorGroup.add(cluster);
+      this.courtyardLeafMeshes.set(spot.id, cluster);
+      this.courtyardLeafClickTargets.push(hitDisc);
+    }
+  }
+
+  syncCourtyardLeaves(collectedIds = []) {
+    const doneSet = new Set(Array.isArray(collectedIds) ? collectedIds : []);
+    for (const [leafId, grp] of this.courtyardLeafMeshes.entries()) {
+      grp.visible = !doneSet.has(leafId);
+    }
+    this.renderFrame();
+  }
+
+  buildInteractiveGardenPlots() {
+    const M = this.MAT;
+    const soilMat = new THREE.MeshStandardMaterial({ color: 0x4A3423, roughness: 0.92 });
+    const readySoilMat = new THREE.MeshStandardMaterial({
+      color: 0x3A5B2C,
+      emissive: 0x2F6B1E,
+      emissiveIntensity: 0.2,
+      roughness: 0.8
+    });
+
+    for (let i = 0; i < TEMPLE_GARDEN_SLOTS.length; i++) {
+      const slot = TEMPLE_GARDEN_SLOTS[i];
+      const grp = new THREE.Group();
+      grp.position.set(slot.x, 0, slot.z);
+      grp.userData.slotIndex = i;
+
+      const rim = new THREE.Mesh(new THREE.BoxGeometry(2.35, 0.34, 2.35), M.stoneLight);
+      rim.position.y = 0.17;
+      rim.receiveShadow = true;
+      rim.castShadow = true;
+      grp.add(rim);
+
+      const soil = new THREE.Mesh(new THREE.BoxGeometry(1.96, 0.38, 1.96), soilMat);
+      soil.position.y = 0.19;
+      soil.userData.slotIndex = i;
+      grp.add(soil);
+
+      const plantAnchor = new THREE.Group();
+      plantAnchor.position.set(0, 0.36, 0);
+      grp.add(plantAnchor);
+
+      const plaque = new THREE.Mesh(
+        new THREE.BoxGeometry(1.45, 0.32, 0.08),
+        new THREE.MeshStandardMaterial({
+          map: makeTextTex(slot.label || `Ô Đất ${i + 1}`, {
+            w: 440,
+            h: 110,
+            bg: '#234C2F',
+            border: '#E9C46A',
+            color: '#FFF6DE',
+            size: 32
+          })
+        })
+      );
+      plaque.position.set(0, 0.42, 1.18);
+      grp.add(plaque);
+
+      const hitBox = new THREE.Mesh(
+        new THREE.BoxGeometry(2.5, 2.2, 2.5),
+        new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false })
+      );
+      hitBox.position.y = 1.1;
+      hitBox.userData.slotIndex = i;
+      grp.add(hitBox);
+
+      this.exteriorGroup.add(grp);
+      this.addObstacle(slot.x, slot.z, 1.35);
+      this.gardenPlotGroups.set(i, {
+        group: grp,
+        soil,
+        soilMat,
+        readySoilMat,
+        plantAnchor,
+        slot
+      });
+      this.gardenPlotClickTargets.push(hitBox);
+    }
+  }
+
+  syncTempleGardenVisuals(gardenSlots = []) {
+    const M = this.MAT;
+    for (let i = 0; i < TEMPLE_GARDEN_SLOTS.length; i++) {
+      const rec = this.gardenPlotGroups.get(i);
+      if (!rec) continue;
+      const st = gardenSlots[i] || null;
+      while (rec.plantAnchor.children.length > 0) {
+        rec.plantAnchor.remove(rec.plantAnchor.children[0]);
+      }
+      const stage = Math.max(0, Number(st?.stage) || 0);
+      const isReady = stage >= 3;
+      rec.soil.material = isReady ? rec.readySoilMat : rec.soilMat;
+      if (!st || !st.speciesId) {
+        // Subtle wooden marker stake showing empty plot ready to sow
+        const stake = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.05, 0.45, 6), M.trunk);
+        stake.position.y = 0.22;
+        rec.plantAnchor.add(stake);
+        continue;
+      }
+
+      const treeKey =
+        st.speciesId === 'cay_sala'
+          ? 'cay_sala'
+          : st.speciesId === 'cay_bo_de'
+          ? 'cay_bo_de'
+          : st.speciesId === 'chum_sen'
+          ? 'chum_sen'
+          : null;
+      if (treeKey && this.propMeshCache[treeKey] && stage >= 1) {
+        const targetH =
+          treeKey === 'chum_sen'
+            ? isReady
+              ? 1.18
+              : stage === 2
+              ? 0.92
+              : 0.68
+            : isReady
+            ? 2.65
+            : stage === 2
+            ? 1.85
+            : 1.12;
+        const treeObj = this.fitProp(this.propMeshCache[treeKey], targetH);
+        rec.plantAnchor.add(treeObj);
+      } else {
+        const stemH = isReady ? 1.45 : 0.35 + stage * 0.38;
+        const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.08, stemH, 8), M.trunk);
+        stem.position.y = stemH * 0.5;
+        rec.plantAnchor.add(stem);
+        const leafMat = st.speciesId === 'cay_sala' ? M.foliageLight : st.speciesId === 'chum_sen' ? M.foliageMid : M.foliageDark;
+        const crown = new THREE.Mesh(
+          new THREE.IcosahedronGeometry(isReady ? 0.62 : 0.24 + stage * 0.14, 2),
+          leafMat
+        );
+        crown.position.y = stemH + 0.14;
+        rec.plantAnchor.add(crown);
+        if (isReady || st.speciesId === 'chum_sen') {
+          const flColor = st.speciesId === 'cay_sala' ? 0xFFB74D : st.speciesId === 'chum_sen' ? 0xF478A8 : 0xFFE066;
+          const blossom = new THREE.Mesh(
+            new THREE.SphereGeometry(0.16, 10, 8),
+            new THREE.MeshStandardMaterial({ color: flColor, emissive: flColor, emissiveIntensity: 0.32, roughness: 0.4 })
+          );
+          blossom.position.y = stemH + 0.48;
+          rec.plantAnchor.add(blossom);
+        }
+      }
+      if (isReady) {
+        const halo = new THREE.Mesh(
+          new THREE.RingGeometry(0.75, 0.92, 24),
+          new THREE.MeshBasicMaterial({ color: 0xFFE17D, transparent: true, opacity: 0.72, side: THREE.DoubleSide })
+        );
+        halo.rotation.x = -Math.PI / 2;
+        halo.position.y = 0.04;
+        rec.plantAnchor.add(halo);
+      }
+    }
+    this.renderFrame();
+  }
+
+  setTempleStateSync(state = {}) {
+    if (Array.isArray(state.collectedLeafIds)) {
+      this.syncCourtyardLeaves(state.collectedLeafIds);
+    }
+    if (Array.isArray(state.gardenSlots)) {
+      this.syncTempleGardenVisuals(state.gardenSlots);
+    }
+  }
+
   makeCoupletTex(textStr) {
     const c = document.createElement('canvas');
     c.width = 160;
@@ -6216,6 +6664,7 @@ export class VinhTrang3DWorld {
         bl.add(wingCarve);
       }
       g.add(bl);
+      this.baoLamPlaceholders.push({ group: bl, cx, cy, cz, width });
       return bl;
     };
 
@@ -6251,6 +6700,7 @@ export class VinhTrang3DWorld {
       const dragonBody = new THREE.Mesh(dragonBodyGeom, goldLeafMat);
       lt.add(dragonBody);
 
+      const replaceParts = [shaft, dragonBody];
       // Dorsal flame fins & gripping dragon claws along spiral
       for (let fi = 2; fi < helixPts.length - 3; fi += 2) {
         const pt = helixPts[fi];
@@ -6259,6 +6709,7 @@ export class VinhTrang3DWorld {
         fin.position.set(pt.x + radial.x * 0.12, pt.y + 0.04, pt.z + radial.z * 0.12);
         fin.lookAt(pt.x + radial.x * 0.6, pt.y + 0.2, pt.z + radial.z * 0.6);
         lt.add(fin);
+        replaceParts.push(fin);
       }
 
       // Sculpted Dragon Head curving out near nave center facing Chánh Điện aisle
@@ -6295,6 +6746,7 @@ export class VinhTrang3DWorld {
       pearl.position.set(0, -0.04, 0.72);
       headGroup.add(pearl);
       lt.add(headGroup);
+      replaceParts.push(headGroup);
 
       // Crimson-Gold Couplet mounted alongside Long Trụ
       const ltCouplet = new THREE.Mesh(
@@ -6310,6 +6762,7 @@ export class VinhTrang3DWorld {
       lt.userData.isLongTru = true;
       g.add(lt);
       this.longTruClickTargets.push(lt);
+      this.longTruPlaceholders.push({ group: lt, px, pz, sideSign, replaceParts });
       this.interiorObstacles.push({ x: px, z: pz, r: 0.66 });
       return lt;
     };
@@ -6520,6 +6973,8 @@ export class VinhTrang3DWorld {
       plaque.position.set(0, 3.4, -0.35);
       ga.add(plaque);
       g.add(ga);
+      if (gx < 0) this.hoPhapPlaceholder = { altar: ga, parts: [fig, hd] };
+      else this.tieuDienPlaceholder = { altar: ga, parts: [fig, hd] };
       this.interiorKhuThoClickTargets.push(ga);
       this.interiorRectObstacles.push({ minX: gx - 1.25, maxX: gx + 1.25, minZ: 5.3, maxZ: 7.1 });
     }
@@ -6608,7 +7063,22 @@ export class VinhTrang3DWorld {
     bell.position.y = 1.85;
     bellStand.add(bell);
     g.add(bellStand);
+    this.interiorBellAnchor = { group: bellStand, placeholder: bell };
     this.interiorObstacles.push({ x: 6.8, z: -10.5, r: 1.1 });
+
+    // Symmetrical Trống Bát Nhã Stand on West Side of Chánh Điện
+    const drumStand = new THREE.Group();
+    drumStand.position.set(-6.8, 0, -10.5);
+    const dFrame = new THREE.Mesh(new THREE.BoxGeometry(1.8, 1.4, 1.1), M.darkWood);
+    dFrame.position.y = 0.7;
+    drumStand.add(dFrame);
+    const drum = new THREE.Mesh(new THREE.CylinderGeometry(0.62, 0.62, 1.15, 18), M.mosaicRed);
+    drum.rotation.z = Math.PI / 2;
+    drum.position.y = 1.68;
+    drumStand.add(drum);
+    g.add(drumStand);
+    this.interiorDrumAnchor = { group: drumStand, placeholder: drum };
+    this.interiorObstacles.push({ x: -6.8, z: -10.5, r: 1.1 });
 
     // Tam Bảo Central Altar (z = -18.7) — Main Buddha Centerpiece + 2 Flanking Bodhisattvas + Multi-tier Altar
     this.tamBaoAltarGroup = new THREE.Group();
@@ -6998,6 +7468,7 @@ export class VinhTrang3DWorld {
     khuThoMainAltar.add(ktScreenPlaque);
 
     // 3 Gilded Patriarch Statues + 5 Ancestral Tablets ("Bài Vị Chư Vị Tổ Sư")
+    this.khuThoAltarGroup = khuThoMainAltar;
     for (const px of [-1.75, 0, 1.75]) {
       const pBody = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.34, 0.92, 12), goldLeafMat);
       pBody.position.set(px, 2.8, -0.2);
@@ -7005,6 +7476,7 @@ export class VinhTrang3DWorld {
       const pHead = new THREE.Mesh(new THREE.SphereGeometry(0.16, 10, 8), goldLeafMat);
       pHead.position.set(px, 3.38, -0.2);
       khuThoMainAltar.add(pHead);
+      if (px === 0) this.khuThoPlaceholderParts.push(pBody, pHead);
     }
     const tabletTitles = ['CHƯ TỔ', 'TIỀN BỐI', 'TỔ SƯ KHAI SƠN', 'HÒA THƯỢNG', 'CHƯ VỊ'];
     for (let ti = -2; ti <= 2; ti++) {
@@ -7498,15 +7970,102 @@ export class VinhTrang3DWorld {
   }
 
   async loadAllGLBAssets() {
-    const [adidaGltf, dilacGltf, phatNamGltf, banThoGltf, kyTuongGltf, toaLocGltf, phucHoGltf] = await Promise.all([
+    const [
+      adidaGltf,
+      dilacGltf,
+      phatNamGltf,
+      banThoGltf,
+      quanAmGltf,
+      hoPhapGltf,
+      tieuDienGltf,
+      toDatMaGltf,
+      kyTuongGltf,
+      toaLocGltf,
+      phucHoGltf,
+      hangLongGltf,
+      hoanHiGltf,
+      phucHo2Gltf,
+      thienDinhGltf,
+      matTienGltf,
+      baoThapGltf,
+      daiHongChungGltf,
+      trongBatNhaGltf,
+      longTruGltf,
+      baoLamGltf,
+      xeKhachGltf,
+      xeOtoGltf
+    ] = await Promise.all([
       this.loadGLB(STATUE_GLB_PATHS.adida),
       this.loadGLB(STATUE_GLB_PATHS.dilac),
       this.loadGLB(STATUE_GLB_PATHS.phatnam),
       this.loadGLB(STATUE_GLB_PATHS.bantho),
+      this.loadGLB(STATUE_GLB_PATHS.quanAm),
+      this.loadGLB(STATUE_GLB_PATHS.hoPhap),
+      this.loadGLB(STATUE_GLB_PATHS.tieuDien),
+      this.loadGLB(STATUE_GLB_PATHS.toDatMa),
       this.loadGLB(ARHAT_GLB_PATHS.kyTuong),
       this.loadGLB(ARHAT_GLB_PATHS.toaLoc),
-      this.loadGLB(ARHAT_GLB_PATHS.phucHo)
+      this.loadGLB(ARHAT_GLB_PATHS.phucHo),
+      this.loadGLB(ARHAT_GLB_PATHS.hangLong),
+      this.loadGLB(ARHAT_GLB_PATHS.hoanHi),
+      this.loadGLB(ARHAT_GLB_PATHS.phucHo2),
+      this.loadGLB(ARHAT_GLB_PATHS.thienDinh),
+      this.loadGLB(ARCH_GLB_PATHS.mat_tien),
+      this.loadGLB(ARCH_GLB_PATHS.bao_thap),
+      this.loadGLB(ARCH_GLB_PATHS.dai_hong_chung),
+      this.loadGLB(ARCH_GLB_PATHS.trong_bat_nha),
+      this.loadGLB(ARCH_GLB_PATHS.long_tru),
+      this.loadGLB(ARCH_GLB_PATHS.bao_lam),
+      this.loadGLB(ARCH_GLB_PATHS.xe_khach),
+      this.loadGLB(ARCH_GLB_PATHS.xe_oto)
     ]);
+
+    if (baoThapGltf?.scene) this.archMeshCache.bao_thap = baoThapGltf.scene;
+    if (daiHongChungGltf?.scene) this.archMeshCache.dai_hong_chung = daiHongChungGltf.scene;
+    if (trongBatNhaGltf?.scene) this.archMeshCache.trong_bat_nha = trongBatNhaGltf.scene;
+    if (longTruGltf?.scene) this.archMeshCache.long_tru = longTruGltf.scene;
+    if (baoLamGltf?.scene) this.archMeshCache.bao_lam = baoLamGltf.scene;
+    if (xeKhachGltf?.scene) this.archMeshCache.xe_khach = xeKhachGltf.scene;
+    if (xeOtoGltf?.scene) this.archMeshCache.xe_oto = xeOtoGltf.scene;
+
+    // 0. Replace procedural Chánh Điện facade with sculpted mat-tien-vinh-trang.glb (strip 'Sân' ground plane)
+    if (matTienGltf?.scene && this.chanhDienFacadeGroup) {
+      const facade = matTienGltf.scene.clone(true);
+      const removeNodes = [];
+      facade.traverse((o) => {
+        if (/^sân\b|^san\b|ground|terrain/i.test(o.name || '')) {
+          removeNodes.push(o);
+          return;
+        }
+        if (o.isMesh && o.geometry) {
+          if (!o.geometry.getAttribute('normal')) o.geometry.computeVertexNormals();
+          o.geometry.computeBoundingBox();
+          const bb = o.geometry.boundingBox;
+          if (bb && (bb.max.x - bb.min.x > 48 || bb.max.z - bb.min.z > 48) && bb.max.y - bb.min.y < 0.8) {
+            removeNodes.push(o);
+            return;
+          }
+          o.castShadow = true;
+          o.receiveShadow = true;
+        }
+      });
+      for (const rn of removeNodes) {
+        if (rn.parent) rn.parent.remove(rn);
+      }
+      const box = new THREE.Box3().setFromObject(facade);
+      const sz = new THREE.Vector3();
+      box.getSize(sz);
+      const scale = 28.4 / Math.max(1, sz.x);
+      facade.scale.setScalar(scale);
+      const box2 = new THREE.Box3().setFromObject(facade);
+      facade.position.set(
+        -(box2.min.x + box2.max.x) / 2,
+        0.02 - box2.min.y,
+        5.05 - (box2.min.z + box2.max.z) / 2
+      );
+      this.chanhDienFacadeGroup.add(facade);
+      if (this.chanhDienProceduralShell) this.chanhDienProceduralShell.visible = false;
+    }
 
     // 1. Đại tượng Phật A Di Đà in the front flower garden (18m statue + 7m lotus/pedestal = 25m total).
     if (adidaGltf?.scene) {
@@ -7560,7 +8119,7 @@ export class VinhTrang3DWorld {
       this.nietBanGroup.add(s);
     }
 
-    // 4. Tượng Phật Bàn Thờ Tam Bảo (2.6m central figure above the multi-tier altar + golden Buddha visible in porch)
+    // 4. Tượng Phật Bàn Thờ Tam Bảo + Porch Altar
     if (banThoGltf?.scene) {
       const s = this.cleanStatueScene(banThoGltf.scene, null);
       const box = new THREE.Box3().setFromObject(s);
@@ -7573,7 +8132,7 @@ export class VinhTrang3DWorld {
         2.82 - box2.min.y,
         -(box2.min.z + box2.max.z) / 2
       );
-      s.rotation.y = Math.PI;
+      s.rotation.y = 0;
       this.tamBaoAltarGroup.add(s);
 
       if (this.chanhDienPorchAltar) {
@@ -7585,24 +8144,74 @@ export class VinhTrang3DWorld {
           1.03 - pb.min.y,
           -(pb.min.z + pb.max.z) / 2
         );
-        porchBuddha.rotation.y = Math.PI;
+        porchBuddha.rotation.y = 0;
         this.chanhDienPorchAltar.add(porchBuddha);
       }
     }
 
-    // Three representative La Hán sculptures: Kỵ Tượng, Tọa Lộc and Phục Hổ.
-    // Their GLBs include their own low stone plinths, so they sit directly on the temple floor.
+    // 5. Tượng Quán Thế Âm Nam Hải replacing placeholder cylinder/sphere
+    if (quanAmGltf?.scene && this.quanAmGroup) {
+      for (const p of this.quanAmPlaceholderParts) {
+        if (p.parent) p.parent.remove(p);
+      }
+      const qa = this.cleanStatueScene(quanAmGltf.scene, null);
+      const box = new THREE.Box3().setFromObject(qa);
+      const h = Math.max(0.1, box.max.y - box.min.y);
+      qa.scale.setScalar(3.35 / h);
+      const box2 = new THREE.Box3().setFromObject(qa);
+      qa.position.set(
+        -(box2.min.x + box2.max.x) / 2,
+        2.68 - box2.min.y,
+        -(box2.min.z + box2.max.z) / 2
+      );
+      this.quanAmGroup.add(qa);
+    }
+
+    // 6. Interior Guardians (Hộ Pháp Vi Đà, Tiêu Diện Đại Sĩ) & Tổ Sư Đạt Ma
+    if (hoPhapGltf?.scene && this.hoPhapPlaceholder?.altar) {
+      for (const p of this.hoPhapPlaceholder.parts) if (p.parent) p.parent.remove(p);
+      const hp = this.cleanStatueScene(hoPhapGltf.scene, null);
+      const box = new THREE.Box3().setFromObject(hp);
+      hp.scale.setScalar(1.95 / Math.max(0.1, box.max.y - box.min.y));
+      const box2 = new THREE.Box3().setFromObject(hp);
+      hp.position.set(-(box2.min.x + box2.max.x) / 2, 1.18 - box2.min.y, -0.18 - (box2.min.z + box2.max.z) / 2);
+      this.hoPhapPlaceholder.altar.add(hp);
+    }
+    if (tieuDienGltf?.scene && this.tieuDienPlaceholder?.altar) {
+      for (const p of this.tieuDienPlaceholder.parts) if (p.parent) p.parent.remove(p);
+      const td = this.cleanStatueScene(tieuDienGltf.scene, null);
+      const box = new THREE.Box3().setFromObject(td);
+      td.scale.setScalar(1.95 / Math.max(0.1, box.max.y - box.min.y));
+      const box2 = new THREE.Box3().setFromObject(td);
+      td.position.set(-(box2.min.x + box2.max.x) / 2, 1.18 - box2.min.y, -0.18 - (box2.min.z + box2.max.z) / 2);
+      this.tieuDienPlaceholder.altar.add(td);
+    }
+    if (toDatMaGltf?.scene && this.khuThoAltarGroup) {
+      for (const p of this.khuThoPlaceholderParts) if (p.parent) p.parent.remove(p);
+      const dm = this.cleanStatueScene(toDatMaGltf.scene, null);
+      const box = new THREE.Box3().setFromObject(dm);
+      dm.scale.setScalar(1.65 / Math.max(0.1, box.max.y - box.min.y));
+      const box2 = new THREE.Box3().setFromObject(dm);
+      dm.position.set(-(box2.min.x + box2.max.x) / 2, 2.34 - box2.min.y, -0.18 - (box2.min.z + box2.max.z) / 2);
+      this.khuThoAltarGroup.add(dm);
+    }
+
+    // 7. All 7 Sculpted La Hán Statues symmetrically flanking Chánh Điện aisles
     const arhatPlacements = [
-      { gltf: toaLocGltf, x: -9.8, z: -4.8, facing: Math.PI / 2, index: 0, title: 'Tọa Lộc La Hán' },
-      { gltf: kyTuongGltf, x: 9.8, z: -9.8, facing: -Math.PI / 2, index: 6, title: 'Kỵ Tượng La Hán' },
-      { gltf: phucHoGltf, x: -9.8, z: -15.8, facing: Math.PI / 2, index: 17, title: 'Phục Hổ La Hán' }
+      { gltf: toaLocGltf, x: -9.8, z: -4.5, facing: Math.PI / 2, index: 0, title: 'Tọa Lộc La Hán' },
+      { gltf: kyTuongGltf, x: 9.8, z: -4.5, facing: -Math.PI / 2, index: 6, title: 'Kỵ Tượng La Hán' },
+      { gltf: hangLongGltf, x: -9.8, z: -9.8, facing: Math.PI / 2, index: 16, title: 'Hàng Long La Hán' },
+      { gltf: phucHoGltf, x: 9.8, z: -9.8, facing: -Math.PI / 2, index: 17, title: 'Phục Hổ La Hán' },
+      { gltf: hoanHiGltf, x: -9.8, z: -15.2, facing: Math.PI / 2, index: 3, title: 'Hoan Hỉ La Hán' },
+      { gltf: phucHo2Gltf, x: 9.8, z: -15.2, facing: -Math.PI / 2, index: 12, title: 'Phục Hổ Tôn Giả' },
+      { gltf: thienDinhGltf, x: -9.8, z: -20.0, facing: Math.PI / 2, index: 8, title: 'Thiền Định La Hán' }
     ];
     for (const item of arhatPlacements) {
       if (!item.gltf?.scene) continue;
       const statue = this.cleanStatueScene(item.gltf.scene, null, true);
       const initialBounds = new THREE.Box3().setFromObject(statue);
       const height = Math.max(0.1, initialBounds.max.y - initialBounds.min.y);
-      statue.scale.setScalar(1.22 / height);
+      statue.scale.setScalar(1.28 / height);
       statue.rotation.y = item.facing;
       const bounds = new THREE.Box3().setFromObject(statue);
       statue.position.set(
@@ -7617,12 +8226,94 @@ export class VinhTrang3DWorld {
       this.interiorObstacles.push({ x: item.x, z: item.z, r: 0.82 });
     }
 
+    // 8. Architectural Upgrades (Bảo Tháp, Đại Hồng Chung, Trống Bát Nhã, Long Trụ, Bao Lam, Parked Vehicles)
+    if (this.archMeshCache.bao_thap && this.stupaGroup) {
+      while (this.stupaGroup.children.length > 0) this.stupaGroup.remove(this.stupaGroup.children[0]);
+      const stupa = this.fitProp(this.archMeshCache.bao_thap, 18.5);
+      const sb = new THREE.Box3().setFromObject(stupa);
+      stupa.position.set(-(sb.min.x + sb.max.x) / 2, -sb.min.y, -(sb.min.z + sb.max.z) / 2);
+      this.stupaGroup.add(stupa);
+    }
+    if (this.archMeshCache.dai_hong_chung) {
+      for (const anchor of this.bellTowerArchAnchors) {
+        if (anchor.placeholder?.parent) anchor.placeholder.parent.remove(anchor.placeholder);
+        const bell = this.fitProp(this.archMeshCache.dai_hong_chung, anchor.targetH || 1.85);
+        const bb = new THREE.Box3().setFromObject(bell);
+        bell.position.set(-(bb.min.x + bb.max.x) / 2, anchor.y - bb.min.y, -(bb.min.z + bb.max.z) / 2);
+        anchor.group.add(bell);
+      }
+      if (this.interiorBellAnchor?.group) {
+        if (this.interiorBellAnchor.placeholder?.parent) this.interiorBellAnchor.placeholder.parent.remove(this.interiorBellAnchor.placeholder);
+        const ibell = this.fitProp(this.archMeshCache.dai_hong_chung, 1.65);
+        const bb = new THREE.Box3().setFromObject(ibell);
+        ibell.position.set(-(bb.min.x + bb.max.x) / 2, 1.38 - bb.min.y, -(bb.min.z + bb.max.z) / 2);
+        this.interiorBellAnchor.group.add(ibell);
+      }
+    }
+    if (this.archMeshCache.trong_bat_nha) {
+      for (const anchor of this.drumTowerArchAnchors) {
+        if (anchor.placeholder?.parent) anchor.placeholder.parent.remove(anchor.placeholder);
+        const drum = this.fitProp(this.archMeshCache.trong_bat_nha, anchor.targetH || 1.72);
+        const db = new THREE.Box3().setFromObject(drum);
+        drum.position.set(-(db.min.x + db.max.x) / 2, anchor.y - db.min.y, -(db.min.z + db.max.z) / 2);
+        anchor.group.add(drum);
+      }
+      if (this.interiorDrumAnchor?.group) {
+        if (this.interiorDrumAnchor.placeholder?.parent) this.interiorDrumAnchor.placeholder.parent.remove(this.interiorDrumAnchor.placeholder);
+        const idrum = this.fitProp(this.archMeshCache.trong_bat_nha, 1.48);
+        const db = new THREE.Box3().setFromObject(idrum);
+        idrum.position.set(-(db.min.x + db.max.x) / 2, 1.15 - db.min.y, -(db.min.z + db.max.z) / 2);
+        this.interiorDrumAnchor.group.add(idrum);
+      }
+    }
+    if (this.archMeshCache.long_tru) {
+      for (const ph of this.longTruPlaceholders) {
+        for (const p of ph.replaceParts) if (p.parent) p.parent.remove(p);
+        const ltModel = this.fitProp(this.archMeshCache.long_tru, 7.45);
+        ltModel.rotation.y = ph.sideSign < 0 ? 0.35 : -0.35;
+        const lb = new THREE.Box3().setFromObject(ltModel);
+        ltModel.position.set(-(lb.min.x + lb.max.x) / 2, 0.65 - lb.min.y, -(lb.min.z + lb.max.z) / 2);
+        ph.group.add(ltModel);
+      }
+    }
+    if (this.archMeshCache.bao_lam) {
+      for (const ph of this.baoLamPlaceholders) {
+        while (ph.group.children.length > 0) ph.group.remove(ph.group.children[0]);
+        const blModel = this.archMeshCache.bao_lam.clone(true);
+        blModel.traverse((o) => {
+          if (o.isMesh && o.geometry && !o.geometry.getAttribute('normal')) o.geometry.computeVertexNormals();
+        });
+        const box = new THREE.Box3().setFromObject(blModel);
+        const sz = new THREE.Vector3();
+        box.getSize(sz);
+        blModel.scale.set(
+          (ph.width || 9.0) / Math.max(0.1, sz.x),
+          1.85 / Math.max(0.1, sz.y),
+          0.42 / Math.max(0.1, sz.z)
+        );
+        const b2 = new THREE.Box3().setFromObject(blModel);
+        blModel.position.set(-(b2.min.x + b2.max.x) / 2, -(b2.min.y + b2.max.y) / 2, -(b2.min.z + b2.max.z) / 2);
+        ph.group.add(blModel);
+      }
+    }
+    for (const pa of this.parkedVehicleAnchors) {
+      const model = pa.kind === 'van' ? this.archMeshCache.xe_khach : this.archMeshCache.xe_oto;
+      if (model && this.buildGLBRoadVehicle) {
+        if (pa.fallback?.parent) pa.fallback.parent.remove(pa.fallback);
+        this.buildGLBRoadVehicle(model, pa.x, pa.z, pa.yaw, pa.targetLength);
+      }
+    }
+
     const initialKey = this.playerState.charKey || 'nu';
-    // Load ALL 3 rigged human GLBs (nu, nam, tre_em) + props upfront so every NPC & interior worshipper uses real rigged characters!
+    // Load ALL rigged human GLBs (including Meshy pilgrims & monks) + props upfront
     const [
       nuGltf,
       namGltf,
       treEmGltf,
+      suThayGltf,
+      nuAoLamGltf,
+      namAoNauGltf,
+      duKhachGltf,
       denLongGltf,
       chumSenGltf,
       mamNguQuaGltf,
@@ -7638,11 +8329,22 @@ export class VinhTrang3DWorld {
       gioMayGltf,
       denHoaDangGltf,
       nenSenGltf,
-      nonLaGltf
+      nonLaGltf,
+      tuiSenGltf,
+      chimBoCauGltf,
+      khanRanGltf,
+      trangHatGltf,
+      vongMayGltf,
+      cayBoDeGltf,
+      caySalaGltf
     ] = await Promise.all([
       this.loadGLB(CHAR_GLB_PATHS.nu),
       this.loadGLB(CHAR_GLB_PATHS.nam),
       this.loadGLB(CHAR_GLB_PATHS.tre_em),
+      this.loadGLB(CHAR_GLB_PATHS.su_thay),
+      this.loadGLB(CHAR_GLB_PATHS.nu_ao_lam),
+      this.loadGLB(CHAR_GLB_PATHS.nam_ao_nau),
+      this.loadGLB(CHAR_GLB_PATHS.du_khach),
       this.loadGLB(PROP_GLB_PATHS.den_long),
       this.loadGLB(PROP_GLB_PATHS.chum_sen),
       this.loadGLB(PROP_GLB_PATHS.mam_ngu_qua),
@@ -7658,12 +8360,23 @@ export class VinhTrang3DWorld {
       this.loadGLB(PROP_GLB_PATHS.gio_may_tre),
       this.loadGLB(PROP_GLB_PATHS.den_hoa_dang),
       this.loadGLB(PROP_GLB_PATHS.nen_hoa_sen),
-      this.loadGLB(PROP_GLB_PATHS.non_la)
+      this.loadGLB(PROP_GLB_PATHS.non_la),
+      this.loadGLB(PROP_GLB_PATHS.tui_sen),
+      this.loadGLB(PROP_GLB_PATHS.chim_bo_cau),
+      this.loadGLB(PROP_GLB_PATHS.khan_ran),
+      this.loadGLB(PROP_GLB_PATHS.trang_hat),
+      this.loadGLB(PROP_GLB_PATHS.vong_may),
+      this.loadGLB(PROP_GLB_PATHS.cay_bo_de),
+      this.loadGLB(PROP_GLB_PATHS.cay_sala)
     ]);
 
     if (nuGltf?.scene) this.charDataCache.nu = nuGltf;
     if (namGltf?.scene) this.charDataCache.nam = namGltf;
     if (treEmGltf?.scene) this.charDataCache.tre_em = treEmGltf;
+    if (suThayGltf?.scene) this.charDataCache.su_thay = suThayGltf;
+    if (nuAoLamGltf?.scene) this.charDataCache.nu_ao_lam = nuAoLamGltf;
+    if (namAoNauGltf?.scene) this.charDataCache.nam_ao_nau = namAoNauGltf;
+    if (duKhachGltf?.scene) this.charDataCache.du_khach = duKhachGltf;
 
     if (denLongGltf?.scene) this.propMeshCache.den_long = denLongGltf.scene;
     if (chumSenGltf?.scene) this.propMeshCache.chum_sen = chumSenGltf.scene;
@@ -7690,6 +8403,13 @@ export class VinhTrang3DWorld {
       this.propMeshCache.hoa_sen = nenSenGltf.scene;
     }
     if (nonLaGltf?.scene) this.propMeshCache.non_la = nonLaGltf.scene;
+    if (tuiSenGltf?.scene) this.propMeshCache.tui_sen = tuiSenGltf.scene;
+    if (chimBoCauGltf?.scene) this.propMeshCache.chim_bo_cau = chimBoCauGltf.scene;
+    if (khanRanGltf?.scene) this.propMeshCache.khan_ran = khanRanGltf.scene;
+    if (trangHatGltf?.scene) this.propMeshCache.trang_hat = trangHatGltf.scene;
+    if (vongMayGltf?.scene) this.propMeshCache.vong_may = vongMayGltf.scene;
+    if (cayBoDeGltf?.scene) this.propMeshCache.cay_bo_de = cayBoDeGltf.scene;
+    if (caySalaGltf?.scene) this.propMeshCache.cay_sala = caySalaGltf.scene;
 
     this.placeLoaded3DPropsInWorld();
     this.setCharacter(initialKey);
@@ -7723,6 +8443,20 @@ export class VinhTrang3DWorld {
 
   placeLoaded3DPropsInWorld() {
     const fitProp = (sceneObj, targetSize) => this.fitProp(sceneObj, targetSize);
+
+    // Upgrade courtyard pigeons with real Meshy chim-bo-cau-3d.glb
+    if (this.propMeshCache.chim_bo_cau && this.pigeons.length > 0) {
+      for (const p of this.pigeons) {
+        while (p.group.children.length > 0) p.group.remove(p.group.children[0]);
+        const dove = fitProp(this.propMeshCache.chim_bo_cau, 0.36);
+        dove.rotation.x = -Math.PI / 2;
+        const db = new THREE.Box3().setFromObject(dove);
+        dove.position.set(-(db.min.x + db.max.x) / 2, -db.min.y, -(db.min.z + db.max.z) / 2);
+        p.group.add(dove);
+        p.wL = null;
+        p.wR = null;
+      }
+    }
 
     // Place hexagonal lanterns at Chánh Điện porch & Shop Pavilion
     if (this.propMeshCache.den_long) {
@@ -8071,7 +8805,18 @@ export class VinhTrang3DWorld {
       const act = mixer.clipAction(clip);
       actions[cleanName] = act;
       actions[clip.name] = act;
+      const norm = normalizeAnimKey(clip.name);
+      if (norm && !actions[norm]) actions[norm] = act;
     }
+    if (actions['di bo'] && !actions['Di bo']) actions['Di bo'] = actions['di bo'];
+    if (actions['walk'] && !actions['Di bo']) actions['Di bo'] = actions['walk'];
+    if (actions['walking'] && !actions['Di bo']) actions['Di bo'] = actions['walking'];
+    if (actions['idle'] && !actions['Dung']) actions['Dung'] = actions['idle'];
+    if (actions['stand'] && !actions['Dung']) actions['Dung'] = actions['stand'];
+    if (actions['dung'] && !actions['Dung']) actions['Dung'] = actions['dung'];
+    if (actions['chap tay'] && !actions['Chắp tay']) actions['Chắp tay'] = actions['chap tay'];
+    if (actions['quy'] && !actions['Quỳ']) actions['Quỳ'] = actions['quy'];
+    if (actions['vai'] && !actions['Vái']) actions['Vái'] = actions['vai'];
     if (actions['Di bo'] && !actions['Đi bộ']) actions['Đi bộ'] = actions['Di bo'];
     if (actions['Đi bộ'] && !actions['Di bo']) actions['Di bo'] = actions['Đi bộ'];
 
@@ -8087,10 +8832,12 @@ export class VinhTrang3DWorld {
 
   playClipCrossfade(record, clipName, fadeDuration = 0.22, loopOnce = false) {
     if (!record || !record.actions) return;
+    const norm = normalizeAnimKey(clipName);
     const target =
       record.actions[clipName] ||
-      (clipName === 'Đi bộ' ? record.actions['Di bo'] : null) ||
-      (clipName === 'Di bo' ? record.actions['Đi bộ'] : null) ||
+      record.actions[norm] ||
+      (norm === 'di bo' || norm === 'walk' ? record.actions['Di bo'] || record.actions['walk'] || record.actions['walking'] : null) ||
+      (norm === 'dung' || norm === 'idle' ? record.actions['Dung'] || record.actions['idle'] : null) ||
       record.actions['Dung'] ||
       Object.values(record.actions)[0];
     if (!target) return;
@@ -8352,13 +9099,20 @@ export class VinhTrang3DWorld {
     // Checkered Southern scarf ("khăn rằn Nam Bộ") draped over shoulders
     if (opts.scarf) {
       const s = rec.root.scale.x || 1;
-      const scarf = new THREE.Mesh(
-        new THREE.TorusGeometry(0.14 / s, 0.032 / s, 7, 14),
-        new THREE.MeshStandardMaterial({ color: 0x2B2420, roughness: 0.8 })
-      );
-      scarf.rotation.x = Math.PI / 2 - 0.15;
-      scarf.position.set(0, (h * 0.79) / s, 0.02 / s);
-      rec.root.add(scarf);
+      if (this.propMeshCache.khan_ran) {
+        const scarf = this.fitProp(this.propMeshCache.khan_ran, 0.42);
+        scarf.scale.multiplyScalar(1 / s);
+        scarf.position.set(0, (h * 0.74) / s, 0.05 / s);
+        rec.root.add(scarf);
+      } else {
+        const scarf = new THREE.Mesh(
+          new THREE.TorusGeometry(0.14 / s, 0.032 / s, 7, 14),
+          new THREE.MeshStandardMaterial({ color: 0x2B2420, roughness: 0.8 })
+        );
+        scarf.rotation.x = Math.PI / 2 - 0.15;
+        scarf.position.set(0, (h * 0.79) / s, 0.02 / s);
+        rec.root.add(scarf);
+      }
     }
 
     // Hand-carried items (hoa_sen, quat_nan, nhang, trang_hat)
@@ -8395,11 +9149,14 @@ export class VinhTrang3DWorld {
         bun.add(top);
         prop = bun;
       } else if (opts.hand === 'beads') {
-        const ring = new THREE.Mesh(
-          new THREE.TorusGeometry(0.09, 0.016, 6, 14),
-          new THREE.MeshStandardMaterial({ color: 0x5E3418, roughness: 0.45 })
-        );
-        prop = ring;
+        if (this.propMeshCache.trang_hat) {
+          prop = this.fitProp(this.propMeshCache.trang_hat, 0.22);
+        } else {
+          prop = new THREE.Mesh(
+            new THREE.TorusGeometry(0.09, 0.016, 6, 14),
+            new THREE.MeshStandardMaterial({ color: 0x5E3418, roughness: 0.45 })
+          );
+        }
       }
       if (prop) {
         if (handBone) {
@@ -8554,8 +9311,8 @@ export class VinhTrang3DWorld {
 
       // --- B. Cổng Phụ -> Bougainvillea Side Pathway -> Cửa Hông Phải & Quán Thế Âm ---
       {
-        charKey: 'nu',
-        tint: [0.84, 0.74, 0.56],
+        charKey: this.charDataCache.nu_ao_lam ? 'nu_ao_lam' : 'nu',
+        isMeshyChar: Boolean(this.charDataCache.nu_ao_lam),
         hat: true,
         hand: 'hoa_sen',
         speed: 1.04,
@@ -8567,8 +9324,9 @@ export class VinhTrang3DWorld {
         ]
       },
       {
-        charKey: 'nam',
-        monkTone: 0,
+        charKey: this.charDataCache.su_thay ? 'su_thay' : 'nam',
+        isMeshyChar: Boolean(this.charDataCache.su_thay),
+        monkTone: this.charDataCache.su_thay ? undefined : 0,
         hand: 'beads',
         speed: 1.0,
         pts: [
@@ -8579,8 +9337,8 @@ export class VinhTrang3DWorld {
         ]
       },
       {
-        charKey: 'nu',
-        tint: [0.62, 0.72, 0.84],
+        charKey: this.charDataCache.du_khach ? 'du_khach' : 'nu',
+        isMeshyChar: Boolean(this.charDataCache.du_khach),
         bag: 'tui_sen',
         hand: 'nhang',
         speed: 1.1,
@@ -8625,8 +9383,8 @@ export class VinhTrang3DWorld {
         ]
       },
       {
-        charKey: 'nam',
-        tint: [0.56, 0.50, 0.42],
+        charKey: this.charDataCache.nam_ao_nau ? 'nam_ao_nau' : 'nam',
+        isMeshyChar: Boolean(this.charDataCache.nam_ao_nau),
         hand: 'nhang',
         speed: 1.06,
         pts: [
@@ -8638,8 +9396,9 @@ export class VinhTrang3DWorld {
         ]
       },
       {
-        charKey: 'nam',
-        monkTone: 1,
+        charKey: this.charDataCache.su_thay ? 'su_thay' : 'nam',
+        isMeshyChar: Boolean(this.charDataCache.su_thay),
+        monkTone: this.charDataCache.su_thay ? undefined : 1,
         hand: 'beads',
         speed: 0.96,
         pts: [
@@ -8665,8 +9424,8 @@ export class VinhTrang3DWorld {
 
       // --- D. Expanded West Wing (Vườn Lâm Tỳ Ni · Non Bộ · Vườn La Hán Ngoài Trời) ---
       {
-        charKey: 'nu',
-        tint: [0.85, 0.74, 0.82],
+        charKey: this.charDataCache.nu_ao_lam ? 'nu_ao_lam' : 'nu',
+        isMeshyChar: Boolean(this.charDataCache.nu_ao_lam),
         hat: true,
         bag: 'gio_may',
         speed: 1.04,
@@ -8679,8 +9438,8 @@ export class VinhTrang3DWorld {
         ]
       },
       {
-        charKey: 'nam',
-        tint: [0.62, 0.68, 0.76],
+        charKey: this.charDataCache.nam_ao_nau ? 'nam_ao_nau' : 'nam',
+        isMeshyChar: Boolean(this.charDataCache.nam_ao_nau),
         hand: 'hoa_sen',
         speed: 1.08,
         pts: [
@@ -8733,8 +9492,8 @@ export class VinhTrang3DWorld {
         ]
       },
       {
-        charKey: 'nam',
-        tint: [0.54, 0.60, 0.68],
+        charKey: this.charDataCache.du_khach ? 'du_khach' : 'nam',
+        isMeshyChar: Boolean(this.charDataCache.du_khach),
         hat: true,
         speed: 1.06,
         pts: [
@@ -8760,8 +9519,9 @@ export class VinhTrang3DWorld {
         ]
       },
       {
-        charKey: 'nam',
-        monkTone: 0,
+        charKey: this.charDataCache.su_thay ? 'su_thay' : 'nam',
+        isMeshyChar: Boolean(this.charDataCache.su_thay),
+        monkTone: this.charDataCache.su_thay ? undefined : 0,
         hand: 'beads',
         speed: 0.98,
         pts: [
@@ -8777,10 +9537,12 @@ export class VinhTrang3DWorld {
       const h = CHAR_HEIGHTS[rt.charKey] || 1.64;
       const rec = this.cloneAnimatedCharacter(rt.charKey, h);
       if (!rec) continue;
-      if (typeof rt.monkTone === 'number') {
-        this.recolorMonkRobe(rec.root, rt.monkTone);
-      } else if (rt.tint) {
-        this.recolorPastelDress(rec.root, rt.tint);
+      if (!rt.isMeshyChar) {
+        if (typeof rt.monkTone === 'number') {
+          this.recolorMonkRobe(rec.root, rt.monkTone);
+        } else if (rt.tint) {
+          this.recolorPastelDress(rec.root, rt.tint);
+        }
       }
       this.equipNpcProps(rec, rt.charKey, h, rt);
       const p0 = rt.pts[0];
@@ -9478,6 +10240,21 @@ export class VinhTrang3DWorld {
       hat.position.set(0, h - 0.06, 0.02);
       this.storePreviewGroup.add(hat);
     }
+    if (storeVisual.bag && this.propMeshCache.tui_sen) {
+      const bag = this.fitProp(this.propMeshCache.tui_sen, 0.34);
+      bag.position.set(-0.22, h * 0.54, 0.04);
+      this.storePreviewGroup.add(bag);
+    }
+    if (storeVisual.scarf && this.propMeshCache.khan_ran) {
+      const scarf = this.fitProp(this.propMeshCache.khan_ran, 0.44);
+      scarf.position.set(0, h * 0.74, 0.06);
+      this.storePreviewGroup.add(scarf);
+    }
+    if (storeVisual.malaId && this.propMeshCache.trang_hat) {
+      const mala = this.fitProp(this.propMeshCache.trang_hat, 0.24);
+      mala.position.set(-0.22, h * 0.52, 0.18);
+      this.storePreviewGroup.add(mala);
+    }
     if (storeVisual.mat) {
       const matKey =
         storeVisual.mat === 'bo_doan_tron'
@@ -9497,48 +10274,79 @@ export class VinhTrang3DWorld {
       prop.position.set(0.28, h * 0.56, 0.22);
       this.storePreviewGroup.add(prop);
     }
-    if (storeVisual.treeProp && this.propMeshCache.chum_sen) {
-      const urn = this.fitProp(this.propMeshCache.chum_sen, 0.85);
-      urn.position.set(-0.68, 0, 0.25);
-      this.storePreviewGroup.add(urn);
+    const treeKey = storeVisual.treeProp || (storeVisual.treeId === 'cay_bo_de_phat' ? 'cay_bo_de' : storeVisual.treeId === 'cay_sala_phat' ? 'cay_sala' : null);
+    if (treeKey) {
+      const treeModel =
+        treeKey === 'cay_bo_de'
+          ? this.propMeshCache.cay_bo_de
+          : treeKey === 'cay_sala'
+          ? this.propMeshCache.cay_sala
+          : this.propMeshCache.chum_sen;
+      if (treeModel) {
+        const urn = this.fitProp(treeModel, treeKey === 'cay_bo_de' || treeKey === 'cay_sala' ? 1.08 : 0.85);
+        urn.position.set(-0.68, 0, 0.25);
+        this.storePreviewGroup.add(urn);
+      }
     }
     if (storeVisual.cloudColor) {
-      const ring = new THREE.Mesh(
-        new THREE.TorusGeometry(0.55, 0.14, 10, 24),
-        new THREE.MeshStandardMaterial({
-          color: new THREE.Color(storeVisual.cloudColor),
-          emissive: new THREE.Color(storeVisual.cloudColor),
-          emissiveIntensity: 0.35,
-          roughness: 0.4,
-          transparent: true,
-          opacity: 0.88
-        })
-      );
-      ring.rotation.x = Math.PI / 2;
-      ring.position.set(0, 0.08, 0);
-      this.storePreviewGroup.add(ring);
+      if (this.propMeshCache.vong_may) {
+        const cloud = this.fitProp(this.propMeshCache.vong_may, 1.08);
+        cloud.traverse((o) => {
+          if (o.isMesh && o.material) {
+            o.material = o.material.clone();
+            o.material.emissive = new THREE.Color(storeVisual.cloudColor);
+            o.material.emissiveIntensity = 0.28;
+            o.material.transparent = true;
+            o.material.opacity = 0.92;
+          }
+        });
+        cloud.position.set(0, 0.04, 0);
+        this.storePreviewGroup.add(cloud);
+      } else {
+        const ring = new THREE.Mesh(
+          new THREE.TorusGeometry(0.55, 0.14, 10, 24),
+          new THREE.MeshStandardMaterial({
+            color: new THREE.Color(storeVisual.cloudColor),
+            emissive: new THREE.Color(storeVisual.cloudColor),
+            emissiveIntensity: 0.35,
+            roughness: 0.4,
+            transparent: true,
+            opacity: 0.88
+          })
+        );
+        ring.rotation.x = Math.PI / 2;
+        ring.position.set(0, 0.08, 0);
+        this.storePreviewGroup.add(ring);
+      }
     }
     if (storeVisual.petType === 'dove') {
-      const bird = new THREE.Group();
-      const body = new THREE.Mesh(
-        new THREE.SphereGeometry(0.11, 10, 8),
-        new THREE.MeshStandardMaterial({ color: 0xFFFFFF, roughness: 0.45 })
-      );
-      body.scale.set(0.9, 0.8, 1.45);
-      bird.add(body);
-      const wingL = new THREE.Mesh(
-        new THREE.BoxGeometry(0.22, 0.03, 0.14),
-        new THREE.MeshStandardMaterial({ color: 0xF4F7FC, roughness: 0.5 })
-      );
-      wingL.position.set(-0.14, 0.03, 0);
-      wingL.rotation.z = 0.28;
-      bird.add(wingL);
-      const wingR = wingL.clone();
-      wingR.position.x = 0.14;
-      wingR.rotation.z = -0.28;
-      bird.add(wingR);
-      bird.position.set(0.56, h + 0.22, -0.1);
-      this.storePreviewGroup.add(bird);
+      if (this.propMeshCache.chim_bo_cau) {
+        const bird = this.fitProp(this.propMeshCache.chim_bo_cau, 0.42);
+        bird.rotation.x = -Math.PI / 2;
+        bird.position.set(0.56, h + 0.18, -0.1);
+        this.storePreviewGroup.add(bird);
+      } else {
+        const bird = new THREE.Group();
+        const body = new THREE.Mesh(
+          new THREE.SphereGeometry(0.11, 10, 8),
+          new THREE.MeshStandardMaterial({ color: 0xFFFFFF, roughness: 0.45 })
+        );
+        body.scale.set(0.9, 0.8, 1.45);
+        bird.add(body);
+        const wingL = new THREE.Mesh(
+          new THREE.BoxGeometry(0.22, 0.03, 0.14),
+          new THREE.MeshStandardMaterial({ color: 0xF4F7FC, roughness: 0.5 })
+        );
+        wingL.position.set(-0.14, 0.03, 0);
+        wingL.rotation.z = 0.28;
+        bird.add(wingL);
+        const wingR = wingL.clone();
+        wingR.position.x = 0.14;
+        wingR.rotation.z = -0.28;
+        bird.add(wingR);
+        bird.position.set(0.56, h + 0.22, -0.1);
+        this.storePreviewGroup.add(bird);
+      }
     } else if (storeVisual.petType === 'koi') {
       const fish = new THREE.Mesh(
         new THREE.ConeGeometry(0.11, 0.42, 8),
@@ -9665,6 +10473,61 @@ export class VinhTrang3DWorld {
       this.nearestStallTrigger = nearestStall;
       this.onStallProximity(nearestStall);
     }
+
+    // Unified courtyard activity proximity check (Leaves, Garden Plots, Bell Tower, Koi Pond)
+    let interactPrompt = null;
+    for (const [leafId, grp] of this.courtyardLeafMeshes.entries()) {
+      if (!grp.visible) continue;
+      const d = Math.hypot(this.playerState.x - grp.position.x, this.playerState.z - grp.position.z);
+      if (d <= 2.75) {
+        interactPrompt = {
+          kind: 'leaf',
+          leafId,
+          label: '🍂 [E] Quét Lá Bồ Đề Vàng (+XP & Công Đức)'
+        };
+        break;
+      }
+    }
+    if (!interactPrompt) {
+      for (const [slotIndex, rec] of this.gardenPlotGroups.entries()) {
+        const d = Math.hypot(this.playerState.x - rec.slot.x, this.playerState.z - rec.slot.z);
+        if (d <= 3.6) {
+          interactPrompt = {
+            kind: 'garden',
+            slotIndex,
+            label: `🌱 [E] Chăm Sóc ${rec.slot.label}`
+          };
+          break;
+        }
+      }
+    }
+    if (!interactPrompt) {
+      const bellDist = Math.hypot(this.playerState.x - -44.0, this.playerState.z - -56.0);
+      if (bellDist <= 7.5) {
+        interactPrompt = {
+          kind: 'bell_rhythm',
+          label: '🔔 [E] Thỉnh Đại Hồng Chung · Gõ Mõ Chánh Niệm'
+        };
+      } else {
+        const koiDist = Math.hypot(this.playerState.x - 3.5, this.playerState.z - 33.0);
+        if (koiDist <= 10.2) {
+          interactPrompt = {
+            kind: 'koi_pond',
+            label: '🐟 [E] Cho Cá Koi Ăn · Tĩnh Tâm Hồ Sen'
+          };
+        }
+      }
+    }
+    const prevKey = this.nearestInteractPrompt
+      ? `${this.nearestInteractPrompt.kind}:${this.nearestInteractPrompt.leafId || this.nearestInteractPrompt.slotIndex || ''}`
+      : '';
+    const nextKey = interactPrompt
+      ? `${interactPrompt.kind}:${interactPrompt.leafId || interactPrompt.slotIndex || ''}`
+      : '';
+    if (prevKey !== nextKey) {
+      this.nearestInteractPrompt = interactPrompt;
+      this.onInteractProximity(interactPrompt);
+    }
   }
 
   initPointerAndWheelControls() {
@@ -9774,6 +10637,27 @@ export class VinhTrang3DWorld {
         }
       }
     } else {
+      if (this.courtyardLeafClickTargets?.length) {
+        const visibleLeaves = this.courtyardLeafClickTargets.filter((t) => t.parent?.visible);
+        if (visibleLeaves.length) {
+          const hits = raycaster.intersectObjects(visibleLeaves, false);
+          if (hits.length > 0) {
+            const leafId = hits[0].object?.userData?.leafId;
+            if (leafId) {
+              this.onObjectClick('COLLECT_LEAF', { leafId });
+              return;
+            }
+          }
+        }
+      }
+      if (this.gardenPlotClickTargets?.length) {
+        const hits = raycaster.intersectObjects(this.gardenPlotClickTargets, false);
+        if (hits.length > 0) {
+          const slotIndex = hits[0].object?.userData?.slotIndex ?? 0;
+          this.onObjectClick('OPEN_GARDEN_PLOT', { slotIndex });
+          return;
+        }
+      }
       if (this.sideDoorClickTargets?.length) {
         const hits = raycaster.intersectObjects(this.sideDoorClickTargets, true);
         if (hits.length > 0) {
@@ -10255,6 +11139,11 @@ export class VinhTrang3DWorld {
       }
     }
 
+    for (const grp of this.courtyardLeafMeshes.values()) {
+      if (!grp.visible) continue;
+      grp.position.y = 0.025 + Math.sin(elapsed * 2.2 + (grp.userData.phase || 0)) * 0.015;
+    }
+
     this.updateProjectedPins();
     this.renderer.render(this.scene, this.camera);
     if (this.isSoftwareGl) {
@@ -10264,8 +11153,7 @@ export class VinhTrang3DWorld {
         this.autoWalkWaypoints.length > 0 ||
         this.entranceTour.active ||
         this.lotusBloomState.active ||
-        this.trafficVehicleRecords.some((vehicle) => vehicle.state !== 'passing' || vehicle.group.position.x > -100 && vehicle.group.position.x < 120) ||
-        this.riggedNpcRecords.some((npc) => npc.temporary && npc.state === 'walk') ||
+        Boolean(this.interiorTransition) ||
         Boolean(
           this.activePlayerRecord?.activeAction && !this.activePlayerRecord.activeAction.paused
         );
@@ -10301,3 +11189,13 @@ export class VinhTrang3DWorld {
     window.setTimeout(poll, 8);
   }
 }
+
+export {
+  clearRiggedBoneProps,
+  recolorGarmentOnScene,
+  createBespokeRobeGroup,
+  createStoreAccessoryGroup,
+  createSculptedArhatShowcase
+} from './garment-and-showcase-3d.mjs';
+
+

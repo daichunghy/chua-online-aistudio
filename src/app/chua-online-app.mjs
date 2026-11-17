@@ -68,16 +68,30 @@ import {
   submitUserFeedback,
   unifyEquippedVisualPayload,
   encodeProfileBackupCode,
-  decodeProfileBackupCode
+  decodeProfileBackupCode,
+  PILGRIM_RANKS,
+  getPilgrimRankInfo,
+  grantPlayerXp,
+  COURTYARD_LEAF_SPOTS,
+  collectCourtyardTask,
+  TEMPLE_GARDEN_SPECIES,
+  TEMPLE_GARDEN_SLOTS,
+  plantGardenTree,
+  waterGardenSlot,
+  harvestGardenSlot,
+  scoreBellRhythmHit,
+  completeBellRhythmSession,
+  HERITAGE_RELICS,
+  discoverHeritageRelic
 } from '/src/logic/chua-online-logic.mjs';
+import { VinhTrang3DWorld } from '/src/app/vinh-trang-3d-world.mjs';
 import {
-  VinhTrang3DWorld,
   recolorGarmentOnScene,
   clearRiggedBoneProps,
   createBespokeRobeGroup,
   createStoreAccessoryGroup,
   createSculptedArhatShowcase
-} from '/src/app/vinh-trang-3d-world.mjs';
+} from '/src/app/garment-and-showcase-3d.mjs';
 
 const STORAGE_KEY = 'chua_online_vinh_trang_state_v11';
 
@@ -119,11 +133,16 @@ export class ChuaOnlineApp {
     this.saved = this.loadState();
     this.playerPos = { x: 35.5, z: 50.8, yaw: Math.PI - 0.16, moving: false };
     this.nearbyStallTrigger = null;
+    this.nearbyInteractPrompt = null;
     this._lastChanhDienBellAt = 0;
     this.entranceTourActive = false;
     this.spiritual = createSpiritualState(this.saved.spiritual);
     this.storeProfile = createStoreProfileState(this.saved.storeProfile);
     this.activityHub = ensureDailyMissionDate(createActivityHubState(this.saved.activityHub));
+    this.goalsTrackerCollapsed =
+      typeof this.saved.goalsTrackerCollapsed === 'boolean'
+        ? this.saved.goalsTrackerCollapsed
+        : typeof window !== 'undefined' && window.innerWidth <= 768;
     this.timeOfDay = TIME_OF_DAY_PRESETS[this.saved.timeOfDay] ? this.saved.timeOfDay : 'morning';
     this.elderFontScale = ['normal', 'large', 'xlarge'].includes(this.saved.elderFontScale)
       ? this.saved.elderFontScale
@@ -202,6 +221,7 @@ export class ChuaOnlineApp {
           spiritual: this.spiritual,
           storeProfile: this.storeProfile,
           activityHub: this.activityHub,
+          goalsTrackerCollapsed: this.goalsTrackerCollapsed,
           timeOfDay: this.timeOfDay,
           elderFontScale: this.elderFontScale,
           cart: this.cart,
@@ -427,9 +447,10 @@ export class ChuaOnlineApp {
               <span class="nav-activity-badge" id="nav-activity-badge" style="display:none;">0</span>
             </button>
 
-            <button class="nav-pill-btn nav-merit-btn" id="nav-btn-merit" title="Sổ Công Đức Thực Hành (Lễ Phật · Dâng hương · Dâng hoa)">
-              <span class="merit-lotus-glyph" aria-hidden="true">🪷</span>
+            <button class="nav-pill-btn nav-merit-btn" id="nav-btn-merit" title="Sổ Công Đức &amp; Cấp Bậc Hành Hương">
+              <span class="merit-lotus-glyph" id="nav-rank-badge" aria-hidden="true">🪷</span>
               <span>Công đức: <strong id="nav-merit-count">0</strong></span>
+              <span class="nav-rank-pill" id="nav-rank-xp-chip">0 XP</span>
             </button>
 
             <button class="nav-pill-btn" id="nav-btn-explore">
@@ -534,12 +555,83 @@ export class ChuaOnlineApp {
           </button>
         </section>
 
-        <!-- Interactive Proximity Prompt for Nhà Tạp Hóa Cổng Chùa -->
-        <button id="stall-proximity-btn" class="stall-proximity-prompt" type="button" style="display:none;" aria-label="Mở Nhà Tạp Hóa gần bạn">
-          <span class="stall-proximity-icon">🛒</span>
+        <!-- Collapsible Corner Daily Goals & Pilgrim Rank Tracker -->
+        <aside id="daily-goals-tracker" class="daily-goals-tracker ${this.goalsTrackerCollapsed ? 'collapsed' : ''}" aria-label="Mục tiêu hôm nay">
+          <div class="goals-tracker-head">
+            <div class="goals-rank-line">
+              <span id="goals-rank-badge" class="goals-rank-badge">🌱</span>
+              <div class="goals-rank-meta">
+                <div id="goals-rank-title" class="goals-rank-title">Thiện Duyên · Cấp 1</div>
+                <div id="goals-rank-xp" class="goals-rank-xp">0 / 120 XP</div>
+              </div>
+            </div>
+            <button type="button" id="btn-toggle-goals-tracker" class="goals-collapse-btn" aria-expanded="${!this.goalsTrackerCollapsed}" title="Thu gọn hoặc mở rộng Mục Tiêu Hôm Nay">
+              ${this.goalsTrackerCollapsed ? 'Mục tiêu ▾' : '✕'}
+            </button>
+          </div>
+          <div class="goals-xp-bar"><div id="goals-xp-fill" class="goals-xp-fill" style="width:0%"></div></div>
+          <div id="daily-goals-list" class="daily-goals-list"></div>
+        </aside>
+
+        <!-- Unified Interactive Proximity Prompt (Market Stall, Leaves, Garden, Bell, Koi) -->
+        <button id="stall-proximity-btn" class="stall-proximity-prompt" type="button" style="display:none;" aria-label="Tương tác điểm gần bạn">
+          <span class="stall-proximity-icon" id="stall-proximity-icon">🛒</span>
           <span id="stall-proximity-label">Ghé Nhà Tạp Hóa</span>
           <span class="stall-proximity-key">E</span>
         </button>
+
+        <!-- Bottom-Left Quick Pilgrimage & Touch/Help Dock -->
+        <aside id="courtyard-quick-dock" class="courtyard-quick-dock" aria-label="Lối tắt chiêm bái và cách di chuyển">
+          <div id="courtyard-help-popover" class="courtyard-help-popover" style="display:none;" role="region" aria-label="Hướng dẫn di chuyển">
+            <div class="courtyard-help-head">
+              <strong>Hướng dẫn tham quan Chùa 3D</strong>
+              <button type="button" id="btn-close-controls-help" class="courtyard-help-close" aria-label="Đóng hướng dẫn">✕</button>
+            </div>
+            <ul class="courtyard-help-list">
+              <li><strong>Đi lại:</strong> Dùng phím <b>W A S D</b> / mũi tên, bật <b>Phím đi</b> hoặc <b>chạm vào mặt sân</b>.</li>
+              <li><strong>Xoay &amp; thu phóng:</strong> Kéo chuột (hoặc vuốt) để xoay góc nhìn · Cuộn để phóng to/nhỏ.</li>
+              <li><strong>Hoạt động mỗi ngày:</strong> Quét lá Bồ Đề vàng trên sân, trồng hoa <b>Vườn Phật</b>, <b>Thỉnh Chuông – Gõ Mõ</b> đúng nhịp và đóng dấu <b>Sổ Di Sản</b> (bấm <b>E</b> hoặc chạm trực tiếp).</li>
+            </ul>
+          </div>
+
+          <div id="courtyard-dpad-pad" class="courtyard-dpad-pad" style="display:none;" aria-label="Phím điều hướng trên màn hình">
+            <span></span>
+            <button type="button" class="dpad-btn" data-dpad-dir="up" aria-label="Đi tới">▲</button>
+            <span></span>
+            <button type="button" class="dpad-btn" data-dpad-dir="left" aria-label="Sang trái">◀</button>
+            <span class="dpad-center-dot" aria-hidden="true">🪷</span>
+            <button type="button" class="dpad-btn" data-dpad-dir="right" aria-label="Sang phải">▶</button>
+            <span></span>
+            <button type="button" class="dpad-btn" data-dpad-dir="down" aria-label="Đi lùi">▼</button>
+            <span></span>
+          </div>
+
+          <div class="courtyard-dock-toolbar">
+            <button type="button" id="btn-toggle-quick-dock" class="dock-tool-btn active" aria-expanded="true">
+              <span>🧭 Đi nhanh</span>
+              <span class="dock-chevron" id="quick-dock-chevron">▾</span>
+            </button>
+            <button type="button" id="btn-toggle-dpad" class="dock-tool-btn" aria-expanded="false">
+              <span>🕹️ Phím đi</span>
+            </button>
+            <button type="button" id="btn-toggle-controls-help" class="dock-tool-btn" aria-expanded="false">
+              <span>❔ Cách đi</span>
+            </button>
+          </div>
+
+          <div id="quick-dock-chips" class="quick-dock-chips">
+            <button type="button" class="walk-chip-btn" data-walk-station="cong_tam_quan">⛩️ Tam Quan</button>
+            <button type="button" class="walk-chip-btn" data-walk-station="phat_adida">🪷 A Di Đà</button>
+            <button type="button" class="walk-chip-btn" data-walk-station="chanh_dien">🏛️ Chánh điện</button>
+            <button type="button" class="walk-chip-btn" id="btn-toggle-interior-hall">🚪 Vào Chánh điện</button>
+            <button type="button" class="walk-chip-btn" data-walk-station="phat_di_lac">😊 Di Lặc</button>
+            <button type="button" class="walk-chip-btn" data-walk-station="phat_niet_ban">☸️ Niết Bàn</button>
+            <button type="button" class="walk-chip-btn" data-walk-station="cua_hang_luu_niem">🛒 Tạp Hóa</button>
+            <button type="button" class="walk-chip-btn" id="btn-open-garden-modal">🌱 Vườn Phật</button>
+            <button type="button" class="walk-chip-btn" id="btn-open-bell-rhythm">🔔 Chuông Mõ</button>
+            <button type="button" class="walk-chip-btn" id="btn-open-heritage-book">📜 Di Sản</button>
+          </div>
+        </aside>
 
         <!-- Ritual / Narration Toast -->
         <div id="ritual-toast" role="status" aria-live="polite">
@@ -723,23 +815,18 @@ export class ChuaOnlineApp {
       onStationProximity: (station, dist) => {
         if (!station) return;
         this.activeStationKey = station.key;
-        this.updateAnCompanionCard();
+        this.tryAutoDiscoverHeritageByStation(station.key, { silent: true });
         if (station.key === 'chanh_dien' && typeof dist === 'number' && dist < 12.5 && !this.world3d?.insideInterior) {
           this.playChanhDienBellCadence();
         }
       },
       onStallProximity: (stall) => {
         this.nearbyStallTrigger = stall || null;
-        const btn = document.getElementById('stall-proximity-btn');
-        const label = document.getElementById('stall-proximity-label');
-        if (!btn || !label) return;
-        if (stall && !this.world3d?.insideInterior) {
-          const shortTitle = String(stall.title || 'Nhà Tạp Hóa').split('·')[0].trim();
-          label.textContent = `Ghé ${shortTitle}`;
-          btn.style.display = 'inline-flex';
-        } else {
-          btn.style.display = 'none';
-        }
+        this.refreshProximityPrompt();
+      },
+      onInteractProximity: (prompt) => {
+        this.nearbyInteractPrompt = prompt || null;
+        this.refreshProximityPrompt();
       },
       onEntranceTourChange: (active) => {
         this.entranceTourActive = Boolean(active);
@@ -758,8 +845,9 @@ export class ChuaOnlineApp {
           this.spiritual,
           `Ghé thăm ${station.name}`
         );
+        this.tryAutoDiscoverHeritageByStation(station.key, { silent: false });
         this.saveState();
-        this.updateActivityHubBadge();
+        this.updateActionBadges();
         this.highlightActiveWalkChip(station.key);
         this.playVoiceAudio(station.audio);
         if (station.key === 'chanh_dien') {
@@ -783,6 +871,7 @@ export class ChuaOnlineApp {
       },
       onLoaded: () => {
         this.syncStoreVisualsTo3D();
+        this.syncTempleWorldGameplayState();
       },
       onTransitionFade: (active) => {
         const veil = document.getElementById('temple-transition-veil');
@@ -790,17 +879,25 @@ export class ChuaOnlineApp {
       },
       onInteriorZoneChange: (zoneKey) => {
         this.highlightInteriorZoneChip(zoneKey);
+        if (zoneKey === 'chanh_dien') {
+          this.tryAutoDiscoverHeritageById('relic_long_tru', { silent: false });
+          this.tryAutoDiscoverHeritageById('relic_bat_bo_la_han', { silent: false });
+        } else if (zoneKey === 'khu_tho') {
+          this.tryAutoDiscoverHeritageById('relic_to_dat_ma', { silent: false });
+        }
       },
       onInteriorStateChange: (inside) => {
         const pinsLayer = document.getElementById('scene-pins-layer');
         const btn = document.getElementById('btn-toggle-interior-hall');
-        const stallBtn = document.getElementById('stall-proximity-btn');
         const zoneBar = document.getElementById('interior-zone-bar');
+        const goalsTracker = document.getElementById('daily-goals-tracker');
         if (pinsLayer) pinsLayer.style.display = inside ? 'none' : 'block';
         if (zoneBar) zoneBar.style.display = inside ? 'flex' : 'none';
+        if (goalsTracker) goalsTracker.style.display = inside ? 'none' : 'block';
         if (inside) {
           this.nearbyStallTrigger = null;
-          if (stallBtn) stallBtn.style.display = 'none';
+          this.nearbyInteractPrompt = null;
+          this.refreshProximityPrompt();
           if (btn) {
             btn.classList.add('active');
             btn.innerHTML = '← Ra Sân Chánh Điện 3D';
@@ -809,7 +906,9 @@ export class ChuaOnlineApp {
           const cutBtn = document.getElementById('btn-interior-cutaway');
           if (cutBtn) cutBtn.classList.toggle('active', Boolean(this.world3d?.interiorCutaway));
           this.spiritual = recordSpiritualMilestone(this.spiritual, 'Vào bên trong Chùa Chính');
+          this.tryAutoDiscoverHeritageById('relic_long_tru', { silent: true });
           this.saveState();
+          this.updateActionBadges();
           this.playBellTone(216, 2.6);
           this.showToast(
             'Bên trong Chùa Chính Chữ Quốc (國)',
@@ -824,6 +923,7 @@ export class ChuaOnlineApp {
             btn.classList.remove('active');
             btn.innerHTML = 'Vào Chánh điện';
           }
+          this.refreshProximityPrompt();
           this.showToast(
             'Ra sân chùa',
             'Bạn đã trở lại khoảng sân trước Chánh điện.',
@@ -835,7 +935,12 @@ export class ChuaOnlineApp {
         if (action === 'ENTER_INTERIOR') {
           this.toggleInteriorHallIn3D(true);
         } else if (action === 'OPEN_ARHAT') {
+          this.tryAutoDiscoverHeritageById('relic_bat_bo_la_han', { silent: true });
           this.openExploreModal('arhats', Number.isFinite(payload?.arhatIndex) ? payload.arhatIndex : 0);
+        } else if (action === 'COLLECT_LEAF') {
+          this.collectCourtyardLeafInApp(payload?.leafId);
+        } else if (action === 'OPEN_GARDEN_PLOT') {
+          this.openTempleGardenModal(Number.isFinite(payload?.slotIndex) ? payload.slotIndex : 0);
         } else if (action === 'LE_PHAT') {
           this.triggerLePhat();
         } else if (action === 'DANG_HUONG') {
@@ -857,21 +962,26 @@ export class ChuaOnlineApp {
         } else if (action === 'OPEN_LECTURE') {
           this.switchScreen('lecture');
         } else if (action === 'RING_BIG_BELL') {
+          this.tryAutoDiscoverHeritageById('relic_dai_hong_chung', { silent: true });
           this.playBellTone(174, 4.2);
           setTimeout(() => this.playBellTone(174, 3.6), 950);
           this.spiritual = recordSpiritualMilestone(this.spiritual, 'Thỉnh Đại Hồng Chung tại Lầu Chuông');
+          this.grantPilgrimXp(10, 'Thỉnh Đại Hồng Chung');
           this.saveState();
-          this.updateUGCMilestoneHUD();
-          this.showToast(
-            '🔔 Tiếng Đại Hồng Chung ngân vang khắp thiền viện',
-            'Âm chuông trầm ấm lan tỏa từ Lầu Chuông Đại Hồng Chung vùng đất cổ Mỹ Tho.',
-            4800,
-            true
-          );
+          this.updateActionBadges();
+          this.openBellRhythmModal();
         } else if (action === 'TOAST' && payload) {
           this.spiritual = recordSpiritualMilestone(this.spiritual, payload.title || 'Chiêm bái khuôn viên chùa');
+          const tLower = String(payload.title || '').toLowerCase();
+          if (tLower.includes('quán thế âm') || tLower.includes('quan âm')) {
+            this.tryAutoDiscoverHeritageById('relic_quan_am', { silent: true });
+          } else if (tLower.includes('bảo tháp')) {
+            this.tryAutoDiscoverHeritageById('relic_bao_thap', { silent: true });
+          } else if (tLower.includes('tổ đạt ma') || tLower.includes('tổ đường')) {
+            this.tryAutoDiscoverHeritageById('relic_to_dat_ma', { silent: true });
+          }
           this.saveState();
-          this.updateUGCMilestoneHUD();
+          this.updateActionBadges();
           this.showToast(payload.title, payload.desc, 4800, true);
         }
       }
@@ -884,98 +994,162 @@ export class ChuaOnlineApp {
     });
   }
 
-  updateAnCompanionCard() {
-    const st =
-      PILGRIMAGE_STATIONS.find((s) => s.key === this.activeStationKey) || PILGRIMAGE_STATIONS[5];
-    const stEl = document.getElementById('an-card-station');
-    const quoteEl = document.getElementById('an-card-quote');
-    const actBtn = document.getElementById('btn-an-station-action');
-    if (!stEl || !quoteEl || !actBtn) return;
-
-    const companionGuides = {
-      cong_tam_quan: {
-        quote: 'Chú tiểu An: "Cổng Tam Quan ghép mảnh sành sứ cổ lấp lánh dưới nắng. Bước qua cửa Không để lòng nhẹ tênh!"',
-        btnLabel: '🎧 Nghe thuyết minh Cổng Tam Quan'
-      },
-      ho_sen_ca_koi: {
-        quote: 'Chú tiểu An: "Song Liên Trì nước biếc sen hồng, đàn cá Koi vàng cam đang bơi lượn quanh Đài Quan Âm!"',
-        btnLabel: '🐟 Cho cá Koi ăn & Thả hoa sen'
-      },
-      phat_adida: {
-        quote: 'Chú tiểu An: "Đại tượng Phật A Di Đà cao sừng sững giữa vòm cây xanh, tay kết ấn Tiếp Dẫn từ bi."',
-        btnLabel: '🙏 Chiêm bái & Lễ Phật A Di Đà'
-      },
-      phat_di_lac: {
-        quote: 'Chú tiểu An: "Đức Phật Di Lặc nở nụ cười hoan hỷ bao dung, nhắc ta buông xả mọi phiền muộn."',
-        btnLabel: '😊 Lễ Phật Di Lặc & Cầu Hoan Hỷ'
-      },
-      lu_huong_san: {
-        quote: 'Chú tiểu An: "Trước Lư Hương đồng có đèn dầu thắp hương. Mời đạo hữu châm 3 nén tâm hương Giới - Định - Tuệ."',
-        btnLabel: '🔥 Thắp nhang từ đèn dầu (4 bước)'
-      },
-      chanh_dien: {
-        quote: 'Chú tiểu An: "Mặt tiền Chánh Điện 13 nhịp vòm vàng rực rỡ. Mời đạo hữu cởi giày bước vào Nội Điện 18 La Hán!"',
-        btnLabel: this.world3d?.insideInterior ? '🙏 Chiêm bái 18 Vị La Hán' : '🏛️ Vào Nội Điện 18 La Hán'
-      },
-      cua_hang_luu_niem: {
-        quote: 'Chú tiểu An: "Quầy Lưu Niệm có nón lá thêu sen, áo tràng, tràng hạt bồ đề và 20 pháp khí 3D để thử gắn!"',
-        btnLabel: '🏮 Mở Cửa Hàng Lưu Niệm 3D'
-      },
-      giang_duong: {
-        quote: 'Chú tiểu An: "Giảng đường gỗ lim trang nghiêm có 24 bài học Phật pháp và 10 giáo trình PDF gốc."',
-        btnLabel: '📖 Vào Giảng Đường Học Phật'
-      },
-      phat_niet_ban: {
-        quote: 'Chú tiểu An: "Sau Chánh Điện là Đại Tượng Phật Niết Bàn dài 28m và Bảo Tháp Xá Lợi 7 tầng uy nghiêm."',
-        btnLabel: '🔔 Thỉnh Chuông & Đọc Kệ Hồi Hướng'
-      }
-    };
-
-    const g = companionGuides[st.key] || companionGuides.chanh_dien;
-    stEl.textContent = st.pinLabel;
-    quoteEl.textContent = g.quote;
-    actBtn.textContent = g.btnLabel;
+  syncTempleWorldGameplayState() {
+    if (!this.world3d?.setTempleStateSync) return;
+    const todayKey = getLocalDateKey();
+    this.activityHub = ensureDailyMissionDate(this.activityHub, todayKey);
+    this.world3d.setTempleStateSync({
+      collectedLeafIds: this.activityHub?.courtyardTasks?.collectedIds || [],
+      gardenSlots: this.activityHub?.templeGarden || []
+    });
   }
 
-  triggerAnStationAction() {
-    const key = this.activeStationKey;
-    if (key === 'cong_tam_quan') {
-      this.playBellTone(216, 2.4);
-      this.playVoiceAudio('s0_chao.mp3');
-      this.showToast('⛩️ Cổng Tam Quan Nghệ Thuật Khảm Sành Sứ', 'Ba cửa Không — Vô Tướng — Vô Tác dẫn vào cõi thiền Vĩnh Tràng.', 4800, true);
-    } else if (key === 'ho_sen_ca_koi') {
-      this.world3d?.placeLotusOfferingIn3D();
-      this.playBellTone(324, 2.2);
-      this.spiritual = recordSpiritualMilestone(this.spiritual, 'Cho cá Koi ăn & Thả sen tại Song Liên Trì');
-      this.saveState();
-      this.updateUGCMilestoneHUD();
-      this.showToast('🐟 Đã rải thức ăn cho đàn cá Koi & Thả sen', 'Đàn cá Koi quẫy đuôi bơi lại gần mặt hồ sen trong vắt!', 4800, true);
-    } else if (key === 'phat_adida') {
-      this.playVoiceAudio('s1_adida.mp3');
-      this.triggerLePhat();
-    } else if (key === 'phat_di_lac') {
-      this.playVoiceAudio('s4_dilac.mp3');
-      this.triggerLePhat();
-    } else if (key === 'lu_huong_san') {
-      this.triggerDangHuong();
-    } else if (key === 'chanh_dien') {
-      if (this.world3d?.insideInterior) {
-        this.openExploreModal('arhats');
-      } else {
-        this.toggleInteriorHallIn3D(true);
-      }
-    } else if (key === 'cua_hang_luu_niem') {
-      this.openMarketplaceStallModal('huong_hoa', 'Sạp Hàng Cổng Chùa Vĩnh Tràng');
-    } else if (key === 'giang_duong') {
-      this.switchScreen('lecture');
-    } else if (key === 'phat_niet_ban') {
-      this.playBellTone(196, 3.2);
-      this.playVoiceAudio('s6_hoi_huong.mp3');
-      this.spiritual = recordSpiritualMilestone(this.spiritual, 'Hồi hướng tại Đại Tượng Phật Niết Bàn & Bảo Tháp 7 Tầng');
-      this.saveState();
-      this.updateUGCMilestoneHUD();
-      this.showToast('🔔 Nguyện Đem Công Đức Này — Hồi Hướng Khắp Tất Cả', 'Tiếng Đại Hồng Chung ngân vang từ Bảo Tháp 7 Tầng và Vườn Phật Niết Bàn.', 5200, true);
+  refreshProximityPrompt() {
+    const btn = document.getElementById('stall-proximity-btn');
+    const iconEl = document.getElementById('stall-proximity-icon');
+    const labelEl = document.getElementById('stall-proximity-label');
+    if (!btn || !labelEl) return;
+
+    if (this.world3d?.insideInterior) {
+      btn.style.display = 'none';
+      return;
     }
+
+    if (this.nearbyInteractPrompt) {
+      const p = this.nearbyInteractPrompt;
+      const cleanLabel = String(p.label || '')
+        .replace(/^[^\p{L}\p{N}[]+/u, '')
+        .replace(/\[E\]\s*/i, '')
+        .trim();
+      const iconMap = { leaf: '🍂', garden: '🌱', bell_rhythm: '🔔', koi_pond: '🐟' };
+      if (iconEl) iconEl.textContent = iconMap[p.kind] || '✨';
+      labelEl.textContent = cleanLabel || 'Tương tác';
+      btn.style.display = 'inline-flex';
+      return;
+    }
+
+    if (this.nearbyStallTrigger) {
+      const shortTitle = String(this.nearbyStallTrigger.title || 'Nhà Tạp Hóa').split('·')[0].trim();
+      if (iconEl) iconEl.textContent = '🛒';
+      labelEl.textContent = `Ghé ${shortTitle}`;
+      btn.style.display = 'inline-flex';
+      return;
+    }
+
+    btn.style.display = 'none';
+  }
+
+  handleProximityInteract() {
+    if (this.world3d?.insideInterior) return false;
+    if (this.nearbyInteractPrompt) {
+      const p = this.nearbyInteractPrompt;
+      if (p.kind === 'leaf' && p.leafId) {
+        this.collectCourtyardLeafInApp(p.leafId);
+        return true;
+      }
+      if (p.kind === 'garden') {
+        this.openTempleGardenModal(Number.isFinite(p.slotIndex) ? p.slotIndex : 0);
+        return true;
+      }
+      if (p.kind === 'bell_rhythm') {
+        this.openBellRhythmModal();
+        return true;
+      }
+      if (p.kind === 'koi_pond') {
+        this.feedKoiPondInApp();
+        return true;
+      }
+    }
+    if (this.nearbyStallTrigger) {
+      this.openMarketplaceStallModal(
+        this.nearbyStallTrigger.stallType || 'huong_hoa',
+        this.nearbyStallTrigger.title || 'Nhà Tạp Hóa Cổng Chùa Vĩnh Tràng'
+      );
+      return true;
+    }
+    return false;
+  }
+
+  grantPilgrimXp(amount, reasonLabel = '') {
+    const res = grantPlayerXp(this.activityHub, amount);
+    this.activityHub = res.activity;
+    if (res.leveledUp) {
+      this.playBellTone(360, 2.8);
+      this.showToast(
+        `${res.rankInfo.badge} Thăng bậc: ${res.rankInfo.title} (Cấp ${res.rankInfo.level})`,
+        reasonLabel ? `Từ hoạt động "${reasonLabel}", cô bác đã đạt bậc hành hương mới!` : 'Chúc mừng cô bác tinh tấn tu học mỗi ngày!',
+        4800,
+        false
+      );
+    }
+    return res;
+  }
+
+  tryAutoDiscoverHeritageById(relicId, { silent = false } = {}) {
+    const res = discoverHeritageRelic(this.activityHub, this.storeProfile, relicId, getLocalDateKey());
+    if (!res.ok || res.alreadyDiscovered) return res;
+    this.activityHub = res.activity;
+    this.storeProfile = res.storeProfile;
+    this.saveState();
+    this.updateActionBadges();
+    if (!silent) {
+      this.playBellTone(324, 2.0);
+      this.showToast('📜 Đóng dấu Sổ Di Sản Vĩnh Tràng', res.message, 4200, false);
+    }
+    return res;
+  }
+
+  tryAutoDiscoverHeritageByStation(stationKey, { silent = true } = {}) {
+    const matches = HERITAGE_RELICS.filter((r) => r.stationKey === stationKey);
+    for (const r of matches) {
+      if (r.id === 'relic_quan_am' || r.id === 'relic_long_tru' || r.id === 'relic_bat_bo_la_han') continue;
+      this.tryAutoDiscoverHeritageById(r.id, { silent });
+    }
+  }
+
+  collectCourtyardLeafInApp(leafId) {
+    if (!leafId) return;
+    const res = collectCourtyardTask(this.activityHub, this.storeProfile, leafId, getLocalDateKey());
+    if (!res.ok) {
+      this.showToast('Quét lá sân chùa', res.message, 2800, false);
+      return;
+    }
+    this.activityHub = res.activity;
+    this.storeProfile = res.storeProfile;
+    this.spiritual = performSpiritualAction(this.spiritual, 'SWEEP_LEAVES').state;
+    this.nearbyInteractPrompt = null;
+    this.saveState();
+    this.syncTempleWorldGameplayState();
+    this.updateActionBadges();
+    this.refreshProximityPrompt();
+    this.playMokugyoTap();
+    if (res.rewardGems > 0 || res.leveledUp) {
+      this.playBellTone(360, 2.4);
+    }
+    this.showToast(
+      `🍂 Đã quét lá (${res.collectedCount}/${res.totalSpots})`,
+      res.message,
+      3800,
+      false
+    );
+  }
+
+  feedKoiPondInApp() {
+    this.world3d?.placeLotusOfferingIn3D?.();
+    this.activityHub = ensureDailyMissionDate(this.activityHub, getLocalDateKey());
+    this.activityHub.koiFedCount = (this.activityHub.koiFedCount || 0) + 1;
+    this.storeProfile.lotusPoints += 12;
+    this.spiritual = recordSpiritualMilestone(this.spiritual, 'Cho cá Koi ăn & Thả sen tại Hồ Sen');
+    this.grantPilgrimXp(10, 'Cho cá Koi ăn');
+    this.saveState();
+    this.updateActionBadges();
+    this.playBellTone(324, 2.2);
+    this.showToast(
+      '🐟 Đã rải thức ăn cho đàn cá Koi (+12 🪷 · +10 XP)',
+      `Cô bác đã gieo duyên phóng sinh ${this.activityHub.koiFedCount} lần tại Hồ Sen Vĩnh Tràng.`,
+      4200,
+      true
+    );
   }
 
   highlightActiveWalkChip(stationKey) {
@@ -992,8 +1166,9 @@ export class ChuaOnlineApp {
       this.spiritual.visitedStations.push(st.id);
     }
     this.spiritual = recordSpiritualMilestone(this.spiritual, `Đến chiêm bái ${st.name}`);
+    this.tryAutoDiscoverHeritageByStation(stationKey, { silent: false });
     this.saveState();
-    this.updateUGCMilestoneHUD();
+    this.updateActionBadges();
     if (this.world3d) {
       if (this.world3d.insideInterior) {
         this.toggleInteriorHallIn3D(false);
@@ -1363,8 +1538,10 @@ export class ChuaOnlineApp {
     const shopEl = document.getElementById('shop-screen');
     const lectureEl = document.getElementById('lecture-screen');
     const pinsLayer = document.getElementById('scene-pins-layer');
+    const quickDock = document.getElementById('courtyard-quick-dock');
     if (shopEl) shopEl.classList.toggle('open', screenName === 'shop');
     if (lectureEl) lectureEl.classList.toggle('open', screenName === 'lecture');
+    if (quickDock) quickDock.style.display = screenName === 'courtyard' ? 'flex' : 'none';
     if (pinsLayer && !this.world3d?.insideInterior) {
       pinsLayer.style.display = screenName === 'courtyard' ? 'block' : 'none';
     }
@@ -1521,30 +1698,570 @@ export class ChuaOnlineApp {
     this.updateMeritCounterHUD();
     this.updateUGCMilestoneHUD();
     this.updateActivityHubBadge();
+    this.refreshGoalsTrackerHUD();
   }
 
   updateMeritCounterHUD() {
     const summary = calculateMeritSummary(this.spiritual);
+    const rank = getPilgrimRankInfo(this.activityHub?.xp || 0);
     const countEl = document.getElementById('nav-merit-count');
+    const badgeEl = document.getElementById('nav-rank-badge');
+    const xpEl = document.getElementById('nav-rank-xp-chip');
     if (countEl) {
       countEl.textContent = String(summary.totalActs);
+    }
+    if (badgeEl) {
+      badgeEl.textContent = rank.badge || '🪷';
+    }
+    if (xpEl) {
+      xpEl.textContent = `${rank.xp} XP`;
     }
     return summary;
   }
 
+  refreshGoalsTrackerHUD() {
+    const tracker = document.getElementById('daily-goals-tracker');
+    if (!tracker) return;
+    const todayKey = getLocalDateKey();
+    this.activityHub = ensureDailyMissionDate(this.activityHub, todayKey);
+    const rank = getPilgrimRankInfo(this.activityHub.xp || 0);
+    const badgeEl = document.getElementById('goals-rank-badge');
+    const titleEl = document.getElementById('goals-rank-title');
+    const xpEl = document.getElementById('goals-rank-xp');
+    const fillEl = document.getElementById('goals-xp-fill');
+    const toggleBtn = document.getElementById('btn-toggle-goals-tracker');
+    const listEl = document.getElementById('daily-goals-list');
+
+    if (badgeEl) badgeEl.textContent = rank.badge;
+    if (titleEl) titleEl.textContent = `${rank.title} · Cấp ${rank.level}`;
+    if (xpEl) {
+      xpEl.textContent = rank.nextTitle
+        ? `${rank.xp} / ${rank.nextMinXp} XP`
+        : `${rank.xp} XP · Tối đa`;
+    }
+    if (fillEl) {
+      fillEl.style.width = `${Math.round(rank.progressRatio * 100)}%`;
+    }
+    tracker.classList.toggle('collapsed', Boolean(this.goalsTrackerCollapsed));
+    if (toggleBtn) {
+      toggleBtn.setAttribute('aria-expanded', this.goalsTrackerCollapsed ? 'false' : 'true');
+      toggleBtn.textContent = this.goalsTrackerCollapsed ? 'Mục tiêu ▾' : '✕';
+    }
+    if (!listEl) return;
+
+    const missions = getDailyMissionsWithProgress(this.activityHub, todayKey);
+    const featuredIds = ['dm_leaves', 'dm_garden', 'dm_rhythm', 'dm_relics', 'dm_incense'];
+    const featured = featuredIds
+      .map((id) => missions.find((m) => m.id === id))
+      .filter(Boolean)
+      .slice(0, 4);
+
+    listEl.innerHTML = featured
+      .map((m) => {
+        const stateCls = m.claimed ? 'done' : m.claimable ? 'ready' : '';
+        const actionBtn = m.claimed
+          ? `<span class="goal-chip-done">✓</span>`
+          : m.claimable
+          ? `<button type="button" class="goal-chip-claim" data-goal-claim="${m.id}">Nhận</button>`
+          : `<button type="button" class="goal-chip-go" data-goal-go="${m.actionHint}">Làm</button>`;
+        return `
+        <div class="daily-goal-row ${stateCls}">
+          <span class="goal-row-icon">${m.icon}</span>
+          <div class="goal-row-main">
+            <div class="goal-row-title">${m.title}</div>
+            <div class="goal-row-prog">${m.current}/${m.target}</div>
+          </div>
+          ${actionBtn}
+        </div>`;
+      })
+      .join('');
+
+    listEl.querySelectorAll('[data-goal-go]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        this.executeQuestActionHint(btn.getAttribute('data-goal-go'));
+      });
+    });
+    listEl.querySelectorAll('[data-goal-claim]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const mid = btn.getAttribute('data-goal-claim');
+        const res = claimDailyMissionReward(this.activityHub, this.storeProfile, mid, getLocalDateKey());
+        this.activityHub = res.activity;
+        this.storeProfile = res.storeProfile;
+        if (res.ok) {
+          this.grantPilgrimXp(15, res.mission?.title || 'Nhiệm vụ hằng ngày');
+          this.playBellTone(324, 2.0);
+          this.showToast('🎁 Nhận lộc nhiệm vụ hôm nay', res.message, 3600, false);
+        }
+        this.saveState();
+        this.updateActionBadges();
+      });
+    });
+  }
+
+  openTempleGardenModal(focusSlotIdx = 0) {
+    let selectedSlot = Math.max(0, Math.min(TEMPLE_GARDEN_SLOTS.length - 1, Number(focusSlotIdx || 0)));
+    let selectedSpecies = TEMPLE_GARDEN_SPECIES[0].id;
+
+    const renderGarden = () => {
+      const todayKey = getLocalDateKey();
+      this.activityHub = ensureDailyMissionDate(this.activityHub, todayKey);
+      const slots = this.activityHub.templeGarden || [];
+      const stageLabels = ['Đất trống', '1/3 · Nảy mầm', '2/3 · Xanh tốt', '3/3 · Mãn khai 🌸'];
+
+      this.openModal(
+        '🌱 Vườn Cây Phật · Vườn Lâm Tỳ Ni',
+        `
+        <div class="garden-modal-wrap">
+          <div class="activity-banner-row">
+            <div>
+              <div style="font-size:16px;font-weight:800;color:#FFD875;">Gieo trồng &amp; Chăm tưới Cây Thiêng 3D</div>
+              <div style="font-size:13px;color:#FFF6E5;margin-top:2px;">Gieo hạt Sen, Bồ Đề hoặc Sa La trực tiếp lên 4 luống đất 3D bên Vườn Lâm Tỳ Ni. Tưới đủ 2 lần để thu hoạch 🪷 &amp; 💎!</div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+              <span class="store-wallet-pill">🪷 ${this.storeProfile.lotusPoints}</span>
+              <span class="store-wallet-pill">💎 ${this.storeProfile.gems}</span>
+              <button type="button" id="btn-garden-walk-3d" class="quest-claim-btn" style="background:#3D6B4A;">🚶 Ra Vườn 3D</button>
+            </div>
+          </div>
+
+          <div class="garden-slots-grid">
+            ${TEMPLE_GARDEN_SLOTS.map((meta, idx) => {
+              const slot = slots[idx] || { slotIdx: idx, speciesId: null, stage: 0, harvestCount: 0 };
+              const sp = TEMPLE_GARDEN_SPECIES.find((s) => s.id === slot.speciesId);
+              const isFocus = idx === selectedSlot;
+              return `
+              <div class="garden-slot-card ${isFocus ? 'focused' : ''} ${slot.stage >= 3 ? 'mature' : ''}" data-garden-select="${idx}">
+                <div class="garden-slot-head">
+                  <span class="quest-cat-pill">Luống ${idx + 1}</span>
+                  <span class="garden-stage-badge">${stageLabels[slot.stage || 0]}</span>
+                </div>
+                <div class="garden-slot-title">${sp ? `${sp.icon} ${sp.name}` : '🟫 Luống đất sạch'}</div>
+                <div class="garden-slot-sub">${meta.label} · Đã thu hoạch ${slot.harvestCount || 0} mùa</div>
+                <div class="quest-progress-track" style="margin:8px 0;">
+                  <div class="quest-progress-fill" style="width:${Math.round(((slot.stage || 0) / 3) * 100)}%"></div>
+                </div>
+                <div class="garden-slot-actions">
+                  ${
+                    !slot.speciesId
+                      ? `<button type="button" class="quest-claim-btn" data-garden-plant="${idx}">🌱 Gieo giống đã chọn</button>`
+                      : slot.stage < 3
+                      ? `<button type="button" class="quest-claim-btn" data-garden-water="${idx}">💧 Tưới nước (+12 🪷 · +15 XP)</button>`
+                      : `<button type="button" class="quest-claim-btn" style="background:#C96F4A;" data-garden-harvest="${idx}">🧺 Thu hoạch (+${sp?.harvestLotus || 60} 🪷 · +${sp?.harvestGems || 2} 💎)</button>`
+                  }
+                </div>
+              </div>`;
+            }).join('')}
+          </div>
+
+          <div class="garden-species-bar">
+            <div style="font-size:13.5px;font-weight:800;color:#5C381F;margin-bottom:6px;">Chọn giống cây để gieo vào luống trống:</div>
+            <div class="garden-species-grid">
+              ${TEMPLE_GARDEN_SPECIES.map((sp) => `
+                <button type="button" class="garden-species-btn ${selectedSpecies === sp.id ? 'active' : ''}" data-garden-species="${sp.id}">
+                  <div class="garden-sp-top"><span>${sp.icon} ${sp.name}</span><strong>🪷 ${sp.seedCostLotus}</strong></div>
+                  <div class="garden-sp-desc">${sp.desc}</div>
+                  <div class="garden-sp-yield">Thu hoạch: +${sp.harvestLotus} 🪷 · +${sp.harvestGems} 💎 · +${sp.harvestXp} XP</div>
+                </button>
+              `).join('')}
+            </div>
+          </div>
+        </div>
+        `
+      );
+
+      document.getElementById('btn-garden-walk-3d')?.addEventListener('click', () => {
+        this.closeModal();
+        this.switchScreen('courtyard');
+        if (this.world3d?.insideInterior) this.toggleInteriorHallIn3D(false);
+        this.walkToStationIn3D('vuon_lam_ty_ni');
+      });
+
+      document.querySelectorAll('[data-garden-select]').forEach((card) => {
+        card.addEventListener('click', (e) => {
+          if (e.target.closest('button')) return;
+          selectedSlot = Number(card.getAttribute('data-garden-select') || 0);
+          renderGarden();
+        });
+      });
+
+      document.querySelectorAll('[data-garden-species]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          selectedSpecies = btn.getAttribute('data-garden-species') || TEMPLE_GARDEN_SPECIES[0].id;
+          this.playMokugyoTap();
+          renderGarden();
+        });
+      });
+
+      document.querySelectorAll('[data-garden-plant]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const idx = Number(btn.getAttribute('data-garden-plant') || 0);
+          const res = plantGardenTree(this.activityHub, this.storeProfile, idx, selectedSpecies, getLocalDateKey());
+          this.activityHub = res.activity;
+          this.storeProfile = res.storeProfile;
+          if (!res.ok) {
+            this.showToast('Vườn Cây Phật', res.message, 3200, false);
+            return;
+          }
+          this.saveState();
+          this.syncTempleWorldGameplayState();
+          this.updateActionBadges();
+          this.playMokugyoTap();
+          this.showToast('🌱 Gieo hạt thành công', res.message, 3600, false);
+          renderGarden();
+        });
+      });
+
+      document.querySelectorAll('[data-garden-water]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const idx = Number(btn.getAttribute('data-garden-water') || 0);
+          const res = waterGardenSlot(this.activityHub, this.storeProfile, idx, getLocalDateKey());
+          this.activityHub = res.activity;
+          this.storeProfile = res.storeProfile;
+          if (!res.ok) {
+            this.showToast('Vườn Cây Phật', res.message, 3200, false);
+            return;
+          }
+          this.saveState();
+          this.syncTempleWorldGameplayState();
+          this.updateActionBadges();
+          this.playBellTone(324, 1.8);
+          this.showToast('💧 Tưới nước vườn thiền', res.message, 3600, false);
+          renderGarden();
+        });
+      });
+
+      document.querySelectorAll('[data-garden-harvest]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const idx = Number(btn.getAttribute('data-garden-harvest') || 0);
+          const res = harvestGardenSlot(this.activityHub, this.storeProfile, idx, getLocalDateKey());
+          this.activityHub = res.activity;
+          this.storeProfile = res.storeProfile;
+          if (!res.ok) {
+            this.showToast('Vườn Cây Phật', res.message, 3200, false);
+            return;
+          }
+          this.saveState();
+          this.syncTempleWorldGameplayState();
+          this.updateActionBadges();
+          this.playBellTone(360, 2.6);
+          this.showToast('🌸 Thu hoạch hoa thiêng', res.message, 4200, true);
+          renderGarden();
+        });
+      });
+    };
+
+    renderGarden();
+  }
+
+  openBellRhythmModal() {
+    if (this._rhythmSession?.rafId) {
+      cancelAnimationFrame(this._rhythmSession.rafId);
+    }
+    const TOTAL_BEATS = 8;
+    const BEAT_INTERVAL_MS = 1150;
+    const LEAD_IN_MS = 1100;
+
+    const session = {
+      active: false,
+      finished: false,
+      startMs: 0,
+      beatIndex: 0,
+      hits: [],
+      combo: 0,
+      lastGradeText: 'Bấm "Bắt đầu khóa nhịp" rồi gõ Chuông / Mõ đúng khi vòng sáng chạm tâm!',
+      rafId: null,
+      result: null
+    };
+    this._rhythmSession = session;
+
+    const renderRhythmShell = () => {
+      const best = this.activityHub?.bellRhythmBest || 0;
+      const doneRes = session.result;
+      this.openModal(
+        '🔔 Thỉnh Chuông & Gõ Mõ Chánh Niệm',
+        `
+        <div class="rhythm-modal-wrap">
+          <div class="activity-banner-row">
+            <div>
+              <div style="font-size:16px;font-weight:800;color:#FFD875;">Khóa lễ Chuông – Mõ 8 nhịp Chánh Niệm</div>
+              <div style="font-size:13px;color:#FFF6E5;margin-top:2px;">Canh đúng lúc vòng ánh sáng thu vào vòng tròn vàng ở giữa, bấm nút gõ (hoặc phím <b>Space</b>) để giữ nhịp thanh tịnh.</div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <span class="store-wallet-pill">🏆 Kỷ lục: ${best}</span>
+              <span class="store-wallet-pill" id="rhythm-combo-pill">🔥 Chuỗi: ${session.combo}</span>
+            </div>
+          </div>
+
+          <div class="rhythm-stage-box">
+            <div class="rhythm-beat-counter" id="rhythm-beat-counter">
+              ${
+                doneRes
+                  ? `Hoàn tất ${TOTAL_BEATS}/${TOTAL_BEATS} nhịp · Chuẩn xác ${doneRes.accuracy}%`
+                  : session.active
+                  ? `Nhịp ${Math.min(TOTAL_BEATS, session.beatIndex + 1)} / ${TOTAL_BEATS}`
+                  : `Sẵn sàng (${TOTAL_BEATS} nhịp Chuông – Mõ)`
+              }
+            </div>
+
+            <div class="rhythm-target-arena">
+              <div class="rhythm-approach-ring" id="rhythm-approach-ring"></div>
+              <button type="button" id="btn-rhythm-strike" class="rhythm-center-gong" ${session.active ? '' : 'disabled'}>
+                <span class="rhythm-gong-icon" id="rhythm-gong-icon">🔔</span>
+                <span class="rhythm-gong-label" id="rhythm-gong-label">${session.active ? 'GÕ NGAY (Space)' : 'CHUÔNG · MÕ'}</span>
+              </button>
+            </div>
+
+            <div class="rhythm-feedback-banner" id="rhythm-feedback-banner">${session.lastGradeText}</div>
+
+            ${
+              doneRes
+                ? `<div class="rhythm-summary-strip">
+                    <span>Điểm: <strong>${doneRes.totalScore}</strong></span>
+                    <span>Chuẩn nhịp: <strong>${doneRes.accuracy}%</strong></span>
+                    <span>Chuỗi tối đa: <strong>${doneRes.maxCombo}</strong></span>
+                    <span>Thưởng: <strong>+${doneRes.rewardLotus} 🪷 · +${doneRes.rewardGems} 💎 · +${doneRes.xpGranted} XP</strong></span>
+                  </div>`
+                : ''
+            }
+
+            <div class="rhythm-controls-row">
+              <button type="button" id="btn-rhythm-start" class="quest-claim-btn" style="min-height:44px;padding:0 22px;font-size:14.5px;">
+                ${doneRes ? '🔄 Luyện lại một khóa nữa' : session.active ? '⏳ Đang giữ nhịp...' : '▶ Bắt đầu khóa nhịp (8 nhịp)'}
+              </button>
+              <button type="button" id="btn-rhythm-walk-tower" class="quest-go-btn" style="min-height:44px;">
+                🚶 Tới Lầu Đại Hồng Chung
+              </button>
+            </div>
+          </div>
+        </div>
+        `
+      );
+
+      const finishSession = () => {
+        if (session.finished) return;
+        session.finished = true;
+        session.active = false;
+        if (session.rafId) {
+          cancelAnimationFrame(session.rafId);
+          session.rafId = null;
+        }
+        while (session.hits.length < TOTAL_BEATS) {
+          session.hits.push({ grade: 'miss', label: 'Lỡ nhịp', points: 0 });
+        }
+        const res = completeBellRhythmSession(this.activityHub, this.storeProfile, session.hits, getLocalDateKey());
+        this.activityHub = res.activity;
+        this.storeProfile = res.storeProfile;
+        session.result = res;
+        this.saveState();
+        this.updateActionBadges();
+        this.playBellTone(216, 3.0);
+        this.showToast('🔔 Hoàn tất khóa Thỉnh Chuông', res.message, 4200, true);
+        renderRhythmShell();
+      };
+
+      const handleStrike = () => {
+        if (!session.active || session.finished) return;
+        const now = performance.now();
+        const targetTime = session.startMs + LEAD_IN_MS + session.beatIndex * BEAT_INTERVAL_MS;
+        const offsetMs = now - targetTime;
+        const scored = scoreBellRhythmHit(offsetMs);
+        session.hits.push(scored);
+        if (scored.points > 0) {
+          session.combo += 1;
+          if (session.beatIndex % 2 === 0) {
+            this.playBellTone(243, 1.8);
+          } else {
+            this.playMokugyoTap();
+          }
+        } else {
+          session.combo = 0;
+          this.playMokugyoTap();
+        }
+        session.lastGradeText = `${scored.label} (+${scored.points} điểm)`;
+        session.beatIndex += 1;
+
+        const fb = document.getElementById('rhythm-feedback-banner');
+        const comboEl = document.getElementById('rhythm-combo-pill');
+        const cntEl = document.getElementById('rhythm-beat-counter');
+        if (fb) fb.textContent = session.lastGradeText;
+        if (comboEl) comboEl.textContent = `🔥 Chuỗi: ${session.combo}`;
+        if (cntEl && session.beatIndex < TOTAL_BEATS) {
+          cntEl.textContent = `Nhịp ${session.beatIndex + 1} / ${TOTAL_BEATS}`;
+        }
+        if (session.beatIndex >= TOTAL_BEATS) {
+          finishSession();
+        }
+      };
+      session.strike = handleStrike;
+
+      document.getElementById('btn-rhythm-strike')?.addEventListener('click', handleStrike);
+
+      document.getElementById('btn-rhythm-walk-tower')?.addEventListener('click', () => {
+        this.closeModal();
+        this.switchScreen('courtyard');
+        if (this.world3d?.insideInterior) this.toggleInteriorHallIn3D(false);
+        this.walkToStationIn3D('thap_chuong_dai_hong');
+      });
+
+      document.getElementById('btn-rhythm-start')?.addEventListener('click', () => {
+        if (session.active) return;
+        session.active = true;
+        session.finished = false;
+        session.result = null;
+        session.startMs = performance.now();
+        session.beatIndex = 0;
+        session.hits = [];
+        session.combo = 0;
+        session.lastGradeText = 'Lắng nghe nhịp đầu tiên...';
+        renderRhythmShell();
+        this.playBellTone(216, 1.6);
+
+        const tick = () => {
+          if (!this._rhythmSession || this._rhythmSession !== session || !session.active || session.finished) return;
+          const now = performance.now();
+          const targetTime = session.startMs + LEAD_IN_MS + session.beatIndex * BEAT_INTERVAL_MS;
+          const timeToBeat = targetTime - now;
+
+          if (timeToBeat < -340) {
+            session.hits.push({ grade: 'miss', label: 'Lỡ nhịp', points: 0 });
+            session.combo = 0;
+            session.lastGradeText = 'Lỡ nhịp (0 điểm)';
+            session.beatIndex += 1;
+            const fb = document.getElementById('rhythm-feedback-banner');
+            const comboEl = document.getElementById('rhythm-combo-pill');
+            const cntEl = document.getElementById('rhythm-beat-counter');
+            if (fb) fb.textContent = session.lastGradeText;
+            if (comboEl) comboEl.textContent = `🔥 Chuỗi: ${session.combo}`;
+            if (cntEl && session.beatIndex < TOTAL_BEATS) {
+              cntEl.textContent = `Nhịp ${session.beatIndex + 1} / ${TOTAL_BEATS}`;
+            }
+            if (session.beatIndex >= TOTAL_BEATS) {
+              finishSession();
+              return;
+            }
+          }
+
+          const ringEl = document.getElementById('rhythm-approach-ring');
+          const iconEl = document.getElementById('rhythm-gong-icon');
+          if (ringEl) {
+            const nextTarget = session.startMs + LEAD_IN_MS + session.beatIndex * BEAT_INTERVAL_MS;
+            const remaining = nextTarget - now;
+            const norm = Math.max(0, Math.min(1, remaining / BEAT_INTERVAL_MS));
+            const scale = 1 + norm * 1.15;
+            ringEl.style.transform = `scale(${scale.toFixed(3)})`;
+            ringEl.style.opacity = remaining < -250 ? '0.2' : '0.92';
+            ringEl.style.borderColor = Math.abs(remaining) <= 130 ? '#FFD875' : '#E68A45';
+          }
+          if (iconEl) {
+            iconEl.textContent = session.beatIndex % 2 === 0 ? '🔔' : '🪵';
+          }
+          session.rafId = requestAnimationFrame(tick);
+        };
+        session.rafId = requestAnimationFrame(tick);
+      });
+    };
+
+    renderRhythmShell();
+  }
+
+  openHeritageBookModal() {
+    const renderBook = () => {
+      const discovered = Array.isArray(this.activityHub?.heritageRelics)
+        ? this.activityHub.heritageRelics
+        : [];
+      const rank = getPilgrimRankInfo(this.activityHub?.xp || 0);
+
+      this.openModal(
+        `📜 Sổ Di Sản Chùa Vĩnh Tràng (${discovered.length}/${HERITAGE_RELICS.length})`,
+        `
+        <div class="heritage-modal-wrap">
+          <div class="activity-banner-row">
+            <div>
+              <div style="font-size:16px;font-weight:800;color:#FFD875;">Bộ sưu tập 10 Dấu Ấn Kiến Trúc &amp; Cổ Tự (1849 – nay)</div>
+              <div style="font-size:13px;color:#FFF6E5;margin-top:2px;">Đến gần từng công trình, tượng Phật hoặc nhấn “Đi tới &amp; Đóng dấu” để sưu tầm trọn bộ lịch sử Chùa Vĩnh Tràng.</div>
+            </div>
+            <div class="store-wallet-pill">${rank.badge} ${rank.title} · ${rank.xp} XP</div>
+          </div>
+
+          <div class="heritage-relics-grid">
+            ${HERITAGE_RELICS.map((r, idx) => {
+              const stamped = discovered.includes(r.id);
+              const pos = this.world3d?.playerPos || this.playerPos;
+              const dist = Math.hypot((pos?.x || 0) - r.pos.x, (pos?.z || 0) - r.pos.z);
+              const canStampNow = !stamped && dist <= 16;
+              return `
+              <article class="heritage-card ${stamped ? 'stamped' : ''}">
+                <div class="heritage-card-head">
+                  <span class="quest-cat-pill">#${idx + 1} · ${r.era}</span>
+                  <span class="heritage-seal ${stamped ? 'done' : ''}">${stamped ? '✓ Đã đóng dấu' : `+${r.rewardLotus} 🪷 · +${r.rewardXp} XP`}</span>
+                </div>
+                <div class="heritage-card-title">${r.name}</div>
+                <p class="heritage-card-desc">${r.desc}</p>
+                <div class="heritage-card-actions">
+                  ${
+                    canStampNow
+                      ? `<button type="button" class="quest-claim-btn" data-relic-stamp="${r.id}">📜 Đóng dấu ngay</button>`
+                      : ''
+                  }
+                  <button type="button" class="quest-go-btn" data-relic-walk="${r.stationKey}" data-relic-id="${r.id}">
+                    ${stamped ? '🚶 Ghé lại' : '🚶 Đi tới chiêm bái'}
+                  </button>
+                </div>
+              </article>`;
+            }).join('')}
+          </div>
+        </div>
+        `
+      );
+
+      document.querySelectorAll('[data-relic-stamp]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const rid = btn.getAttribute('data-relic-stamp');
+          if (rid) {
+            this.tryAutoDiscoverHeritageById(rid, { silent: false });
+            renderBook();
+          }
+        });
+      });
+
+      document.querySelectorAll('[data-relic-walk]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const stKey = btn.getAttribute('data-relic-walk') || 'chanh_dien';
+          const rid = btn.getAttribute('data-relic-id');
+          this.closeModal();
+          this.switchScreen('courtyard');
+          if (rid === 'relic_long_tru' || rid === 'relic_bat_bo_la_han' || rid === 'relic_to_dat_ma') {
+            this.toggleInteriorHallIn3D(true, () => {
+              if (rid === 'relic_to_dat_ma') {
+                this.world3d?.goToInteriorZone?.('khu_tho');
+              }
+              this.tryAutoDiscoverHeritageById(rid, { silent: false });
+            });
+          } else {
+            if (this.world3d?.insideInterior) this.toggleInteriorHallIn3D(false);
+            this.walkToStationIn3D(stKey);
+          }
+        });
+      });
+    };
+
+    renderBook();
+  }
+
   openMeritSummaryModal() {
     const m = calculateMeritSummary(this.spiritual);
+    const rank = getPilgrimRankInfo(this.activityHub?.xp || 0);
     this.openModal(
-      'Sổ Công Đức Thực Hành',
+      'Sổ Công Đức & Cấp Bậc Hành Hương',
       `
       <div class="merit-summary-wrap">
         <div class="merit-hero-banner">
           <div>
-            <div style="font-size:13px;font-weight:700;color:#FFE4A0;">TỔNG LẦN THỰC HÀNH NGHI LỄ</div>
+            <div style="font-size:13px;font-weight:700;color:#FFE4A0;">${rank.badge} ${rank.title.toUpperCase()} · CẤP ${rank.level} (${rank.xp} XP)</div>
             <div class="merit-total-num">${m.totalActs} <span style="font-size:16px;font-weight:700;">công đức</span></div>
           </div>
           <div style="font-size:13.5px;max-width:340px;line-height:1.45;color:#FFF6E5;">
-            Ghi nhận số lần bạn thực hiện Lễ Phật, Dâng hương và Dâng hoa trong hành trình viếng Chùa Vĩnh Tràng.
+            Ghi nhận số lần Lễ Phật, Dâng hương, Dâng hoa, Quét lá Bồ Đề, Chăm Vườn Phật và Sổ Di Sản trong hành trình viếng Chùa Vĩnh Tràng.
           </div>
         </div>
 
@@ -1835,6 +2552,7 @@ export class ChuaOnlineApp {
 
     const res = performSpiritualAction(this.spiritual, 'LE_PHAT');
     this.spiritual = res.state;
+    this.grantPilgrimXp(10, 'Lễ Phật Tam Bái');
     this.saveState();
     this.updateActionBadges();
     this.world3d?.playPlayerBowAnimation();
@@ -1998,6 +2716,7 @@ export class ChuaOnlineApp {
     const res = performSpiritualAction(this.spiritual, 'DANG_HOA');
     this.spiritual = res.state;
     this.activityHub = recordDailyMissionMetric(this.activityHub, 'dailyLotus', 1);
+    this.grantPilgrimXp(10, 'Dâng hoa sen');
     this.saveState();
     this.updateActionBadges();
     this.updateEquippedTags();
@@ -2284,6 +3003,9 @@ export class ChuaOnlineApp {
       const r = performSpiritualAction(this.spiritual, 'NIEM_PHAT_BEAD', { count });
       this.spiritual = r.state;
       this.activityHub = recordDailyMissionMetric(this.activityHub, 'dailyBeads', count);
+      if (count >= 10 || this.spiritual.malaBeads === 0) {
+        this.grantPilgrimXp(8, 'Niệm Phật Tràng Hạt');
+      }
       this.saveState();
       this.updateActionBadges();
       this.playMokugyoTap();
@@ -2746,6 +3468,7 @@ export class ChuaOnlineApp {
             this.completedLessons.add(lesson.id);
             if (wasNew) {
               this.activityHub = recordDailyMissionMetric(this.activityHub, 'dailyLessons', 1);
+              this.grantPilgrimXp(20, lesson.title);
             }
             this.saveState();
             this.updateActionBadges();
@@ -3482,6 +4205,14 @@ export class ChuaOnlineApp {
       this.openExploreModal('stations');
     } else if (actionHint === 'lecture') {
       this.switchScreen('lecture');
+    } else if (actionHint === 'courtyard_leaf') {
+      this.openExploreModal('sweep');
+    } else if (actionHint === 'garden') {
+      this.openTempleGardenModal(0);
+    } else if (actionHint === 'bell_rhythm') {
+      this.openBellRhythmModal();
+    } else if (actionHint === 'heritage') {
+      this.openHeritageBookModal();
     }
   }
 
@@ -4060,22 +4791,48 @@ export class ChuaOnlineApp {
         };
         renderArhatMuseum();
       } else if (sub === 'sweep') {
+        const todayKey = getLocalDateKey();
+        this.activityHub = ensureDailyMissionDate(this.activityHub, todayKey);
+        const collectedIds = this.activityHub?.courtyardTasks?.collectedIds || [];
         box.innerHTML = `
-          <div style="background:#fffdf8;border:1.5px solid rgba(140,100,60,0.28);border-radius:18px;padding:18px;text-align:center;">
-            <div style="font-size:19px;font-weight:800;color:#472915;">Quét lá sân chùa</div>
-            <p style="font-size:14px;color:#4a2f18;margin:6px auto 14px;max-width:520px;">
-              "Chổi tre quét sạch lá vàng, lòng người nhẹ bớt ngổn ngang bụi trần." Bạn đã quét sạch <strong>${this.spiritual.leavesSwept}</strong> đợt lá rụng trên sân Chánh điện.
-            </p>
-            <button id="btn-do-sweep" class="product-detail-btn" style="max-width:280px;">Quét lá sân chùa</button>
+          <div style="display:flex;flex-direction:column;gap:12px;">
+            <div class="activity-banner-row">
+              <div>
+                <div style="font-size:16px;font-weight:800;color:#FFD875;">🍂 Quét Lá Bồ Đề Vàng Sân Chùa (${collectedIds.length}/${COURTYARD_LEAF_SPOTS.length} hôm nay)</div>
+                <div style="font-size:13px;color:#FFF6E5;margin-top:2px;">Nhặt trực tiếp lá vàng phát sáng trên sân 3D hoặc bấm đi tới từng điểm (+15 🪷 · +15 XP mỗi lá, cứ 4 lá thưởng thêm +1 💎).</div>
+              </div>
+              <div class="store-wallet-pill">Tổng đã quét: ${this.activityHub?.courtyardTasks?.totalSwept || this.spiritual.leavesSwept}</div>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px;">
+              ${COURTYARD_LEAF_SPOTS.map((sp) => {
+                const done = collectedIds.includes(sp.id);
+                return `
+                <div style="background:#fffdf8;border:1.5px solid ${done ? '#3D6B4A' : 'rgba(140,100,60,0.28)'};border-radius:14px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;gap:10px;">
+                  <div>
+                    <div style="font-size:13.5px;font-weight:800;color:#5C381F;">${done ? '✓' : '🍂'} ${sp.label}</div>
+                    <div style="font-size:12px;color:#6E5034;margin-top:2px;">${done ? 'Đã quét sạch hôm nay' : 'Đang rụng lá vàng trên sân 3D'}</div>
+                  </div>
+                  ${
+                    done
+                      ? `<span class="quest-done-tag">Xong</span>`
+                      : `<button type="button" class="quest-go-btn" data-sweep-walk="${sp.id}">🚶 Đi quét</button>`
+                  }
+                </div>`;
+              }).join('')}
+            </div>
           </div>
         `;
-        document.getElementById('btn-do-sweep')?.addEventListener('click', () => {
-          const r = performSpiritualAction(this.spiritual, 'SWEEP_LEAVES');
-          this.spiritual = r.state;
-          this.saveState();
-          this.updateUGCMilestoneHUD();
-          this.playMokugyoTap();
-          renderSub('sweep');
+        box.querySelectorAll('[data-sweep-walk]').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            const lid = btn.getAttribute('data-sweep-walk');
+            const spot = COURTYARD_LEAF_SPOTS.find((s) => s.id === lid);
+            if (!spot) return;
+            this.closeModal();
+            this.switchScreen('courtyard');
+            if (this.world3d?.insideInterior) this.toggleInteriorHallIn3D(false);
+            this.world3d?.walkToPoint?.(spot.pos.x, spot.pos.z, spot.label);
+            this.showToast('🍂 Đang đi tới quét lá Bồ Đề', `Bấm trực tiếp vào lá vàng hoặc nhấn [E] khi tới ${spot.label}.`, 3600, false);
+          });
         });
       }
     };
@@ -4443,11 +5200,12 @@ export class ChuaOnlineApp {
           </div>
         `;
       } else if (activeTab === 'quests') {
+        const rank = getPilgrimRankInfo(this.activityHub.xp || 0);
         bodyHtml = `
           <div class="activity-banner-row">
             <div>
-              <div style="font-size:16.5px;font-weight:800;color:#FFD875;">🌅 Nhiệm vụ Hôm nay &amp; Hành trình 7 Ngày Khám phá</div>
-              <div style="font-size:13px;color:#FFF6E5;margin-top:2px;">Thực hành nhẹ nhàng mỗi ngày để tích điểm Sen 🪷 &amp; Ngọc 💎 thỉnh Áo tràng đẹp.</div>
+              <div style="font-size:16.5px;font-weight:800;color:#FFD875;">${rank.badge} Cấp bậc: ${rank.title} (Cấp ${rank.level}) · ${rank.xp} XP</div>
+              <div style="font-size:13px;color:#FFF6E5;margin-top:2px;">Quét lá, chăm Vườn Phật, Thỉnh Chuông–Mõ và sưu tầm Di Sản mỗi ngày để tích 🪷 &amp; 💎.</div>
             </div>
             <div style="display:flex;gap:8px;align-items:center;">
               <span class="store-wallet-pill">🪷 ${this.storeProfile.lotusPoints}</span>
@@ -5123,8 +5881,10 @@ export class ChuaOnlineApp {
       window.addEventListener('pointerup', onUp);
       window.addEventListener('pointermove', onMove);
 
+      let profileTimer = null;
       this._profileStageDispose = () => {
         disposed = true;
+        if (profileTimer) clearTimeout(profileTimer);
         canvas.removeEventListener('pointerdown', onDown);
         window.removeEventListener('pointerup', onUp);
         window.removeEventListener('pointermove', onMove);
@@ -5134,15 +5894,18 @@ export class ChuaOnlineApp {
       stageGroup.rotation.y = 0.18;
       renderer.render(scene, camera);
 
+      const tickDelay = this.world3d?.isSoftwareGl ? 240 : 33;
       const tick = () => {
         if (disposed || !document.body.contains(canvas)) {
           if (!disposed) this._profileStageDispose?.();
           return;
         }
-        if (mixer) mixer.update(0.032);
+        if (mixer) mixer.update(tickDelay / 1000);
         if (!dragging) stageGroup.rotation.y += 0.006;
         renderer.render(scene, camera);
-        setTimeout(() => requestAnimationFrame(tick), 33);
+        profileTimer = setTimeout(() => {
+          if (!disposed) requestAnimationFrame(tick);
+        }, tickDelay);
       };
       tick();
     } catch {}
@@ -5216,8 +5979,10 @@ export class ChuaOnlineApp {
       window.addEventListener('pointerup', onUp);
       window.addEventListener('pointermove', onMove);
 
+      let arhatTimer = null;
       this._arhatStageDispose = () => {
         disposed = true;
+        if (arhatTimer) clearTimeout(arhatTimer);
         canvas.removeEventListener('pointerdown', onDown);
         window.removeEventListener('pointerup', onUp);
         window.removeEventListener('pointermove', onMove);
@@ -5227,6 +5992,7 @@ export class ChuaOnlineApp {
       stageGroup.rotation.y = 0.25;
       renderer.render(scene, camera);
 
+      const tickDelay = this.world3d?.isSoftwareGl ? 240 : 33;
       const tick = () => {
         if (disposed || !document.body.contains(canvas)) {
           if (!disposed) this._arhatStageDispose?.();
@@ -5234,7 +6000,9 @@ export class ChuaOnlineApp {
         }
         if (!dragging) stageGroup.rotation.y += 0.0065;
         renderer.render(scene, camera);
-        setTimeout(() => requestAnimationFrame(tick), 33);
+        arhatTimer = setTimeout(() => {
+          if (!disposed) requestAnimationFrame(tick);
+        }, tickDelay);
       };
       tick();
     } catch {}
@@ -5900,6 +6668,14 @@ export class ChuaOnlineApp {
   }
 
   closeModal() {
+    if (this._rhythmSession) {
+      this._rhythmSession.active = false;
+      if (this._rhythmSession.rafId) {
+        cancelAnimationFrame(this._rhythmSession.rafId);
+        this._rhythmSession.rafId = null;
+      }
+      this._rhythmSession = null;
+    }
     if (this.mindfulnessTimer?.intervalId) {
       clearInterval(this.mindfulnessTimer.intervalId);
       this.mindfulnessTimer.intervalId = null;
@@ -6058,6 +6834,75 @@ export class ChuaOnlineApp {
       this.toggleInteriorHallIn3D();
     });
 
+    // Bottom-Left Quick Pilgrimage & Controls Dock
+    const quickDockEl = document.getElementById('courtyard-quick-dock');
+    const toggleQuickDockBtn = document.getElementById('btn-toggle-quick-dock');
+    const quickChipsEl = document.getElementById('quick-dock-chips');
+    const quickChevronEl = document.getElementById('quick-dock-chevron');
+    let userToggledQuickDock = false;
+    const setQuickChipsExpanded = (expanded) => {
+      if (!quickDockEl || !toggleQuickDockBtn || !quickChipsEl) return;
+      quickDockEl.classList.toggle('chips-collapsed', !expanded);
+      toggleQuickDockBtn.classList.toggle('active', expanded);
+      toggleQuickDockBtn.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+      if (quickChevronEl) quickChevronEl.textContent = expanded ? '▾' : '▸';
+    };
+    const syncQuickDockViewport = () => {
+      if (userToggledQuickDock) return;
+      setQuickChipsExpanded(window.innerWidth > 768);
+    };
+    syncQuickDockViewport();
+    window.addEventListener('resize', syncQuickDockViewport);
+    toggleQuickDockBtn?.addEventListener('click', () => {
+      userToggledQuickDock = true;
+      const nextExpanded = quickDockEl?.classList.contains('chips-collapsed');
+      setQuickChipsExpanded(Boolean(nextExpanded));
+    });
+
+    const toggleDpadBtn = document.getElementById('btn-toggle-dpad');
+    const dpadPadEl = document.getElementById('courtyard-dpad-pad');
+    toggleDpadBtn?.addEventListener('click', () => {
+      if (!dpadPadEl || !toggleDpadBtn) return;
+      const nextShow = dpadPadEl.style.display === 'none';
+      dpadPadEl.style.display = nextShow ? 'grid' : 'none';
+      toggleDpadBtn.classList.toggle('active', nextShow);
+      toggleDpadBtn.setAttribute('aria-expanded', nextShow ? 'true' : 'false');
+    });
+
+    const toggleHelpBtn = document.getElementById('btn-toggle-controls-help');
+    const helpPopoverEl = document.getElementById('courtyard-help-popover');
+    const setHelpOpen = (open) => {
+      if (!helpPopoverEl || !toggleHelpBtn) return;
+      helpPopoverEl.style.display = open ? 'block' : 'none';
+      toggleHelpBtn.classList.toggle('active', open);
+      toggleHelpBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    };
+    toggleHelpBtn?.addEventListener('click', () => {
+      setHelpOpen(helpPopoverEl?.style.display === 'none');
+    });
+    document.getElementById('btn-close-controls-help')?.addEventListener('click', () => {
+      setHelpOpen(false);
+    });
+
+    document.querySelectorAll('[data-dpad-dir]').forEach((btn) => {
+      const dir = btn.getAttribute('data-dpad-dir');
+      if (!dir) return;
+      const startHold = (e) => {
+        e.preventDefault();
+        btn.classList.add('pressed');
+        this.world3d?.setHeldDirection(dir, true);
+        this.handleMoveDirection(dir);
+      };
+      const endHold = () => {
+        btn.classList.remove('pressed');
+        this.world3d?.setHeldDirection(dir, false);
+      };
+      btn.addEventListener('pointerdown', startHold);
+      btn.addEventListener('pointerup', endHold);
+      btn.addEventListener('pointerleave', endHold);
+      btn.addEventListener('pointercancel', endHold);
+    });
+
     // Scene Pins in 3D Courtyard
     document.getElementById('pin-chanh-dien')?.addEventListener('click', () => {
       const pos = this.world3d?.playerPos || this.playerPos;
@@ -6081,11 +6926,21 @@ export class ChuaOnlineApp {
       this.openMarketplaceStallModal('huong_hoa', 'Nhà Tạp Hóa Cổng Chùa Vĩnh Tràng');
     });
     document.getElementById('stall-proximity-btn')?.addEventListener('click', () => {
-      const st = this.nearbyStallTrigger;
-      this.openMarketplaceStallModal(
-        st?.stallType || 'huong_hoa',
-        st?.title || 'Nhà Tạp Hóa Cổng Chùa Vĩnh Tràng'
-      );
+      this.handleProximityInteract();
+    });
+    document.getElementById('btn-toggle-goals-tracker')?.addEventListener('click', () => {
+      this.goalsTrackerCollapsed = !this.goalsTrackerCollapsed;
+      this.saveState();
+      this.refreshGoalsTrackerHUD();
+    });
+    document.getElementById('btn-open-garden-modal')?.addEventListener('click', () => {
+      this.openTempleGardenModal(0);
+    });
+    document.getElementById('btn-open-bell-rhythm')?.addEventListener('click', () => {
+      this.openBellRhythmModal();
+    });
+    document.getElementById('btn-open-heritage-book')?.addEventListener('click', () => {
+      this.openHeritageBookModal();
     });
     document.getElementById('btn-skip-entrance-tour')?.addEventListener('click', () => {
       this.world3d?.cancelEntranceTour();
@@ -6103,15 +6958,6 @@ export class ChuaOnlineApp {
     document.getElementById('btn-open-2d-map')?.addEventListener('click', () => {
       this.openExploreModal('stations');
     });
-    document.getElementById('btn-an-mini-map')?.addEventListener('click', () => {
-      this.openExploreModal('stations');
-    });
-    document.getElementById('btn-an-station-action')?.addEventListener('click', () => {
-      this.triggerAnStationAction();
-    });
-    document.getElementById('btn-an-teleport-here')?.addEventListener('click', () => {
-      this.teleportToStationIn3D(this.activeStationKey || 'chanh_dien');
-    });
 
     const keyMap = {
       ArrowUp: 'up',
@@ -6126,6 +6972,11 @@ export class ChuaOnlineApp {
 
     window.addEventListener('keydown', (e) => {
       if (['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName || '')) return;
+      if (e.code === 'Space' && this._rhythmSession?.active && typeof this._rhythmSession.strike === 'function') {
+        e.preventDefault();
+        this._rhythmSession.strike();
+        return;
+      }
       const dir = keyMap[e.code];
       if (dir && this.activeScreen === 'courtyard') {
         e.preventDefault();
@@ -6133,12 +6984,10 @@ export class ChuaOnlineApp {
         if (!e.repeat) {
           this.handleMoveDirection(dir);
         }
-      } else if (e.code === 'KeyE' && this.activeScreen === 'courtyard' && this.nearbyStallTrigger) {
-        e.preventDefault();
-        this.openMarketplaceStallModal(
-          this.nearbyStallTrigger.stallType || 'huong_hoa',
-          this.nearbyStallTrigger.title || 'Sạp Hàng Cổng Chùa Vĩnh Tràng'
-        );
+      } else if (e.code === 'KeyE' && this.activeScreen === 'courtyard') {
+        if (this.handleProximityInteract()) {
+          e.preventDefault();
+        }
       } else if (e.code === 'Escape') {
         this.closeModal();
       }
