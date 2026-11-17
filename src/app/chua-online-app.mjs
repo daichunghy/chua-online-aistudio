@@ -82,9 +82,34 @@ import {
   scoreBellRhythmHit,
   completeBellRhythmSession,
   HERITAGE_RELICS,
-  discoverHeritageRelic
+  discoverHeritageRelic,
+  NATIONALITY_PROFILES,
+  getNationalityProfile,
+  PILGRIMAGE_MODES,
+  getPilgrimageMode,
+  THIRTY_DAY_RETREATS,
+  THIRTY_DAY_JOURNEY_PLAN,
+  getThirtyDayTheme,
+  LUNAR_FESTIVAL_CALENDAR,
+  getTempleSeasonalContext,
+  HOA_DANG_WISHES,
+  createHoaDangLantern,
+  DHARMA_JOURNAL_MOODS,
+  DHARMA_JOURNAL,
+  createDharmaJournalState,
+  addJournalEntry,
+  ACADEMY_COURSES,
+  ACADEMY_ALL_IN_BUNDLE,
+  ACADEMY_MODULES,
+  getAcademyExamQuestions,
+  gradeAcademyExam,
+  createAcademyEntitlementState,
+  unlockAcademyCourseWithCode,
+  buildVietQRPayload,
+  generateAcademyCertificate
 } from '/src/logic/chua-online-logic.mjs';
 import { VinhTrang3DWorld } from '/src/app/vinh-trang-3d-world.mjs';
+import { TempleAudioEngine } from '/src/app/audio-engine.mjs';
 import {
   recolorGarmentOnScene,
   clearRiggedBoneProps,
@@ -125,7 +150,8 @@ const AUDIO_LIBRARY = [
   { id: 's4_dilac', title: 'Nụ cười Hỷ Xả của Đức Phật Di Lặc', file: 's4_dilac.mp3', duration: '01:40' },
   { id: 's5_nirvana', title: 'Quán niệm Tịch Tịnh trước Tượng Phật Niết Bàn', file: 's5_nirvana.mp3', duration: '02:05' },
   { id: 'niem_phat_xa', title: 'Tiếng niệm Phật A Di Đà & Chuông Mõ Đạo Tràng', file: 'niem_phat_xa.mp3', duration: '04:10' },
-  { id: 's6_hoi_huong', title: 'Kệ Hồi Hướng Công Đức Viên Mãn', file: 's6_hoi_huong.mp3', duration: '02:15' }
+  { id: 's6_hoi_huong', title: 'Kệ Hồi Hướng Công Đức Viên Mãn', file: 's6_hoi_huong.mp3', duration: '02:15' },
+  { id: 's6_ke_1', title: 'Kệ Thiền Chánh Niệm — Khai Tâm Nhập Môn', file: 's6_ke_1.mp3', duration: '01:25' }
 ];
 
 export class ChuaOnlineApp {
@@ -136,6 +162,7 @@ export class ChuaOnlineApp {
     this.nearbyInteractPrompt = null;
     this._lastChanhDienBellAt = 0;
     this.entranceTourActive = false;
+    this.arrivalCutsceneActive = false;
     this.spiritual = createSpiritualState(this.saved.spiritual);
     this.storeProfile = createStoreProfileState(this.saved.storeProfile);
     this.activityHub = ensureDailyMissionDate(createActivityHubState(this.saved.activityHub));
@@ -147,6 +174,7 @@ export class ChuaOnlineApp {
     this.elderFontScale = ['normal', 'large', 'xlarge'].includes(this.saved.elderFontScale)
       ? this.saved.elderFontScale
       : 'normal';
+    this.readAlongRate = this.saved.readAlongRate === 0.85 ? 0.85 : 1.0;
     this.activeGuidedBeacon = null;
     this.ttsSpeaking = false;
     this.mindfulnessTimer = { running: false, intervalId: null, totalSec: 300, remainingSec: 300 };
@@ -170,7 +198,29 @@ export class ChuaOnlineApp {
     this.ugcGallery = Array.isArray(this.saved.ugcGallery)
       ? this.saved.ugcGallery
       : [...INITIAL_UGC_GALLERY];
-    this.characterModelKey = this.saved.characterModelKey || 'nu'; // 'nu' | 'nam' | 'tre_em'
+    this.characterModelKey = CHARACTER_PROFILES.some((c) => c.key === this.saved.characterModelKey)
+      ? this.saved.characterModelKey
+      : 'nu';
+    this.nationalityId = NATIONALITY_PROFILES.some((n) => n.id === this.saved.nationalityId)
+      ? this.saved.nationalityId
+      : 'vn';
+    this.pilgrimageModeId = PILGRIMAGE_MODES.some((m) => m.id === this.saved.pilgrimageModeId)
+      ? this.saved.pilgrimageModeId
+      : 'solo';
+    this.arrivalCompleted = Boolean(this.saved.arrivalCompleted);
+    this.hoaDangWishes =
+      Array.isArray(this.saved.hoaDangWishes) && this.saved.hoaDangWishes.length > 0
+        ? this.saved.hoaDangWishes
+        : [...HOA_DANG_WISHES];
+    this.dharmaJournal = createDharmaJournalState(this.saved.dharmaJournal);
+    this.academyState = createAcademyEntitlementState(this.saved.academyState);
+    this.activeCourseId = ACADEMY_COURSES.some((c) => c.id === this.saved.activeCourseId)
+      ? this.saved.activeCourseId
+      : 'course_1_khai_tam';
+    this.activeModuleId = this.saved.activeModuleId || null;
+    this.practicedDays = Array.isArray(this.saved.practicedDays) ? [...this.saved.practicedDays] : [1];
+    this.studentName = String(this.saved.studentName || 'Phật tử Tâm An').trim() || 'Phật tử Tâm An';
+
     this.uploadedUserPhotoDataUrl = this.saved.uploadedUserPhotoDataUrl || null;
     this.lastDailyDharmaDate = this.saved.lastDailyDharmaDate || null;
     this.lastDailyDharmaQuoteId = this.saved.lastDailyDharmaQuoteId || null;
@@ -180,19 +230,35 @@ export class ChuaOnlineApp {
     // Active screen & sub-views
     this.activeScreen = 'courtyard'; // 'courtyard' | 'shop' | 'lecture'
     this.shopTab = 'souvenir'; // 'souvenir' | 'study' | '3d'
-    this.lectureTab = 'lesson'; // 'listen' | 'lesson' | 'package' (default 'lesson' per Giảng đường V2 spec)
+    this.lectureTab = 'lesson'; // 'listen' | 'lesson' | 'package'
     this.activePathId = 'A';
     this.activeLessonId = 'A1';
-    this.selectedQuizOption = 0;
+    this.selectedQuizOption = null;
     this.quizFeedback = null;
+    this.quizNotice = null;
     this.autoWalkObjective = null;
 
-    // Audio & WebAudio
-    this.audioEl = new Audio();
+    // Unified TempleAudioEngine (replaces raw Audio + AudioContext)
+    const savedMixer = this.saved.audioMixer && typeof this.saved.audioMixer === 'object' ? this.saved.audioMixer : {};
+    this.audio = new TempleAudioEngine({
+      masterVolume: savedMixer.masterVolume ?? 1.0,
+      ambientVolume: savedMixer.ambientVolume ?? 0.45,
+      sfxVolume: savedMixer.sfxVolume ?? 0.85,
+      voiceVolume: savedMixer.voiceVolume ?? 0.9,
+      muted: Boolean(savedMixer.muted),
+      onVoiceStateChange: ({ playing, fileName }) => {
+        this.audioPlaying = Boolean(playing);
+        if (fileName) this.currentAudioFile = fileName;
+        if (this.activeScreen === 'lecture') this.renderLectureStage();
+      },
+      onSpeechStateChange: ({ speaking }) => {
+        this.ttsSpeaking = Boolean(speaking);
+        if (this.activeScreen === 'lecture') this.renderLectureStage();
+      }
+    });
     this.audioPlaying = false;
-    this.audioMuted = false;
+    this.audioMuted = Boolean(savedMixer.muted);
     this.currentAudioFile = 's3_giang_duong.mp3';
-    this.audioCtx = null;
 
     // 3D World & Canvas references
     this.world3d = null;
@@ -224,11 +290,23 @@ export class ChuaOnlineApp {
           goalsTrackerCollapsed: this.goalsTrackerCollapsed,
           timeOfDay: this.timeOfDay,
           elderFontScale: this.elderFontScale,
+          readAlongRate: this.readAlongRate,
           cart: this.cart,
           completedLessons: Array.from(this.completedLessons),
           orders: this.orders,
           ugcGallery: this.ugcGallery.slice(0, 12),
           characterModelKey: this.characterModelKey,
+          nationalityId: this.nationalityId,
+          pilgrimageModeId: this.pilgrimageModeId,
+          arrivalCompleted: this.arrivalCompleted,
+          hoaDangWishes: this.hoaDangWishes.slice(0, 48),
+          dharmaJournal: this.dharmaJournal,
+          academyState: this.academyState,
+          activeCourseId: this.activeCourseId,
+          activeModuleId: this.activeModuleId,
+          practicedDays: this.practicedDays.slice(0, 30),
+          studentName: this.studentName,
+          audioMixer: this.audio ? this.audio.getMixerState() : undefined,
           uploadedUserPhotoDataUrl: this.uploadedUserPhotoDataUrl,
           lastDailyDharmaDate: this.lastDailyDharmaDate,
           lastDailyDharmaQuoteId: this.lastDailyDharmaQuoteId
@@ -242,13 +320,19 @@ export class ChuaOnlineApp {
     this.initLive3DWorld();
     this.setTimeOfDay(this.timeOfDay, true, false);
     this.applyElderFontScale(this.elderFontScale, false);
+    this.updateAudioMixerUI();
     this.bindEvents();
     this.renderShopProducts();
     this.renderLectureStage();
     this.updateActionBadges();
 
     const params = new URLSearchParams(window.location.search);
-    if (params.get('autostart') !== '1') {
+    if (params.get('autostart') === '1') {
+      this.world3d?.skipArrivalCutscene?.(true);
+      this.syncPilgrimageCompanionsTo3D();
+    } else if (!this.arrivalCompleted || params.get('arrival') === '1') {
+      this.openArrivalPilgrimageModal();
+    } else {
       const todayKey = getLocalDateKey();
       if (shouldShowDailyDharmaToday(this.lastDailyDharmaDate, todayKey)) {
         this.showDailyDharmaModal({ markSeenToday: true });
@@ -271,12 +355,21 @@ export class ChuaOnlineApp {
         lectureHall3DMode: Boolean(this.world3d?.lectureHallMode),
         timeOfDay: this.timeOfDay,
         elderFontScale: this.elderFontScale,
+        readAlongRate: this.readAlongRate,
+        nationalityId: this.nationalityId,
+        pilgrimageModeId: this.pilgrimageModeId,
         activeGuidedBeacon: this.activeGuidedBeacon,
         activeStationKey: this.activeStationKey,
         shopTab: this.shopTab,
         lectureTab: this.lectureTab,
+        activeCourseId: this.activeCourseId,
         activeLessonId: this.activeLessonId,
         characterModelKey: this.characterModelKey,
+        audioMuted: this.audioMuted,
+        audioMixer: this.audio?.getMixerState?.() || null,
+        hoaDangCount: this.hoaDangWishes.length,
+        journalCount: this.dharmaJournal?.entries?.length || 0,
+        academyUnlockedCourses: this.academyState?.unlockedCourses || [],
         dailyDharmaSeenDate: this.lastDailyDharmaDate,
         playerPos: this.world3d
           ? {
@@ -292,6 +385,7 @@ export class ChuaOnlineApp {
         storeState: this.storeProfile,
         activityHub: this.activityHub,
         interiorTransitionActive: Boolean(this.world3d?.interiorTransition),
+        arrivalCutsceneActive: Boolean(this.world3d?.arrivalCutscene?.active),
         journeyImprint: calculateJourneyImprint(this.spiritual),
         autoWalkObjective: this.autoWalkObjective ? this.autoWalkObjective.name : null,
         cartSummary: calculateCartSummary(this.cart)
@@ -400,6 +494,11 @@ export class ChuaOnlineApp {
           <button type="button" id="btn-skip-entrance-tour" class="entrance-tour-skip-btn">Bỏ qua</button>
         </div>
 
+        <div id="arrival-cutscene-banner" class="arrival-cutscene-banner" style="display:none;" role="status" aria-live="polite">
+          <span id="arrival-cutscene-label">🚗 Đang đưa quý khách tới Chùa Vĩnh Tràng Mỹ Tho...</span>
+          <button type="button" id="btn-skip-arrival-cutscene" class="entrance-tour-skip-btn" style="min-height:48px;padding:0 16px;">Bỏ qua &amp; vào sân chùa</button>
+        </div>
+
         <nav id="interior-zone-bar" class="interior-zone-bar" style="display:none;" aria-label="Các khu trong Chùa Chính">
           <button type="button" class="walk-chip-btn active" data-interior-zone="tien_duong">1. Tiền đường</button>
           <button type="button" class="walk-chip-btn" data-interior-zone="chanh_dien">2. Chánh điện</button>
@@ -441,7 +540,12 @@ export class ChuaOnlineApp {
               <button type="button" class="time-toggle-btn ${this.timeOfDay === 'evening' ? 'active' : ''}" data-time-of-day="evening" title="Buổi Tối Đèn Lồng (19:00)">🕯️ <span>Tối</span></button>
             </div>
 
-            <button class="nav-pill-btn nav-activity-btn" id="nav-btn-activity" title="Điểm danh 7 ngày · Nhiệm vụ · Hộp thư Nhà Chùa · Hướng dẫn đi chùa">
+            <button type="button" class="nav-pill-btn nav-seasonal-pill" id="nav-seasonal-pill" title="Lịch Âm &amp; Lộ trình 30 ngày tu tập">
+              <span>${getTempleSeasonalContext().isFestivalDay ? '🏮' : '📅'}</span>
+              <span>${getTempleSeasonalContext().activeFestival ? getTempleSeasonalContext().activeFestival.name.split('—')[0].trim() : getTempleSeasonalContext().lunarLabel.replace(' (ước lượng)', '')}</span>
+            </button>
+
+            <button class="nav-pill-btn nav-activity-btn" id="nav-btn-activity" title="Điểm danh 7 ngày · Lộ trình 30 ngày · Nhật Ký An Tâm · Hộp thư Nhà Chùa">
               <span aria-hidden="true">🔔</span>
               <span>Hành trình</span>
               <span class="nav-activity-badge" id="nav-activity-badge" style="display:none;">0</span>
@@ -477,6 +581,11 @@ export class ChuaOnlineApp {
               <span>Cửa hàng</span>
             </button>
 
+            <button type="button" class="nav-pill-btn nav-audio-btn ${this.audioMuted ? 'muted' : ''}" id="nav-btn-audio" title="Điều chỉnh âm thanh &amp; tắt/mở tiếng" aria-expanded="false">
+              <span id="nav-audio-icon" aria-hidden="true">${this.audioMuted ? '🔇' : '🔊'}</span>
+              <span id="nav-audio-label">${this.audioMuted ? 'Đã tắt tiếng' : 'Âm thanh'}</span>
+            </button>
+
             <button class="nav-pill-btn" id="nav-btn-account">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
                 <circle cx="12" cy="8" r="4"/>
@@ -486,6 +595,29 @@ export class ChuaOnlineApp {
             </button>
           </nav>
         </header>
+
+        <!-- 3-Channel Audio Mixer Popover -->
+        <div id="audio-mixer-popover" class="audio-mixer-popover" style="display:none;" role="dialog" aria-label="Điều chỉnh âm thanh Chùa Online">
+          <div class="audio-mixer-head">
+            <strong>🎧 Âm thanh Chùa Vĩnh Tràng</strong>
+            <button type="button" id="btn-close-audio-mixer" class="courtyard-help-close" aria-label="Đóng chỉnh âm thanh">✕</button>
+          </div>
+          <button type="button" id="btn-audio-global-mute" class="audio-mute-toggle-btn ${this.audioMuted ? 'muted' : ''}">
+            ${this.audioMuted ? '🔇 Đang Tắt toàn bộ tiếng (Bấm để Mở lại)' : '🔊 Đang Bật âm thanh (Bấm để Tắt tiếng)'}
+          </button>
+          <div class="audio-slider-row">
+            <label for="slider-ambient-vol"><span>🌿 Tiếng gió &amp; Chuông gió</span><strong id="val-ambient-vol">${Math.round((this.audio?.ambientVolume ?? 0.45) * 100)}%</strong></label>
+            <input type="range" id="slider-ambient-vol" min="0" max="100" value="${Math.round((this.audio?.ambientVolume ?? 0.45) * 100)}" />
+          </div>
+          <div class="audio-slider-row">
+            <label for="slider-sfx-vol"><span>🔔 Chuông · Mõ · Bước chân · Xe</span><strong id="val-sfx-vol">${Math.round((this.audio?.sfxVolume ?? 0.85) * 100)}%</strong></label>
+            <input type="range" id="slider-sfx-vol" min="0" max="100" value="${Math.round((this.audio?.sfxVolume ?? 0.85) * 100)}" />
+          </div>
+          <div class="audio-slider-row">
+            <label for="slider-voice-vol"><span>🎙️ Pháp âm &amp; Thầy đọc bài</span><strong id="val-voice-vol">${Math.round((this.audio?.voiceVolume ?? 0.9) * 100)}%</strong></label>
+            <input type="range" id="slider-voice-vol" min="0" max="100" value="${Math.round((this.audio?.voiceVolume ?? 0.9) * 100)}" />
+          </div>
+        </div>
 
         <!-- Bottom-Right 4 Spiritual Action Buttons -->
         <section class="spiritual-actions-bar" id="spiritual-actions-bar" aria-label="Nghi thức tâm linh">
@@ -590,7 +722,7 @@ export class ChuaOnlineApp {
             <ul class="courtyard-help-list">
               <li><strong>Đi lại:</strong> Dùng phím <b>W A S D</b> / mũi tên, bật <b>Phím đi</b> hoặc <b>chạm vào mặt sân</b>.</li>
               <li><strong>Xoay &amp; thu phóng:</strong> Kéo chuột (hoặc vuốt) để xoay góc nhìn · Cuộn để phóng to/nhỏ.</li>
-              <li><strong>Hoạt động mỗi ngày:</strong> Quét lá Bồ Đề vàng trên sân, trồng hoa <b>Vườn Phật</b>, <b>Thỉnh Chuông – Gõ Mõ</b> đúng nhịp và đóng dấu <b>Sổ Di Sản</b> (bấm <b>E</b> hoặc chạm trực tiếp).</li>
+              <li><strong>Hoạt động mỗi ngày:</strong> Quét lá Bồ Đề vàng trên sân, trồng hoa <b>Vườn Phật</b>, <b>Thỉnh Chuông – Gõ Mõ</b>, thả <b>🏮 Hoa Đăng</b> và đóng dấu <b>Sổ Di Sản</b> (bấm <b>E</b> hoặc chạm trực tiếp).</li>
             </ul>
           </div>
 
@@ -630,6 +762,9 @@ export class ChuaOnlineApp {
             <button type="button" class="walk-chip-btn" id="btn-open-garden-modal">🌱 Vườn Phật</button>
             <button type="button" class="walk-chip-btn" id="btn-open-bell-rhythm">🔔 Chuông Mõ</button>
             <button type="button" class="walk-chip-btn" id="btn-open-heritage-book">📜 Di Sản</button>
+            <button type="button" class="walk-chip-btn" id="btn-open-hoa-dang">🏮 Hoa Đăng</button>
+            <button type="button" class="walk-chip-btn" id="btn-open-30day">🗓️ 30 Ngày</button>
+            <button type="button" class="walk-chip-btn" id="btn-open-journal">📓 Nhật Ký</button>
           </div>
         </aside>
 
@@ -726,23 +861,26 @@ export class ChuaOnlineApp {
         </div>
       </section>
 
-      <!-- ================= 3. GIẢNG ĐƯỜNG PHẬT PHÁP (Live 3D Animated Hall + Elder-Friendly Mobile) ================= -->
-      <section id="lecture-screen" data-font-scale="${this.elderFontScale}" aria-label="Giảng đường Phật pháp">
+      <!-- ================= 3. HỌC VIỆN & GIẢNG ĐƯỜNG PHẬT PHÁP (Live 3D Animated Hall + Elder-Friendly Mobile) ================= -->
+      <section id="lecture-screen" data-font-scale="${this.elderFontScale}" aria-label="Học Viện Phật Học Chùa Vĩnh Tràng">
         <header class="lecture-top-bar">
           <div class="lecture-top-left">
             <button class="lecture-back-courtyard" id="btn-lecture-back">← Sân chùa</button>
-            <h1 class="lecture-hall-heading">Giảng đường Phật pháp</h1>
+            <h1 class="lecture-hall-heading">Học Viện Phật Học</h1>
           </div>
           <div class="lecture-top-actions">
             <div class="lecture-font-controls" aria-label="Điều chỉnh cỡ chữ dễ đọc">
               <button type="button" class="lecture-font-btn" id="btn-lecture-font-dec" title="Giảm cỡ chữ">A-</button>
               <button type="button" class="lecture-font-btn" id="btn-lecture-font-inc" title="Tăng cỡ chữ lớn hơn">A+</button>
             </div>
+            <button type="button" class="lecture-back-courtyard" id="btn-lecture-speed-toggle" title="Tốc độ Thầy đọc bài cho cô bác lớn tuổi">
+              🐢 ${this.readAlongRate === 0.85 ? '0.85x Chậm' : '1.0x Chuẩn'}
+            </button>
             <button class="lecture-back-courtyard" id="btn-lecture-daily-dharma" style="background:rgba(92,56,31,0.78);border-color:rgba(255,232,185,0.45);color:#fff6e5;">
               Lời dạy hôm nay
             </button>
             <button class="lecture-back-courtyard" id="btn-lecture-textbooks" style="background:rgba(230,174,71,0.22);border-color:rgba(230,174,71,0.55);color:#ffe8b3;">
-              Sách Phật học
+              Tủ sách (11 PDF)
             </button>
             <button class="lecture-audio-gold-btn" id="btn-lecture-recordings">Bài thu âm</button>
           </div>
@@ -773,7 +911,7 @@ export class ChuaOnlineApp {
               <polyline points="2 12 12 17 22 12"/>
               <polyline points="2 17 12 22 22 17"/>
             </svg>
-            <span>Gói học</span>
+            <span>Học Viện</span>
           </button>
         </footer>
       </section>
@@ -800,6 +938,9 @@ export class ChuaOnlineApp {
 
     this.world3d = new VinhTrang3DWorld(canvas, {
       initialCharKey: this.characterModelKey,
+      onStepSound: (surface) => {
+        this.audio?.playFootstep?.(surface === 'interior' ? 'wood' : surface);
+      },
       onAutoWalkTargetChange: (targetStation) => {
         this.autoWalkObjective = targetStation || null;
         const banner = document.getElementById('auto-walk-objective-banner');
@@ -872,6 +1013,8 @@ export class ChuaOnlineApp {
       onLoaded: () => {
         this.syncStoreVisualsTo3D();
         this.syncTempleWorldGameplayState();
+        this.syncPilgrimageCompanionsTo3D();
+        this.syncHoaDangLanternsTo3D();
       },
       onTransitionFade: (active) => {
         const veil = document.getElementById('temple-transition-veil');
@@ -891,6 +1034,7 @@ export class ChuaOnlineApp {
         const btn = document.getElementById('btn-toggle-interior-hall');
         const zoneBar = document.getElementById('interior-zone-bar');
         const goalsTracker = document.getElementById('daily-goals-tracker');
+        this.audio?.setAmbientZone?.(inside ? 'interior' : 'exterior');
         if (pinsLayer) pinsLayer.style.display = inside ? 'none' : 'block';
         if (zoneBar) zoneBar.style.display = inside ? 'flex' : 'none';
         if (goalsTracker) goalsTracker.style.display = inside ? 'none' : 'block';
@@ -941,6 +1085,8 @@ export class ChuaOnlineApp {
           this.collectCourtyardLeafInApp(payload?.leafId);
         } else if (action === 'OPEN_GARDEN_PLOT') {
           this.openTempleGardenModal(Number.isFinite(payload?.slotIndex) ? payload.slotIndex : 0);
+        } else if (action === 'OPEN_HOA_DANG') {
+          this.openHoaDangModal();
         } else if (action === 'LE_PHAT') {
           this.triggerLePhat();
         } else if (action === 'DANG_HUONG') {
@@ -1343,40 +1489,20 @@ export class ChuaOnlineApp {
   }
 
   /* ========================================================================
-     SOUND & VOICEOVER ENGINE (WebAudio Bell/Mokugyo + audio_v5 MP3s)
+     SOUND, SOUNDSCAPE & VOICEOVER ENGINE (Unified TempleAudioEngine)
      ======================================================================== */
   ensureAudioContext() {
-    if (!this.audioCtx) {
-      const AC = window.AudioContext || window.webkitAudioContext;
-      if (AC) this.audioCtx = new AC();
-    }
-    if (this.audioCtx && this.audioCtx.state === 'suspended') {
-      this.audioCtx.resume().catch(() => {});
+    this.audio?.unlock?.();
+    if (this.audio && !this.audio.isAmbientRunning) {
+      this.audio.startAmbient(this.world3d?.insideInterior ? 'interior' : 'exterior');
     }
   }
 
   playBellTone(freq = 216, duration = 2.6) {
-    try {
-      this.ensureAudioContext();
-      if (!this.audioCtx) return;
-      const now = this.audioCtx.currentTime;
-      const osc1 = this.audioCtx.createOscillator();
-      const osc2 = this.audioCtx.createOscillator();
-      const gain = this.audioCtx.createGain();
-      osc1.type = 'sine';
-      osc2.type = 'sine';
-      osc1.frequency.setValueAtTime(freq, now);
-      osc2.frequency.setValueAtTime(freq * 2.756, now);
-      gain.gain.setValueAtTime(0.24, now);
-      gain.gain.exponentialRampToValueAtTime(0.0008, now + duration);
-      osc1.connect(gain);
-      osc2.connect(gain);
-      gain.connect(this.audioCtx.destination);
-      osc1.start(now);
-      osc2.start(now);
-      osc1.stop(now + duration);
-      osc2.stop(now + duration);
-    } catch {}
+    this.ensureAudioContext();
+    const pitchScale = Math.max(0.45, Math.min(2.2, Number(freq || 196) / 196));
+    const strength = Math.max(0.35, Math.min(1.25, Number(duration || 2.6) / 3.0));
+    this.audio?.playBronzeBell?.(pitchScale, strength);
   }
 
   playChanhDienBellCadence({ force = false } = {}) {
@@ -1384,72 +1510,440 @@ export class ChuaOnlineApp {
     const nowMs = Date.now();
     if (!force && nowMs - (this._lastChanhDienBellAt || 0) < 18000) return;
     this._lastChanhDienBellAt = nowMs;
-
-    try {
-      this.ensureAudioContext();
-      if (!this.audioCtx) return;
-      const ctx = this.audioCtx;
-      const baseTime = ctx.currentTime + 0.04;
-      const cadence = [
-        { offset: 0, freq: 216, gain: 0.1, dur: 2.5 },
-        { offset: 1.35, freq: 243, gain: 0.09, dur: 2.4 },
-        { offset: 2.7, freq: 216, gain: 0.11, dur: 3.0 }
-      ];
-      for (const hit of cadence) {
-        const t = baseTime + hit.offset;
-        const osc1 = ctx.createOscillator();
-        const osc2 = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc1.type = 'sine';
-        osc2.type = 'sine';
-        osc1.frequency.setValueAtTime(hit.freq, t);
-        osc2.frequency.setValueAtTime(hit.freq * 2.756, t);
-        gain.gain.setValueAtTime(0.0005, t);
-        gain.gain.linearRampToValueAtTime(hit.gain, t + 0.05);
-        gain.gain.exponentialRampToValueAtTime(0.0006, t + hit.dur);
-        osc1.connect(gain);
-        osc2.connect(gain);
-        gain.connect(ctx.destination);
-        osc1.start(t);
-        osc2.start(t);
-        osc1.stop(t + hit.dur + 0.05);
-        osc2.stop(t + hit.dur + 0.05);
-      }
-    } catch {}
+    this.ensureAudioContext();
+    const hits = [
+      { delay: 40, scale: 216 / 196, strength: 0.42 },
+      { delay: 1350, scale: 243 / 196, strength: 0.36 },
+      { delay: 2700, scale: 216 / 196, strength: 0.46 }
+    ];
+    for (const h of hits) {
+      setTimeout(() => {
+        if (!this.audioMuted) {
+          this.audio?.playBronzeBell?.(h.scale, h.strength);
+        }
+      }, h.delay);
+    }
   }
 
-  playMokugyoTap() {
-    try {
-      this.ensureAudioContext();
-      if (!this.audioCtx) return;
-      const now = this.audioCtx.currentTime;
-      const osc = this.audioCtx.createOscillator();
-      const gain = this.audioCtx.createGain();
-      osc.type = 'triangle';
-      osc.frequency.setValueAtTime(390, now);
-      osc.frequency.exponentialRampToValueAtTime(250, now + 0.09);
-      gain.gain.setValueAtTime(0.28, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.11);
-      osc.connect(gain);
-      gain.connect(this.audioCtx.destination);
-      osc.start(now);
-      osc.stop(now + 0.12);
-    } catch {}
+  playMokugyoTap(accent = false) {
+    this.ensureAudioContext();
+    this.audio?.playWoodenMokugyo?.(Boolean(accent));
   }
 
   playVoiceAudio(fileName) {
     if (!fileName) return;
+    this.ensureAudioContext();
     this.currentAudioFile = fileName;
-    this.audioEl.src = `/Mô hình 3D Vĩnh Tràng/audio_v5/${fileName}`;
-    this.audioEl.volume = 0.85;
-    this.audioEl
-      .play()
-      .then(() => {
-        this.audioPlaying = true;
-      })
-      .catch(() => {
-        this.audioPlaying = false;
+    this.audio?.playVoiceAudio?.(fileName);
+  }
+
+  pauseVoiceAudio() {
+    this.audio?.pauseVoice?.();
+    this.audioPlaying = false;
+  }
+
+  updateAudioMixerUI() {
+    const st = this.audio?.getMixerState?.() || {
+      masterVolume: 1,
+      ambientVolume: 0.45,
+      sfxVolume: 0.85,
+      voiceVolume: 0.9,
+      muted: this.audioMuted
+    };
+    this.audioMuted = Boolean(st.muted);
+
+    const navBtn = document.getElementById('nav-btn-audio');
+    const navIcon = document.getElementById('nav-audio-icon');
+    const navLbl = document.getElementById('nav-audio-label');
+    if (navBtn) navBtn.classList.toggle('muted', this.audioMuted);
+    if (navIcon) navIcon.textContent = this.audioMuted ? '🔇' : '🔊';
+    if (navLbl) navLbl.textContent = this.audioMuted ? 'Đã tắt tiếng' : 'Âm thanh';
+
+    const muteBtn = document.getElementById('btn-audio-global-mute');
+    if (muteBtn) {
+      muteBtn.classList.toggle('muted', this.audioMuted);
+      muteBtn.textContent = this.audioMuted
+        ? '🔇 Đang Tắt toàn bộ tiếng (Bấm để Mở lại)'
+        : '🔊 Đang Bật âm thanh (Bấm để Tắt tiếng)';
+    }
+
+    const pairs = [
+      ['slider-ambient-vol', 'val-ambient-vol', st.ambientVolume],
+      ['slider-sfx-vol', 'val-sfx-vol', st.sfxVolume],
+      ['slider-voice-vol', 'val-voice-vol', st.voiceVolume]
+    ];
+    for (const [sId, vId, val] of pairs) {
+      const pct = Math.round((Number(val) || 0) * 100);
+      const sEl = document.getElementById(sId);
+      const vEl = document.getElementById(vId);
+      if (sEl && Number(sEl.value) !== pct) sEl.value = String(pct);
+      if (vEl) vEl.textContent = `${pct}%`;
+    }
+  }
+
+  setAudioMuted(muted) {
+    this.audio?.setMuted?.(Boolean(muted));
+    this.audioMuted = Boolean(this.audio?.muted);
+    if (!this.audioMuted) {
+      this.ensureAudioContext();
+      this.audio?.playBlessingChime?.();
+    }
+    this.updateAudioMixerUI();
+    this.saveState();
+  }
+
+  saveAudioMixerState() {
+    this.updateAudioMixerUI();
+    this.saveState();
+  }
+
+  syncPilgrimageCompanionsTo3D() {
+    if (!this.world3d?.setPilgrimageCompanions) return;
+    const mode = getPilgrimageMode(this.pilgrimageModeId);
+    this.world3d.setPilgrimageCompanions(mode, this.nationalityId);
+  }
+
+  syncHoaDangLanternsTo3D() {
+    if (!this.world3d?.renderFloatingLanterns) return;
+    this.world3d.renderFloatingLanterns(this.hoaDangWishes);
+  }
+
+  openArrivalPilgrimageModal() {
+    let draftChar = this.characterModelKey || 'nu';
+    let draftNat = this.nationalityId || 'vn';
+    let draftMode = this.pilgrimageModeId || 'solo';
+
+    const renderArrival = () => {
+      const natObj = getNationalityProfile(draftNat);
+      const modeObj = getPilgrimageMode(draftMode);
+      const seasonal = getTempleSeasonalContext();
+      const vehLabel =
+        modeObj.arrivalVehicle === 'bus'
+          ? '🚌 Xe khách đoàn 45 chỗ'
+          : modeObj.arrivalVehicle === 'van'
+          ? '🚐 Xe gia đình 7 chỗ'
+          : '🚗 Xe ô tô đưa đón';
+
+      this.openModal(
+        '🙏 Kính Chào Quý Khách Đến Chùa Vĩnh Tràng (1849)',
+        `
+        <div class="arrival-modal-wrap">
+          <div class="seasonal-festival-banner">
+            <div>
+              <div style="font-size:15px;font-weight:800;color:#FFD875;">${seasonal.isFestivalDay ? '🏮 ' : '🪷 '}${seasonal.activeFestival ? seasonal.activeFestival.name : seasonal.lunarLabel}</div>
+              <div style="font-size:13px;color:#FFF6E5;margin-top:2px;">${seasonal.greeting}</div>
+            </div>
+            <span class="store-wallet-pill">Cộng hưởng ${seasonal.xpMultiplier}x XP</span>
+          </div>
+
+          <div class="arrival-section-block">
+            <div class="arrival-step-heading">1. Chọn Quốc tịch &amp; Truyền thống Hành hương (6 vùng)</div>
+            <div class="arrival-nat-grid">
+              ${NATIONALITY_PROFILES.map(
+                (n) => `
+                <button type="button" class="arrival-choice-card ${draftNat === n.id ? 'active' : ''}" data-arr-nat="${n.id}">
+                  <div class="arrival-choice-top"><span>${n.flag} ${n.name.split('—')[0].trim()}</span></div>
+                  <div class="arrival-choice-sub">${n.badgeLabel}</div>
+                </button>`
+              ).join('')}
+            </div>
+            <div class="arrival-greeting-box">${natObj.flag} <em>${natObj.greeting}</em></div>
+          </div>
+
+          <div class="arrival-section-block">
+            <div class="arrival-step-heading">2. Chọn Nhân vật 3D của bạn (7 dáng người)</div>
+            <div class="arrival-char-grid">
+              ${CHARACTER_PROFILES.map(
+                (c) => `
+                <button type="button" class="arrival-char-pill ${draftChar === c.key ? 'active' : ''}" data-arr-char="${c.key}">
+                  <strong>${c.name.split('(')[0].trim()}</strong>
+                  <span>${c.heightLabel} · ${c.outfitName.split('(')[0].trim()}</span>
+                </button>`
+              ).join('')}
+            </div>
+          </div>
+
+          <div class="arrival-section-block">
+            <div class="arrival-step-heading">3. Chọn Mục đích &amp; Bạn đồng hành tới chùa (4 chế độ)</div>
+            <div class="arrival-mode-grid">
+              ${PILGRIMAGE_MODES.map(
+                (m) => `
+                <button type="button" class="arrival-mode-card ${draftMode === m.id ? 'active' : ''}" data-arr-mode="${m.id}">
+                  <div class="arrival-mode-title">${m.name}</div>
+                  <div class="arrival-mode-desc">${m.desc}</div>
+                  <div class="arrival-mode-meta">
+                    <span>${m.arrivalVehicle === 'bus' ? '🚌 Xe đoàn' : m.arrivalVehicle === 'van' ? '🚐 Xe gia đình' : '🚗 Xe riêng'}</span>
+                    <span>· ${m.companions.length > 0 ? `${m.companions.length} bạn đồng hành 3D` : 'Đi một mình tĩnh tâm'}</span>
+                  </div>
+                </button>`
+              ).join('')}
+            </div>
+          </div>
+
+          <div class="arrival-footer-actions">
+            <button type="button" id="btn-arrival-start-car" class="arrival-primary-btn">
+              ${vehLabel} · Khởi hành tới Chùa Vĩnh Tràng →
+            </button>
+            <button type="button" id="btn-arrival-skip-direct" class="arrival-secondary-btn">
+              Vào thẳng sân chùa (Bỏ qua xe)
+            </button>
+          </div>
+        </div>
+        `,
+        { variant: 'scroll' }
+      );
+
+      document.querySelectorAll('[data-arr-nat]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          draftNat = btn.getAttribute('data-arr-nat') || 'vn';
+          const prof = getNationalityProfile(draftNat);
+          if (prof?.preferredCharKey) draftChar = prof.preferredCharKey;
+          this.playMokugyoTap();
+          renderArrival();
+        });
       });
+
+      document.querySelectorAll('[data-arr-char]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          draftChar = btn.getAttribute('data-arr-char') || 'nu';
+          this.playMokugyoTap();
+          renderArrival();
+        });
+      });
+
+      document.querySelectorAll('[data-arr-mode]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          draftMode = btn.getAttribute('data-arr-mode') || 'solo';
+          this.playMokugyoTap();
+          renderArrival();
+        });
+      });
+
+      const commitSelection = () => {
+        this.characterModelKey = draftChar;
+        this.nationalityId = draftNat;
+        this.pilgrimageModeId = draftMode;
+        this.arrivalCompleted = true;
+        this.world3d?.switchCharacter?.(draftChar);
+        this.syncStoreVisualsTo3D();
+        this.syncPilgrimageCompanionsTo3D();
+        this.saveState();
+        this.updateEquippedTags();
+      };
+
+      document.getElementById('btn-arrival-start-car')?.addEventListener('click', () => {
+        commitSelection();
+        this.closeModal();
+        this.ensureAudioContext();
+
+        const mode = getPilgrimageMode(this.pilgrimageModeId);
+        const nat = getNationalityProfile(this.nationalityId);
+        const banner = document.getElementById('arrival-cutscene-banner');
+        const bannerLbl = document.getElementById('arrival-cutscene-label');
+        if (banner) banner.style.display = 'inline-flex';
+        if (bannerLbl) {
+          bannerLbl.textContent = `${mode.arrivalVehicle === 'bus' ? '🚌 Xe đoàn hành hương' : mode.arrivalVehicle === 'van' ? '🚐 Xe gia đình' : '🚗 Xe ô tô'} đang đưa ${nat.flag} quý khách tới cổng Chùa Vĩnh Tràng...`;
+        }
+
+        const vehicleKind = mode.arrivalVehicle === 'bus' ? 'van' : mode.arrivalVehicle;
+        this.world3d?.playArrivalCutscene?.({
+          vehicleKind,
+          onCue: (phase) => {
+            if (phase === 'drive_in') {
+              this.audio?.playCarArrivalSfx?.('arrive');
+            } else if (phase === 'step_out') {
+              this.audio?.playCarArrivalSfx?.('door_open');
+              if (bannerLbl) {
+                bannerLbl.textContent = '🚶 Quý khách xuống xe, theo Cổng Phụ Tịnh Độ bước vào sân Chùa Vĩnh Tràng...';
+              }
+            } else if (phase === 'enter_gate') {
+              this.audio?.playBlessingChime?.();
+              this.playVoiceAudio('s0_chao.mp3');
+            }
+          },
+          onComplete: () => {
+            const b = document.getElementById('arrival-cutscene-banner');
+            if (b) b.style.display = 'none';
+            this.syncPilgrimageCompanionsTo3D();
+            this.updateActionBadges();
+            this.showToast(`${nat.flag} Chào mừng tới Chùa Vĩnh Tràng`, nat.greeting, 4600, false);
+            const todayKey = getLocalDateKey();
+            if (shouldShowDailyDharmaToday(this.lastDailyDharmaDate, todayKey)) {
+              setTimeout(() => {
+                if (document.getElementById('universal-modal')?.classList.contains('open')) return;
+                this.showDailyDharmaModal({ markSeenToday: true });
+              }, 1100);
+            }
+          }
+        });
+      });
+
+      document.getElementById('btn-arrival-skip-direct')?.addEventListener('click', () => {
+        commitSelection();
+        this.closeModal();
+        this.ensureAudioContext();
+        this.world3d?.skipArrivalCutscene?.(true);
+        const b = document.getElementById('arrival-cutscene-banner');
+        if (b) b.style.display = 'none';
+        this.audio?.playBlessingChime?.();
+        const nat = getNationalityProfile(this.nationalityId);
+        this.showToast(`${nat.flag} Hoan hỷ vào sân Chùa Vĩnh Tràng`, nat.greeting, 4000, false);
+        const todayKey = getLocalDateKey();
+        if (shouldShowDailyDharmaToday(this.lastDailyDharmaDate, todayKey)) {
+          this.showDailyDharmaModal({ markSeenToday: true });
+        }
+      });
+    };
+
+    renderArrival();
+  }
+
+  openHoaDangModal() {
+    let selectedColor = '#F79D65';
+    let draftAuthor = this.studentName || 'Phật tử Tâm An';
+    let draftWish = '';
+    const palette = [
+      { hex: '#F79D65', name: 'Cam Sen Ấm' },
+      { hex: '#F4C95D', name: 'Vàng Bồ Đề' },
+      { hex: '#EE7FAE', name: 'Hồng Liên Hoa' },
+      { hex: '#A8DADC', name: 'Ngọc Thanh Tịnh' },
+      { hex: '#FF9EBB', name: 'Phấn Đào Dịu' }
+    ];
+    const quickWishes = [
+      'Cầu cho cha mẹ mạnh khỏe, gia đình thuận hòa bình an.',
+      'Nguyện tâm luôn vững chãi, sáng suốt và biết lắng nghe.',
+      'Hồi hướng công đức đến cửu huyền thất tổ và muôn loài.'
+    ];
+
+    const renderHoaDang = () => {
+      const seasonal = getTempleSeasonalContext();
+      this.openModal(
+        '🏮 Thả Đèn Hoa Đăng Nguyện Ước · Hồ Sen Vĩnh Tràng',
+        `
+        <div class="hoadang-modal-wrap">
+          <div class="activity-banner-row">
+            <div>
+              <div style="font-size:16px;font-weight:800;color:#FFD875;">Gửi Lời Nguyện Bình An Lên Mặt Hồ Sen 3D</div>
+              <div style="font-size:13px;color:#FFF6E5;margin-top:2px;">
+                ${seasonal.lunarLabel} · Đang có <strong>${this.hoaDangWishes.length} ngọn hoa đăng</strong> trôi sáng lung linh trên mặt hồ Vĩnh Tràng.
+              </div>
+            </div>
+            <button type="button" id="btn-hoadang-walk-pond" class="quest-claim-btn" style="background:#3D6B4A;">🚶 Ra Hồ Sen ngắm đèn</button>
+          </div>
+
+          <div class="hoadang-compose-card">
+            <div class="hoadang-form-row">
+              <label for="hoadang-author-input" class="hoadang-label">Tên người thả đèn:</label>
+              <input id="hoadang-author-input" type="text" class="hoadang-input" value="${draftAuthor.replace(/"/g, '&quot;')}" placeholder="Ví dụ: Cô Tư Mỹ Tho" />
+            </div>
+
+            <div class="hoadang-form-row">
+              <span class="hoadang-label">Chọn sắc cánh sen đèn:</span>
+              <div class="hoadang-color-row">
+                ${palette
+                  .map(
+                    (c) => `
+                  <button type="button" class="hoadang-color-chip ${selectedColor === c.hex ? 'active' : ''}" data-hd-color="${c.hex}">
+                    <span class="hoadang-dot" style="background:${c.hex};"></span>
+                    <span>${c.name}</span>
+                  </button>`
+                  )
+                  .join('')}
+              </div>
+            </div>
+
+            <div class="hoadang-form-row">
+              <label for="hoadang-wish-input" class="hoadang-label">Lời nguyện ước an lành:</label>
+              <div class="hoadang-presets-row">
+                ${quickWishes
+                  .map(
+                    (qw, idx) => `
+                  <button type="button" class="mail-reply-btn" data-hd-preset="${idx}">✨ ${qw}</button>`
+                  )
+                  .join('')}
+              </div>
+              <textarea id="hoadang-wish-input" class="feedback-textarea" rows="2" placeholder="Viết lời chúc bình an cho cha mẹ, gia đình hoặc chính mình...">${draftWish}</textarea>
+            </div>
+
+            <button type="button" id="btn-release-hoadang" class="arrival-primary-btn" style="width:100%;">
+              🏮 Thả Hoa Đăng Lên Hồ Sen (+30 🪷 · +25 XP)
+            </button>
+          </div>
+
+          <div class="hub-section-heading">🕯️ Các ngọn hoa đăng đang trôi trên Hồ Sen (${this.hoaDangWishes.length})</div>
+          <div class="hoadang-wishes-list">
+            ${this.hoaDangWishes.slice(0, 12)
+              .map((w) => {
+                const nat = getNationalityProfile(w.nationalityId || 'vn');
+                return `
+                <div class="hoadang-wish-item">
+                  <span class="hoadang-wish-glow" style="background:${w.colorHex || '#F79D65'};"></span>
+                  <div style="flex:1;min-width:0;">
+                    <div class="hoadang-wish-author">${nat.flag} ${w.authorName} <span class="hoadang-wish-time">· ${w.createdAt}</span></div>
+                    <div class="hoadang-wish-text">“${w.wishText}”</div>
+                  </div>
+                </div>`;
+              })
+              .join('')}
+          </div>
+        </div>
+        `
+      );
+
+      document.getElementById('btn-hoadang-walk-pond')?.addEventListener('click', () => {
+        this.closeModal();
+        this.switchScreen('courtyard');
+        if (this.world3d?.insideInterior) this.toggleInteriorHallIn3D(false);
+        this.walkToStationIn3D('ho_sen_ca_koi');
+      });
+
+      document.querySelectorAll('[data-hd-color]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          draftAuthor = document.getElementById('hoadang-author-input')?.value || draftAuthor;
+          draftWish = document.getElementById('hoadang-wish-input')?.value || draftWish;
+          selectedColor = btn.getAttribute('data-hd-color') || '#F79D65';
+          this.playMokugyoTap();
+          renderHoaDang();
+        });
+      });
+
+      document.querySelectorAll('[data-hd-preset]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const idx = Number(btn.getAttribute('data-hd-preset') || 0);
+          draftWish = quickWishes[idx] || quickWishes[0];
+          const ta = document.getElementById('hoadang-wish-input');
+          if (ta) ta.value = draftWish;
+          this.playMokugyoTap();
+        });
+      });
+
+      document.getElementById('btn-release-hoadang')?.addEventListener('click', () => {
+        const authorVal = document.getElementById('hoadang-author-input')?.value || this.studentName || 'Phật tử thập phương';
+        const wishVal = document.getElementById('hoadang-wish-input')?.value || '';
+        const res = createHoaDangLantern(this.hoaDangWishes, {
+          authorName: authorVal,
+          nationalityId: this.nationalityId,
+          wishText: wishVal,
+          colorHex: selectedColor
+        });
+        if (!res.ok) return;
+        this.hoaDangWishes = res.wishes;
+        this.studentName = authorVal.trim() || this.studentName;
+        this.storeProfile.lotusPoints += 30;
+        this.spiritual = recordSpiritualMilestone(this.spiritual, 'Thả Hoa Đăng Nguyện Ước tại Hồ Sen');
+        this.grantPilgrimXp(25, 'Thả Hoa Đăng');
+        this.syncHoaDangLanternsTo3D();
+        this.saveState();
+        this.updateActionBadges();
+        this.audio?.playBlessingChime?.();
+        this.audio?.playCoinLotusSfx?.();
+        this.showToast('🏮 Đã thả hoa đăng lên Hồ Sen', `${res.message} (+30 🪷 · +25 XP)`, 4200, true);
+        draftWish = '';
+        renderHoaDang();
+      });
+    };
+
+    renderHoaDang();
   }
 
   highlightInteriorZoneChip(zoneKey) {
@@ -1550,6 +2044,9 @@ export class ChuaOnlineApp {
       this.stopLectureSpeech();
     }
     this.world3d?.setLectureHallMode?.(screenName === 'lecture');
+    this.audio?.setAmbientZone?.(
+      screenName === 'lecture' || this.world3d?.insideInterior ? 'interior' : 'exterior'
+    );
 
     if (screenName === 'shop') {
       this.renderShopProducts();
@@ -1598,52 +2095,35 @@ export class ChuaOnlineApp {
   }
 
   stopLectureSpeech() {
-    try {
-      window.speechSynthesis?.cancel();
-    } catch {}
+    this.audio?.stopSpeaking?.();
     this.ttsSpeaking = false;
   }
 
   toggleLectureSpeech(lesson) {
     if (!lesson) return;
-    if (this.ttsSpeaking) {
+    if (this.ttsSpeaking || this.audio?.ttsSpeaking) {
       this.stopLectureSpeech();
       this.renderLectureStage();
       return;
     }
 
     const speechText = `${lesson.title}. ${lesson.summary.slice(0, 3).join('. ')}. Gợi ý thực hành: ${lesson.example}`;
-    const synth = typeof window !== 'undefined' ? window.speechSynthesis : null;
-    if (synth && typeof window.SpeechSynthesisUtterance === 'function') {
-      try {
-        synth.cancel();
-        const utter = new window.SpeechSynthesisUtterance(speechText);
-        utter.lang = 'vi-VN';
-        utter.rate = 0.88;
-        utter.pitch = 0.98;
-        const voices = synth.getVoices?.() || [];
-        const viVoice = voices.find((v) => String(v.lang || '').toLowerCase().startsWith('vi'));
-        if (viVoice) utter.voice = viVoice;
-        this.ttsSpeaking = true;
-        utter.onend = () => {
-          this.ttsSpeaking = false;
-          if (this.activeScreen === 'lecture') this.renderLectureStage();
-        };
-        utter.onerror = () => {
-          this.ttsSpeaking = false;
-          if (this.activeScreen === 'lecture') this.renderLectureStage();
-        };
-        synth.speak(utter);
-        this.playBellTone(288, 1.4);
-        this.renderLectureStage();
-        return;
-      } catch {}
+    const started = this.audio?.speakText?.(speechText, {
+      rate: this.readAlongRate || 1.0,
+      lang: 'vi-VN',
+      pitch: 0.98
+    });
+
+    if (started) {
+      this.ttsSpeaking = true;
+      this.playBellTone(288, 1.4);
+      this.renderLectureStage();
+      return;
     }
 
-    // Fallback when SpeechSynthesis is unavailable
+    // Fallback when SpeechSynthesis is unavailable or muted
     this.playBellTone(260, 2.0);
     this.playVoiceAudio(lesson.audio);
-    this.audioPlaying = true;
     this.renderLectureStage();
   }
 
@@ -3038,8 +3518,7 @@ export class ChuaOnlineApp {
 
     document.getElementById('btn-play-chant-audio')?.addEventListener('click', () => {
       if (this.audioPlaying) {
-        this.audioEl.pause();
-        this.audioPlaying = false;
+        this.pauseVoiceAudio();
       } else {
         this.playVoiceAudio('niem_phat_xa.mp3');
       }
@@ -3316,7 +3795,7 @@ export class ChuaOnlineApp {
   }
 
   /* ========================================================================
-     GIẢNG ĐƯỜNG PHẬT PHÁP RENDERING (Live Animated 3D Hall + Elder Mobile UX)
+     HỌC VIỆN PHẬT HỌC & GIẢNG ĐƯỜNG RENDERING (4 Khóa · 12 Học phần · 11 PDF)
      ======================================================================== */
   renderLectureStage() {
     const stage = document.getElementById('lecture-center-stage');
@@ -3328,17 +3807,56 @@ export class ChuaOnlineApp {
 
     const lessonIdx = Math.max(0, LECTURE_LESSONS.findIndex((l) => l.id === this.activeLessonId));
     const lesson = LECTURE_LESSONS[lessonIdx] || LECTURE_LESSONS[0];
+    const lessonCourse =
+      ACADEMY_COURSES.find((c) => c.lessonIds.includes(lesson.id)) || ACADEMY_COURSES[0];
+    const unlockedSet = new Set(this.academyState?.unlockedCourses || ['course_1_khai_tam']);
+    const isLessonUnlocked = lessonCourse.isFree || unlockedSet.has(lessonCourse.id);
     const conciseBullets = lesson.summary.slice(1, 3);
 
+    const renderLockedCourseGuard = (courseObj) => `
+      <div class="lesson-study-stack">
+        <div class="lesson-cream-card lecture-translucent-card academy-lock-card">
+          <div class="academy-lock-badge">🔒 Học phần thuộc ${courseObj.title}</div>
+          <div class="lesson-card-big-title" style="margin-top:6px;">${lesson.title}</div>
+          <p class="lesson-summary-lead" style="margin-top:8px;">
+            Khóa 1 (Khai Tâm Nhập Môn) miễn phí hoàn toàn. Để nghe pháp âm, học bài và thi lấy chứng nhận <strong>${courseObj.title}</strong>, cô bác vui lòng đăng ký học phí <strong>${courseObj.priceLabel}</strong> hoặc nhập mã kích hoạt.
+          </p>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;">
+            <button type="button" id="btn-guard-unlock-course" class="arrival-primary-btn" style="flex:1;min-width:220px;">
+              💳 Đăng ký / Nhập mã (${courseObj.priceLabel})
+            </button>
+            <button type="button" id="btn-guard-back-academy" class="lecture-choose-btn" style="min-height:48px;">
+              🎓 Về trang Học Viện
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    const bindLockedGuard = (courseObj) => {
+      document.getElementById('btn-guard-unlock-course')?.addEventListener('click', () => {
+        this.openAcademyUnlockModal(courseObj.id);
+      });
+      document.getElementById('btn-guard-back-academy')?.addEventListener('click', () => {
+        this.lectureTab = 'package';
+        this.renderLectureStage();
+      });
+    };
+
     if (this.lectureTab === 'listen') {
+      if (!isLessonUnlocked) {
+        stage.innerHTML = renderLockedCourseGuard(lessonCourse);
+        bindLockedGuard(lessonCourse);
+        return;
+      }
       stage.innerHTML = `
         <div class="lesson-study-stack lecture-listen-dock-wrap">
           <div class="lesson-cream-card lecture-translucent-card">
             <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
               <div style="flex:1;min-width:210px;">
-                <div style="font-size:12.5px;font-weight:800;color:#5C381F;text-transform:uppercase;letter-spacing:0.04em;">Giảng đường 3D trực tiếp · Bài ${lesson.id}</div>
+                <div style="font-size:12.5px;font-weight:800;color:#5C381F;text-transform:uppercase;letter-spacing:0.04em;">Giảng đường 3D trực tiếp · ${lessonCourse.badge} · Bài ${lesson.id}</div>
                 <div class="lesson-card-big-title" style="text-align:left;font-size:clamp(19px,2.2vw,24px);margin-top:2px;">${lesson.title}</div>
-                <div class="lesson-card-meta" style="margin-bottom:0;">${lesson.sourceBook} · ${lesson.duration}</div>
+                <div class="lesson-card-meta" style="margin-bottom:0;">${lesson.sourceBook} · ${lesson.duration} · Tốc độ đọc ${this.readAlongRate === 0.85 ? '0.85x Chậm' : '1.0x Chuẩn'}</div>
               </div>
               <div style="display:flex;gap:8px;flex-wrap:wrap;">
                 <button id="btn-listen-tts" class="lecture-tts-btn ${this.ttsSpeaking ? 'speaking' : ''}" type="button">
@@ -3361,11 +3879,9 @@ export class ChuaOnlineApp {
       });
       document.getElementById('btn-toggle-lecture-listen')?.addEventListener('click', () => {
         if (this.audioPlaying) {
-          this.audioEl.pause();
-          this.audioPlaying = false;
+          this.pauseVoiceAudio();
         } else {
           this.playVoiceAudio(lesson.audio);
-          this.audioPlaying = true;
         }
         this.renderLectureStage();
       });
@@ -3373,14 +3889,19 @@ export class ChuaOnlineApp {
     }
 
     if (this.lectureTab === 'lesson') {
+      if (!isLessonUnlocked) {
+        stage.innerHTML = renderLockedCourseGuard(lessonCourse);
+        bindLockedGuard(lessonCourse);
+        return;
+      }
       stage.innerHTML = `
         <div class="lesson-study-stack">
           <div class="lesson-cream-card lesson-header-card lecture-translucent-card">
             <div class="lesson-card-big-title">${lesson.title}</div>
-            <div class="lesson-card-meta">Bài ${lesson.id} (${lessonIdx + 1}/${LECTURE_LESSONS.length}) · ${lesson.duration} · ${lesson.sourceBook}</div>
+            <div class="lesson-card-meta">${lessonCourse.title} · Bài ${lesson.id} (${lessonIdx + 1}/${LECTURE_LESSONS.length}) · ${lesson.duration} · ${lesson.sourceBook}</div>
             <div class="lecture-audio-pair-row">
               <button class="lecture-tts-btn ${this.ttsSpeaking ? 'speaking' : ''}" id="btn-lesson-tts" type="button">
-                <span>${this.ttsSpeaking ? '⏹ Dừng Thầy đọc' : '🔊 Nghe Thầy Giảng'}</span>
+                <span>${this.ttsSpeaking ? '⏹ Dừng Thầy đọc' : `🔊 Nghe Thầy Giảng (${this.readAlongRate === 0.85 ? '0.85x' : '1.0x'})`}</span>
               </button>
               <button class="lesson-listen-btn" id="btn-lesson-play-audio" type="button">
                 <span style="display:inline-flex;align-items:center;gap:8px;">
@@ -3427,6 +3948,11 @@ export class ChuaOnlineApp {
                   </div>`
                 : ''
             }
+            ${
+              this.quizNotice
+                ? `<div class="academy-quiz-notice">${this.quizNotice}</div>`
+                : ''
+            }
           </div>
 
           <div class="lecture-nav-footer">
@@ -3434,7 +3960,7 @@ export class ChuaOnlineApp {
               ← Bài trước
             </button>
             <button class="lecture-choose-btn" id="btn-lesson-choose-other" type="button">
-              📖 Chọn bài
+              🎓 Chương trình Học Viện
             </button>
             <button class="lesson-next-green-btn" id="btn-lesson-continue" type="button">
               <span>Bài tiếp theo</span>
@@ -3450,17 +3976,16 @@ export class ChuaOnlineApp {
 
       document.getElementById('btn-lesson-play-audio')?.addEventListener('click', () => {
         if (this.audioPlaying) {
-          this.audioEl.pause();
-          this.audioPlaying = false;
+          this.pauseVoiceAudio();
         } else {
           this.playVoiceAudio(lesson.audio);
-          this.audioPlaying = true;
         }
         this.renderLectureStage();
       });
 
       stage.querySelectorAll('[data-quiz-idx]').forEach((btn) => {
         btn.addEventListener('click', () => {
+          this.quizNotice = null;
           this.selectedQuizOption = Number(btn.getAttribute('data-quiz-idx') || 0);
           this.quizFeedback = gradeLessonQuiz(lesson.id, this.selectedQuizOption);
           if (this.quizFeedback.correct) {
@@ -3473,6 +3998,8 @@ export class ChuaOnlineApp {
             this.saveState();
             this.updateActionBadges();
             this.playBellTone(324, 1.8);
+          } else {
+            this.playMokugyoTap();
           }
           this.renderLectureStage();
         });
@@ -3481,10 +4008,13 @@ export class ChuaOnlineApp {
       document.getElementById('btn-lesson-prev')?.addEventListener('click', () => {
         this.stopLectureSpeech();
         const prevLesson = LECTURE_LESSONS[(lessonIdx - 1 + LECTURE_LESSONS.length) % LECTURE_LESSONS.length];
+        const prevCourse = ACADEMY_COURSES.find((c) => c.lessonIds.includes(prevLesson.id)) || ACADEMY_COURSES[0];
         this.activeLessonId = prevLesson.id;
         this.activePathId = prevLesson.pathId;
-        this.selectedQuizOption = prevLesson.quiz.correctIndex;
+        this.activeCourseId = prevCourse.id;
+        this.selectedQuizOption = null;
         this.quizFeedback = null;
+        this.quizNotice = null;
         this.playMokugyoTap();
         this.renderLectureStage();
       });
@@ -3496,15 +4026,46 @@ export class ChuaOnlineApp {
 
       document.getElementById('btn-lesson-continue')?.addEventListener('click', () => {
         this.stopLectureSpeech();
-        this.completedLessons.add(lesson.id);
-        this.activityHub = recordDailyMissionMetric(this.activityHub, 'dailyLessons', 1);
-        this.saveState();
-        this.updateActionBadges();
+        const alreadyDone = this.completedLessons.has(lesson.id);
+        const passedQuizNow = Boolean(this.quizFeedback?.correct);
+
+        if (!alreadyDone && !passedQuizNow && !this.quizNotice) {
+          this.quizNotice =
+            '⚠️ Cô bác hãy chọn đáp án đúng ở câu hỏi ôn tập phía trên để hệ thống ghi nhận hoàn thành bài học nhé! (Nếu chỉ muốn xem trước bài kế tiếp, hãy bấm "Bài tiếp theo" thêm một lần nữa.)';
+          this.playMokugyoTap();
+          this.renderLectureStage();
+          return;
+        }
+
+        if (passedQuizNow && !alreadyDone) {
+          this.completedLessons.add(lesson.id);
+          this.activityHub = recordDailyMissionMetric(this.activityHub, 'dailyLessons', 1);
+          this.grantPilgrimXp(20, lesson.title);
+          this.saveState();
+          this.updateActionBadges();
+        }
+
         const nextLesson = LECTURE_LESSONS[(lessonIdx + 1) % LECTURE_LESSONS.length];
+        const nextCourse = ACADEMY_COURSES.find((c) => c.lessonIds.includes(nextLesson.id)) || ACADEMY_COURSES[0];
+        const nextUnlocked = nextCourse.isFree || unlockedSet.has(nextCourse.id);
+
+        this.selectedQuizOption = null;
+        this.quizFeedback = null;
+        this.quizNotice = null;
+
+        if (!nextUnlocked) {
+          this.activeCourseId = nextCourse.id;
+          this.activePathId = nextCourse.pathId;
+          this.lectureTab = 'package';
+          this.playBellTone(288, 1.8);
+          this.renderLectureStage();
+          this.showToast('🎓 Đã hết phần miễn phí', `Mời cô bác mở khóa "${nextCourse.title}" để học tiếp nhé!`, 4200, false);
+          return;
+        }
+
         this.activeLessonId = nextLesson.id;
         this.activePathId = nextLesson.pathId;
-        this.selectedQuizOption = nextLesson.quiz.correctIndex;
-        this.quizFeedback = null;
+        this.activeCourseId = nextCourse.id;
         this.playBellTone(288, 2.0);
         this.renderLectureStage();
       });
@@ -3512,59 +4073,166 @@ export class ChuaOnlineApp {
     }
 
     if (this.lectureTab === 'package') {
-      const lessonsInPath = getLessonsByPath(this.activePathId);
+      const selectedCourse =
+        ACADEMY_COURSES.find((c) => c.id === this.activeCourseId) || ACADEMY_COURSES[0];
+      const isSelectedUnlocked = selectedCourse.isFree || unlockedSet.has(selectedCourse.id);
+      const courseModules = ACADEMY_MODULES.filter((m) => m.courseId === selectedCourse.id).sort(
+        (a, b) => a.order - b.order
+      );
+      const unlockedCount = ACADEMY_COURSES.filter((c) => c.isFree || unlockedSet.has(c.id)).length;
+      const bestExamScore = Number(this.academyState?.examScores?.[selectedCourse.id] || 0);
+      const passedCourseExam = bestExamScore >= selectedCourse.passScore;
+
       stage.innerHTML = `
-        <div class="lesson-study-stack" style="max-width:860px;">
+        <div class="lesson-study-stack" style="max-width:940px;">
           <div class="lesson-cream-card lecture-translucent-card">
-            <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px;">
-              <div style="font-size:22px;font-weight:800;color:#472915;">
-                4 Chủ đề học Phật · 24 Bài đọc
+            <div class="academy-hero-head">
+              <div>
+                <div class="academy-eyebrow">🏛️ HỌC VIỆN PHẬT HỌC CHÙA VĨNH TRÀNG</div>
+                <div style="font-size:22px;font-weight:800;color:#472915;margin-top:2px;">
+                  4 Khóa Học Hệ Thống · 12 Học Phần · 11 Giáo Trình PDF
+                </div>
+                <p style="font-size:14.5px;color:#5b3a1d;margin-top:4px;line-height:1.45;">
+                  Hoàn thành <strong>${this.completedLessons.size}/24 bài học</strong> · Đã mở <strong>${unlockedCount}/4 khóa</strong> · Khóa 1 miễn phí trải nghiệm, có thi tốt nghiệp &amp; cấp bằng chứng nhận.
+                </p>
               </div>
-              <button id="btn-open-pdf-library-inline" class="product-detail-btn" style="width:auto;padding:0 16px;min-height:44px;font-size:14px;background:#8c4b1e;">
-                Tủ sách Phật học (PDF)
+              <button id="btn-open-pdf-library-inline" class="product-detail-btn" style="width:auto;padding:0 16px;min-height:48px;font-size:14px;background:#8c4b1e;">
+                📚 Tủ sách (11 PDF)
               </button>
             </div>
-            <p style="font-size:15px;color:#5b3a1d;margin-bottom:12px;line-height:1.45;">
-              Đã hoàn thành: <strong>${this.completedLessons.size}/24 bài học</strong> — Biên soạn ngắn gọn, dễ hiểu cho cô bác Phật tử theo 10 quyển kinh sách.
-            </p>
-            <div class="lecture-paths-grid">
-              ${LECTURE_PATHS.map(
-                (p) => `
-                <button class="path-tab-btn" data-path-id="${p.id}" style="min-height:54px;padding:11px;border-radius:16px;border:2px solid ${
-                  this.activePathId === p.id ? '#5C381F' : 'rgba(130,90,50,0.25)'
-                };background:${
-                  this.activePathId === p.id ? '#5C381F' : '#fffdf8'
-                };color:${
-                  this.activePathId === p.id ? '#fff' : '#241409'
-                };text-align:left;cursor:pointer;">
-                  <div style="font-size:12.5px;font-weight:800;opacity:0.85;">${p.code}</div>
-                  <div style="font-size:14.5px;font-weight:800;margin-top:3px;">${p.title}</div>
-                </button>
-              `
-              ).join('')}
+
+            <div class="academy-student-row">
+              <label for="academy-student-name-input" style="font-size:14px;font-weight:800;color:#472915;">Họ tên ghi trên Chứng Nhận:</label>
+              <input id="academy-student-name-input" type="text" class="academy-name-input" value="${this.studentName.replace(/"/g, '&quot;')}" placeholder="Ví dụ: Phật tử Nguyễn Văn Tâm" />
+              <button type="button" id="btn-save-student-name" class="quest-go-btn" style="min-height:44px;padding:0 16px;">💾 Lưu tên</button>
             </div>
 
-            <div class="lecture-lessons-grid">
-              ${lessonsInPath
-                .map((l) => {
-                  const done = this.completedLessons.has(l.id);
-                  return `
-                  <button class="select-lesson-card" data-lesson-id="${l.id}" style="min-height:56px;padding:12px 14px;border-radius:14px;border:1.5px solid ${
-                    this.activeLessonId === l.id ? '#5C381F' : 'rgba(130,90,50,0.25)'
-                  };background:#fffdf8;color:#241409;text-align:left;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:10px;">
-                    <div>
-                      <div style="font-size:12.5px;font-weight:800;color:#7a4e25;">Bài ${l.id} · ${l.sourceBook}</div>
-                      <div style="font-size:15px;font-weight:800;margin-top:2px;">${l.title}</div>
-                    </div>
-                    <span style="padding:5px 11px;border-radius:999px;background:${
-                      done ? '#F6E9D2' : '#f3e4cb'
-                    };color:${done ? '#5C381F' : '#6b4522'};font-size:12.5px;font-weight:800;flex-shrink:0;">
-                      ${done ? '✓ Đã học' : 'Học ngay'}
-                    </span>
+            ${
+              !this.academyState?.bundleUnlocked
+                ? `
+                <div class="academy-bundle-banner">
+                  <div>
+                    <div style="font-size:15.5px;font-weight:800;color:#FFD875;">🌟 ${ACADEMY_ALL_IN_BUNDLE.title}</div>
+                    <div style="font-size:13px;color:#FFF6E5;margin-top:2px;">Mở khóa trọn bộ 4 Khóa + Thi cấp 4 Bằng Chứng Nhận + Toàn bộ 11 PDF chỉ một lần.</div>
+                  </div>
+                  <button type="button" id="btn-academy-unlock-bundle" class="academy-bundle-btn">
+                    💳 Mở trọn gói ${ACADEMY_ALL_IN_BUNDLE.priceLabel}
                   </button>
-                `;
-                })
-                .join('')}
+                </div>`
+                : `
+                <div class="academy-bundle-banner unlocked">
+                  <div>
+                    <div style="font-size:15px;font-weight:800;color:#FFD875;">✓ Đã kích hoạt Gói Học Viên Trọn Đời</div>
+                    <div style="font-size:13px;color:#FFF6E5;">Cô bác được toàn quyền học cả 4 khóa, đọc 11 quyển sách PDF và thi cấp bằng chứng nhận.</div>
+                  </div>
+                </div>`
+            }
+
+            <div class="academy-courses-grid">
+              ${ACADEMY_COURSES.map((c) => {
+                const unlocked = c.isFree || unlockedSet.has(c.id);
+                const doneLessons = c.lessonIds.filter((lid) => this.completedLessons.has(lid)).length;
+                const active = selectedCourse.id === c.id;
+                const cScore = Number(this.academyState?.examScores?.[c.id] || 0);
+                return `
+                  <div class="academy-course-card ${active ? 'active' : ''} ${unlocked ? 'unlocked' : 'locked'}" data-select-course="${c.id}" role="button" tabindex="0">
+                    <div class="academy-course-top">
+                      <span class="academy-course-badge">${c.badge}</span>
+                      <span class="academy-course-price ${unlocked ? 'free' : ''}">${unlocked ? '✓ Đã mở' : `🔒 ${c.priceLabel}`}</span>
+                    </div>
+                    <div class="academy-course-title">${c.title}</div>
+                    <div class="academy-course-sub">${c.subtitle}</div>
+                    <div class="academy-course-meta">
+                      <span>⏱️ ${c.estimatedHours}h · ${doneLessons}/${c.lessonIds.length} bài</span>
+                      <span>${cScore > 0 ? `📝 ${cScore}/100đ` : `Đạt ≥${c.passScore}%`}</span>
+                    </div>
+                    ${
+                      !unlocked
+                        ? `<button type="button" class="academy-unlock-inline-btn" data-unlock-course="${c.id}">💳 Đăng ký / Nhập mã</button>`
+                        : ''
+                    }
+                  </div>`;
+              }).join('')}
+            </div>
+
+            <div class="academy-curriculum-panel">
+              <div class="academy-curriculum-head">
+                <div>
+                  <div style="font-size:12.5px;font-weight:800;color:#8c4b1e;text-transform:uppercase;">Giáo trình chi tiết · ${selectedCourse.badge}</div>
+                  <h3 style="font-size:19px;font-weight:800;color:#472915;margin:2px 0 0;">${selectedCourse.title}</h3>
+                </div>
+                <div class="academy-curriculum-actions">
+                  ${
+                    !isSelectedUnlocked
+                      ? `<button type="button" id="btn-active-course-unlock" class="arrival-primary-btn" style="min-height:48px;padding:0 18px;">💳 Mở khóa (${selectedCourse.priceLabel})</button>`
+                      : `
+                      <button type="button" id="btn-academy-open-exam" class="quest-claim-btn" style="min-height:48px;padding:0 16px;font-size:14px;">
+                        📝 Thi Tốt Nghiệp ${bestExamScore > 0 ? `(${bestExamScore}%)` : ''}
+                      </button>
+                      <button type="button" id="btn-academy-open-cert" class="product-detail-btn" style="width:auto;min-height:48px;padding:0 16px;font-size:14px;background:${passedCourseExam ? '#3D6B4A' : '#7E2A22'};">
+                        📜 ${passedCourseExam ? 'Xem Bằng Chứng Nhận' : 'Chứng Nhận'}
+                      </button>
+                      `
+                  }
+                </div>
+              </div>
+
+              <div class="academy-modules-list">
+                ${courseModules
+                  .map((mod) => {
+                    const modBooks = mod.bookIds
+                      .map((bid) => DHARMA_TEXTBOOKS.find((b) => b.id === bid))
+                      .filter(Boolean);
+                    const modLessons = mod.lessonIds
+                      .map((lid) => LECTURE_LESSONS.find((l) => l.id === lid))
+                      .filter(Boolean);
+                    return `
+                    <div class="academy-module-card">
+                      <div class="academy-module-head">
+                        <div class="academy-module-title">${mod.title}</div>
+                        <span class="academy-module-time">⏱️ ~${mod.estimatedMinutes} phút · ${(mod.extraQuizzes || []).length} câu ôn tập</span>
+                      </div>
+
+                      ${
+                        modBooks.length > 0
+                          ? `<div class="academy-module-books">
+                              ${modBooks
+                                .map(
+                                  (b) => `
+                                <a href="${b.pdfPath}" target="_blank" class="academy-pdf-chip">
+                                  📄 ${b.title.split('—')[0].trim()} (PDF)
+                                </a>`
+                                )
+                                .join('')}
+                            </div>`
+                          : ''
+                      }
+
+                      <div class="lecture-lessons-grid" style="margin-top:8px;">
+                        ${modLessons
+                          .map((l) => {
+                            const done = this.completedLessons.has(l.id);
+                            return `
+                            <button class="select-lesson-card" data-lesson-id="${l.id}" style="min-height:56px;padding:12px 14px;border-radius:14px;border:1.5px solid ${
+                              this.activeLessonId === l.id ? '#5C381F' : 'rgba(130,90,50,0.25)'
+                            };background:#fffdf8;color:#241409;text-align:left;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:10px;">
+                              <div>
+                                <div style="font-size:12.5px;font-weight:800;color:#7a4e25;">Bài ${l.id} · ${l.duration}</div>
+                                <div style="font-size:15px;font-weight:800;margin-top:2px;">${l.title}</div>
+                              </div>
+                              <span style="padding:5px 11px;border-radius:999px;background:${
+                                !isSelectedUnlocked ? '#fce8e6' : done ? '#F6E9D2' : '#f3e4cb'
+                              };color:${!isSelectedUnlocked ? '#991b1b' : done ? '#5C381F' : '#6b4522'};font-size:12.5px;font-weight:800;flex-shrink:0;">
+                                ${!isSelectedUnlocked ? '🔒 Khóa' : done ? '✓ Đã học' : 'Học ngay'}
+                              </span>
+                            </button>`;
+                          })
+                          .join('')}
+                      </div>
+                    </div>`;
+                  })
+                  .join('')}
+              </div>
             </div>
           </div>
         </div>
@@ -3574,12 +4242,56 @@ export class ChuaOnlineApp {
         this.openTextbooksModal();
       });
 
-      stage.querySelectorAll('.path-tab-btn').forEach((btn) => {
-        btn.addEventListener('click', () => {
-          const pid = btn.getAttribute('data-path-id');
-          if (pid) {
-            this.activePathId = pid;
+      document.getElementById('btn-save-student-name')?.addEventListener('click', () => {
+        const val = document.getElementById('academy-student-name-input')?.value || '';
+        const clean = val.trim() || 'Phật tử Tâm An';
+        this.studentName = clean;
+        this.saveState();
+        this.playMokugyoTap();
+        this.showToast('✍️ Đã lưu họ tên học viên', `Tên "${clean}" sẽ được in trang trọng lên Chứng Nhận Tốt Nghiệp.`, 3200, false);
+      });
+
+      document.getElementById('btn-academy-unlock-bundle')?.addEventListener('click', () => {
+        this.openAcademyUnlockModal(ACADEMY_ALL_IN_BUNDLE.id);
+      });
+
+      document.getElementById('btn-active-course-unlock')?.addEventListener('click', () => {
+        this.openAcademyUnlockModal(selectedCourse.id);
+      });
+
+      document.getElementById('btn-academy-open-exam')?.addEventListener('click', () => {
+        this.openAcademyExamModal(selectedCourse.id);
+      });
+
+      document.getElementById('btn-academy-open-cert')?.addEventListener('click', () => {
+        this.openAcademyCertificateModal(selectedCourse.id);
+      });
+
+      stage.querySelectorAll('[data-unlock-course]').forEach((btn) => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const cid = btn.getAttribute('data-unlock-course');
+          if (cid) this.openAcademyUnlockModal(cid);
+        });
+      });
+
+      stage.querySelectorAll('[data-select-course]').forEach((card) => {
+        const selectCourse = () => {
+          const cid = card.getAttribute('data-select-course');
+          const courseObj = ACADEMY_COURSES.find((c) => c.id === cid);
+          if (courseObj) {
+            this.activeCourseId = courseObj.id;
+            this.activePathId = courseObj.pathId;
+            this.saveState();
+            this.playMokugyoTap();
             this.renderLectureStage();
+          }
+        };
+        card.addEventListener('click', selectCourse);
+        card.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            selectCourse();
           }
         });
       });
@@ -3587,41 +4299,426 @@ export class ChuaOnlineApp {
       stage.querySelectorAll('.select-lesson-card').forEach((btn) => {
         btn.addEventListener('click', () => {
           const lid = btn.getAttribute('data-lesson-id');
-          if (lid) {
-            this.stopLectureSpeech();
-            this.activeLessonId = lid;
-            this.lectureTab = 'lesson';
-            this.quizFeedback = null;
-            this.renderLectureStage();
+          if (!lid) return;
+          if (!isSelectedUnlocked) {
+            this.openAcademyUnlockModal(selectedCourse.id);
+            return;
           }
+          this.stopLectureSpeech();
+          this.activeLessonId = lid;
+          this.activePathId = selectedCourse.pathId;
+          this.lectureTab = 'lesson';
+          this.selectedQuizOption = null;
+          this.quizFeedback = null;
+          this.quizNotice = null;
+          this.audio?.playPageTurnSfx?.();
+          this.renderLectureStage();
         });
       });
     }
   }
 
-  openTextbooksModal() {
+  openAcademyUnlockModal(courseIdOrBundle = 'course_2_tam_bao') {
+    const qr = buildVietQRPayload(courseIdOrBundle);
+    const isBundle = courseIdOrBundle === ACADEMY_ALL_IN_BUNDLE.id;
+
     this.openModal(
-      'Tủ sách Phật học (10 quyển PDF)',
+      isBundle ? '💳 Đăng ký Gói Học Viên Trọn Đời' : `💳 Mở Khóa ${qr.courseTitle}`,
+      `
+      <div class="academy-unlock-modal">
+        <div class="activity-banner-row">
+          <div>
+            <div style="font-size:16px;font-weight:800;color:#FFD875;">${qr.courseTitle}</div>
+            <div style="font-size:13.5px;color:#FFF6E5;margin-top:2px;">Học phí ủng hộ duy trì Học Viện: <strong>${qr.amount.toLocaleString('vi-VN')}đ</strong> (Dùng trọn đời)</div>
+          </div>
+          <span class="store-wallet-pill">VietQR 24/7</span>
+        </div>
+
+        <div class="academy-vietqr-grid">
+          <div class="academy-qr-box">
+            <img src="${qr.qrImageUrl}" alt="Mã VietQR chuyển khoản Học Viện" class="academy-qr-img" onerror="this.style.display='none';if(this.nextElementSibling)this.nextElementSibling.style.display='flex';" />
+            <div class="academy-qr-fallback" style="display:none;">
+              <div style="font-size:28px;">🏦</div>
+              <div style="font-weight:800;font-size:13.5px;color:#472915;">${qr.bankName}</div>
+              <div style="font-size:13px;color:#5C381F;">STK: <strong>${qr.accountNo}</strong></div>
+            </div>
+            <div style="font-size:12px;color:#5b3a1d;margin-top:6px;">Quét bằng app Ngân hàng bất kỳ</div>
+          </div>
+
+          <div class="academy-bank-info">
+            <div><strong>Ngân hàng:</strong> ${qr.bankName}</div>
+            <div><strong>Số tài khoản:</strong> <code>${qr.accountNo}</code></div>
+            <div><strong>Chủ tài khoản:</strong> ${qr.accountName}</div>
+            <div><strong>Số tiền:</strong> <strong style="color:#a53b16;">${qr.amount.toLocaleString('vi-VN')}đ</strong></div>
+            <div><strong>Nội dung CK:</strong> <code>${qr.transferMemo}</code></div>
+            <p style="font-size:12.5px;color:#5b3a1d;line-height:1.45;margin-top:6px;">
+              Sau khi chuyển khoản, cô bác nhập mã kích hoạt nhận được (hoặc dùng mã trải nghiệm <code>VINHTRANG2026</code> / <code>HOIAN2026</code> / <code>VT-HV-XXXX</code>):
+            </p>
+            <div class="academy-code-row">
+              <input id="academy-unlock-code-input" type="text" class="academy-code-input" placeholder="Nhập mã (VD: VINHTRANG2026)" value="VINHTRANG2026" />
+              <button type="button" id="btn-academy-apply-code" class="arrival-primary-btn" style="min-height:48px;padding:0 18px;">
+                ✓ Kích hoạt ngay
+              </button>
+            </div>
+            <div id="academy-unlock-err" style="display:none;color:#b91c1c;font-size:13px;font-weight:700;"></div>
+          </div>
+        </div>
+      </div>
+      `,
+      { variant: 'scroll' }
+    );
+
+    document.getElementById('btn-academy-apply-code')?.addEventListener('click', () => {
+      const code = document.getElementById('academy-unlock-code-input')?.value || '';
+      const res = unlockAcademyCourseWithCode(this.academyState, courseIdOrBundle, code);
+      const errEl = document.getElementById('academy-unlock-err');
+      if (!res.ok) {
+        if (errEl) {
+          errEl.style.display = 'block';
+          errEl.textContent = res.message;
+        }
+        return;
+      }
+      this.academyState = res.state;
+      if (!isBundle) {
+        this.activeCourseId = courseIdOrBundle;
+        const cObj = ACADEMY_COURSES.find((c) => c.id === courseIdOrBundle);
+        if (cObj) this.activePathId = cObj.pathId;
+      }
+      this.grantPilgrimXp(40, 'Kích hoạt khóa học Học Viện');
+      this.saveState();
+      this.updateActionBadges();
+      this.audio?.playBlessingChime?.();
+      this.audio?.playCoinLotusSfx?.();
+      this.closeModal();
+      this.renderLectureStage();
+      this.showToast('🎓 Kích hoạt Học Viện thành công', res.message, 4400, false);
+    });
+  }
+
+  openAcademyExamModal(courseId = 'course_1_khai_tam') {
+    const course = ACADEMY_COURSES.find((c) => c.id === courseId) || ACADEMY_COURSES[0];
+    const questions = getAcademyExamQuestions(course.id);
+    const answers = {};
+    let result = null;
+
+    const renderExam = () => {
+      this.openModal(
+        `📝 Thi Tốt Nghiệp · ${course.title}`,
+        `
+        <div class="academy-exam-modal">
+          <div class="activity-banner-row">
+            <div>
+              <div style="font-size:15.5px;font-weight:800;color:#FFD875;">Bài Thi Tổng Hợp (${questions.length} câu hỏi trắc nghiệm)</div>
+              <div style="font-size:13px;color:#FFF6E5;margin-top:2px;">Chuẩn tốt nghiệp: đạt từ <strong>${course.passScore}%</strong> trở lên sẽ được cấp Bằng Chứng Nhận có dấu son Chùa Vĩnh Tràng.</div>
+            </div>
+            <span class="store-wallet-pill">Học viên: ${this.studentName}</span>
+          </div>
+
+          ${
+            result
+              ? `
+              <div class="academy-exam-result ${result.passed ? 'passed' : 'failed'}">
+                <div style="font-size:20px;font-weight:800;">
+                  ${result.passed ? '🎉 Chúc mừng! Cô bác đã Đậu Tốt Nghiệp!' : '💡 Chưa đủ chuẩn đạt — Cô bác hãy thử lại nhé!'}
+                </div>
+                <div style="font-size:15px;margin-top:4px;">
+                  Kết quả: <strong>${result.correctCount}/${result.totalQuestions} câu đúng (${result.scorePercent}/100 điểm)</strong> · Yêu cầu tối thiểu: ${result.passScore}%.
+                </div>
+                <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;">
+                  ${
+                    result.passed
+                      ? `<button type="button" id="btn-exam-open-certificate" class="arrival-primary-btn" style="min-height:48px;">📜 Mở &amp; In Bằng Chứng Nhận →</button>`
+                      : `<button type="button" id="btn-exam-retry" class="quest-claim-btn" style="min-height:48px;">🔄 Làm lại bài thi</button>`
+                  }
+                </div>
+              </div>`
+              : ''
+          }
+
+          <div class="academy-exam-questions">
+            ${questions
+              .map((q, qIdx) => {
+                const detail = result?.details?.[qIdx];
+                return `
+                <div class="academy-exam-qcard">
+                  <div class="academy-exam-qtitle">Câu ${qIdx + 1}: ${q.question}</div>
+                  <div class="academy-exam-opts">
+                    ${q.options
+                      .map((opt, oIdx) => {
+                        const chosen = answers[q.id] === oIdx;
+                        const stateCls = detail
+                          ? oIdx === q.correctIndex
+                            ? 'correct'
+                            : chosen && !detail.correct
+                            ? 'wrong'
+                            : ''
+                          : chosen
+                          ? 'selected'
+                          : '';
+                        return `
+                        <button type="button" class="academy-exam-opt ${stateCls}" data-exam-q="${q.id}" data-exam-opt="${oIdx}">
+                          <span>${String.fromCharCode(65 + oIdx)}. ${opt}</span>
+                        </button>`;
+                      })
+                      .join('')}
+                  </div>
+                  ${
+                    detail
+                      ? `<div style="font-size:13px;font-weight:700;color:${detail.correct ? '#3D6B4A' : '#991b1b'};margin-top:6px;">${detail.correct ? '✓ Chính xác: ' : '💡 Giải thích: '}${detail.explanation}</div>`
+                      : ''
+                  }
+                </div>`;
+              })
+              .join('')}
+          </div>
+
+          ${
+            !result
+              ? `
+              <button type="button" id="btn-submit-academy-exam" class="arrival-primary-btn" style="width:100%;min-height:52px;font-size:16px;">
+                📤 Nộp Bài Thi Tốt Nghiệp
+              </button>`
+              : ''
+          }
+        </div>
+        `,
+        { variant: 'scroll' }
+      );
+
+      document.querySelectorAll('[data-exam-q]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          if (result) return;
+          const qid = btn.getAttribute('data-exam-q');
+          const oIdx = Number(btn.getAttribute('data-exam-opt') || 0);
+          if (!qid) return;
+          answers[qid] = oIdx;
+          this.playMokugyoTap();
+          renderExam();
+        });
+      });
+
+      document.getElementById('btn-submit-academy-exam')?.addEventListener('click', () => {
+        result = gradeAcademyExam(course.id, answers);
+        const prevBest = Number(this.academyState.examScores[course.id] || 0);
+        this.academyState.examScores[course.id] = Math.max(prevBest, result.scorePercent);
+        if (result.passed) {
+          const cert = generateAcademyCertificate(this.studentName, course.id, result.scorePercent);
+          if (cert.ok) {
+            const others = (this.academyState.certificates || []).filter((c) => c.courseId !== course.id);
+            this.academyState.certificates = [cert, ...others];
+          }
+          this.grantPilgrimXp(60, `Tốt nghiệp ${course.title}`);
+          this.audio?.playBlessingChime?.();
+          this.playBellTone(324, 2.2);
+        } else {
+          this.playMokugyoTap();
+        }
+        this.saveState();
+        this.updateActionBadges();
+        renderExam();
+      });
+
+      document.getElementById('btn-exam-retry')?.addEventListener('click', () => {
+        result = null;
+        for (const k of Object.keys(answers)) delete answers[k];
+        renderExam();
+      });
+
+      document.getElementById('btn-exam-open-certificate')?.addEventListener('click', () => {
+        this.openAcademyCertificateModal(course.id);
+      });
+    };
+
+    renderExam();
+  }
+
+  openAcademyCertificateModal(courseId = 'course_1_khai_tam') {
+    const course = ACADEMY_COURSES.find((c) => c.id === courseId) || ACADEMY_COURSES[0];
+    const bestScore = Number(this.academyState?.examScores?.[course.id] || 0);
+    const cert = generateAcademyCertificate(this.studentName, course.id, bestScore);
+
+    if (!cert.ok) {
+      this.openModal(
+        '📜 Chứng Nhận Hoàn Thành Khóa Học',
+        `
+        <div style="text-align:center;padding:18px;display:flex;flex-direction:column;gap:12px;align-items:center;">
+          <div style="font-size:40px;">📜</div>
+          <div style="font-size:18px;font-weight:800;color:#472915;">${course.title}</div>
+          <p style="font-size:15px;color:#5b3a1d;max-width:480px;line-height:1.5;">
+            ${cert.message}
+          </p>
+          <button type="button" id="btn-cert-take-exam" class="arrival-primary-btn" style="min-height:48px;padding:0 22px;">
+            📝 Làm Bài Thi Tốt Nghiệp Ngay
+          </button>
+        </div>
+        `
+      );
+      document.getElementById('btn-cert-take-exam')?.addEventListener('click', () => {
+        this.openAcademyExamModal(course.id);
+      });
+      return;
+    }
+
+    this.openModal(
+      '📜 Bằng Chứng Nhận · Học Viện Phật Học Chùa Vĩnh Tràng',
+      `
+      <div class="academy-cert-modal">
+        <div id="printable-academy-cert" class="academy-cert-sheet">
+          <div class="academy-cert-border">
+            <div class="academy-cert-issuer">${cert.issuerName}</div>
+            <div class="academy-cert-heading">CHỨNG NHẬN HOÀN THÀNH KHÓA TU HỌC</div>
+            <div class="academy-cert-motto">“${cert.motto}”</div>
+            <div class="academy-cert-present">Trân trọng chứng nhận Học viên:</div>
+            <div class="academy-cert-student">${cert.studentName}</div>
+            <div class="academy-cert-desc">Đã hoàn thành xuất sắc chương trình đào tạo:</div>
+            <div class="academy-cert-course">${cert.courseTitle}</div>
+            <div class="academy-cert-metrics">
+              <span>Điểm thi: <strong>${cert.score}/100</strong></span>
+              <span>· Xếp loại: <strong>${cert.gradeLabel}</strong></span>
+            </div>
+            <div class="academy-cert-footer">
+              <div>
+                <div>${cert.issuedLabel}</div>
+                <div style="font-size:12px;color:#7a4e25;margin-top:3px;">Mã xác thực: <strong>${cert.verificationCode}</strong></div>
+              </div>
+              <div class="academy-crimson-seal">
+                <span>🪷</span>
+                <small>CHÙA VĨNH TRÀNG</small>
+                <small>CHỨNG NHẬN</small>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <button type="button" id="btn-cert-download-png" class="arrival-primary-btn" style="flex:1;min-height:48px;">
+            📥 Tải Ảnh Chứng Nhận (.PNG)
+          </button>
+          <button type="button" id="btn-cert-print" class="lecture-choose-btn" style="min-height:48px;padding:0 18px;">
+            🖨️ In Chứng Nhận
+          </button>
+        </div>
+      </div>
+      `,
+      { variant: 'scroll' }
+    );
+
+    document.getElementById('btn-cert-print')?.addEventListener('click', () => {
+      window.print();
+    });
+
+    document.getElementById('btn-cert-download-png')?.addEventListener('click', () => {
+      const c = document.createElement('canvas');
+      c.width = 1200;
+      c.height = 840;
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = '#FDF5E4';
+      ctx.fillRect(0, 0, c.width, c.height);
+
+      ctx.strokeStyle = '#C9962E';
+      ctx.lineWidth = 10;
+      ctx.strokeRect(28, 28, c.width - 56, c.height - 56);
+      ctx.strokeStyle = '#7E2A22';
+      ctx.lineWidth = 3;
+      ctx.strokeRect(46, 46, c.width - 92, c.height - 92);
+
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#7E2A22';
+      ctx.font = 'bold 26px "Be Vietnam Pro", sans-serif';
+      ctx.fillText(cert.issuerName.toUpperCase(), 600, 125);
+
+      ctx.fillStyle = '#472915';
+      ctx.font = 'bold 42px "Be Vietnam Pro", sans-serif';
+      ctx.fillText('CHỨNG NHẬN HOÀN THÀNH KHÓA TU HỌC', 600, 195);
+
+      ctx.fillStyle = '#8c4b1e';
+      ctx.font = 'italic 22px "Be Vietnam Pro", sans-serif';
+      ctx.fillText(`“${cert.motto}”`, 600, 240);
+
+      ctx.fillStyle = '#5b3a1d';
+      ctx.font = '24px "Be Vietnam Pro", sans-serif';
+      ctx.fillText('Trân trọng chứng nhận Học viên:', 600, 310);
+
+      ctx.fillStyle = '#7E2A22';
+      ctx.font = 'bold 52px "Be Vietnam Pro", sans-serif';
+      ctx.fillText(cert.studentName, 600, 385);
+
+      ctx.fillStyle = '#472915';
+      ctx.font = 'bold 30px "Be Vietnam Pro", sans-serif';
+      ctx.fillText(cert.courseTitle, 600, 465);
+
+      ctx.fillStyle = '#3D6B4A';
+      ctx.font = 'bold 26px "Be Vietnam Pro", sans-serif';
+      ctx.fillText(`Điểm thi: ${cert.score}/100  ·  Xếp loại: ${cert.gradeLabel}`, 600, 525);
+
+      // Crimson Lotus Seal
+      ctx.save();
+      ctx.translate(930, 665);
+      ctx.strokeStyle = '#B91C1C';
+      ctx.lineWidth = 5;
+      ctx.beginPath();
+      ctx.arc(0, 0, 74, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(0, 0, 64, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.fillStyle = '#B91C1C';
+      ctx.font = 'bold 16px "Be Vietnam Pro", sans-serif';
+      ctx.fillText('CHÙA VĨNH TRÀNG', 0, -10);
+      ctx.fillText('HỌC VIỆN PHẬT HỌC', 0, 16);
+      ctx.font = '13px "Be Vietnam Pro", sans-serif';
+      ctx.fillText('ẤN CHỨNG', 0, 40);
+      ctx.restore();
+
+      ctx.textAlign = 'left';
+      ctx.fillStyle = '#472915';
+      ctx.font = '22px "Be Vietnam Pro", sans-serif';
+      ctx.fillText(cert.issuedLabel, 110, 650);
+      ctx.fillStyle = '#7a4e25';
+      ctx.font = 'bold 18px "Be Vietnam Pro", sans-serif';
+      ctx.fillText(`Mã xác thực: ${cert.verificationCode} · ${cert.certificateId}`, 110, 690);
+
+      const link = document.createElement('a');
+      link.download = `chung-nhan-vinh-trang-${cert.courseId}.png`;
+      link.href = c.toDataURL('image/png');
+      link.click();
+      this.playBellTone(324, 1.6);
+      this.showToast('📜 Đã tải Bằng Chứng Nhận PNG', 'Cô bác có thể mở xem hoặc in làm kỷ niệm.', 3400, false);
+    });
+  }
+
+  openTextbooksModal() {
+    const sortedBooks = [...DHARMA_TEXTBOOKS].sort((a, b) => (a.sortOrder || 99) - (b.sortOrder || 99));
+    this.openModal(
+      `Tủ sách Phật học (${sortedBooks.length} quyển PDF)`,
       `
       <div style="display:flex;flex-direction:column;gap:10px;">
-        <p style="font-size:14px;color:#4a2f18;">
-          24 bài học trong Giảng đường được soạn theo 10 quyển sách Phật học dưới đây:
+        <p style="font-size:14.5px;color:#4a2f18;">
+          24 bài học trong Học Viện được biên soạn có hệ thống theo <strong>${sortedBooks.length} quyển kinh sách Phật học</strong> chuẩn mực dưới đây:
         </p>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-          ${DHARMA_TEXTBOOKS.map(
-            (b) => `
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px;">
+          ${sortedBooks
+            .map(
+              (b) => `
             <div style="background:#fffdf8;border:1.5px solid rgba(140,100,60,0.28);border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;justify-content:space-between;gap:8px;">
               <div>
+                <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;margin-bottom:4px;">
+                  <span style="font-size:11.5px;font-weight:800;padding:2px 8px;border-radius:999px;background:#F6E9D2;color:#5C381F;">${b.tierLabel || 'Giáo trình'}</span>
+                  <span style="font-size:11.5px;color:#7a4e25;font-weight:700;">${b.durationLabel || ''}</span>
+                </div>
                 <div style="font-size:15px;font-weight:800;color:#472915;">${b.title}</div>
                 <div style="font-size:12.5px;font-weight:700;color:#8c4b1e;margin-top:2px;">Tác giả / Dịch giả: ${b.author}</div>
                 <p style="font-size:13px;color:#4a2f18;margin-top:5px;line-height:1.42;">${b.coreTeachings}</p>
               </div>
-              <a href="${b.pdfPath}" target="_blank" download style="display:inline-flex;align-items:center;justify-content:center;height:36px;border-radius:999px;background:#5C381F;color:#fff;font-size:13px;font-weight:700;text-decoration:none;">
-                Đọc sách (PDF)
+              <a href="${b.pdfPath}" target="_blank" download style="display:inline-flex;align-items:center;justify-content:center;min-height:44px;border-radius:999px;background:#5C381F;color:#fff;font-size:13.5px;font-weight:700;text-decoration:none;">
+                📄 Đọc sách (PDF)
               </a>
             </div>
           `
-          ).join('')}
+            )
+            .join('')}
         </div>
       </div>
       `
@@ -4758,15 +5855,8 @@ export class ChuaOnlineApp {
           });
           document.getElementById('btn-arhat-tts')?.addEventListener('click', () => {
             const text = `Vị thứ ${a.id}: ${a.title}, ${a.name}. Đặc trưng: ${a.emblem}. ${a.meaning}`;
-            if ('speechSynthesis' in window) {
-              try {
-                window.speechSynthesis.cancel();
-                const utter = new SpeechSynthesisUtterance(text);
-                utter.lang = 'vi-VN';
-                utter.rate = 0.92;
-                window.speechSynthesis.speak(utter);
-              } catch {}
-            }
+            this.ensureAudioContext();
+            this.audio?.speakText?.(text, { rate: this.readAlongRate || 1.0, lang: 'vi-VN', pitch: 0.98 });
             this.playBellTone(360, 1.4);
             this.showToast(`🙏 ${a.title}`, a.meaning, 4200, false);
           });
@@ -4858,7 +5948,7 @@ export class ChuaOnlineApp {
   }
 
   /* ========================================================================
-     TÀI KHOẢN & TỦ ĐỒ 3 NHÂN VẬT 3D (Nam · Nữ · Trẻ em)
+     TÀI KHOẢN, QUỐC TỊCH, ĐOÀN HÀNH HƯƠNG & TỦ ĐỒ 7 NHÂN VẬT 3D
      ======================================================================== */
   openAccountModal() {
     const wearableItems = SHOP_CATALOG.filter((item) =>
@@ -4884,6 +5974,8 @@ export class ChuaOnlineApp {
 
     const activeProf =
       CHARACTER_PROFILES.find((c) => c.key === this.characterModelKey) || CHARACTER_PROFILES[0];
+    const activeNat = getNationalityProfile(this.nationalityId);
+    const activeMode = getPilgrimageMode(this.pilgrimageModeId);
     this.profilePreviewPose = this.profilePreviewPose || 'Dung';
     const activeVisual = this.buildStoreVisualPayload();
     const activeOutfitText = activeVisual.robeName
@@ -4891,7 +5983,7 @@ export class ChuaOnlineApp {
       : activeProf.outfitName;
 
     this.openModal(
-      'Hồ sơ & Trang phục đi chùa',
+      'Hồ sơ · Quốc tịch · Đoàn hành hương',
       `
       <div class="profile-modal-layout">
         <div class="profile-stage-card">
@@ -4904,8 +5996,8 @@ export class ChuaOnlineApp {
               <button type="button" class="profile-pose-btn ${this.profilePreviewPose === 'Quỳ' ? 'active' : ''}" data-profile-pose="Quỳ">Quỳ</button>
             </div>
           </div>
-          <div class="profile-char-name">${activeProf.name} (${activeProf.heightLabel})</div>
-          <div class="profile-char-sub">${activeOutfitText}</div>
+          <div class="profile-char-name">${activeNat.flag} ${activeProf.name} (${activeProf.heightLabel})</div>
+          <div class="profile-char-sub">${activeOutfitText} · ${activeMode.name}</div>
           <div class="profile-char-switch-row">
             ${CHARACTER_PROFILES.map(
               (c) => `
@@ -4915,6 +6007,9 @@ export class ChuaOnlineApp {
             `
             ).join('')}
           </div>
+          <button type="button" id="btn-account-replay-arrival" class="quest-go-btn" style="width:100%;min-height:44px;margin-top:8px;">
+            🚗 Xem lại xe đưa tới chùa
+          </button>
         </div>
 
         <div class="profile-right-col">
@@ -4923,6 +6018,30 @@ export class ChuaOnlineApp {
             <div><div class="profile-stat-val">${this.spiritual.incenseOfferings}</div><div class="profile-stat-lbl">Lần dâng hương</div></div>
             <div><div class="profile-stat-val">${this.spiritual.malaCycles * 108 + this.spiritual.malaBeads}</div><div class="profile-stat-lbl">Biến niệm Phật</div></div>
             <div><div class="profile-stat-val">${this.completedLessons.size}/24</div><div class="profile-stat-lbl">Bài đã học</div></div>
+          </div>
+
+          <div>
+            <div class="profile-wardrobe-heading">Quốc tịch &amp; Truyền thống hành hương (${activeNat.flag} ${activeNat.name.split('—')[0].trim()}):</div>
+            <div class="profile-nat-pills">
+              ${NATIONALITY_PROFILES.map(
+                (n) => `
+                <button type="button" class="profile-chip-btn ${this.nationalityId === n.id ? 'active' : ''}" data-acc-nat="${n.id}">
+                  ${n.flag} ${n.name.split('—')[0].trim()}
+                </button>`
+              ).join('')}
+            </div>
+          </div>
+
+          <div>
+            <div class="profile-wardrobe-heading">Chế độ &amp; Bạn đồng hành 3D (${activeMode.companions.length} người đi cùng):</div>
+            <div class="profile-mode-pills">
+              ${PILGRIMAGE_MODES.map(
+                (m) => `
+                <button type="button" class="profile-chip-btn ${this.pilgrimageModeId === m.id ? 'active' : ''}" data-acc-mode="${m.id}">
+                  ${m.name} (${m.companions.length > 0 ? `${m.companions.length} bạn 3D` : 'Tĩnh tâm'})
+                </button>`
+              ).join('')}
+            </div>
           </div>
 
           ${
@@ -5044,6 +6163,30 @@ export class ChuaOnlineApp {
       });
     });
 
+    document.querySelectorAll('[data-acc-nat]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        this.nationalityId = btn.getAttribute('data-acc-nat') || 'vn';
+        this.syncPilgrimageCompanionsTo3D();
+        this.saveState();
+        this.playMokugyoTap();
+        this.openAccountModal();
+      });
+    });
+
+    document.querySelectorAll('[data-acc-mode]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        this.pilgrimageModeId = btn.getAttribute('data-acc-mode') || 'solo';
+        this.syncPilgrimageCompanionsTo3D();
+        this.saveState();
+        this.playMokugyoTap();
+        this.openAccountModal();
+      });
+    });
+
+    document.getElementById('btn-account-replay-arrival')?.addEventListener('click', () => {
+      this.openArrivalPilgrimageModal();
+    });
+
     document.querySelectorAll('.store-wardrobe-toggle-btn').forEach((btn) => {
       btn.addEventListener('click', () => {
         const slot = btn.getAttribute('data-store-slot');
@@ -5143,7 +6286,7 @@ export class ChuaOnlineApp {
   }
 
   /* ========================================================================
-     HÀNH TRÌNH MODAL (Điểm danh 7 ngày · Nhiệm vụ & Chặng · Hộp thư · Hướng dẫn · Chia sẻ & Góp ý)
+     HÀNH TRÌNH MODAL (Điểm danh · Lộ trình 30 Ngày · Nhật Ký · Nhiệm vụ · Hộp thư · Hướng dẫn)
      ======================================================================== */
   openActivityHubModal(initialTab = 'checkin') {
     let activeTab = initialTab;
@@ -5151,6 +6294,13 @@ export class ChuaOnlineApp {
     let feedbackRating = 5;
     const feedbackTags = new Set();
     let feedbackComment = '';
+    let selectedWeek = 1;
+    let selectedDayPreview = Math.max(1, Math.min(30, (this.practicedDays?.length || 0) + 1));
+    if ((this.practicedDays || []).includes(selectedDayPreview)) {
+      selectedDayPreview = this.practicedDays[this.practicedDays.length - 1] || 1;
+    }
+    let selectedMood = 'binh_an';
+    let draftJournalText = '';
 
     const renderHub = () => {
       const todayKey = getLocalDateKey();
@@ -5455,6 +6605,121 @@ export class ChuaOnlineApp {
             </div>
           </div>
         `;
+      } else if (activeTab === 'thirty_days') {
+        const seasonal = getTempleSeasonalContext();
+        const practicedSet = new Set(this.practicedDays || [1]);
+        const weekPlan = THIRTY_DAY_RETREATS.find((w) => w.week === selectedWeek) || THIRTY_DAY_RETREATS[0];
+        const daysInWeek = THIRTY_DAY_JOURNEY_PLAN.filter((d) => d.week === selectedWeek);
+        const dayTheme = getThirtyDayTheme(selectedDayPreview);
+        const dayStation = findAnyTempleDestination(dayTheme.suggestedStation) || PILGRIMAGE_STATIONS[0];
+        const isDayDone = practicedSet.has(dayTheme.day);
+
+        bodyHtml = `
+          <div class="seasonal-festival-banner">
+            <div>
+              <div style="font-size:16px;font-weight:800;color:#FFD875;">${seasonal.isFestivalDay ? '🏮 ' : '🪷 '}${seasonal.activeFestival ? seasonal.activeFestival.name : seasonal.lunarLabel}</div>
+              <div style="font-size:13px;color:#FFF6E5;margin-top:2px;">${seasonal.greeting}</div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+              <span class="store-wallet-pill">Đã tu tập ${practicedSet.size}/30 ngày</span>
+              <span class="store-wallet-pill">${seasonal.xpMultiplier}x XP</span>
+            </div>
+          </div>
+
+          <div class="thirty-week-row">
+            ${THIRTY_DAY_RETREATS.map(
+              (w) => `
+              <button type="button" class="thirty-week-pill ${selectedWeek === w.week ? 'active' : ''}" data-thirty-week="${w.week}">
+                <strong>Tuần ${w.week}</strong>
+                <span>${w.title.replace(/^Tuần \d+:\s*/, '')}</span>
+              </button>`
+            ).join('')}
+          </div>
+
+          <div style="font-size:13.5px;color:#5b3a1d;font-weight:700;padding:4px 2px;">${weekPlan.subtitle}</div>
+
+          <div class="thirty-day-grid">
+            ${daysInWeek
+              .map((d) => {
+                const done = practicedSet.has(d.day);
+                const selected = selectedDayPreview === d.day;
+                return `
+                <button type="button" class="thirty-day-card ${done ? 'done' : ''} ${selected ? 'selected' : ''}" data-thirty-day="${d.day}">
+                  <div class="thirty-day-head">
+                    <span class="thirty-day-num">Ngày ${d.day}</span>
+                    <span>${done ? '✓ Đã tu' : `+${d.rewardLotus} 🪷`}</span>
+                  </div>
+                  <div class="thirty-day-title">${d.title}</div>
+                  ${d.milestoneBadge ? `<div class="thirty-day-badge">🏅 ${d.milestoneBadge}</div>` : ''}
+                </button>`;
+              })
+              .join('')}
+          </div>
+
+          <div class="thirty-day-detail-card">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
+              <div>
+                <div style="font-size:12.5px;font-weight:800;color:#8c4b1e;">NGÀY ${dayTheme.day}/30 · ${dayTheme.retreatTitle}</div>
+                <div style="font-size:18px;font-weight:800;color:#472915;margin-top:2px;">${dayTheme.title}</div>
+              </div>
+              <span class="mail-rewards-pill">+${dayTheme.rewardLotus} 🪷 · +${dayTheme.rewardGems} 💎 · +${dayTheme.rewardXp} XP</span>
+            </div>
+            <p style="font-size:14.5px;color:#3d2410;line-height:1.5;margin:8px 0 12px;">“${dayTheme.prompt}”</p>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;">
+              <button type="button" id="btn-thirty-walk-station" class="quest-go-btn" style="min-height:48px;padding:0 16px;">
+                🚶 Tới ${dayStation.name}
+              </button>
+              <button type="button" id="btn-thirty-complete-day" class="arrival-primary-btn" style="flex:1;min-height:48px;" ${isDayDone ? 'disabled' : ''}>
+                ${isDayDone ? `✓ Đã hoàn thành Ngày ${dayTheme.day}` : `🪷 Đánh dấu Tu Tập Ngày ${dayTheme.day} (+${dayTheme.rewardLotus} 🪷)`}
+              </button>
+            </div>
+          </div>
+        `;
+      } else if (activeTab === 'journal') {
+        const entries = this.dharmaJournal?.entries || [];
+        bodyHtml = `
+          <div class="activity-banner-row">
+            <div>
+              <div style="font-size:16.5px;font-weight:800;color:#FFD875;">📓 Nhật Ký An Tâm · Ghi Chép Lời Nguyện &amp; Chánh Niệm</div>
+              <div style="font-size:13px;color:#FFF6E5;margin-top:2px;">Mỗi ngày viết một dòng biết ơn hoặc cảm nhận khi về thăm Chùa Vĩnh Tràng (+20 🪷 · +15 XP).</div>
+            </div>
+            <button type="button" id="btn-journal-open-hoadang" class="quest-claim-btn" style="min-height:44px;">🏮 Thả Hoa Đăng</button>
+          </div>
+
+          <div class="journal-compose-card">
+            <div style="font-size:14px;font-weight:800;color:#472915;margin-bottom:6px;">Tâm trạng hôm nay:</div>
+            <div class="journal-moods-row">
+              ${DHARMA_JOURNAL_MOODS.map(
+                (m) => `
+                <button type="button" class="journal-mood-btn ${selectedMood === m.id ? 'active' : ''}" data-journal-mood="${m.id}">
+                  <span>${m.icon}</span>
+                  <span>${m.label}</span>
+                </button>`
+              ).join('')}
+            </div>
+            <textarea id="journal-entry-input" class="feedback-textarea" rows="3" placeholder="Hôm nay lòng cô bác thế nào? Viết lại một điều biết ơn hoặc lời chúc an lành...">${draftJournalText}</textarea>
+            <button type="button" id="btn-save-journal-entry" class="arrival-primary-btn" style="width:100%;min-height:48px;margin-top:8px;">
+              🪷 Lưu trang Nhật Ký (+20 🪷 · +15 XP)
+            </button>
+          </div>
+
+          <div class="hub-section-heading">📖 Các trang Nhật Ký đã lưu (${entries.length})</div>
+          <div class="journal-entries-list">
+            ${entries
+              .slice(0, 14)
+              .map(
+                (e) => `
+              <article class="journal-entry-card">
+                <div class="journal-entry-head">
+                  <span class="journal-entry-mood">${e.moodIcon || '🪷'} ${e.moodLabel || 'Bình an'}</span>
+                  <span class="journal-entry-date">${e.createdAt || e.dateKey || ''}</span>
+                </div>
+                <p class="journal-entry-text">${e.text}</p>
+              </article>`
+              )
+              .join('')}
+          </div>
+        `;
       }
 
       this.openModal(
@@ -5464,6 +6729,12 @@ export class ChuaOnlineApp {
           <div class="activity-tabs-row" role="tablist">
             <button type="button" class="activity-tab-pill ${activeTab === 'checkin' ? 'active' : ''}" data-hub-tab="checkin">
               📅 Điểm danh ${canCheckinToday ? '<span class="hub-dot"></span>' : ''}
+            </button>
+            <button type="button" class="activity-tab-pill ${activeTab === 'thirty_days' ? 'active' : ''}" data-hub-tab="thirty_days">
+              🗓️ 30 Ngày
+            </button>
+            <button type="button" class="activity-tab-pill ${activeTab === 'journal' ? 'active' : ''}" data-hub-tab="journal">
+              📓 Nhật Ký
             </button>
             <button type="button" class="activity-tab-pill ${activeTab === 'quests' ? 'active' : ''}" data-hub-tab="quests">
               🎯 Nhiệm vụ ${claimableQCount > 0 ? `<span class="hub-count">${claimableQCount}</span>` : ''}
@@ -5695,6 +6966,91 @@ export class ChuaOnlineApp {
         this.showToast('🙏 Đã gửi góp ý', res.message, 4000, false);
         renderHub();
       });
+
+      document.querySelectorAll('[data-thirty-week]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          selectedWeek = Math.max(1, Math.min(4, Number(btn.getAttribute('data-thirty-week') || 1)));
+          selectedDayPreview = (selectedWeek - 1) * 7 + 1;
+          this.playMokugyoTap();
+          renderHub();
+        });
+      });
+
+      document.querySelectorAll('[data-thirty-day]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          selectedDayPreview = Math.max(1, Math.min(30, Number(btn.getAttribute('data-thirty-day') || 1)));
+          this.playMokugyoTap();
+          renderHub();
+        });
+      });
+
+      document.getElementById('btn-thirty-walk-station')?.addEventListener('click', () => {
+        const dayTheme = getThirtyDayTheme(selectedDayPreview);
+        this.closeModal();
+        this.switchScreen('courtyard');
+        if (this.world3d?.insideInterior) {
+          this.toggleInteriorHallIn3D(false);
+        }
+        this.walkToStationIn3D(dayTheme.suggestedStation || 'chanh_dien');
+      });
+
+      document.getElementById('btn-thirty-complete-day')?.addEventListener('click', () => {
+        const dayTheme = getThirtyDayTheme(selectedDayPreview);
+        if (!Array.isArray(this.practicedDays)) this.practicedDays = [1];
+        if (this.practicedDays.includes(dayTheme.day)) return;
+        this.practicedDays.push(dayTheme.day);
+        this.practicedDays.sort((a, b) => a - b);
+        this.storeProfile.lotusPoints += dayTheme.rewardLotus || 40;
+        this.storeProfile.gems += dayTheme.rewardGems || 3;
+        this.grantPilgrimXp(dayTheme.rewardXp || 30, `Tu tập Ngày ${dayTheme.day}/30`);
+        this.spiritual = recordSpiritualMilestone(this.spiritual, `Hoàn thành Ngày ${dayTheme.day} · ${dayTheme.title}`);
+        this.saveState();
+        this.updateActionBadges();
+        this.audio?.playBlessingChime?.();
+        this.audio?.playCoinLotusSfx?.();
+        this.showToast(
+          `🗓️ Hoàn thành Ngày ${dayTheme.day}/30`,
+          `${dayTheme.milestoneBadge ? `🏅 Nhận danh hiệu: ${dayTheme.milestoneBadge} · ` : ''}+${dayTheme.rewardLotus} 🪷 · +${dayTheme.rewardGems} 💎`,
+          4400,
+          true
+        );
+        if (selectedDayPreview < 30) {
+          selectedDayPreview += 1;
+          selectedWeek = Math.min(4, Math.ceil(selectedDayPreview / 7));
+        }
+        renderHub();
+      });
+
+      document.getElementById('btn-journal-open-hoadang')?.addEventListener('click', () => {
+        this.openHoaDangModal();
+      });
+
+      document.querySelectorAll('[data-journal-mood]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          draftJournalText = document.getElementById('journal-entry-input')?.value || draftJournalText;
+          selectedMood = btn.getAttribute('data-journal-mood') || 'binh_an';
+          this.playMokugyoTap();
+          renderHub();
+        });
+      });
+
+      document.getElementById('btn-save-journal-entry')?.addEventListener('click', () => {
+        const txt = document.getElementById('journal-entry-input')?.value || '';
+        const res = addJournalEntry(this.dharmaJournal, txt, selectedMood, getLocalDateKey());
+        if (!res.ok) {
+          this.showToast('Nhật Ký An Tâm', res.message, 3400, false);
+          return;
+        }
+        this.dharmaJournal = res.state;
+        draftJournalText = '';
+        this.storeProfile.lotusPoints += 20;
+        this.grantPilgrimXp(15, 'Viết Nhật Ký An Tâm');
+        this.saveState();
+        this.updateActionBadges();
+        this.audio?.playBlessingChime?.();
+        this.showToast('📓 Đã lưu Nhật Ký An Tâm', `${res.message} (+20 🪷 · +15 XP)`, 4000, false);
+        renderHub();
+      });
     };
 
     renderHub();
@@ -5788,7 +7144,7 @@ export class ChuaOnlineApp {
           }
         });
         if (!geomBox) geomBox = new THREE.Box3().setFromObject(cloned);
-        const targetH = charKey === 'tre_em' ? 1.38 : charKey === 'nam' ? 1.68 : 1.60;
+        const targetH = profile.heightMeters || 1.62;
         const scale = targetH / Math.max(0.2, geomBox.max.y - geomBox.min.y);
         cloned.scale.setScalar(scale);
         cloned.position.y = -geomBox.min.y * scale;
@@ -6741,6 +8097,50 @@ export class ChuaOnlineApp {
     document.getElementById('nav-btn-account')?.addEventListener('click', () => {
       this.openAccountModal();
     });
+    document.getElementById('nav-seasonal-pill')?.addEventListener('click', () => {
+      this.openActivityHubModal('thirty_days');
+    });
+
+    const audioBtn = document.getElementById('nav-btn-audio');
+    const audioPopover = document.getElementById('audio-mixer-popover');
+    const setAudioPopoverOpen = (open) => {
+      if (!audioPopover || !audioBtn) return;
+      audioPopover.style.display = open ? 'block' : 'none';
+      audioBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    };
+    audioBtn?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.ensureAudioContext();
+      const isOpen = audioPopover?.style.display === 'block';
+      setAudioPopoverOpen(!isOpen);
+      this.updateAudioMixerUI();
+    });
+    document.getElementById('btn-close-audio-mixer')?.addEventListener('click', () => {
+      setAudioPopoverOpen(false);
+    });
+    document.addEventListener('click', (e) => {
+      if (!audioPopover || audioPopover.style.display !== 'block') return;
+      if (audioPopover.contains(e.target) || audioBtn?.contains(e.target)) return;
+      setAudioPopoverOpen(false);
+    });
+    document.getElementById('btn-audio-global-mute')?.addEventListener('click', () => {
+      this.setAudioMuted(!this.audioMuted);
+    });
+    document.getElementById('slider-ambient-vol')?.addEventListener('input', (e) => {
+      const val = Number(e.target?.value ?? 45) / 100;
+      this.audio?.setAmbientVolume?.(val);
+      this.saveAudioMixerState();
+    });
+    document.getElementById('slider-sfx-vol')?.addEventListener('input', (e) => {
+      const val = Number(e.target?.value ?? 85) / 100;
+      this.audio?.setSfxVolume?.(val);
+      this.saveAudioMixerState();
+    });
+    document.getElementById('slider-voice-vol')?.addEventListener('input', (e) => {
+      const val = Number(e.target?.value ?? 90) / 100;
+      this.audio?.setVoiceVolume?.(val);
+      this.saveAudioMixerState();
+    });
 
     // Interior Chữ Quốc 6-hall + Trai Đường quick navigation bar + Cutaway & Historical Source modal
     document.querySelectorAll('[data-interior-zone]').forEach((btn) => {
@@ -6891,7 +8291,9 @@ export class ChuaOnlineApp {
         e.preventDefault();
         btn.classList.add('pressed');
         this.world3d?.setHeldDirection(dir, true);
-        this.handleMoveDirection(dir);
+        if (!this.world3d) {
+          this.handleMoveDirection(dir);
+        }
       };
       const endHold = () => {
         btn.classList.remove('pressed');
@@ -6942,8 +8344,23 @@ export class ChuaOnlineApp {
     document.getElementById('btn-open-heritage-book')?.addEventListener('click', () => {
       this.openHeritageBookModal();
     });
+    document.getElementById('btn-open-hoa-dang')?.addEventListener('click', () => {
+      this.openHoaDangModal();
+    });
+    document.getElementById('btn-open-30day')?.addEventListener('click', () => {
+      this.openActivityHubModal('thirty_days');
+    });
+    document.getElementById('btn-open-journal')?.addEventListener('click', () => {
+      this.openActivityHubModal('journal');
+    });
     document.getElementById('btn-skip-entrance-tour')?.addEventListener('click', () => {
       this.world3d?.cancelEntranceTour();
+    });
+    document.getElementById('btn-skip-arrival-cutscene')?.addEventListener('click', () => {
+      this.world3d?.skipArrivalCutscene?.(false);
+      const b = document.getElementById('arrival-cutscene-banner');
+      if (b) b.style.display = 'none';
+      this.syncPilgrimageCompanionsTo3D();
     });
     document.getElementById('pin-giang-duong')?.addEventListener('click', () => {
       this.switchScreen('lecture');
@@ -6981,7 +8398,7 @@ export class ChuaOnlineApp {
       if (dir && this.activeScreen === 'courtyard') {
         e.preventDefault();
         this.world3d?.setHeldDirection(dir, true);
-        if (!e.repeat) {
+        if (!e.repeat && !this.world3d) {
           this.handleMoveDirection(dir);
         }
       } else if (e.code === 'KeyE' && this.activeScreen === 'courtyard') {
@@ -7046,6 +8463,26 @@ export class ChuaOnlineApp {
     document.getElementById('btn-lecture-back')?.addEventListener('click', () => this.switchScreen('courtyard'));
     document.getElementById('btn-lecture-font-dec')?.addEventListener('click', () => this.stepElderFontScale(-1));
     document.getElementById('btn-lecture-font-inc')?.addEventListener('click', () => this.stepElderFontScale(1));
+    document.getElementById('btn-lecture-speed-toggle')?.addEventListener('click', () => {
+      this.readAlongRate = this.readAlongRate === 0.85 ? 1.0 : 0.85;
+      const btn = document.getElementById('btn-lecture-speed-toggle');
+      if (btn) {
+        btn.textContent = `🐢 ${this.readAlongRate === 0.85 ? '0.85x Chậm' : '1.0x Chuẩn'}`;
+      }
+      this.saveState();
+      this.playMokugyoTap();
+      if (this.lectureTab === 'listen' || this.lectureTab === 'lesson') {
+        this.renderLectureStage();
+      }
+      this.showToast(
+        '🎙️ Đã chỉnh tốc độ Thầy đọc',
+        this.readAlongRate === 0.85
+          ? 'Tốc độ 0.85x (Chậm rãi, rõ chữ, phù hợp cô bác lớn tuổi).'
+          : 'Tốc độ 1.0x (Nhịp đọc chuẩn).',
+        3000,
+        false
+      );
+    });
     document.getElementById('btn-lecture-daily-dharma')?.addEventListener('click', () => this.showDailyDharmaModal({ markSeenToday: false }));
     document.getElementById('btn-lecture-textbooks')?.addEventListener('click', () => this.openTextbooksModal());
     document.getElementById('btn-lecture-recordings')?.addEventListener('click', () => this.openAudioRecordingsModal());

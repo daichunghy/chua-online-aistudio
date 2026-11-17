@@ -43,6 +43,54 @@ export const CHARACTER_PROFILES = [
     previewImg: '/Thiết kế giao diện/Nhân vật 3D/anh-xem-truoc-3d-tre_em.png',
     fitPreviewImg: '/Thiết kế giao diện/Nhân vật 3D/render-items-tre-em-v2.jpg',
     description: 'Em nhỏ Phật tử ngoan hiền theo cha mẹ về Chùa Vĩnh Tràng học lễ Phật, dâng hoa và rèn lòng hiếu thảo.'
+  },
+  {
+    key: 'nu_ao_lam',
+    name: 'Phật tử Nữ Áo Lam (Thanh Tịnh)',
+    heightLabel: '1.63m',
+    heightMeters: 1.63,
+    outfitName: 'Áo lam cổ truyền 5 nút & Quần lụa trắng',
+    glb: '/Thiết kế giao diện/Nhân vật 3D/meshy_chars/nu-ao-lam.glb',
+    previewImg: '/Thiết kế giao diện/Nhân vật 3D/anh-xem-truoc-3d-all-nguoi-that.png',
+    fitPreviewImg: '/Thiết kế giao diện/Nhân vật 3D/render-items-nu.jpg',
+    isMeshyChar: true,
+    description: 'Nữ Phật tử duyên dáng trong bộ áo lam cổ truyền thanh thoát, thường xuyên công quả và tụng kinh sáng chiều.'
+  },
+  {
+    key: 'nam_ao_nau',
+    name: 'Cư sĩ Nam Áo Nâu (Thiện Hiền)',
+    heightLabel: '1.73m',
+    heightMeters: 1.73,
+    outfitName: 'Áo tràng nâu sồng Nam Bộ & Tràng hạt Bồ Đề',
+    glb: '/Thiết kế giao diện/Nhân vật 3D/meshy_chars/nam-ao-nau.glb',
+    previewImg: '/Thiết kế giao diện/Nhân vật 3D/anh-xem-truoc-3d-nam.png',
+    fitPreviewImg: '/Thiết kế giao diện/Nhân vật 3D/render-items-nam-v2.jpg',
+    isMeshyChar: true,
+    description: 'Nam cư sĩ đôn hậu mặc áo tràng nâu giản dị miền Tây, vững chãi trong từng bước thiền hành nơi sân chùa.'
+  },
+  {
+    key: 'du_khach',
+    name: 'Du khách Văn hóa (Minh Anh)',
+    heightLabel: '1.76m',
+    heightMeters: 1.76,
+    outfitName: 'Trang phục dạo chùa thanh lịch & Thẻ tham quan di sản',
+    glb: '/Thiết kế giao diện/Nhân vật 3D/meshy_chars/du-khach-quoc-te.glb',
+    previewImg: '/Thiết kế giao diện/Nhân vật 3D/anh-xem-truoc-3d-all-nguoi-that.png',
+    fitPreviewImg: '/Thiết kế giao diện/Nhân vật 3D/render-items-nam-v2.jpg',
+    isMeshyChar: true,
+    description: 'Du khách phương xa yêu mến kiến trúc Á – Âu của Chùa Vĩnh Tràng, ghé thăm chiêm bái và tìm hiểu văn hóa.'
+  },
+  {
+    key: 'su_thay',
+    name: 'Sư Thầy Trụ Trì (Thích Tâm An)',
+    heightLabel: '1.72m',
+    heightMeters: 1.72,
+    outfitName: 'Áo nhật bình & Y hậu vàng trang nghiêm',
+    glb: '/Thiết kế giao diện/Nhân vật 3D/meshy_chars/su-thay-ao-vang.glb',
+    previewImg: '/Thiết kế giao diện/Nhân vật 3D/anh-xem-truoc-3d-all-nguoi-that.png',
+    fitPreviewImg: '/Thiết kế giao diện/Nhân vật 3D/render-items-nam-v2.jpg',
+    isMeshyChar: true,
+    description: 'Bậc tôn túc áo vàng trang nghiêm hướng dẫn Phật tử tu học, giảng giải kinh điển và giữ gìn nếp sống cổ tự.'
   }
 ];
 
@@ -83,13 +131,13 @@ export const PILGRIMAGE_STATIONS = [
     name: 'Tượng Phật A Di Đà (tượng 18m, đài sen/bệ 7m; tổng cao 25m)',
     zoneCode: 'Hoa viên phía trước Chánh điện',
     pinLabel: 'Tượng Phật A Di Đà',
-    pos: { x: 23.0, z: 27.0 },
-    standPos: { x: 23.0, z: 39.0 },
-    via: [[40.5, 45.8], [40.5, 39.5], [32.0, 39.0], [23.0, 39.0]],
-    mapCoord: { x: 67, y: 81 },
-    lookAt: { x: 23.0, y: 12.0, z: 27.0 },
+    pos: { x: 8.5, z: 17.5 },
+    standPos: { x: 15.2, z: 17.5 },
+    via: [[40.5, 45.8], [32.0, 28.0], [23.0, 22.0], [15.2, 17.5]],
+    mapCoord: { x: 56, y: 72 },
+    lookAt: { x: 8.5, y: 12.0, z: 17.5 },
     audio: 's1_adida.mp3',
-    subtitle: 'Tượng Phật A Di Đà đứng giữa hoa viên phía trước Chánh điện; thân tượng cao 18m, đài sen và bệ cao khoảng 7m.',
+    subtitle: 'Tượng Phật A Di Đà đứng bên hoa viên Tây Nam phía trước Chánh điện; thân tượng cao 18m, đài sen và bệ cao khoảng 7m.',
     ritualType: 'niem_phat'
   },
   {
@@ -1252,7 +1300,7 @@ export function validateOrderForm(form) {
 }
 
 /**
- * 10 Canonical Buddhist Textbooks available in /Giáo trình phật học/
+ * 11 Canonical Buddhist Textbooks available in /Giáo trình phật học/
  */
 export const DHARMA_TEXTBOOKS = [
   {
@@ -1260,6 +1308,12 @@ export const DHARMA_TEXTBOOKS = [
     title: 'Phật Học Phổ Thông — Quyển 1 (Khóa I, II, III)',
     author: 'Hòa thượng Thích Thiện Hoa',
     pdfPath: '/Giáo trình phật học/Phật học phổ thông 1.pdf',
+    tier: 'basic',
+    tierLabel: 'Cơ bản · Nhập môn',
+    pages: 210,
+    estimatedMinutes: 65,
+    durationLabel: '210 trang · ~65 phút đọc',
+    sortOrder: 1,
     coreTeachings: 'Trình bày hệ thống từ Quy Y Tam Bảo, Ngũ Giới, Thập Thiện, Tứ Nhiếp Pháp đến Nhân Quả, Luân Hồi và Tứ Diệu Đế theo phương pháp sư phạm dễ hiểu cho Phật tử tại gia.'
   },
   {
@@ -1267,6 +1321,12 @@ export const DHARMA_TEXTBOOKS = [
     title: 'Phật Học Phổ Thông — Quyển 3 (Lục Độ & Đại Thừa)',
     author: 'Hòa thượng Thích Thiện Hoa',
     pdfPath: '/Giáo trình phật học/Phật học phổ thông 3.pdf',
+    tier: 'heritage',
+    tierLabel: 'Di sản & Đại Thừa',
+    pages: 205,
+    estimatedMinutes: 65,
+    durationLabel: '205 trang · ~65 phút đọc',
+    sortOrder: 11,
     coreTeachings: 'Đi sâu vào Tứ Vô Lượng Tâm (Từ, Bi, Hỷ, Xả), Lục Độ Ba La Mật và tinh thần Bồ Tát Đạo nhập thế cứu khổ.'
   },
   {
@@ -1274,6 +1334,12 @@ export const DHARMA_TEXTBOOKS = [
     title: 'Đức Phật Dạy Những Gì (What the Buddha Taught)',
     author: 'HT. Walpola Rahula · Ni sư Trí Hải dịch',
     pdfPath: '/Giáo trình phật học/duc-phat-day-nhung-gi-ht-walpola-rahula-ns-tri-hai-dich.pdf',
+    tier: 'heritage',
+    tierLabel: 'Kinh điển · Tinh yếu',
+    pages: 156,
+    estimatedMinutes: 50,
+    durationLabel: '156 trang · ~50 phút đọc',
+    sortOrder: 9,
     coreTeachings: 'Kiệt tác Phật học thế giới giải thích chuẩn xác thái độ tâm thức Phật giáo, Tứ Diệu Đế, thuyết Vô Ngã (Anatta), Duyên Khởi và Thiền Chánh Niệm.'
   },
   {
@@ -1281,6 +1347,12 @@ export const DHARMA_TEXTBOOKS = [
     title: 'Nền Tảng Phật Giáo — Quyển 1: Tam Bảo',
     author: 'Tỳ kheo Giác Giới',
     pdfPath: '/Giáo trình phật học/nen-tang-phat-giao-quyen-1-tam-bao.pdf',
+    tier: 'intermediate',
+    tierLabel: 'Trung cấp · Tam Bảo',
+    pages: 184,
+    estimatedMinutes: 55,
+    durationLabel: '184 trang · ~55 phút đọc',
+    sortOrder: 3,
     coreTeachings: 'Giải thích rõ ân đức của Phật Bảo (Tự giác, Giác tha, Giác hạnh viên mãn), Pháp Bảo (Thiết thực hiện tại, vượt thời gian) và Tăng Bảo.'
   },
   {
@@ -1288,6 +1360,12 @@ export const DHARMA_TEXTBOOKS = [
     title: 'Nền Tảng Phật Giáo — Quyển 2: Quy Y Tam Bảo',
     author: 'Tỳ kheo Giác Giới',
     pdfPath: '/Giáo trình phật học/nen-tang-phat-giao-quyen-2-quy-y-tam-bao.pdf',
+    tier: 'intermediate',
+    tierLabel: 'Trung cấp · Quy Y',
+    pages: 172,
+    estimatedMinutes: 50,
+    durationLabel: '172 trang · ~50 phút đọc',
+    sortOrder: 4,
     coreTeachings: 'Làm sáng tỏ ý nghĩa Quy y nội tâm (quay về tự tính giác ngộ) và Quy y ngoại tướng, cùng các điều làm thành tựu hay đứt mẻ giới quy y.'
   },
   {
@@ -1295,6 +1373,12 @@ export const DHARMA_TEXTBOOKS = [
     title: 'Nền Tảng Phật Giáo — Quyển 4: Nghiệp và Quả của Nghiệp',
     author: 'Tỳ kheo Giác Giới',
     pdfPath: '/Giáo trình phật học/nen-tang-phat-giao-quyen-4-nghiep-va-qua-cua-nghiep.pdf',
+    tier: 'intermediate',
+    tierLabel: 'Trung cấp · Nghiệp Quả',
+    pages: 178,
+    estimatedMinutes: 55,
+    durationLabel: '178 trang · ~55 phút đọc',
+    sortOrder: 5,
     coreTeachings: 'Phân tích Cố ý (Tác ý - Cetanā) chính là Nghiệp, 10 bất thiện nghiệp, 10 thiện nghiệp và phương pháp chuyển hóa trọng nghiệp bằng tu tâm.'
   },
   {
@@ -1302,6 +1386,12 @@ export const DHARMA_TEXTBOOKS = [
     title: 'Nền Tảng Phật Giáo — Quyển 5: Phước Thiện (Puñña)',
     author: 'Tỳ kheo Giác Giới',
     pdfPath: '/Giáo trình phật học/nen-tang-phat-giao-quyen-quyen-5-phuoc-thien.pdf',
+    tier: 'intermediate',
+    tierLabel: 'Trung cấp · Phước Thiện',
+    pages: 164,
+    estimatedMinutes: 50,
+    durationLabel: '164 trang · ~50 phút đọc',
+    sortOrder: 6,
     coreTeachings: 'Mười cội phước thiện (Thập phúc nghiệp sự): Bố thí, Trì giới, Tham thiền, Cung kính, Phục vụ, Hồi hướng phước, Tùy hỷ phước, Thính pháp, Thuyết pháp và Chánh kiến.'
   },
   {
@@ -1309,6 +1399,12 @@ export const DHARMA_TEXTBOOKS = [
     title: 'Phương Pháp Thiền Căn Bản (Basic Method of Meditation)',
     author: 'Thiền sư Ajahn Brahm',
     pdfPath: '/Giáo trình phật học/phuong-phap-thien-can-ban-ajahn-brahm-tieng-viet.pdf',
+    tier: 'meditation',
+    tierLabel: 'Thiền định & Chánh niệm',
+    pages: 148,
+    estimatedMinutes: 45,
+    durationLabel: '148 trang · ~45 phút đọc',
+    sortOrder: 7,
     coreTeachings: 'Hướng dẫn từng bước buông xả quá khứ và tương lai, an trú trong hiện tại tĩnh lặng và theo dõi hơi thở êm dịu dẫn vào định.'
   },
   {
@@ -1316,6 +1412,12 @@ export const DHARMA_TEXTBOOKS = [
     title: 'Tích Truyện Pháp Cú (Dhammapada Commentary)',
     author: 'Bản dịch Việt ngữ',
     pdfPath: '/Giáo trình phật học/tichtruyenphapcu.pdf',
+    tier: 'heritage',
+    tierLabel: 'Di sản & Pháp Cú',
+    pages: 224,
+    estimatedMinutes: 70,
+    durationLabel: '224 trang · ~70 phút đọc',
+    sortOrder: 10,
     coreTeachings: 'Những câu chuyện lịch sử sinh động thời Đức Phật gắn liền với 423 bài kệ Kinh Pháp Cú — bài học nhân sinh sâu sắc.'
   },
   {
@@ -1323,9 +1425,33 @@ export const DHARMA_TEXTBOOKS = [
     title: 'Tu Dưỡng Tâm Từ Bằng Thiền Chánh Niệm',
     author: 'Giáo trình Thiền Tứ Niệm Xứ & Tâm Từ',
     pdfPath: '/Giáo trình phật học/tu-duong-tam-tu-bang-thien-chanh-niem.pdf',
+    tier: 'meditation',
+    tierLabel: 'Thiền định & Tâm Từ',
+    pages: 136,
+    estimatedMinutes: 40,
+    durationLabel: '136 trang · ~40 phút đọc',
+    sortOrder: 8,
     coreTeachings: 'Kết hợp Quán thân thọ tâm pháp (Satipatthana) với thiền Rải Tâm Từ (Metta Bhavana) để chữa lành tổn thương và nuôi dưỡng lòng bi mẫn.'
+  },
+  {
+    id: 'giao_trinh_phat_hoc_toan_tap',
+    title: 'Giáo Trình Phật Học Cơ Bản Toàn Tập',
+    author: 'Ban Biên Tập Phật Học Phổ Thông',
+    pdfPath: '/Giáo trình phật học/giaotrinhphathoc.pdf',
+    tier: 'basic',
+    tierLabel: 'Cơ bản · Toàn tập',
+    pages: 260,
+    estimatedMinutes: 80,
+    durationLabel: '260 trang · ~80 phút đọc',
+    sortOrder: 2,
+    coreTeachings: 'Bộ giáo trình tổng hợp hệ thống lịch sử Đức Phật Thích Ca, giáo lý Duyên Khởi, Tứ Diệu Đế, Bát Chánh Đạo, oai nghi Phật tử tại gia và phương pháp ứng dụng chánh niệm đời thường.'
   }
 ];
+
+export function getSortedDharmaTextbooks(tier = 'all') {
+  const list = tier === 'all' ? DHARMA_TEXTBOOKS : DHARMA_TEXTBOOKS.filter((b) => b.tier === tier);
+  return [...list].sort((a, b) => (a.sortOrder || 99) - (b.sortOrder || 99));
+}
 
 export const LECTURE_PATHS = [
   {
@@ -1974,6 +2100,17 @@ export const LECTURE_LESSONS = [
     }
   }
 ];
+
+export const PATH_TO_COURSE_ID = {
+  A: 'course_1_khai_tam',
+  B: 'course_2_tam_bao',
+  C: 'course_3_thien_dinh',
+  D: 'course_4_di_san'
+};
+
+for (const lesson of LECTURE_LESSONS) {
+  lesson.courseId = PATH_TO_COURSE_ID[lesson.pathId] || 'course_1_khai_tam';
+}
 
 export function getLessonsByPath(pathId = 'A') {
   return LECTURE_LESSONS.filter((l) => l.pathId === pathId).sort((a, b) => a.order - b.order);
@@ -4962,8 +5099,8 @@ export const HERITAGE_RELICS = [
     name: 'Đại Tượng Phật A Di Đà 24m',
     era: 'Khánh thành 2007',
     stationKey: 'phat_adida',
-    pos: { x: 23, z: 27 },
-    desc: 'Pho tượng đứng uy nghiêm cao 24m trên đài sen hướng mặt về cổng chính đón khách hành hương.',
+    pos: { x: 8.5, z: 17.5 },
+    desc: 'Pho tượng đứng uy nghiêm cao 24m trên đài sen bên hoa viên Tây Nam hướng mặt về trục chính đón khách hành hương.',
     rewardLotus: 35,
     rewardXp: 25
   },
@@ -5086,6 +5223,1539 @@ export function discoverHeritageRelic(activityState, storeProfile, relicId, date
     message: `Đóng dấu Di Sản "${relic.name}"! Nhận +${relic.rewardLotus} 🪷 · +${relic.rewardXp} XP.`,
     activity: nextAct,
     storeProfile: nextProfile
+  };
+}
+
+// ============================================================================
+// 2. NATIONALITY & PILGRIMAGE PURPOSE / COMPANION MODE
+// ============================================================================
+export const NATIONALITY_PROFILES = [
+  {
+    id: 'vn',
+    name: 'Việt Nam — Hành hương Bản xứ',
+    flag: '🇻🇳',
+    greeting: 'A Di Đà Phật! Kính chào quý Phật tử phương Nam ghé thăm Chùa Vĩnh Tràng Mỹ Tho.',
+    accentHex: '#B84518',
+    badgeLabel: 'Hành hương Bản xứ',
+    preferredCharKey: 'nu'
+  },
+  {
+    id: 'jp',
+    name: 'Nhật Bản — Thiền tông & Trà đạo',
+    flag: '🇯🇵',
+    greeting: 'Gassho! Chào mừng hành giả Nhật Bản đến thưởng trà thiền và tịnh tâm tại cổ tự Vĩnh Tràng.',
+    accentHex: '#2F6F5E',
+    badgeLabel: 'Thiền tông · Trà đạo',
+    preferredCharKey: 'nu_ao_lam'
+  },
+  {
+    id: 'kr',
+    name: 'Hàn Quốc — Hoa Nghiêm Tịnh Độ',
+    flag: '🇰🇷',
+    greeting: 'Seongbul-haseyo! Kính đón Phật tử Hàn Quốc cùng lễ Tam Bảo và chiêm bái Bảo Tháp 7 tầng.',
+    accentHex: '#3B679E',
+    badgeLabel: 'Hoa Nghiêm · Tịnh Độ',
+    preferredCharKey: 'nam'
+  },
+  {
+    id: 'tw',
+    name: 'Đài Loan / Hoa Ngữ — Từ Tế Công Đức',
+    flag: '🇹🇼',
+    greeting: 'O-mi-tô-phật! Hoan hỷ đón quý thiện tín Đài Loan & Hoa ngữ về nguồn kết duyên công đức.',
+    accentHex: '#9C5C24',
+    badgeLabel: 'Từ Tế · Công Đức',
+    preferredCharKey: 'nam_ao_nau'
+  },
+  {
+    id: 'th',
+    name: 'Thái Lan — Theravada Chánh Niệm',
+    flag: '🇹🇭',
+    greeting: 'Sawadee & Namo Buddhaya! Kính mời hành giả Thái Lan dạo bước chánh niệm dưới cội Bồ Đề Lâm Tỳ Ni.',
+    accentHex: '#C9962E',
+    badgeLabel: 'Theravada · Chánh Niệm',
+    preferredCharKey: 'su_thay'
+  },
+  {
+    id: 'intl',
+    name: 'Quốc tế — Du khách Khám phá Di sản',
+    flag: '🌍',
+    greeting: 'Welcome to Vĩnh Tràng Pagoda! Khám phá di sản kiến trúc Á – Âu gần 200 năm tuổi tại Mỹ Tho.',
+    accentHex: '#5C381F',
+    badgeLabel: 'Di sản Á – Âu',
+    preferredCharKey: 'du_khach'
+  }
+];
+
+export function getNationalityProfile(nationalityId = 'vn') {
+  return NATIONALITY_PROFILES.find((n) => n.id === nationalityId) || NATIONALITY_PROFILES[0];
+}
+
+export const PILGRIMAGE_MODES = [
+  {
+    id: 'solo',
+    name: 'Đi một mình — Tĩnh tâm vãng cảnh',
+    desc: 'Một mình thong dong dạo sân gạch, lắng nghe tiếng chuông ngân và thực tập chánh niệm sâu.',
+    arrivalVehicle: 'sedan',
+    companions: []
+  },
+  {
+    id: 'family_3gen',
+    name: 'Gia đình 3 thế hệ — Đạo Hiếu sum vầy',
+    desc: 'Cùng Bà/Mẹ và Bé An đi xe gia đình về chùa thắp hương cầu bình an, nuôi dưỡng đạo hiếu cho con trẻ.',
+    arrivalVehicle: 'van',
+    companions: [
+      {
+        charKey: 'nu_ao_lam',
+        roleLabel: 'Bà / Mẹ hiền',
+        tint: '#9A8F99',
+        hat: 'non_la_theu_sen',
+        bag: 'tui_vai_theu_sen',
+        offset: { x: -1.65, z: 1.1 }
+      },
+      {
+        charKey: 'tre_em',
+        roleLabel: 'Bé An (Cháu ngoan)',
+        tint: '#8B9BB4',
+        hat: null,
+        bag: null,
+        offset: { x: 1.45, z: 0.9 }
+      }
+    ]
+  },
+  {
+    id: 'tour_group',
+    name: 'Đoàn hành hương — Xe khách 45 chỗ & Hướng dẫn viên bản tự',
+    desc: 'Đi theo đoàn hành hương thập phương với xe 45 chỗ, nghe thuyết minh lịch sử Chùa Vĩnh Tràng 1849.',
+    arrivalVehicle: 'bus',
+    companions: [
+      {
+        charKey: 'su_thay',
+        roleLabel: 'Hướng dẫn viên bản tự',
+        tint: '#D9A441',
+        hat: null,
+        bag: null,
+        offset: { x: 1.9, z: -0.9 }
+      },
+      {
+        charKey: 'nam_ao_nau',
+        roleLabel: 'Trưởng đoàn Phật tử',
+        tint: '#7A543E',
+        hat: 'non_la_theu_sen',
+        bag: 'tui_vai_theu_sen',
+        offset: { x: -1.9, z: 1.2 }
+      },
+      {
+        charKey: 'nu',
+        roleLabel: 'Đồng tu trong đoàn',
+        tint: '#9A8F99',
+        hat: null,
+        bag: 'tui_vai_theu_sen',
+        offset: { x: 2.1, z: 1.4 }
+      }
+    ]
+  },
+  {
+    id: 'explorer',
+    name: 'Khách tham quan văn hóa — Khám phá kiến trúc Á-Âu',
+    desc: 'Hành trình du khảo tìm hiểu 13 vòm cửa Á – Âu, Thập Bát La Hán gỗ mít 1907 và 3 pho đại tượng.',
+    arrivalVehicle: 'sedan',
+    companions: [
+      {
+        charKey: 'du_khach',
+        roleLabel: 'Bạn đồng hành văn hóa',
+        tint: '#4E86A8',
+        hat: null,
+        bag: 'tui_vai_theu_sen',
+        offset: { x: -1.6, z: 0.85 }
+      }
+    ]
+  }
+];
+
+export function getPilgrimageMode(modeId = 'solo') {
+  return PILGRIMAGE_MODES.find((m) => m.id === modeId) || PILGRIMAGE_MODES[0];
+}
+
+// ============================================================================
+// 3. 30-DAY NON-BORING SPIRITUAL LOOP (Journey Plan, Lunar Calendar,
+//    Hoa Dang Lanterns & Dharma Journal)
+// ============================================================================
+export const THIRTY_DAY_RETREATS = [
+  {
+    id: 'week_1',
+    week: 1,
+    dayRange: [1, 7],
+    title: 'Tuần 1: Gieo Duyên Tam Bảo',
+    subtitle: 'Ngày 1–7 · Quay về nương tựa Phật – Pháp – Tăng giữa không gian cổ tự miền Tây'
+  },
+  {
+    id: 'week_2',
+    week: 2,
+    dayRange: [8, 14],
+    title: 'Tuần 2: Sống An Giữa Đời',
+    subtitle: 'Ngày 8–14 · Giữ chánh niệm trong hơi thở, tách trà và từng bước chân đi đứng'
+  },
+  {
+    id: 'week_3',
+    week: 3,
+    dayRange: [15, 21],
+    title: 'Tuần 3: Từ Bi & Hiếu Hạnh',
+    subtitle: 'Ngày 15–21 · Nuôi dưỡng lòng biết ơn cha mẹ, nói lời hòa ái và sẻ chia công đức'
+  },
+  {
+    id: 'week_4',
+    week: 4,
+    dayRange: [22, 30],
+    title: 'Tuần 4: Trí Tuệ & Viên Mãn',
+    subtitle: 'Ngày 22–30 · Quán chiếu vô thường, chuyển hóa phiền não và hồi hướng viên mãn'
+  }
+];
+
+export const THIRTY_DAY_JOURNEY_PLAN = [
+  // Tuần 1: Gieo Duyên Tam Bảo (Ngày 1-7)
+  {
+    day: 1,
+    week: 1,
+    retreatId: 'week_1',
+    retreatTitle: 'Tuần 1: Gieo Duyên Tam Bảo',
+    title: 'Bước qua Cổng Tam Quan bằng bước chân thong thả',
+    prompt: 'Sáng nay mình tạm gác bộn bề ngoài kia, qua Cổng Phụ Tịnh Độ với một nụ cười nhẹ và ba hơi thở êm.',
+    suggestedStation: 'cong_tam_quan',
+    rewardLotus: 35,
+    rewardGems: 2,
+    rewardXp: 25,
+    milestoneBadge: null
+  },
+  {
+    day: 2,
+    week: 1,
+    retreatId: 'week_1',
+    retreatTitle: 'Tuần 1: Gieo Duyên Tam Bảo',
+    title: 'Ba nén tâm hương trước mặt tiền 13 vòm',
+    prompt: 'Khi phẩy nhẹ cho tắt ngọn lửa nơi đầu nhang, mình thầm gửi một lời chúc bình an cho cả nhà.',
+    suggestedStation: 'lu_huong_san',
+    rewardLotus: 35,
+    rewardGems: 2,
+    rewardXp: 25,
+    milestoneBadge: null
+  },
+  {
+    day: 3,
+    week: 1,
+    retreatId: 'week_1',
+    retreatTitle: 'Tuần 1: Gieo Duyên Tam Bảo',
+    title: 'Tam Bái tại Chánh điện Chữ Quốc',
+    prompt: 'Cúi đầu lạy ba lạy giữa mùi gỗ mít và hương trầm thoang thoảng, nhắc lòng nhớ ơn Phật, Pháp, Tăng.',
+    suggestedStation: 'chanh_dien',
+    rewardLotus: 40,
+    rewardGems: 3,
+    rewardXp: 30,
+    milestoneBadge: null
+  },
+  {
+    day: 4,
+    week: 1,
+    retreatId: 'week_1',
+    retreatTitle: 'Tuần 1: Gieo Duyên Tam Bảo',
+    title: 'Lắng nghe bài pháp ngắn nơi Giảng đường gỗ',
+    prompt: 'Dành 10 phút yên ả ở Giảng đường phía Đông, đọc chậm một đoạn sách như uống ngụm nước dừa mát.',
+    suggestedStation: 'giang_duong',
+    rewardLotus: 40,
+    rewardGems: 3,
+    rewardXp: 30,
+    milestoneBadge: null
+  },
+  {
+    day: 5,
+    week: 1,
+    retreatId: 'week_1',
+    retreatTitle: 'Tuần 1: Gieo Duyên Tam Bảo',
+    title: 'Đóa sen hồng bên Hồ Cá Koi',
+    prompt: 'Nhìn bầy cá Koi bơi khoan thai dưới tán lá súng, thấy lòng mình cũng rộng mở và dịu lại.',
+    suggestedStation: 'ho_sen_ca_koi',
+    rewardLotus: 45,
+    rewardGems: 3,
+    rewardXp: 30,
+    milestoneBadge: null
+  },
+  {
+    day: 6,
+    week: 1,
+    retreatId: 'week_1',
+    retreatTitle: 'Tuần 1: Gieo Duyên Tam Bảo',
+    title: 'Ngước nhìn Đức Phật A Di Đà giữa nắng mai',
+    prompt: 'Đứng dưới đài sen cao 25m, lần nhẹ 21 hạt chuỗi niệm danh hiệu A Di Đà cho nhịp thở đều đặn.',
+    suggestedStation: 'phat_adida',
+    rewardLotus: 50,
+    rewardGems: 4,
+    rewardXp: 35,
+    milestoneBadge: null
+  },
+  {
+    day: 7,
+    week: 1,
+    retreatId: 'week_1',
+    retreatTitle: 'Tuần 1: Gieo Duyên Tam Bảo',
+    title: 'Tròn 7 ngày sơ tâm — Hoa sen đầu mùa nở rộ',
+    prompt: 'Hoàn tất tuần đầu tiên gieo duyên Tam Bảo: giữ một lời hứa nhỏ sống hiền hòa suốt tuần mới.',
+    suggestedStation: 'chanh_dien',
+    rewardLotus: 80,
+    rewardGems: 8,
+    rewardXp: 55,
+    milestoneBadge: 'Ấn Ký Tuần 1 · Sơ Tâm Thanh Tịnh'
+  },
+
+  // Tuần 2: Sống An Giữa Đời (Ngày 8-14)
+  {
+    day: 8,
+    week: 2,
+    retreatId: 'week_2',
+    retreatTitle: 'Tuần 2: Sống An Giữa Đời',
+    title: 'Quét lá Bồ Đề sân gạch buổi sớm',
+    prompt: 'Quét sạch một góc sân chùa cũng là quét nhẹ bụi lo toan bám víu trong tâm trí từ hôm qua.',
+    suggestedStation: 'vuon_lam_ty_ni',
+    rewardLotus: 40,
+    rewardGems: 3,
+    rewardXp: 30,
+    milestoneBadge: null
+  },
+  {
+    day: 9,
+    week: 2,
+    retreatId: 'week_2',
+    retreatTitle: 'Tuần 2: Sống An Giữa Đời',
+    title: 'Chén trà sen ấm tại Lầu Trà Thiền',
+    prompt: 'Nâng chén trà bằng hai tay, nghe mùi hương sen quyện gió sông Tiền mà không vội xem điện thoại.',
+    suggestedStation: 'lau_tra_thien',
+    rewardLotus: 45,
+    rewardGems: 3,
+    rewardXp: 30,
+    milestoneBadge: null
+  },
+  {
+    day: 10,
+    week: 2,
+    retreatId: 'week_2',
+    retreatTitle: 'Tuần 2: Sống An Giữa Đời',
+    title: 'Buông hai chiếc va-li quá khứ và tương lai',
+    prompt: 'Ngồi yên trên bồ đoàn theo lời Thiền sư Ajahn Brahm: đặt hết chuyện cũ và nỗi lo mai xuống đất.',
+    suggestedStation: 'giang_duong',
+    rewardLotus: 45,
+    rewardGems: 3,
+    rewardXp: 35,
+    milestoneBadge: null
+  },
+  {
+    day: 11,
+    week: 2,
+    retreatId: 'week_2',
+    retreatTitle: 'Tuần 2: Sống An Giữa Đời',
+    title: 'Một tiếng Đại Hồng Chung lắng dịu',
+    prompt: 'Thỉnh một hồi chuông chậm rãi nơi lầu Tây Bắc, nghe dư âm ngân dài cho tới khi tâm hoàn toàn tĩnh lặng.',
+    suggestedStation: 'thap_chuong_dai_hong',
+    rewardLotus: 50,
+    rewardGems: 4,
+    rewardXp: 35,
+    milestoneBadge: null
+  },
+  {
+    day: 12,
+    week: 2,
+    retreatId: 'week_2',
+    retreatTitle: 'Tuần 2: Sống An Giữa Đời',
+    title: 'Bữa cơm chay thanh đạm bên Nhà Sàn Gỗ',
+    prompt: 'Biết ơn hạt gạo đồng bằng sông Cửu Long, ăn chậm nhai kỹ để thấy đủ đầy trong từng miếng cơm chay.',
+    suggestedStation: 'nha_san_trai_duong',
+    rewardLotus: 50,
+    rewardGems: 4,
+    rewardXp: 35,
+    milestoneBadge: null
+  },
+  {
+    day: 13,
+    week: 2,
+    retreatId: 'week_2',
+    retreatTitle: 'Tuần 2: Sống An Giữa Đời',
+    title: 'Chăm luống hoa vườn Lâm Tỳ Ni',
+    prompt: 'Tưới nước cho gốc Bồ Đề non và cây Sa La, học cách kiên nhẫn chờ hạt lành nảy mầm từng ngày.',
+    suggestedStation: 'vuon_lam_ty_ni',
+    rewardLotus: 55,
+    rewardGems: 4,
+    rewardXp: 40,
+    milestoneBadge: null
+  },
+  {
+    day: 14,
+    week: 2,
+    retreatId: 'week_2',
+    retreatTitle: 'Tuần 2: Sống An Giữa Đời',
+    title: 'Tròn 14 ngày An Trú — Tâm như mặt hồ phẳng lặng',
+    prompt: 'Hai tuần giữ nhịp sống chậm: ghi lại vào Nhật Ký An Tâm một thay đổi nhỏ khiến mình thấy nhẹ lòng nhất.',
+    suggestedStation: 'ho_phong_sinh',
+    rewardLotus: 90,
+    rewardGems: 9,
+    rewardXp: 60,
+    milestoneBadge: 'Ấn Ký Tuần 2 · An Trú Hiện Tại'
+  },
+
+  // Tuần 3: Từ Bi & Hiếu Hạnh (Ngày 15-21)
+  {
+    day: 15,
+    week: 3,
+    retreatId: 'week_3',
+    retreatTitle: 'Tuần 3: Từ Bi & Hiếu Hạnh',
+    title: 'Gọi về hỏi thăm cha mẹ đầu buổi sáng',
+    prompt: 'Cha mẹ là hai vị Phật tại gia. Hôm nay mình nói một câu dịu dàng hoặc pha cho người thân ly trà ấm.',
+    suggestedStation: 'hau_to_nha_to',
+    rewardLotus: 50,
+    rewardGems: 4,
+    rewardXp: 35,
+    milestoneBadge: null
+  },
+  {
+    day: 16,
+    week: 3,
+    retreatId: 'week_3',
+    retreatTitle: 'Tuần 3: Từ Bi & Hiếu Hạnh',
+    title: 'Học nụ cười hoan hỷ của Đức Phật Di Lặc',
+    prompt: 'Đứng trước tượng Di Lặc 20m, tập mở rộng lòng bao dung để bỏ qua một chuyện lặt vặt làm mình bực bội.',
+    suggestedStation: 'phat_di_lac',
+    rewardLotus: 50,
+    rewardGems: 4,
+    rewardXp: 35,
+    milestoneBadge: null
+  },
+  {
+    day: 17,
+    week: 3,
+    retreatId: 'week_3',
+    retreatTitle: 'Tuần 3: Từ Bi & Hiếu Hạnh',
+    title: 'Lắng nghe sâu trước Động Quán Thế Âm',
+    prompt: 'Nghe tiếng thác nước non bộ đổ xuống hồ xanh, tập lắng nghe người thân nói hết câu mà không vội cãi lại.',
+    suggestedStation: 'non_bo_quan_am',
+    rewardLotus: 55,
+    rewardGems: 4,
+    rewardXp: 40,
+    milestoneBadge: null
+  },
+  {
+    day: 18,
+    week: 3,
+    retreatId: 'week_3',
+    retreatTitle: 'Tuần 3: Từ Bi & Hiếu Hạnh',
+    title: 'Thả đèn hoa đăng cầu bình an cho người thương',
+    prompt: 'Viết một lời chúc hiền hòa lên đèn hoa đăng thả trôi trên mặt hồ sen lung linh.',
+    suggestedStation: 'ho_sen_ca_koi',
+    rewardLotus: 55,
+    rewardGems: 5,
+    rewardXp: 40,
+    milestoneBadge: null
+  },
+  {
+    day: 19,
+    week: 3,
+    retreatId: 'week_3',
+    retreatTitle: 'Tuần 3: Từ Bi & Hiếu Hạnh',
+    title: 'Tùy hỷ niềm vui của đồng tu phương xa',
+    prompt: 'Ghé xem ảnh lưu niệm của cô bác thập phương và gửi một lời chúc hoan hỷ chân thành.',
+    suggestedStation: 'cua_hang_luu_niem',
+    rewardLotus: 55,
+    rewardGems: 5,
+    rewardXp: 40,
+    milestoneBadge: null
+  },
+  {
+    day: 20,
+    week: 3,
+    retreatId: 'week_3',
+    retreatTitle: 'Tuần 3: Từ Bi & Hiếu Hạnh',
+    title: 'Bước qua cầu gỗ chữ Z bên Hồ Phóng Sinh',
+    prompt: 'Gieo một nhân lành phóng thích chấp niệm và bảo vệ sự sống quanh mình dù chỉ từ việc nhỏ nhất.',
+    suggestedStation: 'ho_phong_sinh',
+    rewardLotus: 60,
+    rewardGems: 5,
+    rewardXp: 45,
+    milestoneBadge: null
+  },
+  {
+    day: 21,
+    week: 3,
+    retreatId: 'week_3',
+    retreatTitle: 'Tuần 3: Từ Bi & Hiếu Hạnh',
+    title: 'Tròn 21 ngày Bi Mẫn — Ái ngữ sưởi ấm gia đình',
+    prompt: 'Ba tuần tu dưỡng tâm từ: đêm nay trước khi ngủ rải tâm từ cầu mọi người ngủ ngon giấc lành.',
+    suggestedStation: 'phat_di_lac',
+    rewardLotus: 100,
+    rewardGems: 10,
+    rewardXp: 65,
+    milestoneBadge: 'Ấn Ký Tuần 3 · Đạo Hiếu & Tâm Từ'
+  },
+
+  // Tuần 4: Trí Tuệ & Viên Mãn (Ngày 22-30)
+  {
+    day: 22,
+    week: 4,
+    retreatId: 'week_4',
+    retreatTitle: 'Tuần 4: Trí Tuệ & Viên Mãn',
+    title: 'Chiêm bái Thập Bát La Hán gỗ mít 1907',
+    prompt: 'Nhìn 18 vị La Hán uy nghi mà nhận ra kẻ thù lớn nhất cần hàng phục chính là sự nóng nảy trong lòng mình.',
+    suggestedStation: 'chanh_dien',
+    rewardLotus: 60,
+    rewardGems: 5,
+    rewardXp: 45,
+    milestoneBadge: null
+  },
+  {
+    day: 23,
+    week: 4,
+    retreatId: 'week_4',
+    retreatTitle: 'Tuần 4: Trí Tuệ & Viên Mãn',
+    title: 'Đọc một tích truyện Kinh Pháp Cú',
+    prompt: 'Nhắc mình câu kệ "Ý dẫn đầu các pháp, ý làm chủ, ý tạo" trước khi bắt đầu công việc trong ngày.',
+    suggestedStation: 'giang_duong',
+    rewardLotus: 60,
+    rewardGems: 5,
+    rewardXp: 45,
+    milestoneBadge: null
+  },
+  {
+    day: 24,
+    week: 4,
+    retreatId: 'week_4',
+    retreatTitle: 'Tuần 4: Trí Tuệ & Viên Mãn',
+    title: 'Tìm hiểu hai dòng tư liệu cổ tự tại Chánh điện',
+    prompt: 'Đối chiếu sử liệu bằng tâm cởi mở, tôn trọng lịch sử và công đức tiền nhân dựng chùa từ năm 1849.',
+    suggestedStation: 'chanh_dien',
+    rewardLotus: 65,
+    rewardGems: 5,
+    rewardXp: 50,
+    milestoneBadge: null
+  },
+  {
+    day: 25,
+    week: 4,
+    retreatId: 'week_4',
+    retreatTitle: 'Tuần 4: Trí Tuệ & Viên Mãn',
+    title: 'Quán chiếu Duyên Khởi dưới Sân Thiên Tỉnh',
+    prompt: 'Nhìn ánh nắng giếng trời chiếu xuống hòn non bộ: mọi sự đều nương nhau mà có, nhờ vậy mà biết trân quý nhau hơn.',
+    suggestedStation: 'vuon_la_han_ngoai',
+    rewardLotus: 65,
+    rewardGems: 6,
+    rewardXp: 50,
+    milestoneBadge: null
+  },
+  {
+    day: 26,
+    week: 4,
+    retreatId: 'week_4',
+    retreatTitle: 'Tuần 4: Trí Tuệ & Viên Mãn',
+    title: 'Trọn một vòng chuỗi 108 hạt chuyển hóa phiền não',
+    prompt: 'Mỗi hạt qua tay là một lần buông nhẹ sân si, đố kỵ; giữ miệng niệm rõ, tai nghe rõ, tâm an định.',
+    suggestedStation: 'phat_adida',
+    rewardLotus: 70,
+    rewardGems: 6,
+    rewardXp: 55,
+    milestoneBadge: null
+  },
+  {
+    day: 27,
+    week: 4,
+    retreatId: 'week_4',
+    retreatTitle: 'Tuần 4: Trí Tuệ & Viên Mãn',
+    title: 'Tĩnh lặng bên Tượng Phật Nhập Niết Bàn 32m',
+    prompt: 'Học hạnh tri túc và an nhiên trước quy luật vô thường của đời người như ngọn gió mát sau vườn chùa.',
+    suggestedStation: 'phat_niet_ban',
+    rewardLotus: 75,
+    rewardGems: 7,
+    rewardXp: 55,
+    milestoneBadge: null
+  },
+  {
+    day: 28,
+    week: 4,
+    retreatId: 'week_4',
+    retreatTitle: 'Tuần 4: Trí Tuệ & Viên Mãn',
+    title: 'Chiêm ngưỡng Bảo Tháp Thất Phật 7 tầng',
+    prompt: 'Mỗi tầng tháp nhắc một bước trưởng thành trong Giới – Định – Tuệ suốt gần một tháng kiên trì tu tập.',
+    suggestedStation: 'bao_thap_that_phat',
+    rewardLotus: 80,
+    rewardGems: 8,
+    rewardXp: 60,
+    milestoneBadge: null
+  },
+  {
+    day: 29,
+    week: 4,
+    retreatId: 'week_4',
+    retreatTitle: 'Tuần 4: Trí Tuệ & Viên Mãn',
+    title: 'Tổng kết Sổ Di Sản & Nhật Ký An Tâm',
+    prompt: 'Lật xem lại 29 ngày đã qua, gửi lời tri ân chính mình vì đã giữ lòng hướng thiện mỗi ngày.',
+    suggestedStation: 'hau_to_nha_to',
+    rewardLotus: 90,
+    rewardGems: 9,
+    rewardXp: 65,
+    milestoneBadge: null
+  },
+  {
+    day: 30,
+    week: 4,
+    retreatId: 'week_4',
+    retreatTitle: 'Tuần 4: Trí Tuệ & Viên Mãn',
+    title: 'Ngày 30 Viên Mãn — Hồi Hướng Công Đức Khắp Mười Phương',
+    prompt: 'Nguyện đem hết thảy công đức 30 ngày tu học này hồi hướng cho ông bà cha mẹ hiện tiền an lạc và muôn loài bình an.',
+    suggestedStation: 'phat_niet_ban',
+    rewardLotus: 150,
+    rewardGems: 15,
+    rewardXp: 100,
+    milestoneBadge: 'Ấn Ký Viên Mãn 30 Ngày · Liên Hoa Trí Tuệ'
+  }
+];
+
+export function getThirtyDayTheme(dayNumber = 1) {
+  const safeDay = Math.max(1, Math.min(30, Math.round(Number(dayNumber || 1))));
+  return THIRTY_DAY_JOURNEY_PLAN.find((d) => d.day === safeDay) || THIRTY_DAY_JOURNEY_PLAN[0];
+}
+
+export const LUNAR_FESTIVAL_CALENDAR = [
+  {
+    id: 'mung_1_soc_vong',
+    name: 'Mùng 1 Sóc Vọng — Đầu Tháng Thanh Tịnh',
+    lunarDates: ['01/*'],
+    greeting: 'Mùng 1 Sóc Vọng hoan hỷ! Thắp nén tâm hương đầu tháng cầu gia đạo bình an, công việc hanh thông.',
+    xpMultiplier: 1.3,
+    lotusBonus: 30,
+    blessingWish: 'Đầu tháng tâm sáng như sen mới nở.',
+    accentHex: '#B84518'
+  },
+  {
+    id: 'ram_vong_nguyet',
+    name: 'Rằm Vọng Nguyệt — Thả Hoa Đăng Nguyện Ước',
+    lunarDates: ['15/*'],
+    greeting: 'Trăng rằm Vọng Nguyệt sáng tỏ sân Chùa Vĩnh Tràng! Mời cô bác thả hoa đăng và nghe kinh cầu an.',
+    xpMultiplier: 1.4,
+    lotusBonus: 45,
+    blessingWish: 'Ánh trăng rằm soi dịu mọi ưu tư.',
+    accentHex: '#C9962E'
+  },
+  {
+    id: 'via_quan_the_am',
+    name: 'Ngày Vía Bồ Tát Quán Thế Âm (19/2 · 19/6 · 19/9 ÂL)',
+    lunarDates: ['19/02', '19/06', '19/09'],
+    greeting: 'Nam Mô Đại Bi Quán Thế Âm Bồ Tát! Hôm nay ngày vía Quán Âm, nguyện giữ lời ái ngữ và tâm từ bi.',
+    xpMultiplier: 1.4,
+    lotusBonus: 50,
+    blessingWish: 'Tâm từ lắng nghe, bình cam lồ tưới mát gia đình.',
+    accentHex: '#2F6F5E'
+  },
+  {
+    id: 'phat_dan',
+    name: 'Đại Lễ Phật Đản (Vesak · Rằm Tháng Tư ÂL)',
+    lunarDates: ['08/04', '15/04'],
+    greeting: 'Kính mừng Đại Lễ Phật Đản! Vườn Lâm Tỳ Ni Chùa Vĩnh Tràng rực rỡ cờ hoa đón mừng Đấng Từ Phụ đản sanh.',
+    xpMultiplier: 1.5,
+    lotusBonus: 80,
+    blessingWish: 'Ánh sáng Từ Bi và Trí Tuệ soi rọi khắp muôn phương.',
+    accentHex: '#D9A441'
+  },
+  {
+    id: 'vu_lan_bao_hieu',
+    name: 'Đại Lễ Vu Lan Báo Hiếu (Rằm Tháng Bảy ÂL)',
+    lunarDates: ['15/07'],
+    greeting: 'Mùa Vu Lan Báo Hiếu thiêng liêng! Cài hoa hồng lên áo, cầu nguyện song thân khỏe mạnh bình an.',
+    xpMultiplier: 1.5,
+    lotusBonus: 80,
+    blessingWish: 'Tâm hiếu là tâm Phật, hạnh hiếu là hạnh Phật.',
+    accentHex: '#C94B77'
+  }
+];
+
+function estimateLunarDayAndMonth(dateObj) {
+  const d = dateObj instanceof Date ? dateObj : new Date(dateObj);
+  const utcMs = Date.UTC(d.getFullYear(), d.getMonth(), d.getDate(), 12, 0, 0);
+  // Reference New Moon: 2026-01-18T19:52Z (approx synodic cycle 29.53058867 days)
+  const refNewMoonMs = Date.UTC(2026, 0, 18, 19, 52, 0);
+  const synodicMs = 29.53058867 * 86400000;
+  const elapsed = utcMs - refNewMoonMs;
+  const cycles = Math.floor(elapsed / synodicMs);
+  const phaseDays = (elapsed - cycles * synodicMs) / 86400000;
+  const lunarDay = Math.max(1, Math.min(30, Math.floor(phaseDays) + 1));
+  // Approximate lunar month (~1 month offset from solar calendar in Vietnam)
+  const solarMonth = d.getMonth() + 1;
+  const approxShift = d.getDate() < 18 ? 2 : 1;
+  const lunarMonth = ((solarMonth - approxShift + 11) % 12) + 1;
+  return { lunarDay, lunarMonth };
+}
+
+export function getTempleSeasonalContext(date = new Date()) {
+  const d = date instanceof Date ? date : new Date(date);
+  const dateKey = getLocalDateKey(d);
+  const { lunarDay, lunarMonth } = estimateLunarDayAndMonth(d);
+
+  let activeFestival = null;
+  if (lunarMonth === 4 && (lunarDay === 8 || lunarDay === 15)) {
+    activeFestival = LUNAR_FESTIVAL_CALENDAR.find((f) => f.id === 'phat_dan');
+  } else if (lunarMonth === 7 && lunarDay === 15) {
+    activeFestival = LUNAR_FESTIVAL_CALENDAR.find((f) => f.id === 'vu_lan_bao_hieu');
+  } else if ([2, 6, 9].includes(lunarMonth) && lunarDay === 19) {
+    activeFestival = LUNAR_FESTIVAL_CALENDAR.find((f) => f.id === 'via_quan_the_am');
+  } else if (lunarDay === 15) {
+    activeFestival = LUNAR_FESTIVAL_CALENDAR.find((f) => f.id === 'ram_vong_nguyet');
+  } else if (lunarDay === 1) {
+    activeFestival = LUNAR_FESTIVAL_CALENDAR.find((f) => f.id === 'mung_1_soc_vong');
+  }
+
+  const daySeed = d.getFullYear() * 372 + (d.getMonth() + 1) * 31 + d.getDate();
+  const baseResonance = 136 + (daySeed % 95);
+  const festivalBoost = activeFestival ? 140 : 0;
+  const xpMultiplier = activeFestival ? activeFestival.xpMultiplier : 1.2;
+
+  return {
+    dateKey,
+    lunarDay,
+    lunarMonth,
+    lunarLabel: `Mùng ${lunarDay} tháng ${lunarMonth} ÂL (ước lượng)`,
+    isFestivalDay: Boolean(activeFestival),
+    activeFestival,
+    greeting: activeFestival
+      ? activeFestival.greeting
+      : `Đạo tràng Chùa Vĩnh Tràng hôm nay thanh tịnh (Mùng ${lunarDay} tháng ${lunarMonth} ÂL). Chúc cô bác thân tâm an lạc · Cộng hưởng tu học ${xpMultiplier}x XP.`,
+    xpMultiplier,
+    resonanceCount: baseResonance + festivalBoost,
+    lanternCountHint: activeFestival ? 24 : 10
+  };
+}
+
+export const HOA_DANG_WISHES = [
+  {
+    id: 'hd_seed_1',
+    authorName: 'Cô Sáu Mỹ Tho',
+    nationalityId: 'vn',
+    wishText: 'Cầu cho hai bác mạnh khỏe, con cháu thuận hòa hiếu thảo.',
+    colorHex: '#F79D65',
+    createdAt: 'Sáng nay · Hồ Sen Vĩnh Tràng',
+    pondCoord: { x: 1.8, z: 31.4 }
+  },
+  {
+    id: 'hd_seed_2',
+    authorName: 'Anh Minh Trí (Sài Gòn)',
+    nationalityId: 'vn',
+    wishText: 'Nguyện tâm luôn bình tĩnh sáng suốt giữa công việc bận rộn.',
+    colorHex: '#F4C95D',
+    createdAt: 'Sáng nay · Hồ Sen Vĩnh Tràng',
+    pondCoord: { x: 4.5, z: 34.2 }
+  },
+  {
+    id: 'hd_seed_3',
+    authorName: 'Yuki Tanaka',
+    nationalityId: 'jp',
+    wishText: 'May peace and mindfulness bloom gently like lotus flowers at Vinh Trang.',
+    colorHex: '#EE7FAE',
+    createdAt: 'Hôm qua · Hồ Phóng Sinh',
+    pondCoord: { x: -14.8, z: -54.2 }
+  },
+  {
+    id: 'hd_seed_4',
+    authorName: 'Chị Ngọc Hân (Bến Tre)',
+    nationalityId: 'vn',
+    wishText: 'Hồi hướng công đức đến cửu huyền thất tổ và người thân phương xa.',
+    colorHex: '#FF9EBB',
+    createdAt: 'Hôm qua · Hồ Sen Vĩnh Tràng',
+    pondCoord: { x: 2.9, z: 35.1 }
+  },
+  {
+    id: 'hd_seed_5',
+    authorName: 'Ji-hoon Park',
+    nationalityId: 'kr',
+    wishText: 'Cầu an lành đến muôn loài, cảm ơn vẻ đẹp cổ tự miền Tây.',
+    colorHex: '#A8DADC',
+    createdAt: '2 ngày trước · Hồ Phóng Sinh',
+    pondCoord: { x: -17.2, z: -57.1 }
+  },
+  {
+    id: 'hd_seed_6',
+    authorName: 'Bé An & Gia đình',
+    nationalityId: 'vn',
+    wishText: 'Con chúc ông bà sống lâu trăm tuổi và luôn cười tươi như Phật Di Lặc.',
+    colorHex: '#F9B572',
+    createdAt: '2 ngày trước · Hồ Sen Vĩnh Tràng',
+    pondCoord: { x: 5.1, z: 31.9 }
+  }
+];
+
+export function createHoaDangLantern(
+  wishes = HOA_DANG_WISHES,
+  { authorName = 'Phật tử thập phương', nationalityId = 'vn', wishText = '', colorHex = '#F79D65' } = {}
+) {
+  const list = Array.isArray(wishes) ? [...wishes] : [...HOA_DANG_WISHES];
+  const cleanAuthor = String(authorName || '').trim() || 'Phật tử thập phương';
+  const cleanNat = NATIONALITY_PROFILES.some((n) => n.id === nationalityId) ? nationalityId : 'vn';
+  const cleanWish =
+    String(wishText || '').trim() || 'Nguyện cầu gia đình bình an, thân tâm thường an lạc.';
+  const cleanColor = /^#[0-9A-Fa-f]{6}$/.test(String(colorHex || '').trim())
+    ? String(colorHex).trim().toUpperCase()
+    : '#F79D65';
+
+  const idx = list.length;
+  const angle = (idx * 2.39996) % (Math.PI * 2);
+  const radius = 1.4 + (idx % 4) * 0.65;
+  const lantern = {
+    id: `hd_${Date.now()}_${idx + 1}`,
+    authorName: cleanAuthor,
+    nationalityId: cleanNat,
+    wishText: cleanWish,
+    colorHex: cleanColor,
+    createdAt: 'Vừa thả · Hồ Sen Chùa Vĩnh Tràng',
+    pondCoord: {
+      x: Number((3.5 + Math.cos(angle) * radius).toFixed(2)),
+      z: Number((33.0 + Math.sin(angle) * radius).toFixed(2))
+    }
+  };
+
+  const nextWishes = [lantern, ...list];
+  return {
+    ok: true,
+    lantern,
+    wishes: nextWishes,
+    totalCount: nextWishes.length,
+    message: `Đã thả hoa đăng nguyện ước của ${cleanAuthor} lên Hồ Sen Vĩnh Tràng.`
+  };
+}
+
+export const DHARMA_JOURNAL_MOODS = [
+  { id: 'binh_an', label: 'Bình an', icon: '🪷' },
+  { id: 'biet_on', label: 'Biết ơn', icon: '🙏' },
+  { id: 'thanh_thoi', label: 'Thảnh thơi', icon: '🌿' },
+  { id: 'tinh_tuc', label: 'Tỉnh thức', icon: '🔔' },
+  { id: 'hoan_hy', label: 'Hoan hỷ', icon: '☀️' }
+];
+
+export const DHARMA_JOURNAL = {
+  moods: DHARMA_JOURNAL_MOODS,
+  entries: [
+    {
+      id: 'journal_seed_1',
+      text: 'Sáng nay nghe tiếng chuông chùa và uống tách trà sen chậm rãi, thấy mọi lo âu công việc dịu xuống.',
+      mood: 'binh_an',
+      moodLabel: 'Bình an',
+      dateKey: '2026-05-15',
+      createdAt: 'Khởi duyên · Nhật Ký An Tâm'
+    },
+    {
+      id: 'journal_seed_2',
+      text: 'Biết ơn mẹ đã nấu bữa cơm chay ấm áp cho cả nhà cuối tuần.',
+      mood: 'biet_on',
+      moodLabel: 'Biết ơn',
+      dateKey: '2026-05-16',
+      createdAt: 'Ghi chép hiếu hạnh · Nhật Ký An Tâm'
+    }
+  ]
+};
+
+export function createDharmaJournalState(saved = null) {
+  const src = saved && typeof saved === 'object' ? saved : {};
+  const entries = Array.isArray(src.entries)
+    ? src.entries.map((e) => ({ ...e }))
+    : DHARMA_JOURNAL.entries.map((e) => ({ ...e }));
+  return {
+    entries,
+    lastUpdatedDateKey: typeof src.lastUpdatedDateKey === 'string' ? src.lastUpdatedDateKey : null
+  };
+}
+
+export function addJournalEntry(state, text, mood = 'binh_an', dateKey = getLocalDateKey()) {
+  const baseState = Array.isArray(state)
+    ? createDharmaJournalState({ entries: state })
+    : createDharmaJournalState(state);
+  const cleanText = String(text || '').trim();
+  if (!cleanText) {
+    return {
+      ok: false,
+      reason: 'empty_text',
+      message: 'Cô bác vui lòng viết đôi dòng cảm nhận vào Nhật Ký An Tâm nhé.',
+      state: baseState,
+      entries: baseState.entries
+    };
+  }
+  const moodObj =
+    DHARMA_JOURNAL_MOODS.find((m) => m.id === mood) || DHARMA_JOURNAL_MOODS[0];
+  const entry = {
+    id: `journal_${Date.now()}_${baseState.entries.length + 1}`,
+    text: cleanText,
+    mood: moodObj.id,
+    moodLabel: moodObj.label,
+    moodIcon: moodObj.icon,
+    dateKey,
+    createdAt: `Ghi ngày ${dateKey}`
+  };
+  const nextState = {
+    entries: [entry, ...baseState.entries].slice(0, 120),
+    lastUpdatedDateKey: dateKey
+  };
+  return {
+    ok: true,
+    entry,
+    state: nextState,
+    entries: nextState.entries,
+    message: `Đã lưu trang Nhật Ký An Tâm (${moodObj.icon} ${moodObj.label}).`
+  };
+}
+
+// ============================================================================
+// 4. STRUCTURED PAID HỌC VIỆN PHẬT HỌC (BUDDHIST ACADEMY)
+// ============================================================================
+export const ACADEMY_COURSES = [
+  {
+    id: 'course_1_khai_tam',
+    order: 1,
+    pathId: 'A',
+    tier: 'basic',
+    title: 'Khóa 1: Khai Tâm Nhập Môn Phật Học',
+    subtitle: 'Trải nghiệm miễn phí · Tam Bảo, Ngũ Giới, Nhân Quả & Giáo Trình Phật Học Toàn Tập',
+    priceVnd: 0,
+    priceLabel: '0đ (Mở sẵn)',
+    isFree: true,
+    unlockedByDefault: true,
+    passScore: 70,
+    bookIds: ['phpt_1', 'giao_trinh_phat_hoc_toan_tap'],
+    lessonIds: ['A1', 'A2', 'A3', 'A4', 'A5', 'A6'],
+    estimatedHours: 3.5,
+    badge: 'Miễn phí · Khai Tâm'
+  },
+  {
+    id: 'course_2_tam_bao',
+    order: 2,
+    pathId: 'B',
+    tier: 'intermediate',
+    title: 'Khóa 2: Nền Tảng Tam Bảo, Quy Y & Phước Thiện',
+    subtitle: 'Chuyên sâu 4 bộ Nền Tảng Phật Giáo (Q.1, Q.2, Q.4, Q.5) · Tam Bảo, Nghiệp Quả & Hồi Hướng',
+    priceVnd: 199000,
+    priceLabel: '199.000đ',
+    isFree: false,
+    unlockedByDefault: false,
+    passScore: 75,
+    bookIds: ['nen_tang_1_tam_bao', 'nen_tang_2_quy_y', 'nen_tang_4_nghiep', 'nen_tang_5_phuoc'],
+    lessonIds: ['B1', 'B2', 'B3', 'B4', 'B5', 'B6'],
+    estimatedHours: 5.0,
+    badge: 'Nền Tảng Cư Sĩ'
+  },
+  {
+    id: 'course_3_thien_dinh',
+    order: 3,
+    pathId: 'C',
+    tier: 'meditation',
+    title: 'Khóa 3: Thiền Định Ajahn Brahm & Tu Dưỡng Tâm Từ',
+    subtitle: 'Thực hành Thiền Căn Bản buông xả, Thiền Chánh Niệm và Rải Tâm Từ chữa lành',
+    priceVnd: 249000,
+    priceLabel: '249.000đ',
+    isFree: false,
+    unlockedByDefault: false,
+    passScore: 75,
+    bookIds: ['thien_ajahn_brahm', 'tu_duong_tam_tu'],
+    lessonIds: ['C1', 'C2', 'C3', 'C4', 'C5', 'C6'],
+    estimatedHours: 4.5,
+    badge: 'Thiền Tập Chuyên Sâu'
+  },
+  {
+    id: 'course_4_di_san',
+    order: 4,
+    pathId: 'D',
+    tier: 'heritage',
+    title: 'Khóa 4: Lịch Sử, Nghi Lễ Vĩnh Tràng & Kinh Pháp Cú',
+    subtitle: 'Đức Phật Dạy Những Gì, Tích Truyện Pháp Cú, Phật Học Phổ Thông Q.3 & Di sản Cổ Tự 1849',
+    priceVnd: 299000,
+    priceLabel: '299.000đ',
+    isFree: false,
+    unlockedByDefault: false,
+    passScore: 80,
+    bookIds: ['duc_phat_day_nhung_gi', 'tich_truyen_phap_cu', 'phpt_3'],
+    lessonIds: ['D1', 'D2', 'D3', 'D4', 'D5', 'D6'],
+    estimatedHours: 5.5,
+    badge: 'Di Sản & Kinh Điển'
+  }
+];
+
+export const ACADEMY_ALL_IN_BUNDLE = {
+  id: 'bundle_tron_doi',
+  title: 'Gói Học Viên Trọn Đời (Tất cả 4 Khóa + 11 Giáo trình PDF)',
+  priceVnd: 599000,
+  priceLabel: '599.000đ',
+  includesCourses: ACADEMY_COURSES.map((c) => c.id)
+};
+
+export const ACADEMY_MODULES = [
+  // Khóa 1
+  {
+    id: 'mod_1_1',
+    courseId: 'course_1_khai_tam',
+    order: 1,
+    title: 'Học phần 1.1: Quy Y Tam Bảo & Năm Giới Hộ Thân',
+    bookIds: ['phpt_1'],
+    lessonIds: ['A1', 'A2'],
+    estimatedMinutes: 45,
+    extraQuizzes: [
+      {
+        id: 'Q_1_1_1',
+        question: 'Trong Nền Tảng Phật Giáo, quy y "Pháp Bảo" có nghĩa thiết thực nhất là gì?',
+        options: [
+          'Chỉ cất giữ kinh sách trên tủ cao',
+          'Học hiểu và thực hành lời dạy chân chánh của Đức Phật vào đời sống hằng ngày',
+          'Chờ đợi phép màu ban phát'
+        ],
+        correctIndex: 1,
+        explanation: 'Pháp Bảo chỉ thực sự phát huy tác dụng chữa lành khi hành giả thực hành theo Chánh pháp.'
+      },
+      {
+        id: 'Q_1_1_2',
+        question: 'Vì sao Ngũ Giới được gọi là "Ngũ Đại Thí" (5 món quà lớn tặng đời)?',
+        options: [
+          'Vì giữ giới là trao sự không sợ hãi và an toàn cho bản thân, gia đình và muôn loài',
+          'Vì phải đóng lệ phí lớn',
+          'Vì chỉ người già mới giữ'
+        ],
+        correctIndex: 0,
+        explanation: 'Không sát hại, không trộm cắp, không tà hạnh, không dối gạt, không say nghiện mang lại bình an cho tất cả.'
+      }
+    ]
+  },
+  {
+    id: 'mod_1_2',
+    courseId: 'course_1_khai_tam',
+    order: 2,
+    title: 'Học phần 1.2: Tứ Diệu Đế & Luật Nhân Quả Chuyển Hóa',
+    bookIds: ['giao_trinh_phat_hoc_toan_tap'],
+    lessonIds: ['A3', 'A4'],
+    estimatedMinutes: 55,
+    extraQuizzes: [
+      {
+        id: 'Q_1_2_1',
+        question: 'Trong Tứ Diệu Đế, sự thật thứ tư (Đạo Đế) chỉ ra con đường thoát khổ là gì?',
+        options: ['Bát Chánh Đạo', 'Trốn tránh cuộc đời', 'Cầu khẩn thần linh'],
+        correctIndex: 0,
+        explanation: 'Bát Chánh Đạo là con đường trung đạo gồm 8 yếu tố đưa đến chấm dứt khổ đau.'
+      },
+      {
+        id: 'Q_1_2_2',
+        question: 'Theo Giáo Trình Phật Học Toàn Tập, Nhân Quả có phải là định mệnh bất biến không?',
+        options: [
+          'Đúng, không thể thay đổi gì',
+          'Không, hiện tại biết tu tập Thân – Khẩu – Ý thiện lành sẽ chuyển hóa được quả tương lai',
+          'Chỉ xảy ra ở kiếp sau'
+        ],
+        correctIndex: 1,
+        explanation: 'Phật giáo dạy nhân duyên quả luôn vận hành động; chuyển tâm và hành động hiện tại là chuyển nghiệp.'
+      }
+    ]
+  },
+  {
+    id: 'mod_1_3',
+    courseId: 'course_1_khai_tam',
+    order: 3,
+    title: 'Học phần 1.3: Bát Chánh Đạo & Lục Độ Giữa Đời Thường',
+    bookIds: ['phpt_1', 'giao_trinh_phat_hoc_toan_tap'],
+    lessonIds: ['A5', 'A6'],
+    estimatedMinutes: 50,
+    extraQuizzes: [
+      {
+        id: 'Q_1_3_1',
+        question: 'Nghề nghiệp chân chính (Chánh mạng) trong Bát Chánh Đạo đòi hỏi điều gì?',
+        options: [
+          'Nuôi sống bản thân bằng nghề lương thiện, không gây tổn hại cho mình và chúng sanh',
+          'Kiếm tiền bằng mọi giá',
+          'Không cần làm việc'
+        ],
+        correctIndex: 0,
+        explanation: 'Chánh mạng là nghề nghiệp hợp đạo đức, không buôn bán sinh mạng hay chất độc hại.'
+      }
+    ]
+  },
+
+  // Khóa 2
+  {
+    id: 'mod_2_1',
+    courseId: 'course_2_tam_bao',
+    order: 1,
+    title: 'Học phần 2.1: Ân Đức Tam Bảo & Quy Y Nội Tâm',
+    bookIds: ['nen_tang_1_tam_bao', 'nen_tang_2_quy_y'],
+    lessonIds: ['B1', 'B2'],
+    estimatedMinutes: 60,
+    extraQuizzes: [
+      {
+        id: 'Q_2_1_1',
+        question: 'Theo Nền Tảng Phật Giáo Q.1, danh hiệu "Sammāsambuddho" (Chánh Đẳng Giác) biểu thị ân đức nào?',
+        options: [
+          'Tự mình giác ngộ hoàn toàn chân lý Tứ Đế không thầy chỉ dạy',
+          'Chỉ học thuộc lòng kinh sách',
+          'Có quyền năng ban thưởng vật chất'
+        ],
+        correctIndex: 0,
+        explanation: 'Đức Phật tự chứng ngộ chân lý tối thượng và chỉ dạy lại cho thế gian.'
+      },
+      {
+        id: 'Q_2_1_2',
+        question: 'Quy Y Tam Bảo nội tâm (Quy y tự tánh) giúp người Phật tử điều gì?',
+        options: [
+          'Luôn quay về soi sáng tâm mình bằng Giác, Chánh, Tịnh thay vì tìm cầu bên ngoài',
+          'Không cần đến chùa nữa',
+          'Chỉ đọc chữ không cần hiểu'
+        ],
+        correctIndex: 0,
+        explanation: 'Quy y hình thức là cửa ngõ, quy y nội tâm là sự chuyển hóa thật sự bên trong.'
+      }
+    ]
+  },
+  {
+    id: 'mod_2_2',
+    courseId: 'course_2_tam_bao',
+    order: 2,
+    title: 'Học phần 2.2: Nghiệp – Quả & Niệm Phật Nhiếp Tâm',
+    bookIds: ['nen_tang_4_nghiep'],
+    lessonIds: ['B3', 'B4'],
+    estimatedMinutes: 65,
+    extraQuizzes: [
+      {
+        id: 'Q_2_2_1',
+        question: 'Trong 10 thiện nghiệp (Thập thiện), 3 nghiệp thuộc về Thân là gì?',
+        options: [
+          'Không sát sanh, không trộm cắp, không tà hạnh',
+          'Không nói dối, không nói hai lưỡi, không nói ác',
+          'Không tham, không sân, không si'
+        ],
+        correctIndex: 0,
+        explanation: 'Thân có 3 thiện nghiệp, Khẩu có 4 thiện nghiệp và Ý có 3 thiện nghiệp.'
+      }
+    ]
+  },
+  {
+    id: 'mod_2_3',
+    courseId: 'course_2_tam_bao',
+    order: 3,
+    title: 'Học phần 2.3: Mười Cội Phước Thiện & Hồi Hướng Công Đức',
+    bookIds: ['nen_tang_5_phuoc'],
+    lessonIds: ['B5', 'B6'],
+    estimatedMinutes: 60,
+    extraQuizzes: [
+      {
+        id: 'Q_2_3_1',
+        question: 'Trong 10 cội phước thiện (Quyển 5), phước báu nào được xem là tối thượng về trí tuệ?',
+        options: [
+          'Phước Chánh kiến (Diṭṭhijukamma) và Phước Tham thiền (Bhāvanā)',
+          'Chỉ bố thí vật chất mà tâm còn sân hận',
+          'Khoe khoang công đức'
+        ],
+        correctIndex: 0,
+        explanation: 'Tham thiền và Chánh kiến thanh lọc tận gốc phiền não, nâng đỡ các phước thiện khác.'
+      }
+    ]
+  },
+
+  // Khóa 3
+  {
+    id: 'mod_3_1',
+    courseId: 'course_3_thien_dinh',
+    order: 1,
+    title: 'Học phần 3.1: Bốn Giai Đoạn Thiền Căn Bản (Ajahn Brahm)',
+    bookIds: ['thien_ajahn_brahm'],
+    lessonIds: ['C1', 'C2'],
+    estimatedMinutes: 55,
+    extraQuizzes: [
+      {
+        id: 'Q_3_1_1',
+        question: 'Khi tâm bị phân tán trong lúc theo dõi hơi thở, Thiền sư Ajahn Brahm khuyên thái độ nào là đúng nhất?',
+        options: [
+          'Bực bội tự trách mình dở',
+          'Mỉm cười dịu dàng nhận biết sự phân tâm rồi nhẹ nhàng đưa chú ý trở lại hơi thở',
+          'Đứng dậy bỏ ngang buổi thiền'
+        ],
+        correctIndex: 1,
+        explanation: 'Thái độ dịu dàng, buông bỏ kiểm soát giúp hơi thở tự nhiên lắng dịu.'
+      }
+    ]
+  },
+  {
+    id: 'mod_3_2',
+    courseId: 'course_3_thien_dinh',
+    order: 2,
+    title: 'Học phần 3.2: Thiền Hành, Thiền Trà & Đạo Hiếu Trong Gia Đình',
+    bookIds: ['tu_duong_tam_tu'],
+    lessonIds: ['C3', 'C4'],
+    estimatedMinutes: 50,
+    extraQuizzes: [
+      {
+        id: 'Q_3_2_1',
+        question: 'Chánh niệm trong Tứ Oai Nghi nghĩa là gì?',
+        options: [
+          'Biết rõ thân tâm mình trong cả 4 tư thế: Đi, Đứng, Nằm, Ngồi',
+          'Chỉ nhắm mắt ngồi yên mới gọi là tu',
+          'Đi thật nhanh không cần để ý gì'
+        ],
+        correctIndex: 0,
+        explanation: 'Thiền chánh niệm có mặt trong từng bước chân, chén trà và sinh hoạt gia đình.'
+      }
+    ]
+  },
+  {
+    id: 'mod_3_3',
+    courseId: 'course_3_thien_dinh',
+    order: 3,
+    title: 'Học phần 3.3: 11 Phước Báu Tâm Từ & Hạnh Tri Túc',
+    bookIds: ['thien_ajahn_brahm', 'tu_duong_tam_tu'],
+    lessonIds: ['C5', 'C6'],
+    estimatedMinutes: 55,
+    extraQuizzes: [
+      {
+        id: 'Q_3_3_1',
+        question: 'Thứ tự rải Tâm Từ (Metta Bhavana) hợp lý nhất giúp tâm không gượng gạo là gì?',
+        options: [
+          'Từ chính mình -> người thân quý -> người trung dung -> người gây khó dễ -> khắp muôn loài',
+          'Chỉ rải cho người lạ, bỏ qua mình',
+          'Rải bằng sự ép buộc'
+        ],
+        correctIndex: 0,
+        explanation: 'Tình thương chân thật khởi từ sự bình an tự thân rồi lan tỏa rộng khắp không phân biệt.'
+      }
+    ]
+  },
+
+  // Khóa 4
+  {
+    id: 'mod_4_1',
+    courseId: 'course_4_di_san',
+    order: 1,
+    title: 'Học phần 4.1: Biên Niên Sử & Kiến Trúc Á – Âu Chùa Vĩnh Tràng',
+    bookIds: ['duc_phat_day_nhung_gi'],
+    lessonIds: ['D1', 'D2'],
+    estimatedMinutes: 55,
+    extraQuizzes: [
+      {
+        id: 'Q_4_1_1',
+        question: 'Mặt bằng nội tự khu chùa cổ Chùa Vĩnh Tràng được bố trí theo hình chữ Hán nào?',
+        options: [
+          'Chữ Quốc (國) gồm Tiền đường, Chánh điện, hai Sân Thiên Tỉnh, Nhà Tổ và Nhà Hậu',
+          'Chữ Nhất nằm ngang đơn lẻ',
+          'Hình tròn khép kín'
+        ],
+        correctIndex: 0,
+        explanation: 'Kiến trúc chữ Quốc (國) tạo độ sâu trang nghiêm và hai giếng trời thông thoáng tự nhiên.'
+      }
+    ]
+  },
+  {
+    id: 'mod_4_2',
+    courseId: 'course_4_di_san',
+    order: 2,
+    title: 'Học phần 4.2: Di Sản Điêu Khắc 1907 & Tam Tôn Lộ Thiên',
+    bookIds: ['tich_truyen_phap_cu'],
+    lessonIds: ['D3', 'D4'],
+    estimatedMinutes: 60,
+    extraQuizzes: [
+      {
+        id: 'Q_4_2_1',
+        question: 'Bộ Tích Truyện Pháp Cú gồm bao nhiêu bài kệ gắn liền với các câu chuyện thời Đức Phật?',
+        options: ['423 bài kệ', '12 bài kệ', '1000 bài kệ'],
+        correctIndex: 0,
+        explanation: 'Kinh Pháp Cú gồm 423 bài kệ chia thành 26 phẩm giàu triết lý sống.'
+      }
+    ]
+  },
+  {
+    id: 'mod_4_3',
+    courseId: 'course_4_di_san',
+    order: 3,
+    title: 'Học phần 4.3: Đại Thừa Lục Độ & Oai Nghi Hành Hương Chánh Tín',
+    bookIds: ['phpt_3'],
+    lessonIds: ['D5', 'D6'],
+    estimatedMinutes: 55,
+    extraQuizzes: [
+      {
+        id: 'Q_4_3_1',
+        question: 'Trong Phật Học Phổ Thông Q.3, Bồ Tát Đạo khác với lối tu chỉ lo cho riêng mình ở điểm nào?',
+        options: [
+          'Phát đại nguyện Tứ Hoằng Thệ Nguyện, tu tập Lục Độ nhập thế vừa tự giác vừa giúp đời bớt khổ',
+          'Xa lánh mọi người',
+          'Không cần giữ giới'
+        ],
+        correctIndex: 0,
+        explanation: 'Tinh thần Đại Thừa lấy từ bi và trí tuệ làm đôi cánh phụng sự chúng sanh.'
+      }
+    ]
+  }
+];
+
+export function getAcademyExamQuestions(courseId = 'course_1_khai_tam') {
+  const course = ACADEMY_COURSES.find((c) => c.id === courseId);
+  if (!course) return [];
+  const modules = ACADEMY_MODULES.filter((m) => m.courseId === course.id).sort((a, b) => a.order - b.order);
+  const questions = [];
+
+  for (const mod of modules) {
+    for (const q of mod.extraQuizzes || []) {
+      questions.push({
+        id: q.id,
+        moduleId: mod.id,
+        source: 'module',
+        question: q.question,
+        options: [...q.options],
+        correctIndex: q.correctIndex,
+        explanation: q.explanation
+      });
+    }
+  }
+  for (const lid of course.lessonIds) {
+    const lesson = LECTURE_LESSONS.find((l) => l.id === lid);
+    if (lesson?.quiz) {
+      questions.push({
+        id: `L_${lesson.id}`,
+        lessonId: lesson.id,
+        source: 'lesson',
+        question: lesson.quiz.question,
+        options: [...lesson.quiz.options],
+        correctIndex: lesson.quiz.correctIndex,
+        explanation: lesson.quiz.explanation
+      });
+    }
+  }
+  return questions;
+}
+
+export function gradeAcademyExam(courseId = 'course_1_khai_tam', answers = {}) {
+  const course = ACADEMY_COURSES.find((c) => c.id === courseId);
+  const questions = getAcademyExamQuestions(courseId);
+  if (!course || questions.length === 0) {
+    return {
+      ok: false,
+      found: false,
+      courseId,
+      totalQuestions: 0,
+      correctCount: 0,
+      scorePercent: 0,
+      passed: false,
+      passScore: 70,
+      details: []
+    };
+  }
+
+  let correctCount = 0;
+  const details = questions.map((q, idx) => {
+    const rawAns = Array.isArray(answers) ? answers[idx] : answers?.[q.id];
+    const selectedIndex = rawAns === undefined || rawAns === null ? -1 : Number(rawAns);
+    const correct = selectedIndex === q.correctIndex;
+    if (correct) correctCount += 1;
+    return {
+      id: q.id,
+      selectedIndex,
+      correctIndex: q.correctIndex,
+      correct,
+      explanation: q.explanation
+    };
+  });
+
+  const scorePercent = Math.round((correctCount / questions.length) * 100);
+  const passed = scorePercent >= course.passScore;
+
+  return {
+    ok: true,
+    found: true,
+    courseId: course.id,
+    courseTitle: course.title,
+    totalQuestions: questions.length,
+    correctCount,
+    scorePercent,
+    passed,
+    passScore: course.passScore,
+    details
+  };
+}
+
+export function createAcademyEntitlementState(saved = null) {
+  const src = saved && typeof saved === 'object' ? saved : {};
+  const validIds = new Set(ACADEMY_COURSES.map((c) => c.id));
+  const rawUnlocked = Array.isArray(src.unlockedCourses) ? src.unlockedCourses : [];
+  const unlockedSet = new Set(['course_1_khai_tam']);
+  for (const cid of rawUnlocked) {
+    if (validIds.has(cid)) unlockedSet.add(cid);
+  }
+  const bundleUnlocked =
+    Boolean(src.bundleUnlocked) ||
+    ACADEMY_COURSES.every((c) => unlockedSet.has(c.id));
+
+  return {
+    unlockedCourses: Array.from(unlockedSet),
+    bundleUnlocked,
+    redeemedCodes: Array.isArray(src.redeemedCodes) ? [...src.redeemedCodes] : [],
+    certificates: Array.isArray(src.certificates) ? src.certificates.map((c) => ({ ...c })) : [],
+    examScores: src.examScores && typeof src.examScores === 'object' ? { ...src.examScores } : {}
+  };
+}
+
+const SANDBOX_ACADEMY_CODES = new Set(['VINHTRANG2026', 'HOIAN2026']);
+
+export function unlockAcademyCourseWithCode(state, courseId, code) {
+  const nextState = createAcademyEntitlementState(state);
+  const isBundle = courseId === ACADEMY_ALL_IN_BUNDLE.id || courseId === 'all';
+  const targetCourse = ACADEMY_COURSES.find((c) => c.id === courseId);
+
+  if (!isBundle && !targetCourse) {
+    return {
+      ok: false,
+      reason: 'course_not_found',
+      message: 'Không tìm thấy khóa học trong Học Viện Phật Học.',
+      state: nextState,
+      unlockedCourses: nextState.unlockedCourses
+    };
+  }
+
+  const normalizedCode = String(code || '').trim().toUpperCase();
+  const isValidCode =
+    SANDBOX_ACADEMY_CODES.has(normalizedCode) ||
+    /^VT-HV-[A-Z0-9]{4,16}$/.test(normalizedCode);
+
+  if (!isValidCode) {
+    return {
+      ok: false,
+      reason: 'invalid_code',
+      message: 'Mã kích hoạt chưa hợp lệ. Định dạng đúng: VT-HV-XXXX hoặc mã thử nghiệm VINHTRANG2026.',
+      state: nextState,
+      unlockedCourses: nextState.unlockedCourses
+    };
+  }
+
+  if (isBundle) {
+    for (const c of ACADEMY_COURSES) {
+      if (!nextState.unlockedCourses.includes(c.id)) {
+        nextState.unlockedCourses.push(c.id);
+      }
+    }
+    nextState.bundleUnlocked = true;
+  } else {
+    if (!nextState.unlockedCourses.includes(targetCourse.id)) {
+      nextState.unlockedCourses.push(targetCourse.id);
+    }
+    nextState.bundleUnlocked = ACADEMY_COURSES.every((c) =>
+      nextState.unlockedCourses.includes(c.id)
+    );
+  }
+
+  if (!nextState.redeemedCodes.includes(normalizedCode)) {
+    nextState.redeemedCodes.push(normalizedCode);
+  }
+
+  const targetTitle = isBundle ? ACADEMY_ALL_IN_BUNDLE.title : targetCourse.title;
+  return {
+    ok: true,
+    courseId: isBundle ? ACADEMY_ALL_IN_BUNDLE.id : targetCourse.id,
+    codeUsed: normalizedCode,
+    bundleUnlocked: nextState.bundleUnlocked,
+    unlockedCourses: nextState.unlockedCourses,
+    state: nextState,
+    message: `Kích hoạt thành công "${targetTitle}"! Mời học viên vào lớp cùng 11 bộ giáo trình PDF.`
+  };
+}
+
+export function buildVietQRPayload(courseOrId = 'course_2_tam_bao') {
+  const course =
+    typeof courseOrId === 'string'
+      ? courseOrId === ACADEMY_ALL_IN_BUNDLE.id
+        ? ACADEMY_ALL_IN_BUNDLE
+        : ACADEMY_COURSES.find((c) => c.id === courseOrId) || ACADEMY_COURSES[1]
+      : courseOrId && typeof courseOrId === 'object'
+        ? courseOrId
+        : ACADEMY_COURSES[1];
+
+  const amount = Math.max(0, Math.round(Number(course.priceVnd || 0)));
+  const bankId = 'MB';
+  const bankBin = '970422';
+  const accountNo = '0918491849';
+  const accountName = 'HOC VIEN PHAT HOC VINH TRANG';
+  const shortTag = String(course.id || 'COURSE')
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, '')
+    .slice(0, 14);
+  const transferMemo = `VTHV ${shortTag}`.trim();
+  const isFree = amount === 0;
+
+  const qrImageUrl = `https://img.vietqr.io/image/${bankId}-${accountNo}-compact2.png?amount=${amount}&addInfo=${encodeURIComponent(transferMemo)}&accountName=${encodeURIComponent(accountName)}`;
+  const qrPayload = `VIETQR|${bankBin}|${accountNo}|${amount}|${transferMemo}`;
+
+  return {
+    courseId: course.id,
+    courseTitle: course.title,
+    amount,
+    isFree,
+    currency: 'VND',
+    bankId,
+    bankBin,
+    bankName: 'MB Bank (Ngân hàng Quân đội)',
+    accountNo,
+    accountName,
+    transferMemo,
+    qrPayload,
+    qrImageUrl,
+    adapterReady: { payos: true, sepay: true }
+  };
+}
+
+export function generateAcademyCertificate(
+  studentName = 'Học viên Phật tử',
+  courseOrId = 'course_1_khai_tam',
+  score = 100,
+  issuedAt = new Date()
+) {
+  const course =
+    typeof courseOrId === 'string'
+      ? ACADEMY_COURSES.find((c) => c.id === courseOrId) || ACADEMY_COURSES[0]
+      : courseOrId && typeof courseOrId === 'object'
+        ? courseOrId
+        : ACADEMY_COURSES[0];
+
+  const cleanName = String(studentName || '').trim() || 'Học viên Phật tử';
+  const numericScore = Math.max(0, Math.min(100, Math.round(Number(score || 0))));
+  const minPass = Number(course.passScore || 70);
+  const passed = numericScore >= minPass;
+
+  if (!passed) {
+    return {
+      ok: false,
+      passed: false,
+      reason: 'score_below_pass',
+      studentName: cleanName,
+      courseId: course.id,
+      courseTitle: course.title,
+      score: numericScore,
+      minScore: minPass,
+      message: `Điểm đạt ${numericScore}/100 chưa đủ chuẩn tốt nghiệp (${minPass}/100). Cô bác hãy ôn bài và thi lại nhé.`
+    };
+  }
+
+  const d = issuedAt instanceof Date ? issuedAt : new Date(issuedAt);
+  const issuedDateKey = getLocalDateKey(d);
+  const gradeLabel =
+    numericScore >= 90 ? 'Xuất sắc · Tinh tấn' : numericScore >= 80 ? 'Giỏi · Chánh niệm' : 'Đạt · Hoàn thành';
+
+  // Deterministic checksum verification code
+  const rawSeed = `${cleanName}|${course.id}|${numericScore}|${issuedDateKey}`;
+  let hash = 0;
+  for (let i = 0; i < rawSeed.length; i++) {
+    hash = (hash * 33 + rawSeed.charCodeAt(i)) >>> 0;
+  }
+  const verificationCode = `VT-CERT-${hash.toString(36).toUpperCase().padStart(6, '0')}`;
+  const certificateId = `CERT-${String(course.id).toUpperCase()}-${issuedDateKey.replace(/-/g, '')}-${hash.toString(16).slice(0, 4).toUpperCase()}`;
+
+  return {
+    ok: true,
+    passed: true,
+    certificateId,
+    studentName: cleanName,
+    courseId: course.id,
+    courseTitle: course.title,
+    score: numericScore,
+    minScore: minPass,
+    gradeLabel,
+    issuedDateKey,
+    issuedLabel: `Mỹ Tho, ngày ${issuedDateKey}`,
+    issuerName: 'Học Viện Phật Học Trực Tuyến · Chùa Vĩnh Tràng',
+    verificationCode,
+    sealText: 'ẤN CHỨNG HOÀN THÀNH KHÓA TU HỌC · CHÙA VĨNH TRÀNG',
+    motto: 'Tự giác · Giác tha · Giác hạnh viên mãn'
   };
 }
 

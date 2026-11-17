@@ -41,7 +41,15 @@ import {
   shiftOklch,
   VINH_TRANG_OKLCH_PALETTE
 } from '../logic/chua-online-logic.mjs';
-import { createSculptedGardenArhat } from './sculpted-buddhas.mjs';
+import {
+  createSculptedBodhisattva,
+  createSculptedPatriarch,
+  createSculptedGardenArhat
+} from './sculpted-buddhas.mjs';
+import {
+  findCharacterBones,
+  attachStorePropsToCharacterRig
+} from './garment-and-showcase-3d.mjs';
 
 // Pre-allocated scratch vectors for zero-GC animation & camera loop
 const _tourPos = new THREE.Vector3();
@@ -87,6 +95,7 @@ const STATUE_GLB_PATHS = {
   dilac: '/Mô hình 3D Vĩnh Tràng/Tượng/di-lac.glb',
   phatnam: '/Mô hình 3D Vĩnh Tràng/Tượng/phat-nam.glb',
   bantho: '/Mô hình 3D Vĩnh Tràng/Tượng/phat-ngoi-ban-tho.glb',
+  thichCaChanhDien: '/Mô hình 3D Vĩnh Tràng/Tượng/phat-thich-ca-chanh-dien.glb',
   quanAm: '/Mô hình 3D Vĩnh Tràng/Tượng/quan-am-nam-hai.glb',
   hoPhap: '/Mô hình 3D Vĩnh Tràng/Tượng/ho-phap-vi-da.glb',
   tieuDien: '/Mô hình 3D Vĩnh Tràng/Tượng/tieu-dien-dai-si.glb',
@@ -100,11 +109,16 @@ const ARHAT_GLB_PATHS = {
   hangLong: '/Mô hình 3D Vĩnh Tràng/Tượng/la-han-hang-long.glb',
   hoanHi: '/Mô hình 3D Vĩnh Tràng/Tượng/la-han-hoan-hi.glb',
   phucHo2: '/Mô hình 3D Vĩnh Tràng/Tượng/la-han-phuc-ho.glb',
-  thienDinh: '/Mô hình 3D Vĩnh Tràng/Tượng/la-han-thien-dinh.glb'
+  thienDinh: '/Mô hình 3D Vĩnh Tràng/Tượng/la-han-thien-dinh.glb',
+  cuBat: '/Mô hình 3D Vĩnh Tràng/Tượng/cu-bat-la-han.glb',
+  thacThap: '/Mô hình 3D Vĩnh Tràng/Tượng/thac-thap-la-han.glb',
+  khaiTam: '/Mô hình 3D Vĩnh Tràng/Tượng/khai-tam-la-han.glb',
+  tieuSu: '/Mô hình 3D Vĩnh Tràng/Tượng/tieu-su-la-han.glb'
 };
 
 const ARCH_GLB_PATHS = {
   mat_tien: '/Mô hình 3D Vĩnh Tràng/Bản dựng mới/mat-tien-vinh-trang.glb',
+  tam_quan: '/Mô hình 3D Vĩnh Tràng/Bản dựng mới/tam-quan-vinh-trang.glb',
   bao_thap: '/Thiết kế giao diện/Vật phẩm 3D/meshy_assets/bao-thap-7-tang.glb',
   dai_hong_chung: '/Thiết kế giao diện/Vật phẩm 3D/meshy_assets/dai-hong-chung.glb',
   trong_bat_nha: '/Thiết kế giao diện/Vật phẩm 3D/meshy_assets/trong-bat-nha.glb',
@@ -139,7 +153,9 @@ const PROP_GLB_PATHS = {
   trang_hat: '/Thiết kế giao diện/Vật phẩm 3D/meshy_assets/trang-hat-bo-de-3d.glb',
   vong_may: '/Thiết kế giao diện/Vật phẩm 3D/meshy_assets/vong-may-ngu-sac-3d.glb',
   cay_bo_de: '/Thiết kế giao diện/Vật phẩm 3D/meshy_assets/cay-bo-de-non.glb',
-  cay_sala: '/Thiết kế giao diện/Vật phẩm 3D/meshy_assets/cay-sala-hoa.glb'
+  cay_sala: '/Thiết kế giao diện/Vật phẩm 3D/meshy_assets/cay-sala-hoa.glb',
+  cap_hac_rua: '/Thiết kế giao diện/Vật phẩm 3D/meshy_assets/cap-hac-rua.glb',
+  nhang_khoanh_dong: '/Thiết kế giao diện/Vật phẩm 3D/meshy_assets/nhang-khoanh-dong.glb'
 };
 
 function makeCanvasTex(draw, w = 512, h = 512, repeatX = 1, repeatY = 1, isColor = true) {
@@ -297,6 +313,8 @@ export class VinhTrang3DWorld {
     this.onStallProximity = callbacks.onStallProximity || (() => {});
     this.onInteractProximity = callbacks.onInteractProximity || (() => {});
     this.onEntranceTourChange = callbacks.onEntranceTourChange || (() => {});
+    this.onStepSound = callbacks.onStepSound || (() => {});
+    this._stepAudioTimer = 0;
 
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(0xA6D0F0);
@@ -374,6 +392,8 @@ export class VinhTrang3DWorld {
     this.inInterior = false;
     this.cameraBaseYaw = Math.PI - 0.16;
     this.cameraAzimuthOffset = 0;
+    this.cameraPitchOffset = 0;
+    this.cameraZoomOffset = 0;
     this.playerElevationY = 0;
     this.lastDoorSide = 'right';
     this._doorCooldownUntil = 0;
@@ -387,6 +407,7 @@ export class VinhTrang3DWorld {
     this.activePlayerRecord = null;
     this.npcRecords = [];
     this.riggedNpcRecords = [];
+    this.companionRecords = [];
     this.kneelingRecords = [];
     this.interiorKneelingRecords = [];
     this.interiorNonBoClickTargets = [];
@@ -396,6 +417,7 @@ export class VinhTrang3DWorld {
     this.cutawayTargets = [];
     this.longTruClickTargets = [];
     this.stiltDiningClickTargets = [];
+    this.lectureClickTargets = [];
     this.mainCompoundClickTargets = [];
     this.stallClickTargets = [];
     this.bellTowerClickTargets = [];
@@ -406,6 +428,15 @@ export class VinhTrang3DWorld {
     this.gardenPlotClickTargets = [];
     this.nearestInteractPrompt = null;
     this.stupaGroup = null;
+    this.tamQuanMainGroup = null;
+    this.tamQuanProceduralParts = [];
+    this.spiralIncenseAnchors = [];
+    this.craneTortoiseAnchor = null;
+    this.outdoorArhatPlaza = null;
+    this.lanternWishesGroup = new THREE.Group();
+    this.floatingLanterns = [];
+    this.arrivalCutscene = null;
+    this.proceduralPoseState = { action: null, timer: 0, duration: 2.6 };
     this.bellTowerArchAnchors = [];
     this.drumTowerArchAnchors = [];
     this.longTruPlaceholders = [];
@@ -2733,12 +2764,12 @@ export class VinhTrang3DWorld {
     grass.receiveShadow = true;
     this.exteriorGroup.add(grass);
 
-    // Expanded Stone Courtyard spanning full 136m x 114m (~15,500 m² sanctuary + outer street = ~22,000 m²)
+    // Expanded Stone Courtyard spanning full 136m x 134m (~18,200 m² sanctuary covering rear hall)
     const courtyard = new THREE.Mesh(
-      new THREE.BoxGeometry(136, 0.1, 114),
+      new THREE.BoxGeometry(136, 0.1, 134),
       new THREE.MeshStandardMaterial({ map: this.pavingTex, color: 0xD9D0BF, roughness: 0.86 })
     );
-    courtyard.position.set(0.0, -0.04, -15.5);
+    courtyard.position.set(0.0, -0.04, -25.5);
     courtyard.receiveShadow = true;
     this.exteriorGroup.add(courtyard);
 
@@ -2829,16 +2860,17 @@ export class VinhTrang3DWorld {
     }
 
     // 1. Cổng Chính Tam Quan (CLOSED ceremonially, calm & quiet at x = 23, z = 41.5)
-    const gateEast = this.buildTamQuanGate('TỊNH ĐỘ HUYỀN MÔN · CHÙA VĨNH TRÀNG', true);
+    const gateEast = this.buildTamQuanGate('CHÙA VĨNH TRÀNG', true);
     gateEast.position.set(23, 0, 41.5);
+    this.tamQuanMainGroup = gateEast;
     this.exteriorGroup.add(gateEast);
 
-    // 2. Ornate Ceramic-Mosaic Cổng Phụ ("TỊNH ĐỘ HUYỀN MÔN" — WIDE OPEN & BUSTLING at x = 40.5, z = 41.5, matching image_bb72a8b0.png!)
+    // 2. Ornate Ceramic-Mosaic Cổng Phụ ("TỊNH ĐỘ HUYỀN MÔN" — WIDE OPEN & BUSTLING at x = 40.5, z = 41.5)
     const sideGate = this.buildSideMosaicGate();
     sideGate.position.set(40.5, 0, 41.5);
     this.exteriorGroup.add(sideGate);
 
-    // Yellow Overhead Welcome Banner just inside Cổng Phụ (image_bb72a8b0.png & image_97204806.png!)
+    // Yellow Overhead Welcome Banner just inside Cổng Phụ
     const rightBannerGroup = new THREE.Group();
     rightBannerGroup.position.set(40.5, 0, 34.5);
     for (const px of [-3.6, 3.6]) {
@@ -2871,12 +2903,10 @@ export class VinhTrang3DWorld {
     chanhDien.position.set(23, 0, 1.0);
     this.exteriorGroup.add(chanhDien);
 
-    // Connected Main Temple Complex ("Chùa Chính" chữ Quốc layout — diagram-faithful 4 cross-halls & 2 Sân Thiên Tỉnh):
-    // 1) Tiền Đường (porch at z=+1) -> 2) Chánh Điện (z=-7.5) -> Sân Thiên Tỉnh 1 (z=-12.8)
-    // -> 3) Nhà Tổ (z=-18.4) -> Sân Thiên Tỉnh 2 (z=-23.8) -> 4) Nhà Hậu (z=-28.8), connected by West/East covered corridors.
+    // Connected Main Temple Complex ("Chùa Chính" chữ Quốc layout centered seamlessly on x = 23.0)
     const buildMainTempleCompound = () => {
       const comp = new THREE.Group();
-      const centerX = 25.0;
+      const centerX = 23.0;
       const frontZ = 7.15;
       const rearZ = -82.0;
       const totalDepth = frontZ - rearZ;
@@ -2892,7 +2922,6 @@ export class VinhTrang3DWorld {
         map: this.pavingTex, color: 0xD6C3A5, roughness: 0.82
       });
 
-      // One continuous raised stone plinth ties all four worship halls and both skywells together.
       const plinth = new THREE.Mesh(
         new THREE.BoxGeometry(22.4, 0.96, totalDepth),
         M.stoneLight
@@ -2902,7 +2931,6 @@ export class VinhTrang3DWorld {
       plinth.castShadow = true;
       comp.add(plinth);
 
-      // Two open-air courtyards are tiled separately; no roof is placed over their central spans.
       const skywells = [
         { z: -30.5, depth: 16.6 },
         { z: -60.75, depth: 15.5 }
@@ -2917,7 +2945,6 @@ export class VinhTrang3DWorld {
         comp.add(courtFloor);
       }
 
-      // The east and west covered galleries run beside all four halls and both skywells.
       const galleryZones = [
         { z: -7.525, depth: 29.35 },
         { z: -30.5, depth: 16.6 },
@@ -2925,7 +2952,7 @@ export class VinhTrang3DWorld {
         { z: -60.75, depth: 15.5 },
         { z: -75.25, depth: 13.5 }
       ];
-      for (const sideX of [15.8, 34.2]) {
+      for (const sideX of [13.8, 32.2]) {
         const galleryFloor = new THREE.Mesh(
           new THREE.BoxGeometry(3.8, 0.22, totalDepth),
           M.stoneLight
@@ -2943,7 +2970,6 @@ export class VinhTrang3DWorld {
           comp.add(galleryRoof);
         }
 
-        // Timber columns at both gallery edges, spaced along the whole longitudinal axis.
         for (const edge of [-1, 1]) {
           const colX = sideX + edge * 1.55;
           for (let z = 6.0; z >= -80.0; z -= 4.0) {
@@ -2969,8 +2995,7 @@ export class VinhTrang3DWorld {
         }
       }
 
-      // Low outer balustrades define the gallery edge without closing the courtyard side.
-      for (const edgeX of [14.25, 35.75]) {
+      for (const edgeX of [12.25, 33.75]) {
         const rail = new THREE.Mesh(
           new THREE.BoxGeometry(0.12, 0.62, totalDepth - 1.2), M.creamTrim
         );
@@ -3146,10 +3171,10 @@ export class VinhTrang3DWorld {
       comp.add(water);
 
       for (const [x, y, z, sx, sy, sz] of [
-        [24.0, 2.45, -30.7, 1.25, 2.15, 1.0],
-        [26.1, 2.1, -30.3, 1.05, 1.75, 0.9],
-        [23.2, 1.9, -29.2, 0.82, 1.25, 0.78],
-        [27.0, 1.85, -31.3, 0.76, 1.2, 0.72]
+        [22.0, 2.45, -30.7, 1.25, 2.15, 1.0],
+        [24.1, 2.1, -30.3, 1.05, 1.75, 0.9],
+        [21.2, 1.9, -29.2, 0.82, 1.25, 0.78],
+        [25.0, 1.85, -31.3, 0.76, 1.2, 0.72]
       ]) {
         const rock = new THREE.Mesh(new THREE.DodecahedronGeometry(1, 1), rockMat);
         rock.scale.set(sx, sy, sz);
@@ -3169,18 +3194,18 @@ export class VinhTrang3DWorld {
           color: 0xB8F0FA, transparent: true, opacity: 0.64, side: THREE.DoubleSide
         })
       );
-      cascade.position.set(24.8, 2.1, -29.65);
+      cascade.position.set(22.8, 2.1, -29.65);
       cascade.rotation.x = 0.12;
       comp.add(cascade);
 
-      for (const [x, z] of [[20.8, -26.4], [29.2, -26.4], [20.8, -34.6], [29.2, -34.6]]) {
+      for (const [x, z] of [[18.8, -26.4], [27.2, -26.4], [18.8, -34.6], [27.2, -34.6]]) {
         const bonsai = this.makeBonsai72(0.68);
         bonsai.position.set(x, 1.18, z);
         comp.add(bonsai);
       }
 
       // The second skywell stays open, with only corner bonsai rather than a duplicate rockery.
-      for (const [x, z] of [[20.8, -56.8], [29.2, -56.8], [20.8, -64.7], [29.2, -64.7]]) {
+      for (const [x, z] of [[18.8, -56.8], [27.2, -56.8], [18.8, -64.7], [27.2, -64.7]]) {
         const bonsai = this.makeBonsai72(0.62);
         bonsai.position.set(x, 1.18, z);
         comp.add(bonsai);
@@ -3197,7 +3222,7 @@ export class VinhTrang3DWorld {
 
       this.exteriorGroup.add(comp);
       // Front façade colliders already protect the entrance; leave the stair and side-door approaches clear.
-      this.addRectObstacle(13.8, 36.2, rearZ, -6.5);
+      this.addRectObstacle(11.8, 34.2, rearZ, -6.5);
     };
 
     buildMainTempleCompound();
@@ -3420,8 +3445,17 @@ export class VinhTrang3DWorld {
       this.addRectObstacle(53.6, 54.6, 7.2, 12.6);
       this.addRectObstacle(53.6, 54.6, 16.4, 21.8);
     };
-    // The connected four-hall complex already contains the worship and communal spaces;
-    // do not add detached stilt dining or lecture buildings to the historic temple footprint.
+    buildMekongStiltDiningPavilion();
+
+    // Giảng đường Phật pháp (East Sanctuary Pavilion at (44.0, 0, -18.0))
+    const giangDuong = this.buildGiangDuong();
+    giangDuong.position.set(44.0, 0, -18.0);
+    const gdSteps = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.35, 3.6), M.stoneLight);
+    gdSteps.position.set(-5.2, 0.175, 0);
+    giangDuong.add(gdSteps);
+    this.exteriorGroup.add(giangDuong);
+    this.lectureClickTargets.push(giangDuong);
+    this.addRectObstacle(39.0, 49.2, -27.5, -8.5);
 
     // 7-Tier Terracotta Bảo Tháp in the rear garden near the reclining Buddha (upgraded with bao-thap-7-tang.glb on load).
     this.stupaGroup = this.buildSevenTierStupa();
@@ -3431,11 +3465,14 @@ export class VinhTrang3DWorld {
 
     this.buildStatuePedestals();
 
-    // Large South-Center Lotus Pond right west of Tam Quan courtyard (matching image_97204806.png bottom-center)
+    // Large South-Center Lotus Pond right west of Tam Quan courtyard
     const pond1 = this.buildLotusPond(14.5, 16.5, 16, true);
     pond1.position.set(3.5, 0, 33.0);
     this.exteriorGroup.add(pond1);
     this.addRectObstacle(-4.2, 11.2, 24.4, 41.6);
+
+    this.lanternWishesGroup.position.set(3.5, 0.56, 33.0);
+    this.exteriorGroup.add(this.lanternWishesGroup);
 
     // Secondary Inner Lotus Basin beside the central monastic hall
     const pond2 = this.buildLotusPond(8.0, 10.5, 8, false);
@@ -3443,7 +3480,7 @@ export class VinhTrang3DWorld {
     this.exteriorGroup.add(pond2);
     this.addRectObstacle(-2.4, 6.4, -7.2, 4.2);
 
-    // Twin Three-Tier White-Gold Stupas in Middle Plaza (matching image_97204806.png!)
+    // Twin Three-Tier White-Gold Stupas in Middle Plaza
     for (const tz of [20.5, 25.0]) {
       const miniStupa = new THREE.Group();
       for (let t = 0; t < 3; t++) {
@@ -3498,9 +3535,9 @@ export class VinhTrang3DWorld {
     this.lotusBloomState.burstRing = bloomRing;
 
     const burnerAdida = this.buildIncenseBurner(0.75);
-    burnerAdida.position.set(23.0, 0, 36.0);
+    burnerAdida.position.set(15.8, 0, 17.5);
     this.exteriorGroup.add(burnerAdida);
-    this.addObstacle(23.0, 36.0, 0.9);
+    this.addObstacle(15.8, 17.5, 0.9);
 
     // Incense burner centered at Di Lặc stepped staircase
     const burnerDiLac = this.buildIncenseBurner(0.78);
@@ -3522,7 +3559,7 @@ export class VinhTrang3DWorld {
     const cushionCoords = [
       [21.4, 13.4, Math.PI],
       [24.6, 13.4, Math.PI],
-      [23.0, 38.5, Math.PI],
+      [14.2, 17.5, -Math.PI / 2],
       [-24.5, 21.8, Math.PI],
       [35.2, 22.5, -Math.PI / 2],
       [-24.5, -10.5, 0]
@@ -3577,6 +3614,7 @@ export class VinhTrang3DWorld {
     addWalkStrip(-44.0, 8.0, 5.4, 72.0); // West promenade path linking Vườn Lâm Tỳ Ni -> Non Bộ -> Vườn La Hán -> Tháp Chuông
     addWalkStrip(-10.0, -45.5, 76.0, 5.2); // North promenade linking Tháp Chuông -> Hồ Phóng Sinh -> Bảo Tháp -> Nhà Tổ -> Lầu Trống
     addWalkStrip(51.5, -12.0, 4.8, 66.0); // East tea garden path linking Cổng Phụ garden -> Lầu Trà Thiền -> Lầu Trống
+    addWalkStrip(38.5, -18.0, 9.0, 4.4); // Connector from East courtyard corridor into Giảng Đường (44, -18)
     addWalkStrip(-40.5, 29.0, 18.0, 4.4); // Connector from Di Lặc Plaza into Vườn Lâm Tỳ Ni
 
     // 1. VƯỜN LÂM TỲ NI & CÂY BỒ ĐỀ CỔ THỤ (-53.5, 22.0)
@@ -3676,16 +3714,10 @@ export class VinhTrang3DWorld {
     waterfall.position.set(-0.2, 2.25, -0.3);
     waterfall.rotation.x = 0.14;
     nonBo.add(waterfall);
-    // White Quán Thế Âm standing shrine inside non bộ niche
-    const qaBase = new THREE.Mesh(new THREE.CylinderGeometry(0.65, 0.85, 0.55, 12), M.lotusBlue);
-    qaBase.position.set(0.2, 2.05, 0.65);
-    nonBo.add(qaBase);
-    const qaBody = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.42, 1.55, 12), M.statueWhite);
-    qaBody.position.set(0.2, 3.05, 0.65);
-    nonBo.add(qaBody);
-    const qaHead = new THREE.Mesh(new THREE.SphereGeometry(0.22, 12, 10), M.statueWhite);
-    qaHead.position.set(0.2, 4.02, 0.65);
-    nonBo.add(qaHead);
+    // Sculpted White Quán Thế Âm standing inside Non Bộ niche
+    const qaSculpt = createSculptedBodhisattva(THREE, { variant: 'quan_am', ivory: true, scale: 0.72 });
+    qaSculpt.position.set(0.2, 1.8, 0.65);
+    nonBo.add(qaSculpt);
     // Arched stone footbridge in front of Non Bộ
     const bridgeDeck = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.18, 4.2), M.creamTrim);
     bridgeDeck.position.set(5.4, 0.85, 0);
@@ -3702,7 +3734,38 @@ export class VinhTrang3DWorld {
     this.exteriorGroup.add(nonBo);
     this.addObstacle(-54.0, -4.0, 8.6);
 
-    // 3. Keep the west-north promenade open; the selected La Hán remain inside the main hall.
+    // 3. VƯỜN LA HÁN NGOÀI TRỜI & CÂY SA LA (-49.5, -24.0)
+    const arhatGarden = new THREE.Group();
+    arhatGarden.position.set(-49.5, 0, -24.0);
+    const agPlaza = new THREE.Mesh(new THREE.CylinderGeometry(7.8, 8.2, 0.24, 24), M.stoneLight);
+    agPlaza.position.y = 0.12;
+    agPlaza.receiveShadow = true;
+    arhatGarden.add(agPlaza);
+    for (let ai = 0; ai < 4; ai++) {
+      const ang = (ai / 4) * Math.PI * 2 + Math.PI / 4;
+      const px = Math.cos(ang) * 4.4;
+      const pz = Math.sin(ang) * 4.4;
+      const ped = new THREE.Mesh(new THREE.CylinderGeometry(0.68, 0.82, 0.72, 12), M.stoneDark);
+      ped.position.set(px, 0.48, pz);
+      arhatGarden.add(ped);
+      const stat = createSculptedGardenArhat(THREE, ai, { scale: 1.08 });
+      stat.position.set(px, 0.84, pz);
+      stat.rotation.y = Math.atan2(-px, -pz);
+      stat.userData.arhatIndex = ai;
+      arhatGarden.add(stat);
+    }
+    const agSign = new THREE.Mesh(
+      new THREE.BoxGeometry(4.0, 0.72, 0.14),
+      new THREE.MeshStandardMaterial({
+        map: makeTextTex('VƯỜN LA HÁN · CÂY SA LA', { w: 960, h: 180, bg: '#1C5A34', border: '#FFD875', color: '#FFF6E5', size: 46 })
+      })
+    );
+    agSign.position.set(5.4, 1.18, 2.8);
+    agSign.rotation.y = Math.PI / 2;
+    arhatGarden.add(agSign);
+    this.outdoorArhatPlaza = arhatGarden;
+    this.exteriorGroup.add(arhatGarden);
+    this.addObstacle(-49.5, -24.0, 5.2);
 
     // 4. HỒ PHÓNG SINH LỚN & CẦU GỖ CHỮ Z (-16.0, -56.0)
     const releasePond = this.buildLotusPond(24.0, 15.0, 18, false);
@@ -3903,20 +3966,20 @@ export class VinhTrang3DWorld {
       g.add(seg);
     };
 
-    // Expanded Perimeter walls (-68..68, -72..41.5), leaving ONLY Cổng Phụ (x=35.8..45.2) open!
+    // Expanded Perimeter walls (-68..68, -92..41.5), leaving ONLY Cổng Phụ (x=35.8..45.2) open!
     addWallSeg(-68, 41.5, 17, 41.5);
     addWallSeg(29, 41.5, 35.8, 41.5);
     addWallSeg(45.2, 41.5, 68, 41.5);
-    addWallSeg(-68, -72, -68, 41.5);
-    addWallSeg(68, -72, 68, 41.5);
-    addWallSeg(-68, -72, 68, -72);
+    addWallSeg(-68, -92, -68, 41.5);
+    addWallSeg(68, -92, 68, 41.5);
+    addWallSeg(-68, -92, 68, -92);
 
     this.addRectObstacle(-68.5, 17.2, 40.9, 42.1);
     this.addRectObstacle(28.8, 36.6, 40.9, 42.1);
     this.addRectObstacle(44.4, 68.5, 40.9, 42.1);
-    this.addRectObstacle(-68.8, -67.2, -72.5, 42.0);
-    this.addRectObstacle(67.2, 68.8, -72.5, 42.0);
-    this.addRectObstacle(-68.5, 68.5, -72.8, -71.2);
+    this.addRectObstacle(-68.8, -67.2, -92.5, 42.0);
+    this.addRectObstacle(67.2, 68.8, -92.5, 42.0);
+    this.addRectObstacle(-68.5, 68.5, -92.8, -91.2);
 
     this.exteriorGroup.add(g);
   }
@@ -3924,6 +3987,11 @@ export class VinhTrang3DWorld {
   buildTamQuanGate(signText = 'CHÙA VĨNH TRÀNG', isMainGate = false) {
     const M = this.MAT;
     const g = new THREE.Group();
+    const structGroup = new THREE.Group();
+    g.add(structGroup);
+    if (isMainGate) {
+      this.tamQuanProceduralParts.push(structGroup);
+    }
     const pillarPositions = [-5.8, -2.5, 2.5, 5.8];
     const pillarHeights = [6.2, 8.2, 8.2, 6.2];
 
@@ -3938,20 +4006,20 @@ export class VinhTrang3DWorld {
       const p = new THREE.Mesh(new THREE.BoxGeometry(1.15, h, 1.15), M.goldWall);
       p.position.set(px, h / 2, 0);
       p.castShadow = true;
-      g.add(p);
+      structGroup.add(p);
 
       const strip = new THREE.Mesh(new THREE.BoxGeometry(0.75, h - 1.2, 1.2), tamQuanMosaicMat);
       strip.position.set(px, h / 2, 0);
-      g.add(strip);
+      structGroup.add(strip);
 
       const finial = new THREE.Mesh(new THREE.ConeGeometry(0.55, 1.3, 8), M.mosaicRed);
       finial.position.set(px, h + 0.65, 0);
-      g.add(finial);
+      structGroup.add(finial);
     });
 
     const beam = new THREE.Mesh(new THREE.BoxGeometry(6.4, 1.5, 1.35), M.goldWall);
     beam.position.set(0, 6.4, 0);
-    g.add(beam);
+    structGroup.add(beam);
 
     const signTex = makeTextTex(signText, {
       w: 1500,
@@ -3971,47 +4039,47 @@ export class VinhTrang3DWorld {
     for (const sx of [-4.15, 4.15]) {
       const sb = new THREE.Mesh(new THREE.BoxGeometry(3.4, 1.0, 1.15), M.goldWall);
       sb.position.set(sx, 4.7, 0);
-      g.add(sb);
+      structGroup.add(sb);
       const sr = makeHippedRoofMesh(3.6, 2.0, 1.05, M.roofTile);
       sr.position.set(sx, 5.7, 0);
-      g.add(sr);
+      structGroup.add(sr);
     }
 
     if (isMainGate) {
       for (const upx of [-1.85, 1.85]) {
         const upCol = new THREE.Mesh(new THREE.BoxGeometry(0.65, 2.8, 0.95), M.goldWall);
         upCol.position.set(upx, 8.35, 0);
-        g.add(upCol);
+        structGroup.add(upCol);
       }
       const upperLintel = new THREE.Mesh(new THREE.BoxGeometry(4.8, 0.65, 1.15), M.goldWall);
       upperLintel.position.set(0, 9.75, 0);
-      g.add(upperLintel);
+      structGroup.add(upperLintel);
 
       const nicheStand = new THREE.Mesh(new THREE.CylinderGeometry(0.46, 0.56, 0.36, 12), M.statueWhite);
       nicheStand.position.set(0, 7.15, 0);
-      g.add(nicheStand);
+      structGroup.add(nicheStand);
       const buddhaLower = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.36, 0.92, 12), M.statueWhite);
       buddhaLower.position.set(0, 7.78, 0);
-      g.add(buddhaLower);
+      structGroup.add(buddhaLower);
       const buddhaTorso = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.24, 0.64, 12), M.statueWhite);
       buddhaTorso.position.set(0, 8.5, 0);
-      g.add(buddhaTorso);
+      structGroup.add(buddhaTorso);
       const buddhaShoulders = new THREE.Mesh(new THREE.SphereGeometry(0.32, 10, 8), M.statueWhite);
       buddhaShoulders.scale.set(1.28, 0.55, 0.72);
       buddhaShoulders.position.set(0, 8.76, 0);
-      g.add(buddhaShoulders);
+      structGroup.add(buddhaShoulders);
       const buddhaHead = new THREE.Mesh(new THREE.SphereGeometry(0.2, 12, 10), M.statueWhite);
       buddhaHead.position.set(0, 9.16, 0);
-      g.add(buddhaHead);
+      structGroup.add(buddhaHead);
       const buddhaHalo = new THREE.Mesh(new THREE.TorusGeometry(0.38, 0.035, 8, 20), M.goldAccent);
       buddhaHalo.position.set(0, 9.12, -0.14);
-      g.add(buddhaHalo);
+      structGroup.add(buddhaHalo);
 
       for (let t = 0; t < 2; t++) {
         const w = 6.8 - t * 1.9;
         const roof = makeHippedRoofMesh(w, 2.5 - t * 0.45, 1.2, M.roofTile);
         roof.position.set(0, 10.35 + t * 1.18, 0);
-        g.add(roof);
+        structGroup.add(roof);
       }
 
       // Main Gate (Cổng Chính) wrought-iron leaves CLOSED ceremonially across the archway
@@ -5099,19 +5167,19 @@ export class VinhTrang3DWorld {
   buildStatuePedestals() {
     const M = this.MAT;
 
-    // 1. Đại tượng Phật A Di Đà — hoa viên phía trước Chánh điện, hướng mặt ra cổng.
+    // 1. Đại tượng Phật A Di Đà — hoa viên lệch Tây để giữ trục Tam Quan -> Chánh Điện thông thoáng.
     // Tư liệu thực tế: thân tượng 18m, đài sen và bệ khoảng 7m, tổng chiều cao khoảng 25m.
     this.adidaGroup = new THREE.Group();
-    this.adidaGroup.position.set(23.0, 0, 27.0);
+    this.adidaGroup.position.set(8.5, 0, 17.5);
     const adidaPlaza = new THREE.Mesh(
-      new THREE.CylinderGeometry(9.4, 9.8, 0.18, 32),
+      new THREE.CylinderGeometry(8.8, 9.2, 0.18, 32),
       M.stoneLight
     );
     adidaPlaza.position.y = 0.09;
     adidaPlaza.receiveShadow = true;
     this.adidaGroup.add(adidaPlaza);
     const adidaTerrace = new THREE.Mesh(
-      new THREE.CylinderGeometry(6.8, 7.4, 0.42, 24),
+      new THREE.CylinderGeometry(6.4, 7.0, 0.42, 24),
       M.stoneDark
     );
     adidaTerrace.position.y = 0.21;
@@ -5130,8 +5198,8 @@ export class VinhTrang3DWorld {
     // Four tropical shade trees frame the flower garden without hiding the statue silhouette.
     for (let i = 0; i < 4; i++) {
       const ang = (i / 4) * Math.PI * 2 + Math.PI / 4;
-      const tx = Math.sin(ang) * 10.4;
-      const tz = -Math.cos(ang) * 10.4;
+      const tx = Math.sin(ang) * 9.6;
+      const tz = -Math.cos(ang) * 9.6;
       const t = new THREE.Group();
       const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.34, 3.8, 10), M.trunk);
       trunk.position.y = 1.9;
@@ -5144,7 +5212,7 @@ export class VinhTrang3DWorld {
       this.adidaGroup.add(t);
     }
     this.exteriorGroup.add(this.adidaGroup);
-    this.addObstacle(23.0, 27.0, 7.6);
+    this.addObstacle(8.5, 17.5, 6.8);
 
     // 2. Đại tượng Phật Di Lặc — công viên bên tay phải chùa khi nhìn từ trong ra.
     // Tượng thực tế dài 27m, rộng 18m, cao 20m; khối đế là công trình kiến trúc bên dưới tượng.
@@ -5241,13 +5309,30 @@ export class VinhTrang3DWorld {
     }
 
     // 3. Đại tượng Phật Thích Ca nhập Niết Bàn — khu vườn phía sau Chánh điện.
-    // Tượng dài 32m, cao 10m; bệ kiến trúc thực tế dài 35m, ngang 18m, cao khoảng 7m.
+    // Bệ đá 3 tầng cao 3.6m cùng 5 bậc tam cấp phía Nam hướng Phật tử.
     this.nietBanGroup = new THREE.Group();
     this.nietBanGroup.position.set(-24.5, 0, -24.0);
-    const nbTerrace = new THREE.Mesh(new THREE.BoxGeometry(35.0, 0.36, 18.0), M.stoneLight);
-    nbTerrace.position.y = 0.18;
-    nbTerrace.receiveShadow = true;
-    this.nietBanGroup.add(nbTerrace);
+    const nbTier1 = new THREE.Mesh(new THREE.BoxGeometry(35.0, 1.2, 18.0), M.stoneDark);
+    nbTier1.position.y = 0.6;
+    nbTier1.receiveShadow = true;
+    nbTier1.castShadow = true;
+    this.nietBanGroup.add(nbTier1);
+    const nbTier2 = new THREE.Mesh(new THREE.BoxGeometry(34.2, 1.2, 17.2), M.creamTrim);
+    nbTier2.position.y = 1.8;
+    nbTier2.receiveShadow = true;
+    nbTier2.castShadow = true;
+    this.nietBanGroup.add(nbTier2);
+    const nbTier3 = new THREE.Mesh(new THREE.BoxGeometry(33.6, 1.2, 16.6), M.stoneLight);
+    nbTier3.position.y = 3.0;
+    nbTier3.receiveShadow = true;
+    nbTier3.castShadow = true;
+    this.nietBanGroup.add(nbTier3);
+    for (let st = 0; st < 5; st++) {
+      const step = new THREE.Mesh(new THREE.BoxGeometry(9.2, 0.44, 0.55), M.stoneLight);
+      step.position.set(0, 0.22 + st * 0.42, 9.8 - st * 0.4);
+      step.receiveShadow = true;
+      this.nietBanGroup.add(step);
+    }
 
     const nbSign = new THREE.Mesh(
       new THREE.BoxGeometry(12.5, 1.15, 0.18),
@@ -5262,7 +5347,7 @@ export class VinhTrang3DWorld {
         })
       })
     );
-    nbSign.position.set(0, 1.1, 9.15);
+    nbSign.position.set(0, 2.2, 9.15);
     this.nietBanGroup.add(nbSign);
     this.exteriorGroup.add(this.nietBanGroup);
     this.addRectObstacle(-42.0, -7.0, -33.0, -15.0);
@@ -5877,9 +5962,9 @@ export class VinhTrang3DWorld {
     buildFlagPole(18.2, 25.5, true);
     buildFlagPole(27.8, 25.5, false);
 
-    // 2. A low central hedge guides the pedestrian approach without a second row of statues.
+    // 2. Low hedge frames the West plaza edge without obstructing the main sightline to Chánh Điện.
     const midHedge = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.65, 18.0), M.foliageDark);
-    midHedge.position.set(11.6, 0.325, 15.0);
+    midHedge.position.set(-10.5, 0.325, 16.5);
     this.exteriorGroup.add(midHedge);
 
     // 3. RIGHT (East) Side Garden Pathway: Dense overflowing magenta Bougainvillea & Red Garden Railings (x = 33.8 & 38.2)
@@ -7034,19 +7119,30 @@ export class VinhTrang3DWorld {
       addCarvedBaoLam(0, 6.45, z, 9.2);
     }
 
-    // Spiral Incense Coils ("Nhang Khoanh")
+    // Spiral Incense Coils ("Nhang Khoanh") anchors (replaced on GLB load by nhang-khoanh-dong.glb)
     for (const [ix, iz] of [
       [-2.5, -4],
       [2.5, -4],
       [-2.5, -12.5],
       [2.5, -12.5]
     ]) {
-      const coil = new THREE.Mesh(
-        new THREE.ConeGeometry(0.55, 0.95, 16, 1, true),
-        new THREE.MeshStandardMaterial({ color: 0xC8963E, side: THREE.DoubleSide, wireframe: true })
+      const anc = new THREE.Group();
+      anc.position.set(ix, 6.75, iz);
+      const cord = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.015, 0.015, 0.45, 6),
+        M.goldAccent
       );
-      coil.position.set(ix, 6.2, iz);
-      g.add(coil);
+      cord.position.y = -0.22;
+      anc.add(cord);
+      const coilCone = new THREE.Mesh(
+        new THREE.TorusGeometry(0.32, 0.035, 8, 18),
+        M.bronzeBurner
+      );
+      coilCone.rotation.x = Math.PI / 2;
+      coilCone.position.y = -0.52;
+      anc.add(coilCone);
+      g.add(anc);
+      this.spiralIncenseAnchors.push(anc);
     }
 
     // Side Inlay Table + Incense Burner + Chuông Pháp Bảo
@@ -7084,7 +7180,7 @@ export class VinhTrang3DWorld {
     this.interiorDrumAnchor = { group: drumStand, placeholder: drum };
     this.interiorObstacles.push({ x: -6.8, z: -10.5, r: 1.1 });
 
-    // Tam Bảo Central Altar (z = -18.7) — Main Buddha Centerpiece + 2 Flanking Bodhisattvas + Multi-tier Altar
+    // Tam Bảo Central Altar (z = -18.7) — Main Buddha Centerpiece + 2 Sculpted Flanking Bodhisattvas + Cranes
     this.tamBaoAltarGroup = new THREE.Group();
     this.tamBaoAltarGroup.position.set(0, 0, -18.7);
     const tier1 = new THREE.Mesh(new THREE.BoxGeometry(9.0, 1.35, 3.8), M.redColumn);
@@ -7094,30 +7190,15 @@ export class VinhTrang3DWorld {
     tier2.position.y = 2.05;
     this.tamBaoAltarGroup.add(tier2);
 
-    // 2 Flanking Bodhisattva Statues ("Bồ Tát Quán Thế Âm & Đại Thế Chí" hai bên tượng chính)
-    for (const [bx, crownCol] of [[-2.45, 0xFFF2B2], [2.45, 0xFFE08A]]) {
-      const bGroup = new THREE.Group();
-      bGroup.position.set(bx, 2.75, 0.1);
-      const bLotus = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.56, 0.36, 14), M.redColumn);
-      bLotus.position.y = 0.18;
-      bGroup.add(bLotus);
-      const bRobe = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.36, 1.35, 16), goldLeafMat);
-      bRobe.position.y = 1.0;
-      bGroup.add(bRobe);
-      const bHead = new THREE.Mesh(new THREE.SphereGeometry(0.18, 16, 12), goldLeafMat);
-      bHead.scale.set(0.92, 1.12, 0.92);
-      bHead.position.y = 1.92;
-      bGroup.add(bHead);
-      const bCrown = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.2, 10), new THREE.MeshStandardMaterial({ color: crownCol, metalness: 0.6, roughness: 0.25 }));
-      bCrown.position.y = 2.16;
-      bGroup.add(bCrown);
-      const bHalo = new THREE.Mesh(
-        new THREE.RingGeometry(0.32, 0.4, 20),
-        new THREE.MeshBasicMaterial({ color: 0xFFE684, side: THREE.DoubleSide })
-      );
-      bHalo.position.set(0, 1.95, -0.14);
-      bGroup.add(bHalo);
-      this.tamBaoAltarGroup.add(bGroup);
+    this.craneTortoiseAnchor = new THREE.Group();
+    this.craneTortoiseAnchor.position.set(0, 0, 2.0);
+    this.tamBaoAltarGroup.add(this.craneTortoiseAnchor);
+
+    // 2 Sculpted Flanking Bodhisattva Statues ("Bồ Tát Quán Thế Âm & Đại Thế Chí" hai bên tượng chính)
+    for (const [bx, variant] of [[-2.45, 'quan_am'], [2.45, 'the_chi']]) {
+      const bodhi = createSculptedBodhisattva(THREE, { variant, ivory: false, scale: 1.05 });
+      bodhi.position.set(bx, 2.75, 0.1);
+      this.tamBaoAltarGroup.add(bodhi);
     }
 
     // Flower vases & brass candlesticks flanking Tam Bảo
@@ -7208,8 +7289,7 @@ export class VinhTrang3DWorld {
       g.add(archSign);
     }
 
-    // Three selected high-detail Arhat GLBs are loaded asynchronously below.
-    // Keep both side aisles readable; do not fill them with eighteen primitive stand-ins.
+    // All 18 Thập Bát La Hán statues lining both aisles are mounted cleanly in loadAllGLBAssets().
     this.arhatGroups = [];
 
     // =========================================================================
@@ -7471,16 +7551,13 @@ export class VinhTrang3DWorld {
     ktScreenPlaque.position.set(0, 4.15, -1.12);
     khuThoMainAltar.add(ktScreenPlaque);
 
-    // 3 Gilded Patriarch Statues + 5 Ancestral Tablets ("Bài Vị Chư Vị Tổ Sư")
+    // 3 Sculpted Gilded Patriarch Statues + 5 Ancestral Tablets ("Bài Vị Chư Vị Tổ Sư")
     this.khuThoAltarGroup = khuThoMainAltar;
     for (const px of [-1.75, 0, 1.75]) {
-      const pBody = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.34, 0.92, 12), goldLeafMat);
-      pBody.position.set(px, 2.8, -0.2);
-      khuThoMainAltar.add(pBody);
-      const pHead = new THREE.Mesh(new THREE.SphereGeometry(0.16, 10, 8), goldLeafMat);
-      pHead.position.set(px, 3.38, -0.2);
-      khuThoMainAltar.add(pHead);
-      if (px === 0) this.khuThoPlaceholderParts.push(pBody, pHead);
+      const pat = createSculptedPatriarch(THREE, { scale: 0.96 });
+      pat.position.set(px, 2.35, -0.2);
+      khuThoMainAltar.add(pat);
+      if (px === 0) this.khuThoPlaceholderParts.push(pat);
     }
     const tabletTitles = ['CHƯ TỔ', 'TIỀN BỐI', 'TỔ SƯ KHAI SƠN', 'HÒA THƯỢNG', 'CHƯ VỊ'];
     for (let ti = -2; ti <= 2; ti++) {
@@ -7527,12 +7604,13 @@ export class VinhTrang3DWorld {
       const tbl = new THREE.Mesh(new THREE.BoxGeometry(2.2, 1.15, 1.25), darkLacquerColMat);
       tbl.position.y = 0.575;
       sAltar.add(tbl);
-      const stBody = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.34, 1.35, 12), goldLeafMat);
-      stBody.position.set(0, 1.85, -0.2);
-      sAltar.add(stBody);
-      const stHead = new THREE.Mesh(new THREE.SphereGeometry(0.18, 10, 8), goldLeafMat);
-      stHead.position.set(0, 2.66, -0.2);
-      sAltar.add(stHead);
+      const sideStatue = createSculptedBodhisattva(THREE, {
+        variant: sx < 0 ? 'quan_am' : 'the_chi',
+        ivory: false,
+        scale: 0.92
+      });
+      sideStatue.position.set(0, 1.15, -0.2);
+      sAltar.add(sideStatue);
       const sb = this.buildIncenseBurner(0.32);
       sb.position.set(0, 1.15, 0.34);
       sAltar.add(sb);
@@ -7979,6 +8057,7 @@ export class VinhTrang3DWorld {
       dilacGltf,
       phatNamGltf,
       banThoGltf,
+      thichCaChanhDienGltf,
       quanAmGltf,
       hoPhapGltf,
       tieuDienGltf,
@@ -7990,7 +8069,12 @@ export class VinhTrang3DWorld {
       hoanHiGltf,
       phucHo2Gltf,
       thienDinhGltf,
+      cuBatGltf,
+      thacThapGltf,
+      khaiTamGltf,
+      tieuSuGltf,
       matTienGltf,
+      tamQuanGltf,
       baoThapGltf,
       daiHongChungGltf,
       trongBatNhaGltf,
@@ -8003,6 +8087,7 @@ export class VinhTrang3DWorld {
       this.loadGLB(STATUE_GLB_PATHS.dilac),
       this.loadGLB(STATUE_GLB_PATHS.phatnam),
       this.loadGLB(STATUE_GLB_PATHS.bantho),
+      this.loadGLB(STATUE_GLB_PATHS.thichCaChanhDien),
       this.loadGLB(STATUE_GLB_PATHS.quanAm),
       this.loadGLB(STATUE_GLB_PATHS.hoPhap),
       this.loadGLB(STATUE_GLB_PATHS.tieuDien),
@@ -8014,7 +8099,12 @@ export class VinhTrang3DWorld {
       this.loadGLB(ARHAT_GLB_PATHS.hoanHi),
       this.loadGLB(ARHAT_GLB_PATHS.phucHo2),
       this.loadGLB(ARHAT_GLB_PATHS.thienDinh),
+      this.loadGLB(ARHAT_GLB_PATHS.cuBat),
+      this.loadGLB(ARHAT_GLB_PATHS.thacThap),
+      this.loadGLB(ARHAT_GLB_PATHS.khaiTam),
+      this.loadGLB(ARHAT_GLB_PATHS.tieuSu),
       this.loadGLB(ARCH_GLB_PATHS.mat_tien),
+      this.loadGLB(ARCH_GLB_PATHS.tam_quan),
       this.loadGLB(ARCH_GLB_PATHS.bao_thap),
       this.loadGLB(ARCH_GLB_PATHS.dai_hong_chung),
       this.loadGLB(ARCH_GLB_PATHS.trong_bat_nha),
@@ -8024,6 +8114,7 @@ export class VinhTrang3DWorld {
       this.loadGLB(ARCH_GLB_PATHS.xe_oto)
     ]);
 
+    if (tamQuanGltf?.scene) this.archMeshCache.tam_quan = tamQuanGltf.scene;
     if (baoThapGltf?.scene) this.archMeshCache.bao_thap = baoThapGltf.scene;
     if (daiHongChungGltf?.scene) this.archMeshCache.dai_hong_chung = daiHongChungGltf.scene;
     if (trongBatNhaGltf?.scene) this.archMeshCache.trong_bat_nha = trongBatNhaGltf.scene;
@@ -8032,7 +8123,27 @@ export class VinhTrang3DWorld {
     if (xeKhachGltf?.scene) this.archMeshCache.xe_khach = xeKhachGltf.scene;
     if (xeOtoGltf?.scene) this.archMeshCache.xe_oto = xeOtoGltf.scene;
 
-    // 0. Replace procedural Chánh Điện facade with sculpted mat-tien-vinh-trang.glb (strip 'Sân' ground plane)
+    // 0A. Mount custom sculpted Tam Quan Vĩnh Tràng GLB onto main entrance gate while retaining plaque + iron gates
+    if (this.archMeshCache.tam_quan && this.tamQuanMainGroup) {
+      const tq = this.archMeshCache.tam_quan.clone(true);
+      tq.traverse((o) => {
+        if (o.isMesh) {
+          o.castShadow = true;
+          o.receiveShadow = true;
+          if (o.geometry && !o.geometry.getAttribute('normal')) o.geometry.computeVertexNormals();
+        }
+      });
+      const box = new THREE.Box3().setFromObject(tq);
+      const sz = new THREE.Vector3();
+      box.getSize(sz);
+      tq.scale.setScalar(13.6 / Math.max(0.2, sz.x));
+      const b2 = new THREE.Box3().setFromObject(tq);
+      tq.position.set(-(b2.min.x + b2.max.x) / 2, -b2.min.y, -(b2.min.z + b2.max.z) / 2);
+      for (const p of this.tamQuanProceduralParts) p.visible = false;
+      this.tamQuanMainGroup.add(tq);
+    }
+
+    // 0B. Replace procedural Chánh Điện facade with sculpted mat-tien-vinh-trang.glb (strip 'Sân' ground plane)
     if (matTienGltf?.scene && this.chanhDienFacadeGroup) {
       const facade = matTienGltf.scene.clone(true);
       const removeNodes = [];
@@ -8071,7 +8182,7 @@ export class VinhTrang3DWorld {
       if (this.chanhDienProceduralShell) this.chanhDienProceduralShell.visible = false;
     }
 
-    // 1. Đại tượng Phật A Di Đà in the front flower garden (18m statue + 7m lotus/pedestal = 25m total).
+    // 1. Đại tượng Phật A Di Đà in the front garden plaza (18m statue + 7m lotus/pedestal = 25m total).
     if (adidaGltf?.scene) {
       const s = this.cleanStatueScene(adidaGltf.scene, null);
       const box = new THREE.Box3().setFromObject(s);
@@ -8088,14 +8199,12 @@ export class VinhTrang3DWorld {
       this.adidaGroup.add(s);
     }
 
-    // 2. Đại tượng Phật Di Lặc — scale independently to the documented 27 × 18 × 20m envelope.
+    // 2. Đại tượng Phật Di Lặc — uniform proportional scale (~15.2m statue atop 4.8m terrace = 20m total)
     if (dilacGltf?.scene) {
       const s = this.cleanStatueScene(dilacGltf.scene, null);
       const box = new THREE.Box3().setFromObject(s);
-      const w = Math.max(0.1, box.max.x - box.min.x);
       const h = Math.max(0.1, box.max.y - box.min.y);
-      const d = Math.max(0.1, box.max.z - box.min.z);
-      s.scale.set(27.0 / w, 20.0 / h, 18.0 / d);
+      s.scale.setScalar(15.2 / h);
       const box2 = new THREE.Box3().setFromObject(s);
       s.position.set(
         -(box2.min.x + box2.max.x) / 2,
@@ -8106,7 +8215,7 @@ export class VinhTrang3DWorld {
       this.dilacGroup.add(s);
     }
 
-    // 3. Đại tượng Phật nhập Niết Bàn — fit the 32m body to the 35m plinth.
+    // 3. Đại tượng Phật nhập Niết Bàn — fit 32m body cleanly atop the 3.6m multi-tier stone plinth
     if (phatNamGltf?.scene) {
       const s = this.cleanStatueScene(phatNamGltf.scene, null);
       const box = new THREE.Box3().setFromObject(s);
@@ -8116,20 +8225,20 @@ export class VinhTrang3DWorld {
       const box2 = new THREE.Box3().setFromObject(s);
       s.position.set(
         -(box2.min.x + box2.max.x) / 2,
-        0.34 - box2.min.y,
+        3.62 - box2.min.y,
         -(box2.min.z + box2.max.z) / 2
       );
       s.rotation.y = Math.PI;
       this.nietBanGroup.add(s);
     }
 
-    // 4. Tượng Phật Bàn Thờ Tam Bảo + Porch Altar
-    if (banThoGltf?.scene) {
-      const s = this.cleanStatueScene(banThoGltf.scene, null);
+    // 4. Tượng Phật Bàn Thờ Tam Bảo (Thích Ca Chánh Điện or fallback) + Porch Altar
+    const mainSanctuaryScene = thichCaChanhDienGltf?.scene || banThoGltf?.scene;
+    if (mainSanctuaryScene) {
+      const s = this.cleanStatueScene(mainSanctuaryScene, null);
       const box = new THREE.Box3().setFromObject(s);
       const h = Math.max(0.1, box.max.y - box.min.y);
-      const scale = 2.6 / h;
-      s.scale.setScalar(scale);
+      s.scale.setScalar(2.85 / h);
       const box2 = new THREE.Box3().setFromObject(s);
       s.position.set(
         -(box2.min.x + box2.max.x) / 2,
@@ -8138,19 +8247,20 @@ export class VinhTrang3DWorld {
       );
       s.rotation.y = 0;
       this.tamBaoAltarGroup.add(s);
-
-      if (this.chanhDienPorchAltar) {
-        const porchBuddha = this.cleanStatueScene(banThoGltf.scene, null);
-        porchBuddha.scale.setScalar(2.15 / h);
-        const pb = new THREE.Box3().setFromObject(porchBuddha);
-        porchBuddha.position.set(
-          -(pb.min.x + pb.max.x) / 2,
-          1.03 - pb.min.y,
-          -(pb.min.z + pb.max.z) / 2
-        );
-        porchBuddha.rotation.y = 0;
-        this.chanhDienPorchAltar.add(porchBuddha);
-      }
+    }
+    if (banThoGltf?.scene && this.chanhDienPorchAltar) {
+      const porchBuddha = this.cleanStatueScene(banThoGltf.scene, null);
+      const box = new THREE.Box3().setFromObject(porchBuddha);
+      const h = Math.max(0.1, box.max.y - box.min.y);
+      porchBuddha.scale.setScalar(2.15 / h);
+      const pb = new THREE.Box3().setFromObject(porchBuddha);
+      porchBuddha.position.set(
+        -(pb.min.x + pb.max.x) / 2,
+        1.03 - pb.min.y,
+        -(pb.min.z + pb.max.z) / 2
+      );
+      porchBuddha.rotation.y = 0;
+      this.chanhDienPorchAltar.add(porchBuddha);
     }
 
     // 5. Tượng Quán Thế Âm Nam Hải replacing placeholder cylinder/sphere
@@ -8200,40 +8310,72 @@ export class VinhTrang3DWorld {
       this.khuThoAltarGroup.add(dm);
     }
 
-    // 7. All 7 Sculpted La Hán Statues symmetrically flanking Chánh Điện aisles
-    const arhatPlacements = [
-      { gltf: toaLocGltf, x: -9.8, z: -4.5, facing: Math.PI / 2, index: 0, title: 'Tọa Lộc La Hán' },
-      { gltf: kyTuongGltf, x: 9.8, z: -4.5, facing: -Math.PI / 2, index: 6, title: 'Kỵ Tượng La Hán' },
-      { gltf: hangLongGltf, x: -9.8, z: -9.8, facing: Math.PI / 2, index: 16, title: 'Hàng Long La Hán' },
-      { gltf: phucHoGltf, x: 9.8, z: -9.8, facing: -Math.PI / 2, index: 17, title: 'Phục Hổ La Hán' },
-      { gltf: hoanHiGltf, x: -9.8, z: -15.2, facing: Math.PI / 2, index: 3, title: 'Hoan Hỉ La Hán' },
-      { gltf: phucHo2Gltf, x: 9.8, z: -15.2, facing: -Math.PI / 2, index: 12, title: 'Phục Hổ Tôn Giả' },
-      { gltf: thienDinhGltf, x: -9.8, z: -20.0, facing: Math.PI / 2, index: 8, title: 'Thiền Định La Hán' }
+    // 7. All 18 Thập Bát La Hán Statues symmetrically lining West (x=-9.8) & East (x=+9.8) Chánh Điện aisles
+    const arhatRoster = [
+      { index: 0, title: 'Tọa Lộc La Hán', gltf: toaLocGltf },
+      { index: 1, title: 'Khánh Hỷ La Hán', gltf: tieuSuGltf },
+      { index: 2, title: 'Cử Bát La Hán', gltf: cuBatGltf },
+      { index: 3, title: 'Hoan Hỉ La Hán', gltf: hoanHiGltf },
+      { index: 4, title: 'Bố Đại La Hán', gltf: null },
+      { index: 5, title: 'Ba Tiêu La Hán', gltf: null },
+      { index: 6, title: 'Kỵ Tượng La Hán', gltf: kyTuongGltf },
+      { index: 7, title: 'Tiếu Sư La Hán', gltf: null },
+      { index: 8, title: 'Thiền Định La Hán', gltf: thienDinhGltf },
+      { index: 9, title: 'Trầm Tư La Hán', gltf: null },
+      { index: 10, title: 'Thám Thủ La Hán', gltf: null },
+      { index: 11, title: 'Khai Tâm La Hán', gltf: khaiTamGltf },
+      { index: 12, title: 'Phục Hổ Tôn Giả', gltf: phucHo2Gltf },
+      { index: 13, title: 'Thác Tháp La Hán', gltf: thacThapGltf },
+      { index: 14, title: 'Khoái Nhĩ La Hán', gltf: null },
+      { index: 15, title: 'Trường Mi La Hán', gltf: null },
+      { index: 16, title: 'Hàng Long La Hán', gltf: hangLongGltf },
+      { index: 17, title: 'Phục Hổ La Hán', gltf: phucHoGltf }
     ];
-    for (const item of arhatPlacements) {
-      if (!item.gltf?.scene) continue;
-      const statue = this.cleanStatueScene(item.gltf.scene, null, true);
-      const initialBounds = new THREE.Box3().setFromObject(statue);
-      const height = Math.max(0.1, initialBounds.max.y - initialBounds.min.y);
-      statue.scale.setScalar(1.28 / height);
-      statue.rotation.y = item.facing;
+    for (let i = 0; i < 18; i++) {
+      const item = arhatRoster[i];
+      const isWest = i < 9;
+      const row = isWest ? i : i - 9;
+      const ax = isWest ? -9.8 : 9.8;
+      const az = -2.0 - row * 2.25;
+      const facing = isWest ? Math.PI / 2 : -Math.PI / 2;
+
+      const pedestal = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.42, 0.48, 0.28, 12),
+        this.MAT.stoneDark
+      );
+      pedestal.position.set(ax, 0.14, az);
+      pedestal.receiveShadow = true;
+      pedestal.userData.arhatIndex = item.index;
+      pedestal.userData.arhatTitle = item.title;
+      this.interiorGroup.add(pedestal);
+
+      let statue;
+      if (item.gltf?.scene) {
+        statue = this.cleanStatueScene(item.gltf.scene, null, true);
+        const initialBounds = new THREE.Box3().setFromObject(statue);
+        const height = Math.max(0.1, initialBounds.max.y - initialBounds.min.y);
+        statue.scale.setScalar(1.26 / height);
+      } else {
+        statue = createSculptedGardenArhat(THREE, i, { scale: 1.02 });
+      }
+      statue.rotation.y = facing;
       const bounds = new THREE.Box3().setFromObject(statue);
       statue.position.set(
-        item.x - (bounds.min.x + bounds.max.x) / 2,
-        -bounds.min.y,
-        item.z - (bounds.min.z + bounds.max.z) / 2
+        ax - (bounds.min.x + bounds.max.x) / 2,
+        0.28 - bounds.min.y,
+        az - (bounds.min.z + bounds.max.z) / 2
       );
       statue.userData.arhatIndex = item.index;
       statue.userData.arhatTitle = item.title;
       this.interiorGroup.add(statue);
-      this.arhatGroups.push(statue);
-      this.interiorObstacles.push({ x: item.x, z: item.z, r: 0.82 });
+      this.arhatGroups.push(statue, pedestal);
+      this.interiorObstacles.push({ x: ax, z: az, r: 0.72 });
     }
 
-    // 8. Architectural Upgrades (Bảo Tháp, Đại Hồng Chung, Trống Bát Nhã, Long Trụ, Bao Lam, Parked Vehicles)
+    // 8. Architectural Upgrades (Bảo Tháp 35m, Đại Hồng Chung, Trống Bát Nhã, Long Trụ, Bao Lam, Parked Vehicles)
     if (this.archMeshCache.bao_thap && this.stupaGroup) {
       while (this.stupaGroup.children.length > 0) this.stupaGroup.remove(this.stupaGroup.children[0]);
-      const stupa = this.fitProp(this.archMeshCache.bao_thap, 18.5);
+      const stupa = this.fitProp(this.archMeshCache.bao_thap, 35.0);
       const sb = new THREE.Box3().setFromObject(stupa);
       stupa.position.set(-(sb.min.x + sb.max.x) / 2, -sb.min.y, -(sb.min.z + sb.max.z) / 2);
       this.stupaGroup.add(stupa);
@@ -8340,7 +8482,9 @@ export class VinhTrang3DWorld {
       trangHatGltf,
       vongMayGltf,
       cayBoDeGltf,
-      caySalaGltf
+      caySalaGltf,
+      capHacRuaGltf,
+      nhangKhoanhDongGltf
     ] = await Promise.all([
       this.loadGLB(CHAR_GLB_PATHS.nu),
       this.loadGLB(CHAR_GLB_PATHS.nam),
@@ -8371,7 +8515,9 @@ export class VinhTrang3DWorld {
       this.loadGLB(PROP_GLB_PATHS.trang_hat),
       this.loadGLB(PROP_GLB_PATHS.vong_may),
       this.loadGLB(PROP_GLB_PATHS.cay_bo_de),
-      this.loadGLB(PROP_GLB_PATHS.cay_sala)
+      this.loadGLB(PROP_GLB_PATHS.cay_sala),
+      this.loadGLB(PROP_GLB_PATHS.cap_hac_rua),
+      this.loadGLB(PROP_GLB_PATHS.nhang_khoanh_dong)
     ]);
 
     if (nuGltf?.scene) this.charDataCache.nu = nuGltf;
@@ -8414,6 +8560,8 @@ export class VinhTrang3DWorld {
     if (vongMayGltf?.scene) this.propMeshCache.vong_may = vongMayGltf.scene;
     if (cayBoDeGltf?.scene) this.propMeshCache.cay_bo_de = cayBoDeGltf.scene;
     if (caySalaGltf?.scene) this.propMeshCache.cay_sala = caySalaGltf.scene;
+    if (capHacRuaGltf?.scene) this.propMeshCache.cap_hac_rua = capHacRuaGltf.scene;
+    if (nhangKhoanhDongGltf?.scene) this.propMeshCache.nhang_khoanh_dong = nhangKhoanhDongGltf.scene;
 
     this.placeLoaded3DPropsInWorld();
     this.setCharacter(initialKey);
@@ -8448,18 +8596,51 @@ export class VinhTrang3DWorld {
   placeLoaded3DPropsInWorld() {
     const fitProp = (sceneObj, targetSize) => this.fitProp(sceneObj, targetSize);
 
-    // Upgrade courtyard pigeons with real Meshy chim-bo-cau-3d.glb
+    // Upgrade courtyard pigeons with upright Meshy chim-bo-cau-3d.glb
     if (this.propMeshCache.chim_bo_cau && this.pigeons.length > 0) {
+      const rawBox = new THREE.Box3().setFromObject(this.propMeshCache.chim_bo_cau);
+      const rawSz = rawBox.getSize(new THREE.Vector3());
+      const isFlatSheet = rawSz.z < rawSz.y * 0.25;
       for (const p of this.pigeons) {
         while (p.group.children.length > 0) p.group.remove(p.group.children[0]);
         const dove = fitProp(this.propMeshCache.chim_bo_cau, 0.36);
-        dove.rotation.x = -Math.PI / 2;
+        dove.rotation.x = isFlatSheet ? -Math.PI / 2 : 0;
         const db = new THREE.Box3().setFromObject(dove);
         dove.position.set(-(db.min.x + db.max.x) / 2, -db.min.y, -(db.min.z + db.max.z) / 2);
         p.group.add(dove);
         p.wL = null;
         p.wR = null;
       }
+    }
+
+    // Interior sacred implements: Nhang Khoanh Đồng coils & Cặp Hạc Rùa Đồng on Tam Bảo
+    if (this.propMeshCache.nhang_khoanh_dong && this.spiralIncenseAnchors?.length) {
+      for (const anc of this.spiralIncenseAnchors) {
+        while (anc.children.length > 0) anc.remove(anc.children[0]);
+        const coil = fitProp(this.propMeshCache.nhang_khoanh_dong, 1.05);
+        const cb = new THREE.Box3().setFromObject(coil);
+        coil.position.set(-(cb.min.x + cb.max.x) / 2, -cb.max.y, -(cb.min.z + cb.max.z) / 2);
+        anc.add(coil);
+      }
+    }
+    if (this.propMeshCache.cap_hac_rua && this.craneTortoiseAnchor) {
+      while (this.craneTortoiseAnchor.children.length > 0) {
+        this.craneTortoiseAnchor.remove(this.craneTortoiseAnchor.children[0]);
+      }
+      for (const cx of [-2.8, 2.8]) {
+        const crane = fitProp(this.propMeshCache.cap_hac_rua, 1.75);
+        const cb = new THREE.Box3().setFromObject(crane);
+        crane.position.set(cx - (cb.min.x + cb.max.x) / 2, -cb.min.y, -(cb.min.z + cb.max.z) / 2);
+        crane.rotation.y = cx < 0 ? 0.16 : -0.16;
+        this.craneTortoiseAnchor.add(crane);
+      }
+    }
+
+    // Living Sala flowering tree beside Outdoor Arhat Plaza
+    if (this.propMeshCache.cay_sala && this.outdoorArhatPlaza) {
+      const sala = fitProp(this.propMeshCache.cay_sala, 5.8);
+      sala.position.set(-4.2, 0, -4.6);
+      this.outdoorArhatPlaza.add(sala);
     }
 
     // Place hexagonal lanterns at Chánh Điện porch & Shop Pavilion
@@ -8605,7 +8786,7 @@ export class VinhTrang3DWorld {
   initSmokeColumns() {
     const origins = [
       new THREE.Vector3(23.0, 1.32, 12.0),
-      new THREE.Vector3(23.0, 1.15, 36.0),
+      new THREE.Vector3(15.8, 1.15, 17.5),
       new THREE.Vector3(-24.5, 2.85, 17.2),
       new THREE.Vector3(34.5, 0.98, 22.5),
       new THREE.Vector3(-24.5, 0.98, -13.5)
@@ -8863,13 +9044,14 @@ export class VinhTrang3DWorld {
   }
 
   setCharacter(charKey = 'nu') {
-    if (!['nu', 'nam', 'tre_em'].includes(charKey)) charKey = 'nu';
+    const validKeys = ['nu', 'nam', 'tre_em', 'su_thay', 'nu_ao_lam', 'nam_ao_nau', 'du_khach'];
+    if (!validKeys.includes(charKey)) charKey = 'nu';
     this.playerState.charKey = charKey;
     while (this.playerContainer.children.length > 0) {
       this.playerContainer.remove(this.playerContainer.children[0]);
     }
     const h = CHAR_HEIGHTS[charKey] || 1.62;
-    const rec = this.cloneAnimatedCharacter(charKey, h);
+    const rec = this.cloneAnimatedCharacter(charKey, h) || this.cloneAnimatedCharacter('nu', h);
     if (!rec) return;
     this.activePlayerRecord = rec;
     this.playerContainer.add(rec.root);
@@ -8883,45 +9065,23 @@ export class VinhTrang3DWorld {
     shadow.position.y = 0.015;
     this.playerContainer.add(shadow);
 
-    // Default cream shoulder tote bag for female protagonist on left shoulder when viewed from behind (matching Reference Image 1)
-    if (charKey === 'nu') {
-      const bagGroup = new THREE.Group();
-      const bagMat = new THREE.MeshStandardMaterial({ color: 0xF3E6CE, roughness: 0.78 });
-      const pouch = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.24, 0.22), bagMat);
-      pouch.position.set(0.21, h * 0.54, -0.03);
-      pouch.rotation.z = -0.12;
-      bagGroup.add(pouch);
-      const strap = new THREE.Mesh(
-        new THREE.TorusGeometry(0.14, 0.016, 8, 16, Math.PI),
-        bagMat
-      );
-      strap.position.set(0.18, h * 0.67, -0.02);
-      strap.rotation.y = Math.PI / 2;
-      bagGroup.add(strap);
-      this.playerContainer.add(bagGroup);
-    }
-
     this.equipmentGroup = new THREE.Group();
     this.playerContainer.add(this.equipmentGroup);
 
     this.storePreviewGroup = new THREE.Group();
     this.playerContainer.add(this.storePreviewGroup);
 
-    // Start in natural mid-stride walking posture (arms relaxed at sides, not T/A-pose)
-    this.playClipCrossfade(rec, 'Di bo', 0.05);
+    // Start cleanly in standing idle posture ('Dung') so avatar is ready to animate immediately
+    this.playerState.moving = false;
+    this.playerState.pose = 'Dung';
+    this.playClipCrossfade(rec, 'Dung', 0.08, false);
     if (rec.activeAction) {
-      rec.mixer.setTime(0.28);
-      rec.mixer.update(0);
-      rec.activeAction.paused = true;
+      rec.activeAction.paused = false;
+      rec.mixer.update(0.02);
     }
 
     this.syncPlayerTransform();
-    if (this.lastEquippedState) {
-      this.updateEquippedItems(this.lastEquippedState);
-    }
-    if (this.activeStorePreview) {
-      this.applyStoreVisualsToPlayer(this.activeStorePreview);
-    }
+    this.syncRiggedPlayerWearables();
     this.renderFrame();
   }
 
@@ -9058,21 +9218,20 @@ export class VinhTrang3DWorld {
 
   equipNpcProps(rec, charKey, h, opts = {}) {
     if (!rec?.root) return;
+    const bones = findCharacterBones(rec.root);
+    const invS = 1 / (rec.root.scale.x || 1);
+
     if (opts.hat) {
       if (this.propMeshCache.non_la) {
-        let headBone = null;
-        rec.root.traverse((b) => {
-          if (b.isBone && /head/i.test(b.name)) headBone = b;
-        });
-        const hat = this.fitProp(this.propMeshCache.non_la, charKey === 'tre_em' ? 0.34 : 0.44);
-        if (headBone) {
-          const s = rec.root.scale.x || 1;
-          hat.scale.multiplyScalar(1 / s);
-          hat.position.set(0, 0.14 / s, 0);
+        const hat = this.fitProp(this.propMeshCache.non_la, charKey === 'tre_em' ? 0.34 : 0.43);
+        if (bones.head) {
+          hat.scale.multiplyScalar(invS);
+          hat.position.set(0, (bones.isMixamoRig ? 0.11 : 0.13) * invS, 0.01 * invS);
           hat.rotation.x = -0.06;
-          headBone.add(hat);
+          bones.head.add(hat);
         } else {
-          hat.position.set(0, h * 0.94, 0.02);
+          hat.scale.multiplyScalar(invS);
+          hat.position.set(0, h * 0.96 * invS, 0.01 * invS);
           rec.root.add(hat);
         }
       } else {
@@ -9080,58 +9239,57 @@ export class VinhTrang3DWorld {
       }
     }
 
-    // Shoulder tote bag or woven market basket
-    if (opts.bag === 'tui_sen') {
-      const bagMesh = this.propMeshCache.tui_sen
-        ? this.fitProp(this.propMeshCache.tui_sen, 0.34)
-        : new THREE.Mesh(
-            new THREE.BoxGeometry(0.11, 0.25, 0.22),
-            new THREE.MeshStandardMaterial({ color: 0xEFE1C6, roughness: 0.78 })
-          );
-      const s = rec.root.scale.x || 1;
-      bagMesh.scale.multiplyScalar(1 / s);
-      bagMesh.position.set(-0.22 / s, (h * 0.54) / s, 0.04 / s);
-      rec.root.add(bagMesh);
-    } else if (opts.bag === 'gio_may' && this.propMeshCache.gio_may_tre) {
-      const basket = this.fitProp(this.propMeshCache.gio_may_tre, 0.36);
-      const s = rec.root.scale.x || 1;
-      basket.scale.multiplyScalar(1 / s);
-      basket.position.set(0.24 / s, (h * 0.48) / s, 0.14 / s);
-      rec.root.add(basket);
+    // Shoulder tote bag or woven market basket attached to chest/spine bone
+    if (opts.bag === 'tui_sen' || opts.bag === 'gio_may') {
+      const bagMesh =
+        opts.bag === 'gio_may' && this.propMeshCache.gio_may_tre
+          ? this.fitProp(this.propMeshCache.gio_may_tre, 0.34)
+          : this.propMeshCache.tui_sen
+          ? this.fitProp(this.propMeshCache.tui_sen, 0.32)
+          : new THREE.Mesh(
+              new THREE.BoxGeometry(0.11, 0.24, 0.2),
+              new THREE.MeshStandardMaterial({ color: 0xEFE1C6, roughness: 0.78 })
+            );
+      const torsoBone = bones.chest || bones.spine;
+      bagMesh.scale.multiplyScalar(invS);
+      if (torsoBone) {
+        bagMesh.position.set((opts.bag === 'gio_may' ? 0.2 : -0.19) * invS, -0.05 * invS, -0.04 * invS);
+        torsoBone.add(bagMesh);
+      } else {
+        bagMesh.position.set((opts.bag === 'gio_may' ? 0.22 : -0.2) * invS, h * 0.54 * invS, 0.02 * invS);
+        rec.root.add(bagMesh);
+      }
     }
 
-    // Checkered Southern scarf ("khăn rằn Nam Bộ") draped over shoulders
+    // Checkered Southern scarf ("khăn rằn Nam Bộ") attached to neck/collar bone
     if (opts.scarf) {
-      const s = rec.root.scale.x || 1;
-      if (this.propMeshCache.khan_ran) {
-        const scarf = this.fitProp(this.propMeshCache.khan_ran, 0.42);
-        scarf.scale.multiplyScalar(1 / s);
-        scarf.position.set(0, (h * 0.74) / s, 0.05 / s);
-        rec.root.add(scarf);
+      const scarf = this.propMeshCache.khan_ran
+        ? this.fitProp(this.propMeshCache.khan_ran, 0.4)
+        : new THREE.Mesh(
+            new THREE.TorusGeometry(0.13, 0.03, 7, 14),
+            new THREE.MeshStandardMaterial({ color: 0x2B2420, roughness: 0.8 })
+          );
+      if (!this.propMeshCache.khan_ran) scarf.rotation.x = Math.PI / 2 - 0.15;
+      const collarBone = bones.neck || bones.chest || bones.spine;
+      scarf.scale.multiplyScalar(invS);
+      if (collarBone) {
+        scarf.position.set(0, (bones.isMixamoRig ? 0.02 : 0.07) * invS, 0.03 * invS);
+        collarBone.add(scarf);
       } else {
-        const scarf = new THREE.Mesh(
-          new THREE.TorusGeometry(0.14 / s, 0.032 / s, 7, 14),
-          new THREE.MeshStandardMaterial({ color: 0x2B2420, roughness: 0.8 })
-        );
-        scarf.rotation.x = Math.PI / 2 - 0.15;
-        scarf.position.set(0, (h * 0.79) / s, 0.02 / s);
+        scarf.position.set(0, h * 0.75 * invS, 0.05 * invS);
         rec.root.add(scarf);
       }
     }
 
-    // Hand-carried items (hoa_sen, quat_nan, nhang, trang_hat)
+    // Hand-carried items attached to right hand / forearm bone
     if (opts.hand) {
-      const s = rec.root.scale.x || 1;
-      let handBone = null;
-      rec.root.traverse((b) => {
-        if (b.isBone && /righthand|hand_r|r_hand/i.test(b.name)) handBone = b;
-      });
+      const handBone = bones.rightHand || bones.rightForearm;
       let prop = null;
       if (opts.hand === 'quat' && this.propMeshCache.quat_nan_la_dua) {
-        prop = this.fitProp(this.propMeshCache.quat_nan_la_dua, 0.34);
+        prop = this.fitProp(this.propMeshCache.quat_nan_la_dua, 0.32);
       } else if (opts.hand === 'hoa_sen') {
         if (this.propMeshCache.nen_hoa_sen) {
-          prop = this.fitProp(this.propMeshCache.nen_hoa_sen, 0.28);
+          prop = this.fitProp(this.propMeshCache.nen_hoa_sen, 0.26);
         } else {
           prop = new THREE.Mesh(
             new THREE.ConeGeometry(0.08, 0.18, 7),
@@ -9141,35 +9299,34 @@ export class VinhTrang3DWorld {
       } else if (opts.hand === 'nhang') {
         const bun = new THREE.Group();
         const wrap = new THREE.Mesh(
-          new THREE.CylinderGeometry(0.035, 0.035, 0.24, 8),
+          new THREE.CylinderGeometry(0.03, 0.03, 0.22, 8),
           new THREE.MeshStandardMaterial({ color: 0xC62828, roughness: 0.6 })
         );
         bun.add(wrap);
         const top = new THREE.Mesh(
-          new THREE.CylinderGeometry(0.032, 0.032, 0.22, 8),
+          new THREE.CylinderGeometry(0.028, 0.028, 0.2, 8),
           new THREE.MeshStandardMaterial({ color: 0xD9962E, roughness: 0.7 })
         );
-        top.position.y = 0.2;
+        top.position.y = 0.18;
         bun.add(top);
         prop = bun;
       } else if (opts.hand === 'beads') {
         if (this.propMeshCache.trang_hat) {
-          prop = this.fitProp(this.propMeshCache.trang_hat, 0.22);
+          prop = this.fitProp(this.propMeshCache.trang_hat, 0.2);
         } else {
           prop = new THREE.Mesh(
-            new THREE.TorusGeometry(0.09, 0.016, 6, 14),
+            new THREE.TorusGeometry(0.08, 0.015, 6, 14),
             new THREE.MeshStandardMaterial({ color: 0x5E3418, roughness: 0.45 })
           );
         }
       }
       if (prop) {
+        prop.scale.multiplyScalar(invS);
         if (handBone) {
-          prop.scale.multiplyScalar(1 / s);
-          prop.position.set(0, 0.04 / s, 0.06 / s);
+          prop.position.set(0, -0.02 * invS, 0.05 * invS);
           handBone.add(prop);
         } else {
-          prop.scale.multiplyScalar(1 / s);
-          prop.position.set(0.21 / s, (h * 0.56) / s, 0.18 / s);
+          prop.position.set(0.21 * invS, h * 0.56 * invS, 0.18 * invS);
           rec.root.add(prop);
         }
       }
@@ -9181,7 +9338,7 @@ export class VinhTrang3DWorld {
     const kneelSpots = [
       { charKey: 'nu', x: 21.4, z: 13.4, yaw: Math.PI, tint: [0.76, 0.64, 0.72] },
       { charKey: 'nam', x: 24.6, z: 13.4, yaw: Math.PI, monkTone: 0 },
-      { charKey: 'nu', x: 23.0, z: 38.5, yaw: Math.PI, tint: [0.80, 0.72, 0.62] },
+      { charKey: 'nu', x: 14.2, z: 17.5, yaw: -Math.PI / 2, tint: [0.80, 0.72, 0.62] },
       { charKey: 'nam', x: -24.5, z: 17.5, yaw: Math.PI, monkTone: 1 },
       { charKey: 'nu', x: 35.2, z: 22.5, yaw: -Math.PI / 2, tint: [0.85, 0.70, 0.76] },
       { charKey: 'nam', x: -24.5, z: -10.5, yaw: 0, monkTone: 2 },
@@ -10073,6 +10230,13 @@ export class VinhTrang3DWorld {
     return this.inInterior;
   }
 
+  normalizeInteriorZoneKey(zoneKey = 'chanh_dien') {
+    if (zoneKey === 'chanh_dien_noi_that') return 'chanh_dien';
+    if (zoneKey === 'san_thien_tinh_1') return 'non_bo_giua';
+    if (zoneKey === 'nha_to') return 'khu_tho';
+    return zoneKey;
+  }
+
   getInteriorZoneKey() {
     if (!this.inInterior) return 'exterior';
     const px = this.playerState.x;
@@ -10086,7 +10250,8 @@ export class VinhTrang3DWorld {
     return 'nha_hau';
   }
 
-  goToInteriorZone(zoneKey = 'chanh_dien') {
+  goToInteriorZone(rawZoneKey = 'chanh_dien') {
+    const zoneKey = this.normalizeInteriorZoneKey(rawZoneKey);
     if (!this.inInterior) {
       this.toggleInterior(true, 'right');
     }
@@ -10157,12 +10322,18 @@ export class VinhTrang3DWorld {
     };
     const resolved = mapName[clipName] || 'Vái';
     this.playerState.pose = resolved;
+    this.proceduralPoseState = {
+      action: resolved === 'Di bo' || resolved === 'Dung' ? null : resolved,
+      timer: 0,
+      duration: resolved === 'Quỳ' ? 3.0 : 2.5
+    };
     if (this.activePlayerRecord) {
       this.playClipCrossfade(this.activePlayerRecord, resolved, 0.22, true);
       clearTimeout(this._poseReturnTimer);
       this._poseReturnTimer = setTimeout(() => {
         if (!this.playerState.moving && this.activePlayerRecord) {
           this.playerState.pose = 'Dung';
+          this.proceduralPoseState.action = null;
           this.playClipCrossfade(this.activePlayerRecord, 'Dung', 0.25, false);
         }
       }, 2800);
@@ -10199,167 +10370,44 @@ export class VinhTrang3DWorld {
     this.offeredLotusesGroup.add(fl);
   }
 
+  syncRiggedPlayerWearables() {
+    if (!this.activePlayerRecord?.root) return;
+    const eq = this.lastEquippedState || {};
+    const st = this.activeStorePreview || {};
+    const merged = {
+      ...st,
+      hat: Boolean(st.hat ?? eq.hat),
+      bag: st.bag ?? eq.bag ?? null,
+      handProp: st.handProp ?? (eq.hand === 'hoa_sen_trang_nghiem' ? 'hoa_sen_trang_nghiem' : eq.hand || null),
+      scarf: Boolean(st.scarf ?? eq.scarf),
+      malaId: st.malaId ?? eq.malaId ?? null
+    };
+    const h = CHAR_HEIGHTS[this.playerState.charKey] || 1.64;
+    if (this.equipmentGroup) {
+      while (this.equipmentGroup.children.length > 0) {
+        this.equipmentGroup.remove(this.equipmentGroup.children[0]);
+      }
+    }
+    attachStorePropsToCharacterRig(THREE, this.activePlayerRecord, merged, {
+      h,
+      propMeshCache: this.propMeshCache,
+      fitPropFn: (obj, sz) => this.fitProp(obj, sz),
+      groundGroup: this.storePreviewGroup,
+      isMoving: Boolean(this.playerState.moving),
+      isKneeling: this.playerState.pose === 'Quỳ',
+      previewMode: Boolean(this.activeStorePreview && Object.keys(this.activeStorePreview).length > 0)
+    });
+  }
+
   updateEquippedItems(equipped = {}) {
     this.lastEquippedState = equipped;
-    if (!this.equipmentGroup) return;
-    while (this.equipmentGroup.children.length > 0) {
-      this.equipmentGroup.remove(this.equipmentGroup.children[0]);
-    }
-    const h = CHAR_HEIGHTS[this.playerState.charKey] || 1.64;
-    if (equipped.hat && this.propMeshCache.non_la) {
-      const hat = this.propMeshCache.non_la.clone(true);
-      hat.scale.setScalar(0.38);
-      hat.position.set(0, h + 0.02, 0);
-      this.equipmentGroup.add(hat);
-    }
-    if (equipped.bag && this.propMeshCache.tui_sen) {
-      const bag = this.propMeshCache.tui_sen.clone(true);
-      bag.scale.setScalar(0.28);
-      bag.position.set(-0.22, h * 0.56, 0.04);
-      this.equipmentGroup.add(bag);
-    }
-    if (equipped.hand === 'hoa_sen_trang_nghiem' && this.propMeshCache.hoa_sen) {
-      const lotus = this.propMeshCache.hoa_sen.clone(true);
-      lotus.scale.setScalar(0.26);
-      lotus.position.set(0.22, h * 0.62, 0.24);
-      this.equipmentGroup.add(lotus);
-    }
+    this.syncRiggedPlayerWearables();
+    this.renderFrame();
   }
 
   applyStoreVisualsToPlayer(storeVisual = {}) {
     this.activeStorePreview = storeVisual;
-    if (!this.activePlayerRecord?.root || !this.storePreviewGroup) return;
-
-    // 1. Live robe color preview / equipped robe
-    this.recolorPastelDress(this.activePlayerRecord.root, storeVisual.robeTint || null);
-
-    // 2. Rebuild live prop previews attached to protagonist
-    while (this.storePreviewGroup.children.length > 0) {
-      this.storePreviewGroup.remove(this.storePreviewGroup.children[0]);
-    }
-    const h = CHAR_HEIGHTS[this.playerState.charKey] || 1.64;
-
-    if (storeVisual.hat && this.propMeshCache.non_la) {
-      const hat = this.fitProp(this.propMeshCache.non_la, 0.44);
-      hat.position.set(0, h - 0.06, 0.02);
-      this.storePreviewGroup.add(hat);
-    }
-    if (storeVisual.bag && this.propMeshCache.tui_sen) {
-      const bag = this.fitProp(this.propMeshCache.tui_sen, 0.34);
-      bag.position.set(-0.22, h * 0.54, 0.04);
-      this.storePreviewGroup.add(bag);
-    }
-    if (storeVisual.scarf && this.propMeshCache.khan_ran) {
-      const scarf = this.fitProp(this.propMeshCache.khan_ran, 0.44);
-      scarf.position.set(0, h * 0.74, 0.06);
-      this.storePreviewGroup.add(scarf);
-    }
-    if (storeVisual.malaId && this.propMeshCache.trang_hat) {
-      const mala = this.fitProp(this.propMeshCache.trang_hat, 0.24);
-      mala.position.set(-0.22, h * 0.52, 0.18);
-      this.storePreviewGroup.add(mala);
-    }
-    if (storeVisual.mat) {
-      const matKey =
-        storeVisual.mat === 'bo_doan_tron'
-          ? 'bo_doan_tron'
-          : storeVisual.mat === 'chieu_coi_thien'
-          ? 'chieu_coi_thien'
-          : 'bo_doan';
-      const matScene = this.propMeshCache[matKey];
-      if (matScene) {
-        const matMesh = this.fitProp(matScene, matKey === 'chieu_coi_thien' ? 1.45 : 0.92);
-        matMesh.position.set(0, 0.01, 0);
-        this.storePreviewGroup.add(matMesh);
-      }
-    }
-    if (storeVisual.handProp && this.propMeshCache[storeVisual.handProp]) {
-      const prop = this.fitProp(this.propMeshCache[storeVisual.handProp], 0.34);
-      prop.position.set(0.28, h * 0.56, 0.22);
-      this.storePreviewGroup.add(prop);
-    }
-    const treeKey = storeVisual.treeProp || (storeVisual.treeId === 'cay_bo_de_phat' ? 'cay_bo_de' : storeVisual.treeId === 'cay_sala_phat' ? 'cay_sala' : null);
-    if (treeKey) {
-      const treeModel =
-        treeKey === 'cay_bo_de'
-          ? this.propMeshCache.cay_bo_de
-          : treeKey === 'cay_sala'
-          ? this.propMeshCache.cay_sala
-          : this.propMeshCache.chum_sen;
-      if (treeModel) {
-        const urn = this.fitProp(treeModel, treeKey === 'cay_bo_de' || treeKey === 'cay_sala' ? 1.08 : 0.85);
-        urn.position.set(-0.68, 0, 0.25);
-        this.storePreviewGroup.add(urn);
-      }
-    }
-    if (storeVisual.cloudColor) {
-      if (this.propMeshCache.vong_may) {
-        const cloud = this.fitProp(this.propMeshCache.vong_may, 1.08);
-        cloud.traverse((o) => {
-          if (o.isMesh && o.material) {
-            o.material = o.material.clone();
-            o.material.emissive = new THREE.Color(storeVisual.cloudColor);
-            o.material.emissiveIntensity = 0.28;
-            o.material.transparent = true;
-            o.material.opacity = 0.92;
-          }
-        });
-        cloud.position.set(0, 0.04, 0);
-        this.storePreviewGroup.add(cloud);
-      } else {
-        const ring = new THREE.Mesh(
-          new THREE.TorusGeometry(0.55, 0.14, 10, 24),
-          new THREE.MeshStandardMaterial({
-            color: new THREE.Color(storeVisual.cloudColor),
-            emissive: new THREE.Color(storeVisual.cloudColor),
-            emissiveIntensity: 0.35,
-            roughness: 0.4,
-            transparent: true,
-            opacity: 0.88
-          })
-        );
-        ring.rotation.x = Math.PI / 2;
-        ring.position.set(0, 0.08, 0);
-        this.storePreviewGroup.add(ring);
-      }
-    }
-    if (storeVisual.petType === 'dove') {
-      if (this.propMeshCache.chim_bo_cau) {
-        const bird = this.fitProp(this.propMeshCache.chim_bo_cau, 0.42);
-        bird.rotation.x = -Math.PI / 2;
-        bird.position.set(0.56, h + 0.18, -0.1);
-        this.storePreviewGroup.add(bird);
-      } else {
-        const bird = new THREE.Group();
-        const body = new THREE.Mesh(
-          new THREE.SphereGeometry(0.11, 10, 8),
-          new THREE.MeshStandardMaterial({ color: 0xFFFFFF, roughness: 0.45 })
-        );
-        body.scale.set(0.9, 0.8, 1.45);
-        bird.add(body);
-        const wingL = new THREE.Mesh(
-          new THREE.BoxGeometry(0.22, 0.03, 0.14),
-          new THREE.MeshStandardMaterial({ color: 0xF4F7FC, roughness: 0.5 })
-        );
-        wingL.position.set(-0.14, 0.03, 0);
-        wingL.rotation.z = 0.28;
-        bird.add(wingL);
-        const wingR = wingL.clone();
-        wingR.position.x = 0.14;
-        wingR.rotation.z = -0.28;
-        bird.add(wingR);
-        bird.position.set(0.56, h + 0.22, -0.1);
-        this.storePreviewGroup.add(bird);
-      }
-    } else if (storeVisual.petType === 'koi') {
-      const fish = new THREE.Mesh(
-        new THREE.ConeGeometry(0.11, 0.42, 8),
-        new THREE.MeshStandardMaterial({ color: 0xFF7043, roughness: 0.3 })
-      );
-      fish.rotation.x = Math.PI / 2;
-      fish.position.set(0.58, 0.55, 0.18);
-      this.storePreviewGroup.add(fish);
-    }
+    this.syncRiggedPlayerWearables();
     this.renderFrame();
   }
 
@@ -10371,12 +10419,12 @@ export class VinhTrang3DWorld {
     );
     this.playerContainer.rotation.y = this.playerState.yaw;
 
-    if (this.entranceTour?.active) return;
+    if (this.entranceTour?.active || this.arrivalCutscene?.active) return;
 
     if (this.inInterior && this.interiorCutaway) {
       const cutAngle = Math.PI * 0.78 + this.cameraAzimuthOffset;
-      const cutDist = 30.0;
-      const cutHeight = 20.5;
+      const cutDist = Math.max(18.0, 30.0 + (this.cameraZoomOffset || 0));
+      const cutHeight = Math.max(14.0, 20.5 + (this.cameraPitchOffset || 0));
       const focusX = this.playerState.x * 0.4;
       const focusZ = Math.max(-72.0, Math.min(2.0, this.playerState.z - 8.0));
       this.camera.position.set(
@@ -10396,7 +10444,7 @@ export class VinhTrang3DWorld {
     const isAdidaPlaza =
       !this.inInterior &&
       (this.currentStationId === 2 ||
-        Math.hypot(this.playerState.x - 23.0, this.playerState.z - 37.0) < 9.5);
+        Math.hypot(this.playerState.x - 8.5, this.playerState.z - 25.0) < 9.5);
     const isMonumental =
       !this.inInterior &&
       ([2, 3, 8].includes(this.currentStationId) ||
@@ -10405,19 +10453,28 @@ export class VinhTrang3DWorld {
         Math.hypot(this.playerState.x - -24.5, this.playerState.z - -10.5) < 8.5);
 
     const transitionPull = this.interiorTransition?.phase === 'climb_side_door' ? 2.1 : 0;
-    const camDist = this.inInterior
+    const baseDist = this.inInterior
       ? 4.6
       : (isAdidaPlaza ? 11.2 : isMonumental ? 11.2 : 7.0) - transitionPull;
-    const camHeight = this.inInterior
-      ? 2.15 + (this.playerElevationY || 0) * 0.9
-      : (isAdidaPlaza ? 2.35 : isMonumental ? 2.15 : 2.1) + (this.playerElevationY || 0) * 0.7;
-    const lookY = this.inInterior
-      ? 2.45 + (this.playerElevationY || 0) * 0.85
-      : isAdidaPlaza
-      ? 12.0
-      : isMonumental
-      ? 7.6
-      : 3.65;
+    const camDist = Math.max(2.6, Math.min(18.5, baseDist + (this.cameraZoomOffset || 0)));
+    const camHeight = Math.max(
+      1.2,
+      (this.inInterior
+        ? 2.15 + (this.playerElevationY || 0) * 0.9
+        : (isAdidaPlaza ? 2.35 : isMonumental ? 2.15 : 2.1) + (this.playerElevationY || 0) * 0.7) +
+        (this.cameraPitchOffset || 0) * 0.55
+    );
+    const lookY = Math.max(
+      0.8,
+      (this.inInterior
+        ? 2.45 + (this.playerElevationY || 0) * 0.85
+        : isAdidaPlaza
+        ? 12.0
+        : isMonumental
+        ? 7.6
+        : 3.65) -
+        (this.cameraPitchOffset || 0) * 0.65
+    );
     const lookAngle = this.cameraBaseYaw + this.cameraAzimuthOffset;
     const sideOffset = this.inInterior ? 0 : isMonumental ? 0.48 : 0.62;
     const cx =
@@ -10549,6 +10606,21 @@ export class VinhTrang3DWorld {
       downY = e.clientY;
     });
 
+    this.canvas.addEventListener(
+      'wheel',
+      (e) => {
+        e.preventDefault();
+        this.cancelEntranceTour();
+        this.cameraZoomOffset = THREE.MathUtils.clamp(
+          (this.cameraZoomOffset || 0) + e.deltaY * 0.005,
+          -3.0,
+          7.0
+        );
+        this.syncPlayerTransform();
+      },
+      { passive: false }
+    );
+
     window.addEventListener('pointermove', (e) => {
       if (!dragging) return;
       const dx = e.clientX - downX;
@@ -10557,6 +10629,11 @@ export class VinhTrang3DWorld {
         movedDrag = true;
         this.cancelEntranceTour();
         this.cameraAzimuthOffset -= dx * 0.0045;
+        this.cameraPitchOffset = THREE.MathUtils.clamp(
+          (this.cameraPitchOffset || 0) + dy * 0.012,
+          -2.2,
+          5.5
+        );
         downX = e.clientX;
         downY = e.clientY;
         this.syncPlayerTransform();
@@ -10594,7 +10671,16 @@ export class VinhTrang3DWorld {
       if (this.arhatGroups?.length) {
         const hits = raycaster.intersectObjects(this.arhatGroups, true);
         if (hits.length > 0) {
-          this.onObjectClick('OPEN_ARHAT');
+          let cur = hits[0].object;
+          let arhatIndex = 0;
+          while (cur) {
+            if (cur.userData?.arhatIndex !== undefined) {
+              arhatIndex = cur.userData.arhatIndex;
+              break;
+            }
+            cur = cur.parent;
+          }
+          this.onObjectClick('OPEN_ARHAT', { arhatIndex });
           return;
         }
       }
@@ -10661,6 +10747,13 @@ export class VinhTrang3DWorld {
         if (hits.length > 0) {
           const slotIndex = hits[0].object?.userData?.slotIndex ?? 0;
           this.onObjectClick('OPEN_GARDEN_PLOT', { slotIndex });
+          return;
+        }
+      }
+      if (this.lectureClickTargets?.length) {
+        const hits = raycaster.intersectObjects(this.lectureClickTargets, true);
+        if (hits.length > 0) {
+          this.onObjectClick('OPEN_LECTURE');
           return;
         }
       }
@@ -10938,6 +11031,7 @@ export class VinhTrang3DWorld {
 
     // Damped Entrance Camera Tour along Tam Quan -> Yellow Banner & Vietnamese Stalls -> Right Bougainvillea Path
     const tourStep = this.isSoftwareGl ? Math.max(dt, 0.14) : dt;
+    this.stepArrivalCutscene(tourStep);
     this.stepEntranceTour(tourStep);
     this.stepRoadTraffic(this.isSoftwareGl ? trDt : dt);
 
@@ -10951,20 +11045,29 @@ export class VinhTrang3DWorld {
             0.55 + 0.65 * this.playerState.moveBlend;
         }
         this.activePlayerRecord.mixer.update(dt);
+        if (!this.arrivalCutscene?.active) {
+          this._stepAudioTimer += dt;
+          if (this._stepAudioTimer >= 0.42) {
+            this._stepAudioTimer = 0;
+            this.onStepSound(this.inInterior ? 'interior' : 'stone');
+          }
+        }
       } else {
         this.playerState.moveBlend = Math.max(0, this.playerState.moveBlend - dt * 7);
-        if (
-          this.activePlayerRecord.activeClipName === 'Di bo' ||
-          this.activePlayerRecord.activeClipName === 'Đi bộ'
-        ) {
-          if (this.activePlayerRecord.activeAction) {
-            this.activePlayerRecord.activeAction.paused = true;
-          }
-        } else {
-          this.activePlayerRecord.mixer.update(dt);
+        this._stepAudioTimer = 0.25;
+        const activeName = normalizeAnimKey(this.activePlayerRecord.activeClipName);
+        if ((activeName === 'di bo' || activeName === 'walk') && !this.proceduralPoseState?.action) {
+          this.playClipCrossfade(this.activePlayerRecord, 'Dung', 0.2, false);
         }
+        if (this.activePlayerRecord.activeAction) {
+          this.activePlayerRecord.activeAction.paused = false;
+        }
+        this.activePlayerRecord.mixer.update(dt);
       }
+      this.updateProceduralPoseFallback(dt);
     }
+
+    this.stepPilgrimageCompanions(dt);
 
     if (!this.inInterior) {
       for (let ni = 0; ni < this.riggedNpcRecords.length; ni++) {
@@ -11093,6 +11196,16 @@ export class VinhTrang3DWorld {
       ls.group.rotation.z = Math.sin(elapsed * 1.4 + ls.phase) * 0.045;
       ls.group.rotation.x = Math.cos(elapsed * 1.1 + ls.phase) * 0.035;
     }
+    if (this.floatingLanterns?.length && !this.inInterior) {
+      for (const fl of this.floatingLanterns) {
+        fl.mesh.position.y = 0.04 + Math.sin(elapsed * 1.7 + fl.phase) * 0.025;
+        fl.mesh.rotation.y += dt * 0.14;
+        fl.mesh.rotation.z = Math.sin(elapsed * 1.3 + fl.phase) * 0.06;
+        if (fl.flameMat) {
+          fl.flameMat.emissiveIntensity = 0.85 + Math.sin(elapsed * 7.5 + fl.phase) * 0.28;
+        }
+      }
+    }
 
     // Animate Dâng hoa blooming & glowing lotus effect in the pond (zero GC)
     this.stepLotusBloom(this.isSoftwareGl ? Math.max(dt, 0.12) : dt);
@@ -11158,6 +11271,8 @@ export class VinhTrang3DWorld {
         this.heldDirs.size > 0 ||
         this.autoWalkWaypoints.length > 0 ||
         this.entranceTour.active ||
+        Boolean(this.arrivalCutscene?.active) ||
+        Boolean(this.proceduralPoseState?.action) ||
         this.lotusBloomState.active ||
         Boolean(this.interiorTransition) ||
         Boolean(
@@ -11166,6 +11281,335 @@ export class VinhTrang3DWorld {
       this.afterDraw(() => this.animate(), isActivelyAnimating ? 100 : 520);
     } else {
       requestAnimationFrame(() => this.animate());
+    }
+  }
+
+  updateProceduralPoseFallback(dt) {
+    const st = this.proceduralPoseState;
+    if (!st || !st.action || !this.activePlayerRecord?.root) return;
+    st.timer += dt;
+    const p = Math.min(1, st.timer / Math.max(0.2, st.duration || 2.5));
+    const curve = Math.sin(p * Math.PI);
+    const bones = findCharacterBones(this.activePlayerRecord.root);
+    const act = normalizeAnimKey(st.action);
+
+    if (act === 'quy') {
+      this.activePlayerRecord.root.position.y =
+        (this.activePlayerRecord.baseY || 0) - 0.34 * curve;
+      if (bones.spine) bones.spine.rotation.x += 0.32 * curve;
+      if (bones.head) bones.head.rotation.x += 0.25 * curve;
+    } else if (act === 'vai') {
+      if (bones.spine) bones.spine.rotation.x += 0.44 * curve;
+      if (bones.chest && bones.chest !== bones.spine) bones.chest.rotation.x += 0.18 * curve;
+      if (bones.head) bones.head.rotation.x += 0.3 * curve;
+    } else if (act === 'thap nhang' || act === 'chap tay') {
+      if (bones.spine) bones.spine.rotation.x += 0.16 * curve;
+      if (bones.head) bones.head.rotation.x += 0.2 * curve;
+      if (bones.leftForearm) bones.leftForearm.rotation.x -= 0.55 * curve;
+      if (bones.rightForearm) bones.rightForearm.rotation.x -= 0.55 * curve;
+    }
+
+    if (p >= 1) {
+      st.action = null;
+      st.timer = 0;
+      this.activePlayerRecord.root.position.y = this.activePlayerRecord.baseY || 0;
+    }
+  }
+
+  playArrivalCutscene({ vehicleKind = 'sedan', onCue = () => {}, onComplete = () => {} } = {}) {
+    this.skipArrivalCutscene(true);
+    this.cancelEntranceTour();
+    this.cancelAutoWalk();
+    if (this.inInterior) this.toggleInterior(false);
+
+    const isCoach = vehicleKind === 'van' || vehicleKind === 'doan_xe_buyt';
+    const vehColor = isCoach ? 0xD7DFE4 : 0xEFEBE2;
+    const vehicle = this.spawnRoadTrafficVehicle({
+      kind: isCoach ? 'van' : 'sedan',
+      x: 92,
+      z: 59.4,
+      direction: -1,
+      speed: 8.5,
+      color: vehColor
+    });
+    if (vehicle?.group) {
+      vehicle.group.userData.isCutsceneVehicle = true;
+    }
+
+    // Temporarily tuck player inside drop-off spot while car pulls up
+    this.playerState.x = 58.0;
+    this.playerState.z = 52.5;
+    this.playerState.yaw = Math.PI;
+    this.playerState.moving = false;
+    this.playerContainer.visible = false;
+
+    this.arrivalCutscene = {
+      active: true,
+      timer: 0,
+      phase: 'drive_in',
+      vehicle,
+      vehicleKind: isCoach ? 'van' : 'sedan',
+      onCue,
+      onComplete,
+      cuedArrival: false,
+      cuedWalkIn: false
+    };
+    onCue('drive_in');
+  }
+
+  skipArrivalCutscene(silent = false) {
+    const cs = this.arrivalCutscene;
+    if (!cs) return;
+    if (cs.vehicle) {
+      this.disposeRoadTrafficVehicle(cs.vehicle);
+    }
+    this.arrivalCutscene = null;
+    this.playerContainer.visible = true;
+    this.playerState.x = 35.5;
+    this.playerState.z = 50.8;
+    this.playerState.yaw = Math.PI - 0.16;
+    this.playerState.moving = false;
+    this.cameraBaseYaw = Math.PI - 0.16;
+    this.cameraAzimuthOffset = 0;
+    this.syncPlayerTransform();
+    if (!silent && typeof cs.onComplete === 'function') {
+      cs.onComplete();
+    }
+  }
+
+  stepArrivalCutscene(dt) {
+    const cs = this.arrivalCutscene;
+    if (!cs || !cs.active || this.inInterior) return;
+    cs.timer += dt;
+    const vGrp = cs.vehicle?.group;
+
+    // 0 -> 2.8s: car cruises west along Nguyễn Trung Trực road and pulls into Cổng Phụ curb
+    if (cs.timer < 2.8) {
+      const u = Math.min(1, cs.timer / 2.8);
+      const ease = 1 - Math.pow(1 - u, 3);
+      if (vGrp) {
+        vGrp.position.x = THREE.MathUtils.lerp(92, 51.5, ease);
+        vGrp.position.z = THREE.MathUtils.lerp(59.4, 53.6, Math.max(0, (u - 0.45) / 0.55));
+        vGrp.rotation.y = Math.PI + (u > 0.45 && u < 0.92 ? -0.26 : 0);
+      }
+      this.camera.position.set(
+        THREE.MathUtils.lerp(66, 44.5, ease),
+        THREE.MathUtils.lerp(5.2, 3.6, ease),
+        THREE.MathUtils.lerp(69, 63.5, ease)
+      );
+      this.camera.lookAt(
+        THREE.MathUtils.lerp(72, 48.0, ease),
+        1.7,
+        THREE.MathUtils.lerp(57, 50.5, ease)
+      );
+      return;
+    }
+
+    // 2.8 -> 6.8s: step out of vehicle onto plaza & walk gracefully through Cổng Phụ toward Chùa Vĩnh Tràng
+    if (!cs.cuedArrival) {
+      cs.cuedArrival = true;
+      this.playerContainer.visible = true;
+      this.playerState.x = 49.5;
+      this.playerState.z = 51.2;
+      cs.onCue('step_out');
+    }
+    if (cs.timer < 6.8) {
+      const w = (cs.timer - 2.8) / 4.0;
+      const sx = THREE.MathUtils.lerp(49.5, 35.5, w);
+      const sz = THREE.MathUtils.lerp(51.2, 50.8, w);
+      this.playerState.yaw = Math.atan2(35.5 - sx, 50.8 - sz);
+      this.playerState.x = sx;
+      this.playerState.z = sz;
+      this.playerState.moving = true;
+      this.playerContainer.position.set(sx, 0, sz);
+      this.playerContainer.rotation.y = this.playerState.yaw;
+      if (!cs.cuedWalkIn && w > 0.35) {
+        cs.cuedWalkIn = true;
+        cs.onCue('enter_gate');
+      }
+      this.camera.position.set(
+        THREE.MathUtils.lerp(44.5, 37.8, w),
+        THREE.MathUtils.lerp(3.6, 2.5, w),
+        THREE.MathUtils.lerp(63.5, 57.5, w)
+      );
+      this.camera.lookAt(
+        THREE.MathUtils.lerp(39.0, 29.0, w),
+        THREE.MathUtils.lerp(2.4, 3.4, w),
+        THREE.MathUtils.lerp(46.0, 38.0, w)
+      );
+      return;
+    }
+
+    this.skipArrivalCutscene(false);
+  }
+
+  setPilgrimageCompanions(modeConfig = {}, nationalityId = 'vn') {
+    for (const c of this.companionRecords) {
+      if (c.rec?.root?.parent) c.rec.root.parent.remove(c.rec.root);
+    }
+    this.companionRecords = [];
+
+    const specs = Array.isArray(modeConfig?.companions) ? modeConfig.companions : [];
+    const tintByNat = {
+      vn: [0.68, 0.72, 0.78],
+      us: [0.46, 0.56, 0.74],
+      intl: [0.48, 0.60, 0.74],
+      jp: [0.58, 0.52, 0.68],
+      kr: [0.78, 0.74, 0.82],
+      tw: [0.62, 0.45, 0.34],
+      fr: [0.56, 0.62, 0.54],
+      th: [0.82, 0.74, 0.44]
+    };
+    const toRgbTuple = (val) => {
+      if (Array.isArray(val) && val.length >= 3) return val;
+      if (typeof val === 'string' && /^#[0-9a-f]{6}$/i.test(val.trim())) {
+        const hex = val.trim().slice(1);
+        return [
+          parseInt(hex.slice(0, 2), 16) / 255,
+          parseInt(hex.slice(2, 4), 16) / 255,
+          parseInt(hex.slice(4, 6), 16) / 255
+        ];
+      }
+      return null;
+    };
+
+    for (let i = 0; i < specs.length; i++) {
+      const sp = specs[i];
+      const charKey = this.charDataCache[sp.charKey] ? sp.charKey : 'nu_ao_lam';
+      const height = CHAR_HEIGHTS[charKey] || 1.62;
+      const rec = this.cloneAnimatedCharacter(charKey, height);
+      if (!rec) continue;
+      const rgbTint = toRgbTuple(sp.tint) || tintByNat[nationalityId] || null;
+      if (rgbTint) {
+        this.recolorPastelDress(rec.root, rgbTint);
+      }
+      this.equipNpcProps(rec, charKey, height, {
+        hat: Boolean(sp.hat),
+        bag: sp.bag || null,
+        scarf: Boolean(sp.scarf),
+        hand: sp.hand || 'hoa_sen'
+      });
+
+      const angleOffset = (i === 0 ? 1 : -1) * (0.9 + Math.floor(i / 2) * 0.55);
+      const backDist = 1.55 + Math.floor(i / 2) * 1.15;
+      const startX = this.playerState.x - Math.sin(this.playerState.yaw + angleOffset) * backDist;
+      const startZ = this.playerState.z - Math.cos(this.playerState.yaw + angleOffset) * backDist;
+      rec.root.position.set(startX, rec.baseY, startZ);
+      rec.root.rotation.y = this.playerState.yaw;
+      this.playClipCrossfade(rec, 'Dung', 0.1, false);
+      this.scene.add(rec.root);
+      this.companionRecords.push({
+        rec,
+        roleLabel: sp.roleLabel || sp.label || 'Bạn đồng hành',
+        sideOffset: (i % 2 === 0 ? -1.15 : 1.15) * (1 + Math.floor(i / 2) * 0.45),
+        backOffset: -1.45 - Math.floor(i / 2) * 1.05,
+        state: 'Dung',
+        yaw: this.playerState.yaw
+      });
+    }
+  }
+
+  stepPilgrimageCompanions(dt) {
+    if (!this.companionRecords?.length) return;
+    const hideCompanions = Boolean(this.arrivalCutscene?.active && !this.playerContainer.visible);
+    const pYaw = this.playerState.yaw || 0;
+    const fwdX = Math.sin(pYaw);
+    const fwdZ = Math.cos(pYaw);
+    const rightX = -fwdZ;
+    const rightZ = fwdX;
+
+    for (const c of this.companionRecords) {
+      c.rec.root.visible = !hideCompanions;
+      if (hideCompanions) continue;
+
+      const targetX = this.playerState.x + fwdX * c.backOffset + rightX * c.sideOffset;
+      const targetZ = this.playerState.z + fwdZ * c.backOffset + rightZ * c.sideOffset;
+      const pos = c.rec.root.position;
+      pos.y = (this.playerElevationY || 0) + (c.rec.baseY || 0);
+      const dx = targetX - pos.x;
+      const dz = targetZ - pos.z;
+      const d = Math.hypot(dx, dz);
+
+      if (d > 0.35) {
+        const moveStep = Math.min(d, dt * (d > 3.5 ? 5.8 : 4.4));
+        pos.x += (dx / d) * moveStep;
+        pos.z += (dz / d) * moveStep;
+        const moveYaw = Math.atan2(dx, dz);
+        c.yaw = this.lerpAngle(c.yaw, moveYaw, dt * 8.0);
+        c.rec.root.rotation.y = c.yaw;
+        if (c.state !== 'Di bo') {
+          c.state = 'Di bo';
+          this.playClipCrossfade(c.rec, 'Di bo', 0.16, false);
+        }
+        c.rec.mixer.update(dt);
+      } else {
+        c.yaw = this.lerpAngle(c.yaw, pYaw, dt * 6.0);
+        c.rec.root.rotation.y = c.yaw;
+        if (c.state !== 'Dung') {
+          c.state = 'Dung';
+          this.playClipCrossfade(c.rec, 'Dung', 0.2, false);
+        }
+        c.rec.mixer.update(dt);
+      }
+    }
+  }
+
+  renderFloatingLanterns(wishes = []) {
+    if (!this.lanternWishesGroup) return;
+    while (this.lanternWishesGroup.children.length > 0) {
+      this.lanternWishesGroup.remove(this.lanternWishesGroup.children[0]);
+    }
+    this.floatingLanterns = [];
+    const list = Array.isArray(wishes) ? wishes.slice(0, 18) : [];
+
+    for (let i = 0; i < list.length; i++) {
+      const w = list[i];
+      const ang = (i / Math.max(1, list.length)) * Math.PI * 2 + i * 0.42;
+      const rad = 1.6 + (i % 4) * 1.15;
+      const holder = new THREE.Group();
+      holder.position.set(Math.cos(ang) * rad, 0.04, Math.sin(ang) * rad);
+
+      let mesh = null;
+      if (this.propMeshCache.den_hoa_dang) {
+        mesh = this.fitProp(this.propMeshCache.den_hoa_dang, 0.44);
+      } else {
+        mesh = new THREE.Group();
+        const petalMat = new THREE.MeshStandardMaterial({
+          color: w.colorHex ? new THREE.Color(w.colorHex) : 0xFF8AA8,
+          emissive: 0xFF7B3B,
+          emissiveIntensity: 0.32,
+          roughness: 0.4
+        });
+        const base = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.14, 0.08, 8), petalMat);
+        base.position.y = 0.04;
+        mesh.add(base);
+        for (let p = 0; p < 6; p++) {
+          const pa = (p / 6) * Math.PI * 2;
+          const petal = new THREE.Mesh(new THREE.ConeGeometry(0.08, 0.16, 4), petalMat);
+          petal.position.set(Math.cos(pa) * 0.14, 0.11, Math.sin(pa) * 0.14);
+          petal.rotation.z = -Math.cos(pa) * 0.4;
+          petal.rotation.x = Math.sin(pa) * 0.4;
+          mesh.add(petal);
+        }
+      }
+      const flameMat = new THREE.MeshStandardMaterial({
+        color: 0xFFE58F,
+        emissive: 0xFF9F2E,
+        emissiveIntensity: 0.95
+      });
+      const flame = new THREE.Mesh(new THREE.SphereGeometry(0.042, 8, 6), flameMat);
+      flame.position.y = 0.18;
+      mesh.add(flame);
+
+      holder.add(mesh);
+      holder.userData.wishId = w.id;
+      holder.userData.wishLabel = w.wish || w.categoryLabel || 'Hoa Đăng Nguyện Ước';
+      this.lanternWishesGroup.add(holder);
+      this.floatingLanterns.push({
+        mesh: holder,
+        flameMat,
+        phase: i * 1.15
+      });
     }
   }
 
@@ -11197,11 +11641,14 @@ export class VinhTrang3DWorld {
 }
 
 export {
+  findCharacterBones,
+  attachStorePropsToCharacterRig,
   clearRiggedBoneProps,
   recolorGarmentOnScene,
   createBespokeRobeGroup,
   createStoreAccessoryGroup,
   createSculptedArhatShowcase
 } from './garment-and-showcase-3d.mjs';
+
 
 

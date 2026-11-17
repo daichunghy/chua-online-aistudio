@@ -61,7 +61,32 @@ import {
   completeBellRhythmSession,
   HERITAGE_RELICS,
   discoverHeritageRelic,
-  createActivityHubState
+  createActivityHubState,
+  getSortedDharmaTextbooks,
+  NATIONALITY_PROFILES,
+  getNationalityProfile,
+  PILGRIMAGE_MODES,
+  getPilgrimageMode,
+  THIRTY_DAY_RETREATS,
+  THIRTY_DAY_JOURNEY_PLAN,
+  getThirtyDayTheme,
+  LUNAR_FESTIVAL_CALENDAR,
+  getTempleSeasonalContext,
+  HOA_DANG_WISHES,
+  createHoaDangLantern,
+  DHARMA_JOURNAL,
+  DHARMA_JOURNAL_MOODS,
+  createDharmaJournalState,
+  addJournalEntry,
+  ACADEMY_COURSES,
+  ACADEMY_MODULES,
+  ACADEMY_ALL_IN_BUNDLE,
+  getAcademyExamQuestions,
+  gradeAcademyExam,
+  createAcademyEntitlementState,
+  unlockAcademyCourseWithCode,
+  buildVietQRPayload,
+  generateAcademyCertificate
 } from './chua-online-logic.mjs';
 
 test('OKLab/OKLCH perceptual color engine (meodai/skill.color-expert) preserves perceptual lightness and prevents muddy mid-tones', () => {
@@ -83,13 +108,18 @@ test('OKLab/OKLCH perceptual color engine (meodai/skill.color-expert) preserves 
 });
 
 
-test('3 rigged 3D character profiles (Nam, Nữ, Trẻ em) are defined with exact heights and GLBs', () => {
-  assert.equal(CHARACTER_PROFILES.length, 3);
+test('7 rigged 3D character profiles (first 3 intact + 4 expanded) are defined with exact heights and GLBs', () => {
+  assert.equal(CHARACTER_PROFILES.length, 7);
   const keys = CHARACTER_PROFILES.map((c) => c.key);
-  assert.deepEqual(keys, ['nu', 'nam', 'tre_em']);
+  assert.deepEqual(keys, ['nu', 'nam', 'tre_em', 'nu_ao_lam', 'nam_ao_nau', 'du_khach', 'su_thay']);
   assert.equal(CHARACTER_PROFILES[0].heightMeters, 1.62);
   assert.equal(CHARACTER_PROFILES[1].heightMeters, 1.74);
   assert.equal(CHARACTER_PROFILES[2].heightMeters, 1.15);
+  for (const prof of CHARACTER_PROFILES) {
+    assert.ok(prof.glb.startsWith('/Thiết kế giao diện/Nhân vật 3D/'));
+    assert.ok(prof.glb.endsWith('.glb'));
+    assert.ok(prof.description.length > 20);
+  }
 });
 
 test('stepPlayerMovement moves character, updates yaw, and respects world bounds & obstacles', () => {
@@ -203,8 +233,22 @@ test('Shop catalog has 3D Shop Kiosk model, exact top 3 souvenir items from Refe
   assert.equal(goodOrder.valid, true);
 });
 
-test('Deeply researched Buddhist Dharma has 10 canonical PDF textbooks, 4 paths, 24 lessons, and milestone-unlocked user-photo UGC check-in', () => {
-  assert.equal(DHARMA_TEXTBOOKS.length, 10);
+test('Deeply researched Buddhist Dharma has 11 canonical PDF textbooks, 4 paths, 24 lessons, and milestone-unlocked user-photo UGC check-in', () => {
+  assert.equal(DHARMA_TEXTBOOKS.length, 11);
+  const fullCurriculumBook = DHARMA_TEXTBOOKS.find((b) => b.pdfPath.endsWith('/giaotrinhphathoc.pdf'));
+  assert.ok(fullCurriculumBook);
+  assert.equal(fullCurriculumBook.title, 'Giáo Trình Phật Học Cơ Bản Toàn Tập');
+  assert.equal(fullCurriculumBook.tier, 'basic');
+  for (const book of DHARMA_TEXTBOOKS) {
+    assert.ok(['basic', 'intermediate', 'meditation', 'heritage'].includes(book.tier));
+    assert.ok(book.pages > 100 && book.estimatedMinutes >= 30);
+    assert.ok(book.pdfPath.startsWith('/Giáo trình phật học/'));
+  }
+  const sortedBooks = getSortedDharmaTextbooks();
+  assert.equal(sortedBooks.length, 11);
+  assert.equal(sortedBooks[0].sortOrder, 1);
+  assert.equal(sortedBooks[1].id, 'giao_trinh_phat_hoc_toan_tap');
+
   assert.equal(LECTURE_PATHS.length, 4);
   assert.equal(LECTURE_LESSONS.length, 24);
 
@@ -212,6 +256,7 @@ test('Deeply researched Buddhist Dharma has 10 canonical PDF textbooks, 4 paths,
     assert.ok(lesson.sourceBook && lesson.sourceBook.length > 5);
     assert.ok(lesson.summary.length >= 3);
     assert.equal(lesson.quiz.options.length, 3);
+    assert.ok(lesson.courseId && lesson.courseId.startsWith('course_'));
   }
 
   assert.equal(gradeLessonQuiz('A1', 1).correct, true);
@@ -298,8 +343,8 @@ test('9-category Store catalog, live try-on, level gating, and Tam Quan South->N
   const nietBan = PILGRIMAGE_STATIONS.find((s) => s.key === 'phat_niet_ban');
   assert.ok(tamQuan.standPos.z > tamQuan.pos.z); // Spawns South outside Tam Quan gate
   assert.equal(tamQuan.pos.x, 23); // Front Tam Quan axis aligned with Chánh điện
-  assert.equal(phatAdida.pos.x, 23); // Front garden on the main temple axis
-  assert.equal(phatAdida.pos.z, 27);
+  assert.equal(phatAdida.pos.x, 8.5); // Relocated slightly West to preserve clear Tam Quan -> Chánh Điện sightline
+  assert.equal(phatAdida.pos.z, 17.5);
   assert.ok(phatAdida.pos.z < tamQuan.pos.z);
   assert.equal(chanhDien.pos.x, 23);
   assert.equal(nietBan.pos.x, -24.5);
@@ -476,6 +521,171 @@ test('Multi-day replayable gameplay: Pilgrim XP ranks, courtyard leaf sweep, Tem
   const relDup = discoverHeritageRelic(act, prof, 'relic_tam_quan', '2026-05-20');
   assert.equal(relDup.alreadyDiscovered, true);
 });
+
+test('NATIONALITY_PROFILES and PILGRIMAGE_MODES define 6 nationalities and 4 companion/vehicle modes cleanly', () => {
+  assert.equal(NATIONALITY_PROFILES.length, 6);
+  assert.deepEqual(
+    NATIONALITY_PROFILES.map((n) => n.id),
+    ['vn', 'jp', 'kr', 'tw', 'th', 'intl']
+  );
+  const charKeys = new Set(CHARACTER_PROFILES.map((c) => c.key));
+  for (const nat of NATIONALITY_PROFILES) {
+    assert.ok(nat.flag && nat.greeting && nat.accentHex.startsWith('#') && nat.badgeLabel);
+    assert.ok(charKeys.has(nat.preferredCharKey));
+  }
+  assert.equal(getNationalityProfile('jp').id, 'jp');
+  assert.equal(getNationalityProfile('unknown_nat').id, 'vn');
+
+  assert.equal(PILGRIMAGE_MODES.length, 4);
+  assert.deepEqual(
+    PILGRIMAGE_MODES.map((m) => m.id),
+    ['solo', 'family_3gen', 'tour_group', 'explorer']
+  );
+  const familyMode = getPilgrimageMode('family_3gen');
+  assert.equal(familyMode.arrivalVehicle, 'van');
+  assert.equal(familyMode.companions.length, 2);
+  assert.ok(familyMode.companions.some((c) => c.charKey === 'tre_em'));
+
+  const tourMode = getPilgrimageMode('tour_group');
+  assert.equal(tourMode.arrivalVehicle, 'bus');
+  assert.ok(tourMode.companions.length >= 2);
+  for (const mode of PILGRIMAGE_MODES) {
+    assert.ok(['sedan', 'van', 'bus'].includes(mode.arrivalVehicle));
+    for (const comp of mode.companions) {
+      assert.ok(charKeys.has(comp.charKey));
+      assert.ok(comp.roleLabel && typeof comp.offset?.x === 'number' && typeof comp.offset?.z === 'number');
+    }
+  }
+});
+
+test('30-Day Spiritual Loop: THIRTY_DAY_JOURNEY_PLAN, LUNAR_FESTIVAL_CALENDAR, Hoa Dang lanterns, and Dharma Journal', () => {
+  assert.equal(THIRTY_DAY_RETREATS.length, 4);
+  assert.equal(THIRTY_DAY_JOURNEY_PLAN.length, 30);
+  const weekCounts = { 1: 0, 2: 0, 3: 0, 4: 0 };
+  for (let i = 0; i < 30; i++) {
+    const entry = THIRTY_DAY_JOURNEY_PLAN[i];
+    assert.equal(entry.day, i + 1);
+    weekCounts[entry.week] += 1;
+    assert.ok(entry.title.length > 8 && entry.prompt.length > 20);
+    assert.ok(entry.rewardLotus > 0 && entry.rewardXp > 0);
+  }
+  assert.deepEqual(weekCounts, { 1: 7, 2: 7, 3: 7, 4: 9 });
+  assert.equal(getThirtyDayTheme(1).week, 1);
+  assert.equal(getThirtyDayTheme(30).milestoneBadge.includes('30 Ngày'), true);
+
+  assert.equal(LUNAR_FESTIVAL_CALENDAR.length, 5);
+  const seasonal = getTempleSeasonalContext(new Date(2026, 4, 15));
+  assert.equal(seasonal.dateKey, '2026-05-15');
+  assert.ok(seasonal.xpMultiplier >= 1.2 && seasonal.xpMultiplier <= 1.5);
+  assert.ok(seasonal.resonanceCount > 100);
+  assert.ok(seasonal.greeting.length > 15);
+
+  // Hoa Dang communal lanterns (pure, non-mutating)
+  assert.ok(HOA_DANG_WISHES.length >= 6);
+  const initialCount = HOA_DANG_WISHES.length;
+  const lanternRes = createHoaDangLantern(HOA_DANG_WISHES, {
+    authorName: 'Cô Tư Bến Tre',
+    nationalityId: 'vn',
+    wishText: 'Cầu mưa thuận gió hòa, gia đạo an vui.',
+    colorHex: '#EE7FAE'
+  });
+  assert.equal(lanternRes.ok, true);
+  assert.equal(HOA_DANG_WISHES.length, initialCount);
+  assert.equal(lanternRes.wishes.length, initialCount + 1);
+  assert.equal(lanternRes.lantern.authorName, 'Cô Tư Bến Tre');
+  assert.equal(lanternRes.lantern.colorHex, '#EE7FAE');
+
+  // Nhat Ky An Tam
+  assert.ok(DHARMA_JOURNAL.entries.length >= 2);
+  assert.ok(DHARMA_JOURNAL_MOODS.length >= 5);
+  const emptyJournal = addJournalEntry(createDharmaJournalState(), '   ', 'binh_an');
+  assert.equal(emptyJournal.ok, false);
+  const savedJournal = addJournalEntry(
+    createDharmaJournalState(),
+    'Chiều nay tịnh tâm nghe tiếng chuông Đại Hồng Chung thấy nhẹ lòng.',
+    'thanh_thoi',
+    '2026-05-21'
+  );
+  assert.equal(savedJournal.ok, true);
+  assert.equal(savedJournal.entry.mood, 'thanh_thoi');
+  assert.equal(savedJournal.entries.length, DHARMA_JOURNAL.entries.length + 1);
+});
+
+test('Structured Paid Buddhist Academy: 4 courses, 12 modules, multi-question exam, unlock codes, VietQR payload, and certificate', () => {
+  assert.equal(ACADEMY_COURSES.length, 4);
+  assert.equal(ACADEMY_COURSES[0].id, 'course_1_khai_tam');
+  assert.equal(ACADEMY_COURSES[0].priceVnd, 0);
+  assert.equal(ACADEMY_COURSES[0].unlockedByDefault, true);
+  assert.equal(ACADEMY_COURSES[1].priceVnd, 199000);
+  assert.equal(ACADEMY_COURSES[2].priceVnd, 249000);
+  assert.equal(ACADEMY_COURSES[3].priceVnd, 299000);
+
+  // All 11 PDFs & 24 lessons are mapped cleanly across the 4 courses
+  const mappedBooks = new Set(ACADEMY_COURSES.flatMap((c) => c.bookIds));
+  const mappedLessons = new Set(ACADEMY_COURSES.flatMap((c) => c.lessonIds));
+  assert.equal(mappedBooks.size, 11);
+  assert.equal(mappedLessons.size, 24);
+  assert.equal(ACADEMY_MODULES.length, 12);
+
+  // Multi-question exam grading
+  const examQuestions = getAcademyExamQuestions('course_2_tam_bao');
+  assert.ok(examQuestions.length >= 10);
+  const perfectAnswers = {};
+  for (const q of examQuestions) perfectAnswers[q.id] = q.correctIndex;
+  const passGrade = gradeAcademyExam('course_2_tam_bao', perfectAnswers);
+  assert.equal(passGrade.ok, true);
+  assert.equal(passGrade.scorePercent, 100);
+  assert.equal(passGrade.passed, true);
+
+  const failGrade = gradeAcademyExam('course_2_tam_bao', {});
+  assert.equal(failGrade.passed, false);
+  assert.equal(failGrade.scorePercent, 0);
+
+  // Entitlement & unlock codes
+  let ent = createAcademyEntitlementState();
+  assert.deepEqual(ent.unlockedCourses, ['course_1_khai_tam']);
+  assert.equal(ent.bundleUnlocked, false);
+
+  const badUnlock = unlockAcademyCourseWithCode(ent, 'course_2_tam_bao', 'INVALID-123');
+  assert.equal(badUnlock.ok, false);
+  assert.equal(badUnlock.reason, 'invalid_code');
+
+  const codeUnlock = unlockAcademyCourseWithCode(ent, 'course_2_tam_bao', 'vt-hv-2026a');
+  assert.equal(codeUnlock.ok, true);
+  assert.ok(codeUnlock.unlockedCourses.includes('course_2_tam_bao'));
+  ent = codeUnlock.state;
+
+  const sandboxBundleUnlock = unlockAcademyCourseWithCode(ent, ACADEMY_ALL_IN_BUNDLE.id, 'VINHTRANG2026');
+  assert.equal(sandboxBundleUnlock.ok, true);
+  assert.equal(sandboxBundleUnlock.bundleUnlocked, true);
+  assert.equal(sandboxBundleUnlock.unlockedCourses.length, 4);
+
+  // VietQR payload
+  const qr = buildVietQRPayload('course_3_thien_dinh');
+  assert.equal(qr.amount, 249000);
+  assert.equal(qr.currency, 'VND');
+  assert.ok(qr.transferMemo.startsWith('VTHV '));
+  assert.ok(qr.qrPayload.includes('249000'));
+  assert.ok(qr.qrImageUrl.includes('amount=249000'));
+  assert.equal(qr.adapterReady.payos, true);
+  assert.equal(qr.adapterReady.sepay, true);
+
+  // Certificate generation
+  const lowCert = generateAcademyCertificate('Nguyễn Văn An', 'course_4_di_san', 50);
+  assert.equal(lowCert.ok, false);
+  assert.equal(lowCert.passed, false);
+
+  const cert = generateAcademyCertificate('Nguyễn Thị Minh Tâm', 'course_4_di_san', 95, new Date(2026, 4, 21));
+  assert.equal(cert.ok, true);
+  assert.equal(cert.passed, true);
+  assert.equal(cert.studentName, 'Nguyễn Thị Minh Tâm');
+  assert.equal(cert.courseId, 'course_4_di_san');
+  assert.equal(cert.score, 95);
+  assert.equal(cert.issuedDateKey, '2026-05-21');
+  assert.ok(cert.certificateId.startsWith('CERT-'));
+  assert.ok(cert.verificationCode.startsWith('VT-CERT-'));
+});
+
 
 
 
