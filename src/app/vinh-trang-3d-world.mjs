@@ -6292,8 +6292,10 @@ export class VinhTrang3DWorld {
 
     for (let i = 0; i < COURTYARD_LEAF_SPOTS.length; i++) {
       const spot = COURTYARD_LEAF_SPOTS[i];
+      const lx = spot.pos?.x ?? spot.x ?? 0;
+      const lz = spot.pos?.z ?? spot.z ?? 0;
       const cluster = new THREE.Group();
-      cluster.position.set(spot.x, 0.025, spot.z);
+      cluster.position.set(lx, 0.025, lz);
       cluster.userData.leafId = spot.id;
       cluster.userData.phase = i * 0.9;
 
@@ -6348,8 +6350,10 @@ export class VinhTrang3DWorld {
 
     for (let i = 0; i < TEMPLE_GARDEN_SLOTS.length; i++) {
       const slot = TEMPLE_GARDEN_SLOTS[i];
+      const sx = slot.pos?.x ?? slot.x ?? 0;
+      const sz = slot.pos?.z ?? slot.z ?? 0;
       const grp = new THREE.Group();
-      grp.position.set(slot.x, 0, slot.z);
+      grp.position.set(sx, 0, sz);
       grp.userData.slotIndex = i;
 
       const rim = new THREE.Mesh(new THREE.BoxGeometry(2.35, 0.34, 2.35), M.stoneLight);
@@ -6392,7 +6396,7 @@ export class VinhTrang3DWorld {
       grp.add(hitBox);
 
       this.exteriorGroup.add(grp);
-      this.addObstacle(slot.x, slot.z, 1.35);
+      this.addObstacle(sx, sz, 1.35);
       this.gardenPlotGroups.set(i, {
         group: grp,
         soil,
@@ -10490,7 +10494,9 @@ export class VinhTrang3DWorld {
     }
     if (!interactPrompt) {
       for (const [slotIndex, rec] of this.gardenPlotGroups.entries()) {
-        const d = Math.hypot(this.playerState.x - rec.slot.x, this.playerState.z - rec.slot.z);
+        const sx = rec.slot.pos?.x ?? rec.slot.x ?? 0;
+        const sz = rec.slot.pos?.z ?? rec.slot.z ?? 0;
+        const d = Math.hypot(this.playerState.x - sx, this.playerState.z - sz);
         if (d <= 3.6) {
           interactPrompt = {
             kind: 'garden',

@@ -4113,9 +4113,20 @@ select {
 
 @media (max-width: 768px) {
   .daily-goals-tracker {
-    top: 118px;
+    top: 124px;
     left: 10px;
     width: 230px;
+  }
+  .daily-goals-tracker.collapsed {
+    width: auto;
+  }
+}
+
+@media (max-width: 640px) {
+  .daily-goals-tracker {
+    top: 162px;
+    left: 8px;
+    width: 224px;
   }
   .daily-goals-tracker.collapsed {
     width: auto;
