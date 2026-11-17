@@ -2454,16 +2454,23 @@ export const STORE_ITEMS_CATALOG = [
     tryable: false
   },
 
-  // === 3. ÁO TRÀNG (đúng 6 mẫu, cấp, badge Hiếm & giá theo ảnh tham chiếu 2) ===
+  // === 3. ÁO TRÀNG & PHÁP PHỤC (12 mẫu thiết kế riêng 3D đa sắc: Áo tràng, Áo lam, Áo bà ba, Áo dài, Áo gấm) ===
   {
     id: 'ao_trang_nau',
     category: 'ao_trang',
     slot: 'robe',
+    robeStyle: 'nau_thien',
     name: 'Áo tràng nâu',
-    description: 'Màu nâu đất mộc mạc.',
+    description: 'Màu nâu đất mộc mạc · Thiết kế cổ chéo truyền thống Nam Bộ.',
+    elderBenefit: 'Mặc trực tiếp lên nhân vật 3D khi vào Chánh điện lễ Phật.',
     image: '/public/assets/aistudio/image_8f6004e3.png',
     swatchHex: '#7A5438',
+    secondarySwatchHex: '#4B3221',
     robeTint: [0.54, 0.37, 0.25],
+    upperTint: [0.52, 0.35, 0.23],
+    lowerTint: [0.36, 0.24, 0.16],
+    trimTint: [0.28, 0.18, 0.11],
+    sashTint: [0.76, 0.56, 0.24],
     currency: 'lotus',
     price: 120,
     requiredLevel: 1,
@@ -2474,11 +2481,18 @@ export const STORE_ITEMS_CATALOG = [
     id: 'ao_trang_trang',
     category: 'ao_trang',
     slot: 'robe',
+    robeStyle: 'trang_vu_lan',
     name: 'Áo tràng trắng',
-    description: 'Trắng tinh khôi như mùa Vu Lan.',
+    description: 'Trắng tinh khôi như mùa Vu Lan · Đính khuy sen ngọc.',
+    elderBenefit: 'Thanh nhã trang nghiêm, phù hợp cho cô bác mặc ngày rằm & mùng 1.',
     image: '/public/assets/aistudio/image_8f6004e3.png',
     swatchHex: '#EBE8DF',
+    secondarySwatchHex: '#C8B88C',
     robeTint: [0.92, 0.90, 0.87],
+    upperTint: [0.93, 0.91, 0.88],
+    lowerTint: [0.85, 0.83, 0.78],
+    trimTint: [0.78, 0.70, 0.48],
+    sashTint: [0.74, 0.66, 0.44],
     currency: 'lotus',
     price: 200,
     requiredLevel: 1,
@@ -2489,14 +2503,21 @@ export const STORE_ITEMS_CATALOG = [
     id: 'ao_vang_nghe',
     category: 'ao_trang',
     slot: 'robe',
+    robeStyle: 'vang_sa_mon',
     name: 'Áo vàng nghệ',
-    description: 'Dành cho người đã tinh tấn đến cấp 10.',
+    description: 'Dành cho người đã tinh tấn đến cấp 10 · Kèm y chéo viền vàng.',
+    elderBenefit: 'Pháp phục cao quý tỏa sắc vàng ấm áp khi hành hương toàn khuôn viên.',
     image: '/public/assets/aistudio/image_8f6004e3.png',
     swatchHex: '#D89F2B',
+    secondarySwatchHex: '#9C2B1E',
     robeTint: [0.88, 0.65, 0.22],
+    upperTint: [0.88, 0.64, 0.19],
+    lowerTint: [0.72, 0.48, 0.14],
+    trimTint: [0.64, 0.19, 0.12],
+    sashTint: [0.74, 0.24, 0.14],
     currency: 'lotus',
-    price: 500,
-    requiredLevel: 10,
+    price: 350,
+    requiredLevel: 1,
     rare: false,
     tryable: true
   },
@@ -2504,11 +2525,18 @@ export const STORE_ITEMS_CATALOG = [
     id: 'ao_hoa_sen',
     category: 'ao_trang',
     slot: 'robe',
+    robeStyle: 'hoa_sen_phat',
     name: 'Áo hoa sen',
-    description: 'Áo hồng phấn thêu sen.',
+    description: 'Áo hồng phấn thêu sen nổi 3D và dải lụa ngọc bích.',
+    elderBenefit: 'Mặc vào hiện rõ họa tiết hoa sen hồng tươi thanh lịch trên nhân vật 3D.',
     image: '/public/assets/aistudio/image_8f6004e3.png',
     swatchHex: '#E08DAA',
+    secondarySwatchHex: '#357A52',
     robeTint: [0.88, 0.56, 0.67],
+    upperTint: [0.89, 0.57, 0.69],
+    lowerTint: [0.82, 0.78, 0.75],
+    trimTint: [0.97, 0.94, 0.95],
+    sashTint: [0.22, 0.48, 0.34],
     currency: 'gem',
     price: 60,
     requiredLevel: 1,
@@ -2519,11 +2547,18 @@ export const STORE_ITEMS_CATALOG = [
     id: 'ao_vu_lan_hong',
     category: 'ao_trang',
     slot: 'robe',
+    robeStyle: 'vu_lan_bao_hieu',
     name: 'Áo Vu Lan hồng',
-    description: 'Hồng phấn thêu sen trắng ngà, mặc mùa báo hiếu.',
+    description: 'Hồng phấn viền trắng ngà, cài Bông Hồng Vu Lan trước ngực.',
+    elderBenefit: 'Mặc mùa báo hiếu, tri ân công đức sinh thành của cha mẹ.',
     image: '/public/assets/aistudio/image_8f6004e3.png',
     swatchHex: '#EA9AB7',
+    secondarySwatchHex: '#D92B48',
     robeTint: [0.93, 0.64, 0.74],
+    upperTint: [0.94, 0.65, 0.76],
+    lowerTint: [0.64, 0.28, 0.39],
+    trimTint: [0.98, 0.96, 0.97],
+    sashTint: [0.84, 0.22, 0.34],
     currency: 'gem',
     price: 100,
     requiredLevel: 1,
@@ -2534,13 +2569,152 @@ export const STORE_ITEMS_CATALOG = [
     id: 'ao_may_bac',
     category: 'ao_trang',
     slot: 'robe',
+    robeStyle: 'may_bac_tinh_tan',
     name: 'Áo mây bạc',
-    description: 'Xám bạc dệt vân mây trắng, nhẹ như sương sớm.',
+    description: 'Xám bạc dệt cổ vân mây trắng ngà, nhẹ như sương sớm.',
+    elderBenefit: 'Cổ áo vân mây thanh thoát, nổi bật rõ nét trong Chánh điện.',
     image: '/public/assets/aistudio/image_8f6004e3.png',
     swatchHex: '#B6C2CE',
+    secondarySwatchHex: '#F4F7FB',
     robeTint: [0.74, 0.79, 0.85],
+    upperTint: [0.74, 0.79, 0.86],
+    lowerTint: [0.36, 0.42, 0.50],
+    trimTint: [0.95, 0.97, 0.99],
+    sashTint: [0.54, 0.63, 0.74],
     currency: 'gem',
     price: 100,
+    requiredLevel: 1,
+    rare: true,
+    tryable: true
+  },
+  {
+    id: 'ao_lam_truyen_thong',
+    category: 'ao_trang',
+    slot: 'robe',
+    robeStyle: 'lam_truyen_thong',
+    name: 'Áo Lam truyền thống',
+    description: 'Xám lam đi chùa trang nhã, phối quần sẫm gọn gàng và khuy đồng cổ.',
+    elderBenefit: 'Trang phục chuẩn mực nhất của Phật tử miền Tây khi vào lễ Tam Bảo.',
+    image: '/public/assets/aistudio/image_8f6004e3.png',
+    swatchHex: '#637588',
+    secondarySwatchHex: '#37424E',
+    robeTint: [0.44, 0.52, 0.61],
+    upperTint: [0.46, 0.54, 0.63],
+    lowerTint: [0.27, 0.32, 0.39],
+    trimTint: [0.24, 0.30, 0.37],
+    sashTint: [0.78, 0.60, 0.28],
+    currency: 'lotus',
+    price: 90,
+    requiredLevel: 1,
+    rare: false,
+    tryable: true
+  },
+  {
+    id: 'ao_ba_ba_nau_nam_bo',
+    category: 'ao_trang',
+    slot: 'robe',
+    robeStyle: 'ba_ba_nau',
+    name: 'Áo Bà Ba nâu Nam Bộ',
+    description: 'Áo bà ba nâu sồng miền sông nước, quần đen óng và viền cổ khăn rằn.',
+    elderBenefit: 'Gần gũi thân quen như ngày hội chùa quê Tiền Giang.',
+    image: '/public/assets/aistudio/image_8f6004e3.png',
+    swatchHex: '#6F4A32',
+    secondarySwatchHex: '#25211E',
+    robeTint: [0.48, 0.32, 0.22],
+    upperTint: [0.52, 0.34, 0.23],
+    lowerTint: [0.18, 0.16, 0.16],
+    trimTint: [0.90, 0.84, 0.74],
+    sashTint: [0.35, 0.22, 0.15],
+    currency: 'lotus',
+    price: 140,
+    requiredLevel: 1,
+    rare: false,
+    tryable: true
+  },
+  {
+    id: 'ao_ba_ba_trang_sen',
+    category: 'ao_trang',
+    slot: 'robe',
+    robeStyle: 'ba_ba_trang',
+    name: 'Áo Bà Ba trắng đi chùa',
+    description: 'Áo bà ba trắng ngà cổ tròn khuy ngọc, quần sẫm thanh lịch cài sen.',
+    elderBenefit: 'Mát mẻ, sáng sủa, tôn nét hiền hòa cho cô bác và gia đình.',
+    image: '/public/assets/aistudio/image_8f6004e3.png',
+    swatchHex: '#F3EFE6',
+    secondarySwatchHex: '#2C3748',
+    robeTint: [0.94, 0.92, 0.87],
+    upperTint: [0.95, 0.93, 0.89],
+    lowerTint: [0.22, 0.26, 0.33],
+    trimTint: [0.85, 0.74, 0.48],
+    sashTint: [0.91, 0.56, 0.69],
+    currency: 'lotus',
+    price: 160,
+    requiredLevel: 1,
+    rare: false,
+    tryable: true
+  },
+  {
+    id: 'ao_dai_lam_le_phat',
+    category: 'ao_trang',
+    slot: 'robe',
+    robeStyle: 'dai_lam_le',
+    name: 'Áo Dài Lam lễ Phật',
+    description: 'Tà áo dài xanh thanh thiên dịu mắt phối quần lụa trắng ngà tinh khôi.',
+    elderBenefit: 'Duyên dáng trang nghiêm khi dâng hoa và chụp ảnh lưu niệm sân chùa.',
+    image: '/public/assets/aistudio/image_8f6004e3.png',
+    swatchHex: '#3E6E9E',
+    secondarySwatchHex: '#F4F2EC',
+    robeTint: [0.28, 0.48, 0.68],
+    upperTint: [0.27, 0.47, 0.68],
+    lowerTint: [0.93, 0.91, 0.87],
+    trimTint: [0.89, 0.72, 0.32],
+    sashTint: [0.90, 0.76, 0.38],
+    currency: 'gem',
+    price: 75,
+    requiredLevel: 1,
+    rare: true,
+    tryable: true
+  },
+  {
+    id: 'ao_trang_tim_hue',
+    category: 'ao_trang',
+    slot: 'robe',
+    robeStyle: 'tim_hue_co_do',
+    name: 'Áo tràng tím Huế',
+    description: 'Sắc tím huế trầm ấm cổ chéo viền kem, điểm đóa sen ngọc bích.',
+    elderBenefit: 'Đài các mà tĩnh lặng, phù hợp mặc suốt hành trình vãng cảnh Chùa Vĩnh Tràng.',
+    image: '/public/assets/aistudio/image_8f6004e3.png',
+    swatchHex: '#6F507D',
+    secondarySwatchHex: '#EDE2CE',
+    robeTint: [0.47, 0.34, 0.53],
+    upperTint: [0.48, 0.35, 0.54],
+    lowerTint: [0.33, 0.24, 0.38],
+    trimTint: [0.92, 0.87, 0.78],
+    sashTint: [0.82, 0.64, 0.32],
+    currency: 'lotus',
+    price: 220,
+    requiredLevel: 1,
+    rare: false,
+    tryable: true
+  },
+  {
+    id: 'ao_gam_le_hoi',
+    category: 'ao_trang',
+    slot: 'robe',
+    robeStyle: 'gam_le_hoi',
+    name: 'Áo gấm Vạn Tự lễ hội',
+    description: 'Đỏ đô gấm chùa thêu viền vàng kim, cài phù hiệu Pháp Luân đại lễ.',
+    elderBenefit: 'Lộng lẫy trang nghiêm trong các đại lễ Phật Đản, Vu Lan và đầu xuân.',
+    image: '/public/assets/aistudio/image_8f6004e3.png',
+    swatchHex: '#8E2824',
+    secondarySwatchHex: '#E0AC3D',
+    robeTint: [0.60, 0.19, 0.17],
+    upperTint: [0.62, 0.20, 0.17],
+    lowerTint: [0.36, 0.12, 0.11],
+    trimTint: [0.90, 0.70, 0.24],
+    sashTint: [0.93, 0.74, 0.26],
+    currency: 'gem',
+    price: 110,
     requiredLevel: 1,
     rare: true,
     tryable: true
@@ -3350,6 +3524,998 @@ export function purchaseMarketplaceItem(
   };
 }
 
+/* ==========================================================================
+   THỜI GIAN TRONG NGÀY · ĐIỂM DANH 7 NGÀY · NHIỆM VỤ · HỘP THƯ · HƯỚNG DẪN
+   ========================================================================== */
+export const TIME_OF_DAY_PRESETS = {
+  morning: {
+    key: 'morning',
+    label: 'Buổi Sáng',
+    shortLabel: 'Sáng',
+    icon: '🌅',
+    subtitle: 'Nắng sớm 7:30 miền Tây dịu mát, sương nhẹ quanh tán bồ đề'
+  },
+  midday: {
+    key: 'midday',
+    label: 'Giữa Trưa',
+    shortLabel: 'Trưa',
+    icon: '☀️',
+    subtitle: 'Ánh nắng rực rỡ chiếu rọi 13 nhịp vòm vàng Chánh điện'
+  },
+  evening: {
+    key: 'evening',
+    label: 'Buổi Tối',
+    shortLabel: 'Tối',
+    icon: '🕯️',
+    subtitle: 'Ánh nến & đèn lồng ấm áp dưới bầu trời sao thanh tịnh'
+  }
+};
 
+export const DAILY_CHECKIN_REWARDS = [
+  { day: 1, lotus: 30, gems: 10, label: 'Ngày 1 · Phát Tâm', giftName: '30 Sen · 10 Ngọc' },
+  { day: 2, lotus: 40, gems: 12, label: 'Ngày 2 · Tinh Tấn', giftName: '40 Sen · 12 Ngọc' },
+  { day: 3, lotus: 50, gems: 15, label: 'Ngày 3 · An Trú', giftName: '50 Sen · 15 Ngọc' },
+  { day: 4, lotus: 60, gems: 18, label: 'Ngày 4 · Nhẫn Nại', giftName: '60 Sen · 18 Ngọc' },
+  { day: 5, lotus: 75, gems: 22, label: 'Ngày 5 · Hoan Hỷ', giftName: '75 Sen · 22 Ngọc' },
+  { day: 6, lotus: 90, gems: 25, label: 'Ngày 6 · Chánh Niệm', giftName: '90 Sen · 25 Ngọc' },
+  { day: 7, lotus: 150, gems: 45, label: 'Ngày 7 · Viên Mãn', giftName: '150 Sen · 45 Ngọc' }
+];
 
+export const DAILY_QUESTS_TEMPLATE = [
+  {
+    id: 'q_daily_checkin',
+    category: 'Hằng ngày',
+    icon: '📅',
+    title: 'Điểm danh lễ chùa đầu ngày',
+    desc: 'Vào mục Điểm danh nhận lộc công đức mỗi ngày một lần.',
+    metric: 'checkinCount',
+    target: 1,
+    rewardLotus: 25,
+    rewardGems: 5,
+    actionHint: 'checkin'
+  },
+  {
+    id: 'q_le_phat',
+    category: 'Hằng ngày',
+    icon: '🙏',
+    title: 'Đảnh lễ Tam Bảo (3 lạy)',
+    desc: 'Bấm nút Lễ Phật tại Chánh điện hoặc trước Đại tượng lộ thiên.',
+    metric: 'bowCount',
+    target: 3,
+    rewardLotus: 40,
+    rewardGems: 10,
+    actionHint: 'le_phat'
+  },
+  {
+    id: 'q_dang_huong',
+    category: 'Hằng ngày',
+    icon: '🪔',
+    title: 'Dâng 3 nén tâm hương',
+    desc: 'Thực hiện nghi thức thắp hương tại lư đồng sân Chánh điện.',
+    metric: 'incenseOfferings',
+    target: 1,
+    rewardLotus: 35,
+    rewardGems: 8,
+    actionHint: 'dang_huong'
+  },
+  {
+    id: 'q_dang_hoa',
+    category: 'Hằng ngày',
+    icon: '🪷',
+    title: 'Thả hoa sen cầu bình an',
+    desc: 'Dâng một đóa hoa sen tươi kèm lời chúc an lành cho gia đình.',
+    metric: 'lotusOfferings',
+    target: 1,
+    rewardLotus: 35,
+    rewardGems: 8,
+    actionHint: 'dang_hoa'
+  },
+  {
+    id: 'q_niem_phat',
+    category: 'Tu tập',
+    icon: '📿',
+    title: 'Lần chuỗi 21 biến Niệm Phật',
+    desc: 'Mở chuỗi bồ đề và niệm 21 biến danh hiệu Phật trong chánh niệm.',
+    metric: 'malaTotalBeads',
+    target: 21,
+    rewardLotus: 45,
+    rewardGems: 12,
+    actionHint: 'niem_phat'
+  },
+  {
+    id: 'q_kham_pha_3',
+    category: 'Hành hương',
+    icon: '🧭',
+    title: 'Viếng 3 thắng cảnh Chùa Vĩnh Tràng',
+    desc: 'Dạo bước ghé thăm ít nhất 3 trạm hoặc khu cảnh quan trong khuôn viên.',
+    metric: 'visitedCount',
+    target: 3,
+    rewardLotus: 55,
+    rewardGems: 15,
+    actionHint: 'explore'
+  },
+  {
+    id: 'q_hoc_phat',
+    category: 'Pháp âm',
+    icon: '📖',
+    title: 'Nghe & học 1 bài Giảng đường',
+    desc: 'Vào Giảng đường nghe pháp âm hoặc hoàn thành 1 bài học Phật pháp.',
+    metric: 'completedLessonsCount',
+    target: 1,
+    rewardLotus: 50,
+    rewardGems: 15,
+    actionHint: 'lecture'
+  }
+];
 
+export const INITIAL_MAILBOX_MESSAGES = [
+  {
+    id: 'mail_welcome_vinhtrang',
+    sender: 'Ban Quản Trị Chùa Vĩnh Tràng',
+    title: 'Kính chào quý Phật tử hữu duyên ghé thăm Chùa Online',
+    dateLabel: 'Hôm nay',
+    body:
+      'Kính chúc cô bác và anh chị thân tâm an lạc. Nhà chùa xin gửi tặng phần lộc Sen Vàng & Ngọc Quý để thỉnh hương hoa dâng Phật hoặc đổi pháp phục áo tràng trang nghiêm.',
+    rewardLotus: 80,
+    rewardGems: 25
+  },
+  {
+    id: 'mail_morning_chanting',
+    sender: 'Giảng Đường Phật Pháp',
+    title: 'Mời cô bác nghe bài giảng mới với chữ to & giọng đọc rõ ràng',
+    dateLabel: 'Mỗi ngày',
+    body:
+      'Giảng đường nay đã mở không gian 3D trực tiếp cùng nút "Nghe Thầy Giảng" và cỡ chữ lớn A+/A- để cô bác lớn tuổi dễ đọc trên điện thoại.',
+    rewardLotus: 45,
+    rewardGems: 10
+  },
+  {
+    id: 'mail_evening_lantern',
+    sender: 'Ban Nghi Lễ Tam Quan',
+    title: 'Trải nghiệm cảnh Chùa Vĩnh Tràng buổi tối thắp đèn hoa đăng',
+    dateLabel: 'Cập nhật mới',
+    body:
+      'Quý Phật tử có thể chuyển đổi thời gian Sáng · Trưa · Tối ngay trên thanh điều khiển để chiêm ngưỡng ánh đèn lồng lung linh quanh hồ sen và bảo tháp.',
+    rewardLotus: 50,
+    rewardGems: 15
+  }
+];
+
+export const PILGRIMAGE_GUIDE_STEPS = [
+  {
+    step: 1,
+    stationKey: 'cua_hang_luu_niem',
+    title: 'Bước 1 · Vào Cổng Phụ & Ghé Nhà Tạp Hóa',
+    desc: 'Đi qua Cổng Phụ Tịnh Độ bên phải Tam Quan, dừng tại Nhà Tạp Hóa thỉnh 3 nén nhang trầm, hoa sen tươi hoặc nước dừa xiêm giải nhiệt.'
+  },
+  {
+    step: 2,
+    stationKey: 'ho_sen_ca_koi',
+    title: 'Bước 2 · Ngắm Hồ Sen Cá Koi & Dâng Hoa',
+    desc: 'Dạo theo lối gạch đỏ qua giàn hoa giấy rực rỡ, thả hoa sen và cầu bình an cho cha mẹ, gia quyến bên hồ cá Koi.'
+  },
+  {
+    step: 3,
+    stationKey: 'lu_huong_san',
+    title: 'Bước 3 · Dâng Hương Sân Chánh Điện',
+    desc: 'Tại lư hương đồng ngoài sân, thắp 1–3 nén hương, phẩy nhẹ bằng tay chứ không thổi bằng miệng và xá ba xá.'
+  },
+  {
+    step: 4,
+    stationKey: 'chanh_dien',
+    title: 'Bước 4 · Vào Chánh Điện Chữ Quốc (國) Lễ Phật',
+    desc: 'Đi qua Cửa Hông để vào Nội Điện: chiêm bái bộ tượng Tam Bảo, cặp Long Trụ rồng cuốn và 18 vị La Hán gỗ mít trăm tuổi.'
+  },
+  {
+    step: 5,
+    stationKey: 'phat_adida',
+    title: 'Bước 5 · Chiêm Bái Ba Pho Đại Tượng Lộ Thiên',
+    desc: 'Lần lượt lễ Đại tượng Phật A Di Đà (24m), Phật Di Lặc hoan hỷ (20m) và Phật Thích Ca nhập Niết Bàn (32m) cạnh Bảo Tháp Thất Phật.'
+  },
+  {
+    step: 6,
+    stationKey: 'giang_duong',
+    title: 'Bước 6 · Nghe Pháp Tại Giảng Đường & Dùng Cơm Trai Đường',
+    desc: 'Ghé Giảng Đường 3D nghe giảng kinh, sau đó qua Nhà Sàn Trai Đường miền Tây dùng cơm chay thanh tịnh trước khi hồi hương.'
+  }
+];
+
+export const DAILY_RESET_MISSIONS = [
+  {
+    id: 'dm_checkin',
+    icon: '📅',
+    category: 'Hằng ngày',
+    title: 'Điểm danh lễ chùa đầu ngày',
+    desc: 'Nhấn Điểm danh mỗi ngày để nhận lộc công đức và nối dài chuỗi tu tập.',
+    metric: 'dailyCheckedIn',
+    target: 1,
+    rewardLotus: 30,
+    rewardGems: 8,
+    actionHint: 'checkin'
+  },
+  {
+    id: 'dm_incense',
+    icon: '🪔',
+    category: 'Nghi lễ',
+    title: 'Thắp hương tại lư đồng',
+    desc: 'Thắp 3 nén tâm hương Giới – Định – Tuệ trước sân Chánh điện hôm nay.',
+    metric: 'dailyIncense',
+    target: 1,
+    rewardLotus: 40,
+    rewardGems: 10,
+    actionHint: 'dang_huong'
+  },
+  {
+    id: 'dm_quotes',
+    icon: '📜',
+    category: 'Lời dạy',
+    title: 'Đọc 3 lời Phật dạy',
+    desc: 'Mở Lời Phật Dạy và chiêm nghiệm ít nhất 3 câu kệ an lành trong ngày.',
+    metric: 'dailyQuotesRead',
+    target: 3,
+    rewardLotus: 45,
+    rewardGems: 10,
+    actionHint: 'daily_dharma'
+  },
+  {
+    id: 'dm_mindful',
+    icon: '🧘',
+    category: 'Chánh niệm',
+    title: 'Thực hành chánh niệm 5 phút',
+    desc: 'Ngồi yên theo dõi hơi thở hoặc lần chuỗi niệm Phật đủ 5 phút (300 giây).',
+    metric: 'dailyMindfulSeconds',
+    target: 300,
+    rewardLotus: 80,
+    rewardGems: 20,
+    actionHint: 'niem_phat'
+  },
+  {
+    id: 'dm_mala',
+    icon: '📿',
+    category: 'Niệm Phật',
+    title: 'Lần 27 hạt tràng niệm Phật',
+    desc: 'Mở chuỗi tràng hạt Bồ Đề và lần ít nhất 27 hạt trong chánh niệm.',
+    metric: 'dailyBeads',
+    target: 27,
+    rewardLotus: 50,
+    rewardGems: 12,
+    actionHint: 'niem_phat'
+  },
+  {
+    id: 'dm_lotus',
+    icon: '🪷',
+    category: 'Cầu nguyện',
+    title: 'Dâng hoa sen & gửi lời chúc bình an',
+    desc: 'Thả một đóa hoa sen tươi bên hồ cầu sức khỏe cho ông bà, con cháu.',
+    metric: 'dailyLotus',
+    target: 1,
+    rewardLotus: 40,
+    rewardGems: 8,
+    actionHint: 'dang_hoa'
+  },
+  {
+    id: 'dm_lesson',
+    icon: '📖',
+    category: 'Pháp âm',
+    title: 'Nghe 1 bài Giảng đường hôm nay',
+    desc: 'Vào Giảng đường nghe thầy giảng hoặc hoàn thành 1 bài học.',
+    metric: 'dailyLessons',
+    target: 1,
+    rewardLotus: 55,
+    rewardGems: 15,
+    actionHint: 'lecture'
+  }
+];
+
+export const EXPLORATION_CHAPTERS = [
+  {
+    id: 'chap_1_tam_quan',
+    dayUnlock: 1,
+    title: 'Ngày 1 · Bước Qua Cổng Tam Quan & Hồ Sen',
+    desc: 'Ghé thăm Cổng Tam Quan khảm sành sứ cổ, Hồ Sen Cá Koi và Nhà Tạp Hóa cổng chùa.',
+    requiredStations: 2,
+    rewardLotus: 60,
+    rewardGems: 15,
+    stationKey: 'ho_sen_ca_koi'
+  },
+  {
+    id: 'chap_2_chanh_dien',
+    dayUnlock: 2,
+    title: 'Ngày 2 · Vào Chánh Điện & Chiêm Bái 18 Vị La Hán',
+    desc: 'Bước qua Cửa Hông để vào Chánh điện ngắm cặp Long Trụ rồng cuốn và 18 vị La Hán gỗ mít.',
+    requiredStations: 4,
+    rewardLotus: 80,
+    rewardGems: 20,
+    stationKey: 'chanh_dien'
+  },
+  {
+    id: 'chap_3_thien_tinh',
+    dayUnlock: 3,
+    title: 'Ngày 3 · Hai Sân Thiên Tỉnh & Tổ Đường Cổ Kính',
+    desc: 'Khám phá trọn vẹn trục Chữ Quốc (國): Tiền đường -> Chánh điện -> Thiên Tỉnh 1 -> Nhà Tổ -> Nhà Hậu.',
+    requiredStations: 5,
+    rewardLotus: 95,
+    rewardGems: 25,
+    stationKey: 'hau_to_nha_to'
+  },
+  {
+    id: 'chap_4_tam_tuong',
+    dayUnlock: 4,
+    title: 'Ngày 4 · Ba Pho Đại Tượng Lộ Thiên Vĩnh Tràng',
+    desc: 'Đảnh lễ tượng Phật A Di Đà 24m, Phật Di Lặc 20m và Phật Thích Ca Niết Bàn 32m.',
+    requiredStations: 6,
+    rewardLotus: 110,
+    rewardGems: 30,
+    stationKey: 'phat_adida'
+  },
+  {
+    id: 'chap_5_giang_duong',
+    dayUnlock: 5,
+    title: 'Ngày 5 · Giảng Đường Chánh Niệm & Lầu Trà Thiền',
+    desc: 'Thọ pháp tại Giảng Đường 3D và dừng chân thưởng trà dưới tán bồ đề xanh mát.',
+    requiredStations: 7,
+    rewardLotus: 130,
+    rewardGems: 35,
+    stationKey: 'lau_tra_thien'
+  },
+  {
+    id: 'chap_6_trai_duong',
+    dayUnlock: 6,
+    title: 'Ngày 6 · Nhà Sàn Gỗ Trai Đường & Vườn Lâm Tỳ Ni',
+    desc: 'Tham quan khu ăn chay nhà sàn miền Tây và vườn Lâm Tỳ Ni thanh tịnh.',
+    requiredStations: 8,
+    rewardLotus: 150,
+    rewardGems: 40,
+    stationKey: 'nha_san_trai_duong'
+  },
+  {
+    id: 'chap_7_vien_man',
+    dayUnlock: 7,
+    title: 'Ngày 7 · Viên Mãn Hành Hương & Thắp Đèn Hoa Đăng',
+    desc: 'Hoàn tất trọn vẹn 9 dấu ấn sen vàng Chùa Vĩnh Tràng và hồi hướng công đức.',
+    requiredStations: 9,
+    rewardLotus: 220,
+    rewardGems: 60,
+    stationKey: 'bao_thap_that_phat'
+  }
+];
+
+export const EXTENDED_MAILBOX_MESSAGES = [
+  {
+    id: 'mail_18_arhats_story',
+    unlockCheckinDay: 2,
+    sender: 'Ban Bảo Tồn Di Sản Chùa Vĩnh Tràng',
+    title: 'Chuyện kể về 18 vị La Hán gỗ mít trăm năm tuổi',
+    dateLabel: 'Ngày 2 hành hương',
+    body:
+      'Ít ai biết mỗi pho tượng La Hán trong Chánh điện đều mang một linh thú hoặc pháp khí riêng như hươu trắng, voi trắng, sư tử nhỏ, bảo tháp hay rồng xanh — nhắc nhở người tu chuyển hóa tham sân si giữa đời thường.',
+    rewardLotus: 65,
+    rewardGems: 18,
+    replyOptions: ['🙏 Con đã ngắm đủ 18 vị La Hán rất trang nghiêm', '🪷 Cảm ơn Ban Bảo Tồn đã chia sẻ']
+  },
+  {
+    id: 'mail_vu_lan_filial',
+    unlockCheckinDay: 3,
+    sender: 'Thầy Trụ Trì Chùa Vĩnh Tràng',
+    title: 'Thư gửi cô bác về Đạo Hiếu & Bông Hồng Cài Áo',
+    dateLabel: 'Ngày 3 hành hương',
+    body:
+      'Tâm hiếu là tâm Phật, hạnh hiếu là hạnh Phật. Nhà chùa kính gửi tặng cô bác lộc công đức để thỉnh Áo Vu Lan hồng hoặc một bó hoa sen dâng lên cầu bình an cho song thân và con cháu.',
+    rewardLotus: 90,
+    rewardGems: 25,
+    replyOptions: ['🌹 Nguyện cầu cha mẹ & gia đình luôn bình an', '🙏 Con xin ghi nhớ chữ Hiếu làm đầu']
+  },
+  {
+    id: 'mail_mindful_tea',
+    unlockCheckinDay: 4,
+    sender: 'Lầu Trà Thiền Vườn Bồ Đề',
+    title: 'Mời cô bác thực hành 5 phút Chánh Niệm mỗi sáng',
+    dateLabel: 'Ngày 4 hành hương',
+    body:
+      'Chỉ cần 5 phút ngồi yên lần từng hạt Tràng Hạt gỗ Bồ Đề, hít vào bình an và thở ra nhẹ nhàng cũng đủ nuôi dưỡng thân tâm khỏe mạnh suốt cả ngày.',
+    rewardLotus: 75,
+    rewardGems: 20,
+    replyOptions: ['🧘 Hôm nay con sẽ ngồi thiền 5 phút', '📿 Tiếng mõ và chuỗi hạt rất dễ chịu']
+  },
+  {
+    id: 'mail_trai_duong_feast',
+    unlockCheckinDay: 5,
+    sender: 'Ban Trai Soạn Nhà Sàn Miền Tây',
+    title: 'Thân mời đoàn gia đình & du khách ghé Nhà Sàn Trai Đường',
+    dateLabel: 'Ngày 5 hành hương',
+    body:
+      'Khu nhà sàn gỗ căm xe bên hồ sen đã chuẩn bị sẵn trà đá thanh mát và cơm chay đạm bạc đón quý Phật tử phương xa cùng đoàn du lịch ghé nghỉ chân.',
+    rewardLotus: 85,
+    rewardGems: 22,
+    replyOptions: ['🍚 Không khí nhà sàn miền Tây thật ấm cúng', '🌿 Cảm ơn nhà chùa tiếp đón chu đáo']
+  }
+];
+
+export function ensureDailyMissionDate(activityState, dateKey = getLocalDateKey()) {
+  const nextAct = createActivityHubState(activityState);
+  if (nextAct.dailyDateKey === dateKey) return nextAct;
+  nextAct.dailyDateKey = dateKey;
+  nextAct.dailyMetrics = {
+    dailyCheckedIn: nextAct.lastCheckinDate === dateKey ? 1 : 0,
+    dailyIncense: 0,
+    dailyQuotesRead: 0,
+    dailyMindfulSeconds: 0,
+    dailyBeads: 0,
+    dailyLotus: 0,
+    dailyLessons: 0
+  };
+  nextAct.claimedDailyMissions = [];
+  return nextAct;
+}
+
+export function createActivityHubState(initial = {}) {
+  const src = initial && typeof initial === 'object' ? initial : {};
+  const dm = src.dailyMetrics && typeof src.dailyMetrics === 'object' ? src.dailyMetrics : {};
+  return {
+    lastCheckinDate: typeof src.lastCheckinDate === 'string' ? src.lastCheckinDate : null,
+    streakDays: Math.max(0, Math.min(7, Number(src.streakDays || 0))),
+    checkinCount: Math.max(0, Number(src.checkinCount || 0)),
+    claimedDays: Array.isArray(src.claimedDays) ? [...src.claimedDays] : [],
+    claimedQuests: Array.isArray(src.claimedQuests) ? [...src.claimedQuests] : [],
+    claimedMails: Array.isArray(src.claimedMails) ? [...src.claimedMails] : [],
+    readMails: Array.isArray(src.readMails) ? [...src.readMails] : [],
+    repliedMails: src.repliedMails && typeof src.repliedMails === 'object' ? { ...src.repliedMails } : {},
+    dailyDateKey: typeof src.dailyDateKey === 'string' ? src.dailyDateKey : null,
+    dailyMetrics: {
+      dailyCheckedIn: Math.max(0, Number(dm.dailyCheckedIn || 0)),
+      dailyIncense: Math.max(0, Number(dm.dailyIncense || 0)),
+      dailyQuotesRead: Math.max(0, Number(dm.dailyQuotesRead || 0)),
+      dailyMindfulSeconds: Math.max(0, Number(dm.dailyMindfulSeconds || 0)),
+      dailyBeads: Math.max(0, Number(dm.dailyBeads || 0)),
+      dailyLotus: Math.max(0, Number(dm.dailyLotus || 0)),
+      dailyLessons: Math.max(0, Number(dm.dailyLessons || 0))
+    },
+    claimedDailyMissions: Array.isArray(src.claimedDailyMissions) ? [...src.claimedDailyMissions] : [],
+    claimedChapters: Array.isArray(src.claimedChapters) ? [...src.claimedChapters] : [],
+    shareCount: Math.max(0, Number(src.shareCount || 0)),
+    lastShareDate: typeof src.lastShareDate === 'string' ? src.lastShareDate : null,
+    feedbackList: Array.isArray(src.feedbackList) ? src.feedbackList.map((f) => ({ ...f })) : [],
+    extraMetrics:
+      src.extraMetrics && typeof src.extraMetrics === 'object' ? { ...src.extraMetrics } : {}
+  };
+}
+
+export function recordDailyMissionMetric(activityState, metricKey, amount = 1, dateKey = getLocalDateKey()) {
+  const nextAct = ensureDailyMissionDate(activityState, dateKey);
+  if (Object.prototype.hasOwnProperty.call(nextAct.dailyMetrics, metricKey)) {
+    nextAct.dailyMetrics[metricKey] = Math.max(
+      0,
+      Number(nextAct.dailyMetrics[metricKey] || 0) + Math.max(0, Number(amount || 0))
+    );
+  }
+  return nextAct;
+}
+
+export function getDailyMissionsWithProgress(activityState, dateKey = getLocalDateKey()) {
+  const act = ensureDailyMissionDate(activityState, dateKey);
+  return DAILY_RESET_MISSIONS.map((m) => {
+    const rawCurrent =
+      m.metric === 'dailyCheckedIn'
+        ? act.lastCheckinDate === dateKey
+          ? 1
+          : act.dailyMetrics.dailyCheckedIn || 0
+        : act.dailyMetrics[m.metric] || 0;
+    const current = Math.min(m.target, rawCurrent);
+    const completed = rawCurrent >= m.target;
+    const claimed = act.claimedDailyMissions.includes(m.id);
+    return {
+      ...m,
+      current,
+      rawCurrent,
+      completed,
+      claimed,
+      claimable: completed && !claimed
+    };
+  });
+}
+
+export function claimDailyMissionReward(activityState, storeProfile, missionId, dateKey = getLocalDateKey()) {
+  const nextAct = ensureDailyMissionDate(activityState, dateKey);
+  const nextProfile = createStoreProfileState(storeProfile);
+  const list = getDailyMissionsWithProgress(nextAct, dateKey);
+  const mission = list.find((m) => m.id === missionId);
+  if (!mission) {
+    return { ok: false, reason: 'not_found', message: 'Không tìm thấy nhiệm vụ hằng ngày.', activity: nextAct, storeProfile: nextProfile };
+  }
+  if (mission.claimed) {
+    return { ok: false, reason: 'already_claimed', message: 'Hôm nay cô bác đã nhận thưởng nhiệm vụ này rồi.', activity: nextAct, storeProfile: nextProfile };
+  }
+  if (!mission.completed) {
+    return {
+      ok: false,
+      reason: 'incomplete',
+      message: `Cần hoàn thành "${mission.title}" (${mission.current}/${mission.target}) trước khi nhận lộc.`,
+      activity: nextAct,
+      storeProfile: nextProfile
+    };
+  }
+  nextAct.claimedDailyMissions.push(mission.id);
+  nextProfile.lotusPoints += mission.rewardLotus;
+  nextProfile.gems += mission.rewardGems;
+  return {
+    ok: true,
+    mission,
+    message: `Hoàn thành "${mission.title}"! Nhận +${mission.rewardLotus} 🪷 & +${mission.rewardGems} 💎.`,
+    activity: nextAct,
+    storeProfile: nextProfile
+  };
+}
+
+export function getExplorationChaptersStatus(activityState, spiritualState) {
+  const act = createActivityHubState(activityState);
+  const sp = createSpiritualState(spiritualState);
+  const effectiveDay = Math.max(1, act.checkinCount || 1);
+  const visitedCount = sp.visitedStations.length;
+  return EXPLORATION_CHAPTERS.map((ch) => {
+    const unlockedByDay = effectiveDay >= ch.dayUnlock || visitedCount >= ch.requiredStations;
+    const completed = visitedCount >= ch.requiredStations && unlockedByDay;
+    const claimed = act.claimedChapters.includes(ch.id);
+    return {
+      ...ch,
+      unlocked: unlockedByDay,
+      visitedCount: Math.min(ch.requiredStations, visitedCount),
+      completed,
+      claimed,
+      claimable: completed && !claimed
+    };
+  });
+}
+
+export function claimExplorationChapterReward(activityState, storeProfile, spiritualState, chapterId) {
+  const nextAct = createActivityHubState(activityState);
+  const nextProfile = createStoreProfileState(storeProfile);
+  const list = getExplorationChaptersStatus(nextAct, spiritualState);
+  const chap = list.find((c) => c.id === chapterId);
+  if (!chap) {
+    return { ok: false, reason: 'not_found', message: 'Không tìm thấy chặng khám phá.', activity: nextAct, storeProfile: nextProfile };
+  }
+  if (chap.claimed) {
+    return { ok: false, reason: 'already_claimed', message: 'Bạn đã nhận phần thưởng chặng này rồi.', activity: nextAct, storeProfile: nextProfile };
+  }
+  if (!chap.completed) {
+    return { ok: false, reason: 'incomplete', message: `Hãy khám phá ${chap.requiredStations} điểm để mở thưởng chặng này.`, activity: nextAct, storeProfile: nextProfile };
+  }
+  nextAct.claimedChapters.push(chap.id);
+  nextProfile.lotusPoints += chap.rewardLotus;
+  nextProfile.gems += chap.rewardGems;
+  return {
+    ok: true,
+    chapter: chap,
+    message: `Hoàn thành ${chap.title}! Nhận +${chap.rewardLotus} 🪷 & +${chap.rewardGems} 💎.`,
+    activity: nextAct,
+    storeProfile: nextProfile
+  };
+}
+
+export function claimDailyCheckin(activityState, storeProfile, dateKey = getLocalDateKey()) {
+  const nextAct = ensureDailyMissionDate(activityState, dateKey);
+  const nextProfile = createStoreProfileState(storeProfile);
+
+  if (nextAct.lastCheckinDate === dateKey) {
+    return {
+      ok: false,
+      reason: 'already_checked_in',
+      message: 'Hôm nay cô bác đã điểm danh nhận lộc rồi. Hẹn ngày mai quay lại nhé!',
+      activity: nextAct,
+      storeProfile: nextProfile,
+      reward: null
+    };
+  }
+
+  const nextDayIndex = (nextAct.streakDays % 7) + 1;
+  const reward = DAILY_CHECKIN_REWARDS[nextDayIndex - 1] || DAILY_CHECKIN_REWARDS[0];
+
+  nextAct.lastCheckinDate = dateKey;
+  nextAct.streakDays = nextDayIndex;
+  nextAct.checkinCount += 1;
+  nextAct.dailyMetrics.dailyCheckedIn = 1;
+  if (!nextAct.claimedDays.includes(nextDayIndex)) {
+    nextAct.claimedDays.push(nextDayIndex);
+  }
+  if (nextDayIndex === 7) {
+    nextAct.claimedDays = [1, 2, 3, 4, 5, 6, 7];
+  }
+
+  nextProfile.lotusPoints += reward.lotus;
+  nextProfile.gems += reward.gems;
+
+  return {
+    ok: true,
+    day: nextDayIndex,
+    reward,
+    message: `Điểm danh ${reward.label} thành công! Nhận +${reward.lotus} 🪷 & +${reward.gems} 💎.`,
+    activity: nextAct,
+    storeProfile: nextProfile
+  };
+}
+
+export function getQuestMetricValue(activityState, spiritualState, completedLessonsCount = 0, metric) {
+  const act = createActivityHubState(activityState);
+  const sp = createSpiritualState(spiritualState);
+  if (metric === 'checkinCount') return act.checkinCount;
+  if (metric === 'bowCount') return sp.bowCount;
+  if (metric === 'incenseOfferings') return sp.incenseOfferings;
+  if (metric === 'lotusOfferings') return sp.lotusOfferings;
+  if (metric === 'malaTotalBeads') return sp.malaCycles * 108 + sp.malaBeads;
+  if (metric === 'visitedCount') return sp.visitedStations.length;
+  if (metric === 'completedLessonsCount') return Math.max(0, Number(completedLessonsCount || 0));
+  return Math.max(0, Number(act.extraMetrics[metric] || 0));
+}
+
+export function incrementQuestProgress(activityState, metric, amount = 1) {
+  const nextAct = createActivityHubState(activityState);
+  nextAct.extraMetrics[metric] =
+    Math.max(0, Number(nextAct.extraMetrics[metric] || 0)) + Math.max(0, Number(amount || 0));
+  return nextAct;
+}
+
+export function getQuestsWithProgress(activityState, spiritualState, completedLessonsCount = 0) {
+  const act = createActivityHubState(activityState);
+  return DAILY_QUESTS_TEMPLATE.map((q) => {
+    const current = getQuestMetricValue(act, spiritualState, completedLessonsCount, q.metric);
+    const clamped = Math.min(q.target, current);
+    const completed = current >= q.target;
+    const claimed = act.claimedQuests.includes(q.id);
+    return {
+      ...q,
+      current: clamped,
+      rawCurrent: current,
+      completed,
+      claimed,
+      claimable: completed && !claimed
+    };
+  });
+}
+
+export function claimQuestReward(
+  activityState,
+  storeProfile,
+  spiritualState,
+  completedLessonsCount = 0,
+  questId
+) {
+  const nextAct = createActivityHubState(activityState);
+  const nextProfile = createStoreProfileState(storeProfile);
+  const list = getQuestsWithProgress(nextAct, spiritualState, completedLessonsCount);
+  const quest = list.find((q) => q.id === questId);
+
+  if (!quest) {
+    return { ok: false, reason: 'not_found', message: 'Không tìm thấy nhiệm vụ.', activity: nextAct, storeProfile: nextProfile };
+  }
+  if (quest.claimed) {
+    return { ok: false, reason: 'already_claimed', message: 'Bạn đã nhận thưởng nhiệm vụ này rồi.', activity: nextAct, storeProfile: nextProfile };
+  }
+  if (!quest.completed) {
+    return {
+      ok: false,
+      reason: 'incomplete',
+      message: `Cần hoàn thành "${quest.title}" (${quest.current}/${quest.target}) trước khi nhận thưởng.`,
+      activity: nextAct,
+      storeProfile: nextProfile
+    };
+  }
+
+  nextAct.claimedQuests.push(quest.id);
+  nextProfile.lotusPoints += quest.rewardLotus;
+  nextProfile.gems += quest.rewardGems;
+
+  return {
+    ok: true,
+    quest,
+    message: `Hoàn thành "${quest.title}"! Nhận +${quest.rewardLotus} 🪷 & +${quest.rewardGems} 💎.`,
+    activity: nextAct,
+    storeProfile: nextProfile
+  };
+}
+
+export function getMailboxWithStatus(activityState, { includeExtended = false, spiritualState = null } = {}) {
+  const act = createActivityHubState(activityState);
+  const dayNum = Math.max(1, act.checkinCount || 1);
+  const visitedCount = spiritualState ? createSpiritualState(spiritualState).visitedStations.length : 1;
+
+  const baseList = INITIAL_MAILBOX_MESSAGES.map((m) => ({
+    ...m,
+    replyOptions: m.replyOptions || [
+      '🙏 Con xin cảm ơn & ghi nhớ lời nhắn',
+      '🪷 Chúc Ban Quản Trị nhà chùa luôn an lạc'
+    ],
+    unlocked: true
+  }));
+
+  const extList = includeExtended
+    ? EXTENDED_MAILBOX_MESSAGES.filter(
+        (m) => dayNum >= (m.unlockCheckinDay || 1) || visitedCount >= (m.unlockCheckinDay || 2) + 1
+      ).map((m) => ({ ...m, unlocked: true }))
+    : [];
+
+  return [...baseList, ...extList].map((m) => ({
+    ...m,
+    claimed: act.claimedMails.includes(m.id),
+    read: act.readMails.includes(m.id) || act.claimedMails.includes(m.id),
+    replyText: act.repliedMails[m.id] || null
+  }));
+}
+
+export function claimMailboxReward(activityState, storeProfile, mailId) {
+  const nextAct = createActivityHubState(activityState);
+  const nextProfile = createStoreProfileState(storeProfile);
+  const mail = [...INITIAL_MAILBOX_MESSAGES, ...EXTENDED_MAILBOX_MESSAGES].find((m) => m.id === mailId);
+
+  if (!mail) {
+    return { ok: false, reason: 'not_found', message: 'Không tìm thấy thư.', activity: nextAct, storeProfile: nextProfile };
+  }
+  if (!nextAct.readMails.includes(mailId)) {
+    nextAct.readMails.push(mailId);
+  }
+  if (nextAct.claimedMails.includes(mailId)) {
+    return { ok: false, reason: 'already_claimed', message: 'Bạn đã nhận quà từ thư này rồi.', activity: nextAct, storeProfile: nextProfile };
+  }
+
+  nextAct.claimedMails.push(mailId);
+  nextProfile.lotusPoints += mail.rewardLotus;
+  nextProfile.gems += mail.rewardGems;
+
+  return {
+    ok: true,
+    mail,
+    message: `Đã nhận quà từ "${mail.sender}": +${mail.rewardLotus} 🪷 & +${mail.rewardGems} 💎.`,
+    activity: nextAct,
+    storeProfile: nextProfile
+  };
+}
+
+export function replyToMailboxMessage(activityState, storeProfile, mailId, optionIndex = 0) {
+  const nextAct = createActivityHubState(activityState);
+  const nextProfile = createStoreProfileState(storeProfile);
+  const mail = [...INITIAL_MAILBOX_MESSAGES, ...EXTENDED_MAILBOX_MESSAGES].find((m) => m.id === mailId);
+  if (!mail) {
+    return { ok: false, message: 'Không tìm thấy thư để hồi âm.', activity: nextAct, storeProfile: nextProfile };
+  }
+  const options = mail.replyOptions || [
+    '🙏 Con xin cảm ơn & ghi nhớ lời nhắn',
+    '🪷 Chúc Ban Quản Trị nhà chùa luôn an lạc'
+  ];
+  const replyText = options[Math.max(0, Math.min(options.length - 1, Number(optionIndex || 0)))];
+  const firstReply = !nextAct.repliedMails[mailId];
+  nextAct.repliedMails[mailId] = replyText;
+  if (!nextAct.readMails.includes(mailId)) nextAct.readMails.push(mailId);
+  if (firstReply) {
+    nextProfile.lotusPoints += 15;
+  }
+  return {
+    ok: true,
+    firstReply,
+    replyText,
+    message: firstReply
+      ? `Đã gửi hồi âm tới "${mail.sender}" (+15 🪷 tri ân).`
+      : `Đã cập nhật lời hồi âm của cô bác.`,
+    activity: nextAct,
+    storeProfile: nextProfile
+  };
+}
+
+export function buildPilgrimageShareText({
+  characterModelKey = 'nu',
+  spiritual = {},
+  storeProfile = {},
+  activityHub = {},
+  completedLessonsCount = 0
+} = {}) {
+  const sp = createSpiritualState(spiritual);
+  const act = createActivityHubState(activityHub);
+  const prof = createStoreProfileState(storeProfile);
+  const charProf = CHARACTER_PROFILES.find((c) => c.key === characterModelKey) || CHARACTER_PROFILES[0];
+  const totalBeads = sp.malaCycles * 108 + sp.malaBeads;
+  const mindfulMins = Math.floor((act.dailyMetrics?.dailyMindfulSeconds || 0) / 60);
+  return [
+    '🪷 THIỆP HÀNH HƯƠNG CHÙA VĨNH TRÀNG (MỸ THO) 🪷',
+    `Phật tử: ${charProf.name} · Chuỗi chuyên cần ${act.streakDays || 1} ngày`,
+    `• Đảnh lễ Tam Bảo: ${sp.bowCount} lạy · Dâng hương: ${sp.incenseOfferings} lần · Hoa sen: ${sp.lotusOfferings} đóa`,
+    `• Niệm Phật: ${totalBeads} biến (${sp.malaCycles} vòng 108 hạt) · Chánh niệm hôm nay: ${mindfulMins} phút`,
+    `• Khám phá: ${sp.visitedStations.length}/9 thắng cảnh · Đã học: ${completedLessonsCount} bài Giảng đường · Điểm Sen: ${prof.lotusPoints} 🪷`,
+    'Nguyện đem công đức này hướng về khắp tất cả, cầu bình an sức khỏe đến gia đình & mọi người!'
+  ].join('\n');
+}
+
+export function recordPilgrimageShare(activityState, storeProfile, dateKey = getLocalDateKey()) {
+  const nextAct = createActivityHubState(activityState);
+  const nextProfile = createStoreProfileState(storeProfile);
+  const dailyBonusGranted = nextAct.lastShareDate !== dateKey;
+  nextAct.shareCount += 1;
+  nextAct.lastShareDate = dateKey;
+  if (dailyBonusGranted) {
+    nextProfile.lotusPoints += 30;
+    nextProfile.gems += 5;
+  }
+  return {
+    ok: true,
+    dailyBonusGranted,
+    message: dailyBonusGranted
+      ? 'Đã sao chép thiệp chia sẻ hành hương! Tặng cô bác +30 🪷 & +5 💎 lộc lan tỏa bình an.'
+      : 'Đã sao chép thiệp chia sẻ hành hương gửi người thân.',
+    activity: nextAct,
+    storeProfile: nextProfile
+  };
+}
+
+export function submitUserFeedback(activityState, storeProfile, { rating = 5, tags = [], comment = '' } = {}, dateKey = getLocalDateKey()) {
+  const nextAct = createActivityHubState(activityState);
+  const nextProfile = createStoreProfileState(storeProfile);
+  const cleanComment = String(comment || '').trim();
+  const cleanTags = Array.isArray(tags) ? tags.filter(Boolean).slice(0, 6) : [];
+  if (!cleanComment && cleanTags.length === 0) {
+    return {
+      ok: false,
+      message: 'Cô bác vui lòng chọn ít nhất 1 mục góp ý hoặc nhập lời nhắn ngắn ạ.',
+      activity: nextAct,
+      storeProfile: nextProfile
+    };
+  }
+  const alreadyRewardedToday = nextAct.feedbackList.some((f) => f.dateKey === dateKey);
+  nextAct.feedbackList.unshift({
+    id: `fb_${Date.now()}`,
+    dateKey,
+    rating: Math.max(1, Math.min(5, Number(rating || 5))),
+    tags: cleanTags,
+    comment: cleanComment
+  });
+  nextAct.feedbackList = nextAct.feedbackList.slice(0, 20);
+  if (!alreadyRewardedToday) {
+    nextProfile.lotusPoints += 25;
+  }
+  return {
+    ok: true,
+    bonusGranted: !alreadyRewardedToday,
+    message: alreadyRewardedToday
+      ? 'Nhà chùa xin chân thành cảm ơn góp ý quý báu của cô bác!'
+      : 'Cảm ơn cô bác đã góp ý! Kính tặng +25 🪷 để thỉnh hương hoa.',
+    activity: nextAct,
+    storeProfile: nextProfile
+  };
+}
+
+export function unifyEquippedVisualPayload(storeProfile = {}, spiritual = {}) {
+  const prof = createStoreProfileState(storeProfile);
+  const sp = createSpiritualState(spiritual);
+  const eq = prof.equipped || {};
+  const spEq = sp.equippedItems || {};
+  const findItem = (id) => (id ? STORE_ITEMS_CATALOG.find((x) => x.id === id) || null : null);
+
+  const tryingItem = findItem(prof.tryingItemId);
+  const eqRobe = findItem(eq.robe);
+  const activeRobe =
+    tryingItem?.slot === 'robe'
+      ? tryingItem
+      : eqRobe || (spEq.outfit === 'ao_trang_phat_tu' ? { id: 'ao_trang_lam', robeStyle: 'lam_phat_tu', robeTint: [0.60, 0.56, 0.62] } : null);
+
+  const activeHat = tryingItem?.slot === 'hat' ? tryingItem : findItem(eq.hat);
+  const activeMat = tryingItem?.slot === 'mat' ? tryingItem : findItem(eq.mat);
+  const activeHand =
+    tryingItem && ['handItem', 'instrument', 'offering'].includes(tryingItem.slot)
+      ? tryingItem
+      : findItem(eq.handItem || eq.instrument || eq.offering);
+  const activeMala = tryingItem?.slot === 'mala' ? tryingItem : findItem(eq.mala);
+  const activeTree = tryingItem?.slot === 'tree' ? tryingItem : findItem(eq.tree);
+  const activeCloud = tryingItem?.slot === 'cloud' ? tryingItem : findItem(eq.cloud);
+  const activePet = tryingItem?.slot === 'pet' ? tryingItem : findItem(eq.pet);
+
+  let handProp = activeHand?.prop3d || null;
+  if (!handProp && spEq.hand && spEq.hand !== 'trang_hat_bo_de') {
+    handProp = spEq.hand === 'hoa_sen_trang_nghiem' || spEq.hand === 'hoa_sen' ? 'nen_hoa_sen' : spEq.hand;
+  }
+
+  return {
+    robeId: activeRobe?.id || null,
+    robeName: activeRobe?.name || null,
+    robeStyle: activeRobe?.robeStyle || null,
+    robeTint: activeRobe?.robeTint || null,
+    upperTint: activeRobe?.upperTint || activeRobe?.robeTint || null,
+    lowerTint: activeRobe?.lowerTint || activeRobe?.robeTint || null,
+    trimTint: activeRobe?.trimTint || null,
+    sashTint: activeRobe?.sashTint || null,
+    hat: Boolean(activeHat || spEq.hat === 'non_la_theu_sen'),
+    hatGlbKey: activeHat?.prop3d === 'non_la_blender' ? 'non_la_blender' : activeHat || spEq.hat === 'non_la_theu_sen' ? 'non_la' : null,
+    bag: spEq.bag || null,
+    bagGlbKey: spEq.bag ? (String(spEq.bag).includes('tui') ? 'tui_sen' : null) : null,
+    scarf: spEq.scarf || null,
+    malaId: activeMala?.id || (spEq.hand === 'trang_hat_go' || spEq.hand === 'trang_hat_bo_de' ? 'trang_hat_bo_de_108_store' : null),
+    mat: activeMat?.prop3d || null,
+    handProp,
+    treeProp: activeTree?.prop3d || null,
+    cloudColor: activeCloud?.cloudColor || null,
+    petType: activePet?.petType || null
+  };
+}
+
+export function encodeProfileBackupCode(payload = {}) {
+  const safePayload = {
+    v: 1,
+    char: payload.characterModelKey || 'nu',
+    spiritual: createSpiritualState(payload.spiritual),
+    storeProfile: createStoreProfileState(payload.storeProfile),
+    activityHub: createActivityHubState(payload.activityHub),
+    completedLessons: Array.isArray(payload.completedLessons) ? payload.completedLessons : []
+  };
+  const json = JSON.stringify(safePayload);
+  const bytes = new TextEncoder().encode(json);
+  let bin = '';
+  for (let i = 0; i < bytes.length; i++) {
+    bin += String.fromCharCode(bytes[i]);
+  }
+  let checksum = 0;
+  for (let i = 0; i < json.length; i++) {
+    checksum = (checksum * 31 + json.charCodeAt(i)) >>> 0;
+  }
+  const b64 = btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  return `VT1-${checksum.toString(36).toUpperCase()}-${b64}`;
+}
+
+export function decodeProfileBackupCode(code) {
+  try {
+    const raw = String(code || '').trim();
+    if (!raw.startsWith('VT1-')) {
+      return { ok: false, message: 'Mã khôi phục không đúng định dạng (phải bắt đầu bằng VT1-).' };
+    }
+    const parts = raw.split('-');
+    if (parts.length < 3) {
+      return { ok: false, message: 'Mã khôi phục bị thiếu dữ liệu.' };
+    }
+    const givenChecksum = parts[1].toUpperCase();
+    const b64 = parts.slice(2).join('-').replace(/-/g, '+').replace(/_/g, '/');
+    const padLen = (4 - (b64.length % 4)) % 4;
+    const bin = atob(b64 + '='.repeat(padLen));
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) {
+      bytes[i] = bin.charCodeAt(i);
+    }
+    const json = new TextDecoder().decode(bytes);
+    let checksum = 0;
+    for (let i = 0; i < json.length; i++) {
+      checksum = (checksum * 31 + json.charCodeAt(i)) >>> 0;
+    }
+    if (checksum.toString(36).toUpperCase() !== givenChecksum) {
+      return { ok: false, message: 'Mã khôi phục không khớp kiểm tra toàn vẹn (checksum).' };
+    }
+    const parsed = JSON.parse(json);
+    return {
+      ok: true,
+      data: {
+        characterModelKey: parsed.char || 'nu',
+        spiritual: createSpiritualState(parsed.spiritual),
+        storeProfile: createStoreProfileState(parsed.storeProfile),
+        activityHub: createActivityHubState(parsed.activityHub),
+        completedLessons: Array.isArray(parsed.completedLessons) ? parsed.completedLessons : []
+      }
+    };
+  } catch {
+    return { ok: false, message: 'Không thể giải mã mã khôi phục. Vui lòng kiểm tra lại.' };
+  }
+}
+
+export const INTERIOR_HALL_CAPACITY = {
+  prayerCushions: 144,
+  diningSeats: 48,
+  standingSlots: 36,
+  totalCapacity: 228,
+  minRequired: 180
+};
+
+export function calculateInteriorPlayerCapacity(overrides = {}) {
+  const prayerCushions = Number(overrides.prayerCushions ?? INTERIOR_HALL_CAPACITY.prayerCushions);
+  const diningSeats = Number(overrides.diningSeats ?? INTERIOR_HALL_CAPACITY.diningSeats);
+  const standingSlots = Number(overrides.standingSlots ?? INTERIOR_HALL_CAPACITY.standingSlots);
+  const totalCapacity = Math.max(0, prayerCushions) + Math.max(0, diningSeats) + Math.max(0, standingSlots);
+  return {
+    prayerCushions,
+    diningSeats,
+    standingSlots,
+    totalCapacity,
+    minRequired: INTERIOR_HALL_CAPACITY.minRequired,
+    meetsTarget: totalCapacity >= INTERIOR_HALL_CAPACITY.minRequired
+  };
+}

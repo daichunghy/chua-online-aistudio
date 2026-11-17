@@ -41,31 +41,65 @@ import {
   MARKETPLACE_STALL_CATALOG,
   filterMarketplaceItems,
   purchaseMarketplaceItem,
-  calculateMeritSummary
+  calculateMeritSummary,
+  TIME_OF_DAY_PRESETS,
+  DAILY_CHECKIN_REWARDS,
+  DAILY_QUESTS_TEMPLATE,
+  INITIAL_MAILBOX_MESSAGES,
+  PILGRIMAGE_GUIDE_STEPS,
+  DAILY_RESET_MISSIONS,
+  EXPLORATION_CHAPTERS,
+  createActivityHubState,
+  ensureDailyMissionDate,
+  recordDailyMissionMetric,
+  getDailyMissionsWithProgress,
+  claimDailyMissionReward,
+  getExplorationChaptersStatus,
+  claimExplorationChapterReward,
+  claimDailyCheckin,
+  incrementQuestProgress,
+  getQuestsWithProgress,
+  claimQuestReward,
+  getMailboxWithStatus,
+  claimMailboxReward,
+  replyToMailboxMessage,
+  buildPilgrimageShareText,
+  recordPilgrimageShare,
+  submitUserFeedback,
+  unifyEquippedVisualPayload,
+  encodeProfileBackupCode,
+  decodeProfileBackupCode
 } from '/src/logic/chua-online-logic.mjs';
-import { VinhTrang3DWorld } from '/src/app/vinh-trang-3d-world.mjs';
+import {
+  VinhTrang3DWorld,
+  recolorGarmentOnScene,
+  clearRiggedBoneProps,
+  createBespokeRobeGroup,
+  createStoreAccessoryGroup,
+  createSculptedArhatShowcase
+} from '/src/app/vinh-trang-3d-world.mjs';
 
 const STORAGE_KEY = 'chua_online_vinh_trang_state_v11';
 
 const EIGHTEEN_ARHATS = [
-  { id: 1, name: 'Tôn giả Tân Độ La Bạt La Đọa Xà', title: 'Tọa Lộc La Hán', meaning: 'Cưỡi hươu vào hoàng cung độ hóa vua quan, biểu trưng cho sự thanh cao và tinh tấn.' },
-  { id: 2, name: 'Tôn giả Ca Nặc Ca Phạt Tha', title: 'Khánh Hỷ La Hán', meaning: 'Phân biệt rõ thiện ác, luôn mang niềm vui chánh pháp đến cho muôn người.' },
-  { id: 3, name: 'Tôn giả Ca Nặc Ca Bạt Ly Đọa Xà', title: 'Cử Bát La Hán', meaning: 'Nâng bình bát xin ăn với tâm bình đẳng, gieo ruộng phước lành cho thí chủ.' },
-  { id: 4, name: 'Tôn giả Tô Tần Đà', title: 'Thác Tháp La Hán', meaning: 'Nâng bảo tháp Phật trên tay, nhắc nhở luôn hộ trì Tam Bảo và giữ tâm sáng.' },
-  { id: 5, name: 'Tôn giả Nặc Cự La', title: 'Tĩnh Tọa La Hán', meaning: 'Ngồi thiền định vững chãi như núi Thái Sơn, chiến thắng nội ma phiền não.' },
-  { id: 6, name: 'Tôn giả Bạt Đà La', title: 'Quá Giang La Hán', meaning: 'Vượt biển truyền bá Phật pháp khắp các hải đảo Đông Nam Á.' },
-  { id: 7, name: 'Tôn giả Ca Lý Ca', title: 'Kỵ Tượng La Hán', meaning: 'Cưỡi voi trắng biểu trưng cho sức mạnh đại thừa và tâm từ bi rộng lớn.' },
-  { id: 8, name: 'Tôn giả Phạt Xà La Phất Đa La', title: 'Tiếu Sư La Hán', meaning: 'Chơi đùa cùng sư tử nhỏ, cảm hóa loài hung dữ bằng lòng từ ái.' },
-  { id: 9, name: 'Tôn giả Thú Bác Ca', title: 'Khai Tâm La Hán', meaning: 'Mở vạt áo để lộ tâm Phật trong sáng, nhắc người đời ai cũng có Phật tính.' },
-  { id: 10, name: 'Tôn giả Bán Thác Ca', title: 'Thám Thủ La Hán', meaning: 'Vươn tay ngáp nhẹ sau giờ thiền định, tự tại giữa muôn duyên.' },
-  { id: 11, name: 'Tôn giả La Hầu La', title: 'Trầm Tư La Hán', meaning: 'Mật hạnh đệ nhất, luôn suy tư quán chiếu sâu sắc để tu sửa thân tâm.' },
-  { id: 12, name: 'Tôn giả Na Già Tê Na', title: 'Khoái Nhĩ La Hán', meaning: 'Ngoáy tai thảnh thơi — nghe đủ mọi âm thanh đời thường mà tâm chẳng nhiễm ô.' },
-  { id: 13, name: 'Tôn giả Nhân Yết Đà', title: 'Bố Đại La Hán', meaning: 'Mang túi vải bố thu nhiếp khổ đau thế gian và trao tặng niềm hoan hỷ.' },
-  { id: 14, name: 'Tôn giả Phạt Na Bà Tư', title: 'Ba Tiêu La Hán', meaning: 'Ngồi dưới tán chuối xanh nghe mưa rơi mà ngộ lý vô thường.' },
-  { id: 15, name: 'Tôn giả A Thị Đa', title: 'Trường Mi La Hán', meaning: 'Đôi lông mày dài bạc trắng biểu thị phước tướng từ bi trường thọ.' },
-  { id: 16, name: 'Tôn giả Chú Trà Bán Thác Ca', title: 'Khán Môn La Hán', meaning: 'Cầm gậy tích trượng canh giữ cửa thiền, nhắc hành giả hộ trì sáu căn.' },
-  { id: 17, name: 'Tôn giả Khánh Hữu (Nan Đề Mật Đa La)', title: 'Hàng Long La Hán', meaning: 'Hàng phục rồng dữ — biểu trưng cho trí tuệ chế ngự lòng sân hận.' },
-  { id: 18, name: 'Tôn giả Tân Đầu Lư', title: 'Phục Hổ La Hán', meaning: 'Thuần phục hổ dữ bằng tâm từ — chế ngự lòng tham lam dữ tợn.' }
+  { id: 1, name: 'Tôn giả Tân Độ La Bạt La Đọa Xà', title: 'Tọa Lộc La Hán', emblem: 'Hươu trắng · Thanh cao', meaning: 'Cưỡi hươu vào hoàng cung độ hóa vua quan, biểu trưng cho tâm hạnh thanh cao và tinh tấn.' },
+  { id: 2, name: 'Tôn giả Ca Nặc Ca Phạt Tha', title: 'Khánh Hỷ La Hán', emblem: 'Chuông vàng · Hỷ lạc', meaning: 'Phân biệt rõ thiện ác, mang niềm vui chánh pháp đến cho muôn người.' },
+  { id: 3, name: 'Tôn giả Ca Nặc Ca Bạt Ly Đọa Xà', title: 'Cử Bát La Hán', emblem: 'Bình bát · Bình đẳng', meaning: 'Nâng bình bát với tâm bình đẳng, gieo ruộng phước lành cho thí chủ.' },
+  { id: 4, name: 'Tôn giả Tô Tần Đà', title: 'Thác Tháp La Hán', emblem: 'Bảo tháp · Hộ trì Tam Bảo', meaning: 'Nâng bảo tháp Phật trên tay, nhắc nhở luôn hộ trì Tam Bảo và giữ tâm sáng.' },
+  { id: 5, name: 'Tôn giả Nặc Cự La', title: 'Tĩnh Tọa La Hán', emblem: 'Tảng đá · Thiền định vững chãi', meaning: 'Ngồi thiền định vững chãi như núi Thái Sơn, chiến thắng nội ma phiền não.' },
+  { id: 6, name: 'Tôn giả Bạt Đà La', title: 'Quá Giang La Hán', emblem: 'Sóng nước & Tích trượng', meaning: 'Vượt biển truyền bá Phật pháp khắp các vùng đất phương Nam.' },
+  { id: 7, name: 'Tôn giả Ca Lý Ca', title: 'Kỵ Tượng La Hán', emblem: 'Voi trắng · Sức mạnh từ bi', meaning: 'Cưỡi voi trắng biểu trưng cho sức mạnh đại thừa và tâm từ bi rộng lớn.' },
+  { id: 8, name: 'Tôn giả Phạt Xà La Phất Đa La', title: 'Tiếu Sư La Hán', emblem: 'Sư tử nhỏ · Cảm hóa bằng từ ái', meaning: 'Chơi đùa cùng sư tử nhỏ, cảm hóa loài hung dữ bằng lòng từ ái.' },
+  { id: 9, name: 'Tôn giả Thú Bác Ca', title: 'Khai Tâm La Hán', emblem: 'Tâm Phật · Giác ngộ tự tâm', meaning: 'Mở vạt áo để lộ tâm Phật trong sáng, nhắc người đời ai cũng có Phật tính.' },
+  { id: 10, name: 'Tôn giả Bán Thác Ca', title: 'Thám Thủ La Hán', emblem: 'Tự tại sau giờ thiền', meaning: 'Vươn tay thư thái sau giờ thiền định, giữ lòng an nhiên giữa muôn duyên.' },
+  { id: 11, name: 'Tôn giả La Hầu La', title: 'Trầm Tư La Hán', emblem: 'Mật hạnh · Quán chiếu sâu sắc', meaning: 'Mật hạnh đệ nhất, luôn suy tư quán chiếu sâu sắc để tu sửa thân tâm.' },
+  { id: 12, name: 'Tôn giả Na Già Tê Na', title: 'Khoái Nhĩ La Hán', emblem: 'Lắng nghe thanh tịnh', meaning: 'Nghe đủ mọi âm thanh đời thường mà tâm chẳng nhiễm ô phiền muộn.' },
+  { id: 13, name: 'Tôn giả Nhân Yết Đà', title: 'Bố Đại La Hán', emblem: 'Túi vải bố · Hoan hỷ bao dung', meaning: 'Mang túi vải bố thu nhiếp khổ đau thế gian và trao tặng niềm hoan hỷ.' },
+  { id: 14, name: 'Tôn giả Phạt Na Bà Tư', title: 'Ba Tiêu La Hán', emblem: 'Tán chuối xanh · Quán vô thường', meaning: 'Ngồi dưới tán chuối xanh nghe mưa rơi mà ngộ lý vô thường.' },
+  { id: 15, name: 'Tôn giả A Thị Đa', title: 'Trường Mi La Hán', emblem: 'Lông mày dài · Trường thọ từ bi', meaning: 'Đôi lông mày dài bạc trắng biểu thị phước tướng từ bi trường thọ.' },
+  { id: 16, name: 'Tôn giả Chú Trà Bán Thác Ca', title: 'Khán Môn La Hán', emblem: 'Tích trượng · Hộ trì sáu căn', meaning: 'Cầm gậy tích trượng canh giữ cửa thiền, nhắc hành giả giữ gìn sáu căn.' },
+  { id: 17, name: 'Tôn giả Khánh Hữu (Nan Đề Mật Đa La)', title: 'Hàng Long La Hán', emblem: 'Rồng xanh & Minh châu · Chế ngự sân', meaning: 'Hàng phục rồng dữ — biểu trưng cho trí tuệ chế ngự lòng sân hận.' },
+  { id: 18, name: 'Tôn giả Tân Đầu Lư', title: 'Phục Hổ La Hán', emblem: 'Hổ vàng · Chế ngự tham lam', meaning: 'Thuần phục hổ dữ bằng tâm từ — chế ngự lòng tham lam dữ tợn.' }
 ];
 
 const AUDIO_LIBRARY = [
@@ -89,7 +123,15 @@ export class ChuaOnlineApp {
     this.entranceTourActive = false;
     this.spiritual = createSpiritualState(this.saved.spiritual);
     this.storeProfile = createStoreProfileState(this.saved.storeProfile);
-    this.storeCategory = 'cay_phat';
+    this.activityHub = ensureDailyMissionDate(createActivityHubState(this.saved.activityHub));
+    this.timeOfDay = TIME_OF_DAY_PRESETS[this.saved.timeOfDay] ? this.saved.timeOfDay : 'morning';
+    this.elderFontScale = ['normal', 'large', 'xlarge'].includes(this.saved.elderFontScale)
+      ? this.saved.elderFontScale
+      : 'normal';
+    this.activeGuidedBeacon = null;
+    this.ttsSpeaking = false;
+    this.mindfulnessTimer = { running: false, intervalId: null, totalSec: 300, remainingSec: 300 };
+    this.storeCategory = 'ao_trang';
     this.marketStallTab = 'huong_hoa';
     this.activeModalVariant = 'default';
     this.cart = Array.isArray(this.saved.cart)
@@ -132,15 +174,6 @@ export class ChuaOnlineApp {
     this.audioMuted = false;
     this.currentAudioFile = 's3_giang_duong.mp3';
     this.audioCtx = null;
-    this.ambientNature = {
-      running: false,
-      mutedByUser: false,
-      masterGain: null,
-      noiseSource: null,
-      lfoOsc: null,
-      chirpTimer: null,
-      isIndoors: false
-    };
 
     // 3D World & Canvas references
     this.world3d = null;
@@ -149,6 +182,7 @@ export class ChuaOnlineApp {
     this.is3DWorldOpen = true;
     this.toastTimer = null;
     this.cachedGLBCharacters = {};
+    this.cachedGLBProps = {};
   }
 
   loadState() {
@@ -167,6 +201,9 @@ export class ChuaOnlineApp {
         JSON.stringify({
           spiritual: this.spiritual,
           storeProfile: this.storeProfile,
+          activityHub: this.activityHub,
+          timeOfDay: this.timeOfDay,
+          elderFontScale: this.elderFontScale,
           cart: this.cart,
           completedLessons: Array.from(this.completedLessons),
           orders: this.orders,
@@ -183,6 +220,8 @@ export class ChuaOnlineApp {
   init() {
     this.mountDOM();
     this.initLive3DWorld();
+    this.setTimeOfDay(this.timeOfDay, true, false);
+    this.applyElderFontScale(this.elderFontScale, false);
     this.bindEvents();
     this.renderShopProducts();
     this.renderLectureStage();
@@ -209,6 +248,10 @@ export class ChuaOnlineApp {
         screen: this.activeScreen,
         is3DWalkableWorld: true,
         insideInteriorHall: Boolean(this.world3d?.insideInterior),
+        lectureHall3DMode: Boolean(this.world3d?.lectureHallMode),
+        timeOfDay: this.timeOfDay,
+        elderFontScale: this.elderFontScale,
+        activeGuidedBeacon: this.activeGuidedBeacon,
         activeStationKey: this.activeStationKey,
         shopTab: this.shopTab,
         lectureTab: this.lectureTab,
@@ -227,6 +270,7 @@ export class ChuaOnlineApp {
         hasUploadedUserPhoto: Boolean(this.uploadedUserPhotoDataUrl),
         spiritual: this.spiritual,
         storeState: this.storeProfile,
+        activityHub: this.activityHub,
         interiorTransitionActive: Boolean(this.world3d?.interiorTransition),
         journeyImprint: calculateJourneyImprint(this.spiritual),
         autoWalkObjective: this.autoWalkObjective ? this.autoWalkObjective.name : null,
@@ -241,7 +285,9 @@ export class ChuaOnlineApp {
         this.lastDailyDharmaDate = dateKey;
       }
       this.lastDailyDharmaQuoteId = quoteObj.id;
+      this.activityHub = recordDailyMissionMetric(this.activityHub, 'dailyQuotesRead', 1, dateKey || getLocalDateKey());
       this.saveState();
+      this.updateActivityHubBadge();
 
       this.openModal(
         'Lời Phật dạy hôm nay',
@@ -325,7 +371,7 @@ export class ChuaOnlineApp {
           </button>
         </div>
 
-        <div id="auto-walk-objective-banner" style="display:none;position:fixed;top:76px;left:50%;transform:translateX(-50%);z-index:26;background:rgba(28,90,52,0.92);color:#FFF6E5;border:1.5px solid #C9962E;border-radius:999px;padding:6px 18px;font-size:13.5px;font-weight:700;box-shadow:0 6px 18px rgba(0,0,0,0.24);pointer-events:none;">
+        <div id="auto-walk-objective-banner" class="auto-walk-objective-banner" style="display:none;">
           Đang đi tới: Chánh điện
         </div>
 
@@ -369,9 +415,16 @@ export class ChuaOnlineApp {
           </button>
 
           <nav class="top-nav-group" aria-label="Điều hướng chính">
-            <button class="nav-pill-btn nav-ambient-btn" id="nav-btn-ambient-audio" title="Âm thanh thiên nhiên sân chùa (Chim hót & gió thổi lá cây)" aria-pressed="true">
-              <span aria-hidden="true" id="nav-ambient-icon">🌿</span>
-              <span id="nav-ambient-label">Chim &amp; gió</span>
+            <div class="time-toggle-group" id="time-of-day-switch" role="group" aria-label="Thời gian trong ngày">
+              <button type="button" class="time-toggle-btn ${this.timeOfDay === 'morning' ? 'active' : ''}" data-time-of-day="morning" title="Buổi Sáng (07:30)">🌅 <span>Sáng</span></button>
+              <button type="button" class="time-toggle-btn ${this.timeOfDay === 'midday' ? 'active' : ''}" data-time-of-day="midday" title="Giữa Trưa (12:00)">☀️ <span>Trưa</span></button>
+              <button type="button" class="time-toggle-btn ${this.timeOfDay === 'evening' ? 'active' : ''}" data-time-of-day="evening" title="Buổi Tối Đèn Lồng (19:00)">🕯️ <span>Tối</span></button>
+            </div>
+
+            <button class="nav-pill-btn nav-activity-btn" id="nav-btn-activity" title="Điểm danh 7 ngày · Nhiệm vụ · Hộp thư Nhà Chùa · Hướng dẫn đi chùa">
+              <span aria-hidden="true">🔔</span>
+              <span>Hành trình</span>
+              <span class="nav-activity-badge" id="nav-activity-badge" style="display:none;">0</span>
             </button>
 
             <button class="nav-pill-btn nav-merit-btn" id="nav-btn-merit" title="Sổ Công Đức Thực Hành (Lễ Phật · Dâng hương · Dâng hoa)">
@@ -413,26 +466,7 @@ export class ChuaOnlineApp {
           </nav>
         </header>
 
-        <!-- Bottom-Left D-Pad Card ("Di chuyển" — Matches Reference Image 1) -->
-        <aside class="dpad-card" id="dpad-card" aria-label="Bộ điều khiển di chuyển">
-          <div class="dpad-title">Di chuyển</div>
-          <div class="dpad-grid">
-            <button class="dpad-btn dpad-up" data-dir="up" aria-label="Tiến lên">
-              <svg viewBox="0 0 24 24"><polygon points="12,5 20,18 4,18"/></svg>
-            </button>
-            <button class="dpad-btn dpad-left" data-dir="left" aria-label="Sang trái">
-              <svg viewBox="0 0 24 24"><polygon points="5,12 18,4 18,20"/></svg>
-            </button>
-            <button class="dpad-btn dpad-right" data-dir="right" aria-label="Sang phải">
-              <svg viewBox="0 0 24 24"><polygon points="19,12 6,4 6,20"/></svg>
-            </button>
-            <button class="dpad-btn dpad-down" data-dir="down" aria-label="Lùi lại">
-              <svg viewBox="0 0 24 24"><polygon points="12,19 4,6 20,6"/></svg>
-            </button>
-          </div>
-        </aside>
-
-        <!-- Bottom-Right 4 Spiritual Action Buttons (Matches Reference Image 1) -->
+        <!-- Bottom-Right 4 Spiritual Action Buttons -->
         <section class="spiritual-actions-bar" id="spiritual-actions-bar" aria-label="Nghi thức tâm linh">
           <button class="action-square-btn" id="act-le-phat">
             <span class="action-badge-count" id="badge-le-phat" style="display:none;">0</span>
@@ -600,15 +634,19 @@ export class ChuaOnlineApp {
         </div>
       </section>
 
-      <!-- ================= 3. GIẢNG ĐƯỜNG PHẬT PHÁP (Reference Image 3 & Lesson Cards) ================= -->
-      <section id="lecture-screen" aria-label="Giảng đường Phật pháp">
+      <!-- ================= 3. GIẢNG ĐƯỜNG PHẬT PHÁP (Live 3D Animated Hall + Elder-Friendly Mobile) ================= -->
+      <section id="lecture-screen" data-font-scale="${this.elderFontScale}" aria-label="Giảng đường Phật pháp">
         <header class="lecture-top-bar">
           <div class="lecture-top-left">
             <button class="lecture-back-courtyard" id="btn-lecture-back">← Sân chùa</button>
             <h1 class="lecture-hall-heading">Giảng đường Phật pháp</h1>
           </div>
-          <div style="display:flex;gap:10px;align-items:center;">
-            <button class="lecture-back-courtyard" id="btn-lecture-daily-dharma" style="background:rgba(28,90,52,0.55);border-color:rgba(255,232,185,0.45);color:#fff6e5;">
+          <div class="lecture-top-actions">
+            <div class="lecture-font-controls" aria-label="Điều chỉnh cỡ chữ dễ đọc">
+              <button type="button" class="lecture-font-btn" id="btn-lecture-font-dec" title="Giảm cỡ chữ">A-</button>
+              <button type="button" class="lecture-font-btn" id="btn-lecture-font-inc" title="Tăng cỡ chữ lớn hơn">A+</button>
+            </div>
+            <button class="lecture-back-courtyard" id="btn-lecture-daily-dharma" style="background:rgba(92,56,31,0.78);border-color:rgba(255,232,185,0.45);color:#fff6e5;">
               Lời dạy hôm nay
             </button>
             <button class="lecture-back-courtyard" id="btn-lecture-textbooks" style="background:rgba(230,174,71,0.22);border-color:rgba(230,174,71,0.55);color:#ffe8b3;">
@@ -721,6 +759,7 @@ export class ChuaOnlineApp {
           `Ghé thăm ${station.name}`
         );
         this.saveState();
+        this.updateActivityHubBadge();
         this.highlightActiveWalkChip(station.key);
         this.playVoiceAudio(station.audio);
         if (station.key === 'chanh_dien') {
@@ -759,7 +798,6 @@ export class ChuaOnlineApp {
         const zoneBar = document.getElementById('interior-zone-bar');
         if (pinsLayer) pinsLayer.style.display = inside ? 'none' : 'block';
         if (zoneBar) zoneBar.style.display = inside ? 'flex' : 'none';
-        this.updateAmbientLocationGain(inside);
         if (inside) {
           this.nearbyStallTrigger = null;
           if (stallBtn) stallBtn.style.display = 'none';
@@ -797,7 +835,7 @@ export class ChuaOnlineApp {
         if (action === 'ENTER_INTERIOR') {
           this.toggleInteriorHallIn3D(true);
         } else if (action === 'OPEN_ARHAT') {
-          this.openExploreModal('arhats');
+          this.openExploreModal('arhats', Number.isFinite(payload?.arhatIndex) ? payload.arhatIndex : 0);
         } else if (action === 'LE_PHAT') {
           this.triggerLePhat();
         } else if (action === 'DANG_HUONG') {
@@ -1239,196 +1277,6 @@ export class ChuaOnlineApp {
       });
   }
 
-  startAmbientNatureSound() {
-    if (this.ambientNature.mutedByUser || this.audioMuted || this.ambientNature.running) return;
-    try {
-      this.ensureAudioContext();
-      const ctx = this.audioCtx;
-      if (!ctx) return;
-
-      const masterGain = ctx.createGain();
-      const targetVol = this.ambientNature.isIndoors ? 0.42 : 1.0;
-      masterGain.gain.setValueAtTime(0.001, ctx.currentTime);
-      masterGain.gain.linearRampToValueAtTime(targetVol, ctx.currentTime + 1.2);
-      masterGain.connect(ctx.destination);
-
-      // Seamless 3-second pink noise buffer for gentle temple foliage rustle in breeze
-      const sampleRate = ctx.sampleRate || 44100;
-      const len = sampleRate * 3;
-      const buffer = ctx.createBuffer(2, len, sampleRate);
-      for (let ch = 0; ch < 2; ch++) {
-        const data = buffer.getChannelData(ch);
-        let b0 = 0;
-        let b1 = 0;
-        let b2 = 0;
-        let b3 = 0;
-        let b4 = 0;
-        let b5 = 0;
-        let b6 = 0;
-        for (let i = 0; i < len; i++) {
-          const white = Math.random() * 2 - 1;
-          b0 = 0.99886 * b0 + white * 0.0555179;
-          b1 = 0.99332 * b1 + white * 0.0750759;
-          b2 = 0.96900 * b2 + white * 0.1538520;
-          b3 = 0.86650 * b3 + white * 0.3104856;
-          b4 = 0.55000 * b4 + white * 0.5329522;
-          b5 = -0.7616 * b5 - white * 0.0168980;
-          data[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362) * 0.032;
-          b6 = white * 0.115926;
-        }
-        // Smooth crossfade seam over 256 samples
-        for (let i = 0; i < 256; i++) {
-          const w = i / 256;
-          const tail = len - 256 + i;
-          data[i] = data[i] * w + data[tail] * (1 - w);
-        }
-      }
-
-      const noiseSource = ctx.createBufferSource();
-      noiseSource.buffer = buffer;
-      noiseSource.loop = true;
-
-      const bandpass = ctx.createBiquadFilter();
-      bandpass.type = 'bandpass';
-      bandpass.frequency.setValueAtTime(1020, ctx.currentTime);
-      bandpass.Q.setValueAtTime(0.68, ctx.currentTime);
-
-      const lowpass = ctx.createBiquadFilter();
-      lowpass.type = 'lowpass';
-      lowpass.frequency.setValueAtTime(2200, ctx.currentTime);
-
-      const leafGain = ctx.createGain();
-      leafGain.gain.setValueAtTime(0.032, ctx.currentTime);
-
-      // Slow breeze modulation LFO
-      const lfoOsc = ctx.createOscillator();
-      lfoOsc.type = 'sine';
-      lfoOsc.frequency.setValueAtTime(0.085, ctx.currentTime);
-      const lfoFilterDepth = ctx.createGain();
-      lfoFilterDepth.gain.setValueAtTime(280, ctx.currentTime);
-      const lfoAmpDepth = ctx.createGain();
-      lfoAmpDepth.gain.setValueAtTime(0.012, ctx.currentTime);
-
-      lfoOsc.connect(lfoFilterDepth);
-      lfoFilterDepth.connect(bandpass.frequency);
-      lfoOsc.connect(lfoAmpDepth);
-      lfoAmpDepth.connect(leafGain.gain);
-
-      noiseSource.connect(bandpass);
-      bandpass.connect(lowpass);
-      lowpass.connect(leafGain);
-      leafGain.connect(masterGain);
-
-      noiseSource.start();
-      lfoOsc.start();
-
-      this.ambientNature.masterGain = masterGain;
-      this.ambientNature.noiseSource = noiseSource;
-      this.ambientNature.lfoOsc = lfoOsc;
-      this.ambientNature.running = true;
-
-      this.scheduleNextBirdChirp(650);
-    } catch {}
-  }
-
-  scheduleNextBirdChirp(initialDelayMs = null) {
-    clearTimeout(this.ambientNature.chirpTimer);
-    if (!this.ambientNature.running || this.audioMuted || this.ambientNature.mutedByUser) return;
-    const delay = initialDelayMs ?? (2100 + Math.random() * 3400);
-    this.ambientNature.chirpTimer = setTimeout(() => {
-      this.playSoftBirdChirp();
-      this.scheduleNextBirdChirp();
-    }, delay);
-  }
-
-  playSoftBirdChirp() {
-    try {
-      if (!this.audioCtx || !this.ambientNature.masterGain || !this.ambientNature.running) return;
-      const ctx = this.audioCtx;
-      const notes = 2 + Math.floor(Math.random() * 2);
-      const baseFreq = 2250 + Math.random() * 950;
-      let t = ctx.currentTime + 0.02;
-
-      for (let i = 0; i < notes; i++) {
-        const osc = ctx.createOscillator();
-        const g = ctx.createGain();
-        osc.type = i % 2 === 0 ? 'sine' : 'triangle';
-        const fStart = baseFreq * (0.94 + Math.random() * 0.16);
-        const fPeak = fStart * (1.16 + Math.random() * 0.14);
-        const dur = 0.085 + Math.random() * 0.065;
-
-        osc.frequency.setValueAtTime(fStart, t);
-        osc.frequency.exponentialRampToValueAtTime(fPeak, t + dur * 0.55);
-        osc.frequency.exponentialRampToValueAtTime(fStart * 0.92, t + dur);
-
-        g.gain.setValueAtTime(0.0005, t);
-        g.gain.linearRampToValueAtTime(0.032 + Math.random() * 0.014, t + 0.015);
-        g.gain.exponentialRampToValueAtTime(0.0005, t + dur);
-
-        osc.connect(g);
-        g.connect(this.ambientNature.masterGain);
-        osc.start(t);
-        osc.stop(t + dur + 0.01);
-        t += dur + 0.045 + Math.random() * 0.04;
-      }
-    } catch {}
-  }
-
-  stopAmbientNatureSound() {
-    clearTimeout(this.ambientNature.chirpTimer);
-    this.ambientNature.chirpTimer = null;
-    try {
-      this.ambientNature.noiseSource?.stop();
-    } catch {}
-    try {
-      this.ambientNature.lfoOsc?.stop();
-    } catch {}
-    try {
-      this.ambientNature.masterGain?.disconnect();
-    } catch {}
-    this.ambientNature.noiseSource = null;
-    this.ambientNature.lfoOsc = null;
-    this.ambientNature.masterGain = null;
-    this.ambientNature.running = false;
-  }
-
-  updateAmbientLocationGain(inside) {
-    this.ambientNature.isIndoors = Boolean(inside);
-    if (!this.audioCtx || !this.ambientNature.masterGain || !this.ambientNature.running) return;
-    try {
-      const target = inside ? 0.42 : 1.0;
-      this.ambientNature.masterGain.gain.cancelScheduledValues(this.audioCtx.currentTime);
-      this.ambientNature.masterGain.gain.linearRampToValueAtTime(target, this.audioCtx.currentTime + 0.8);
-    } catch {}
-  }
-
-  toggleAmbientAudio() {
-    const nextMuted = !this.audioMuted;
-    this.audioMuted = nextMuted;
-    this.ambientNature.mutedByUser = nextMuted;
-    const btn = document.getElementById('nav-btn-ambient-audio');
-    const icon = document.getElementById('nav-ambient-icon');
-    const label = document.getElementById('nav-ambient-label');
-
-    if (nextMuted) {
-      this.stopAmbientNatureSound();
-      if (btn) {
-        btn.classList.add('muted');
-        btn.setAttribute('aria-pressed', 'false');
-      }
-      if (icon) icon.textContent = '🔇';
-      if (label) label.textContent = 'Tắt tiếng';
-    } else {
-      this.startAmbientNatureSound();
-      if (btn) {
-        btn.classList.remove('muted');
-        btn.setAttribute('aria-pressed', 'true');
-      }
-      if (icon) icon.textContent = '🌿';
-      if (label) label.textContent = 'Chim & gió';
-    }
-  }
-
   highlightInteriorZoneChip(zoneKey) {
     document.querySelectorAll('[data-interior-zone]').forEach((btn) => {
       const match = btn.getAttribute('data-interior-zone') === zoneKey;
@@ -1465,7 +1313,7 @@ export class ChuaOnlineApp {
   }
 
   /* ========================================================================
-     REAL-TIME 3D MOVEMENT & NAVIGATION (D-Pad + Keyboard WASD/Arrows)
+     REAL-TIME 3D MOVEMENT & NAVIGATION (Touch & Keyboard WASD/Arrows)
      ======================================================================== */
   handleMoveDirection(dir) {
     const dirMap = {
@@ -1514,13 +1362,135 @@ export class ChuaOnlineApp {
     this.activeScreen = screenName;
     const shopEl = document.getElementById('shop-screen');
     const lectureEl = document.getElementById('lecture-screen');
+    const pinsLayer = document.getElementById('scene-pins-layer');
     if (shopEl) shopEl.classList.toggle('open', screenName === 'shop');
     if (lectureEl) lectureEl.classList.toggle('open', screenName === 'lecture');
+    if (pinsLayer && !this.world3d?.insideInterior) {
+      pinsLayer.style.display = screenName === 'courtyard' ? 'block' : 'none';
+    }
+
+    if (screenName !== 'lecture') {
+      this.stopLectureSpeech();
+    }
+    this.world3d?.setLectureHallMode?.(screenName === 'lecture');
 
     if (screenName === 'shop') {
       this.renderShopProducts();
     } else if (screenName === 'lecture') {
       this.renderLectureStage();
+    }
+  }
+
+  setTimeOfDay(presetKey, immediate = false, showNotice = true) {
+    const preset = TIME_OF_DAY_PRESETS[presetKey];
+    if (!preset) return;
+    this.timeOfDay = preset.key;
+    document.querySelectorAll('[data-time-of-day]').forEach((btn) => {
+      btn.classList.toggle('active', btn.getAttribute('data-time-of-day') === preset.key);
+    });
+    this.world3d?.setTimeOfDay?.(preset.key, immediate);
+    this.saveState();
+    if (showNotice) {
+      this.playBellTone(preset.key === 'evening' ? 216 : preset.key === 'midday' ? 288 : 256, 1.5);
+      this.showToast(`${preset.icon} Chế độ ánh sáng: ${preset.label}`, preset.subtitle, 3200, false);
+    }
+  }
+
+  applyElderFontScale(scale, save = true) {
+    const valid = ['normal', 'large', 'xlarge'].includes(scale) ? scale : 'normal';
+    this.elderFontScale = valid;
+    const screenEl = document.getElementById('lecture-screen');
+    if (screenEl) {
+      screenEl.setAttribute('data-font-scale', valid);
+    }
+    const decBtn = document.getElementById('btn-lecture-font-dec');
+    const incBtn = document.getElementById('btn-lecture-font-inc');
+    if (decBtn) decBtn.disabled = valid === 'normal';
+    if (incBtn) incBtn.disabled = valid === 'xlarge';
+    if (save) this.saveState();
+  }
+
+  stepElderFontScale(delta) {
+    const order = ['normal', 'large', 'xlarge'];
+    const idx = Math.max(0, order.indexOf(this.elderFontScale));
+    const nextIdx = Math.max(0, Math.min(order.length - 1, idx + delta));
+    const nextScale = order[nextIdx];
+    this.applyElderFontScale(nextScale, true);
+    const labelMap = { normal: 'Chữ tiêu chuẩn', large: 'Chữ lớn (+18%)', xlarge: 'Chữ rất lớn (+34%)' };
+    this.showToast('Cỡ chữ Giảng đường', `Đã chuyển sang ${labelMap[nextScale]} cho cô bác dễ đọc.`, 2200, false);
+  }
+
+  stopLectureSpeech() {
+    try {
+      window.speechSynthesis?.cancel();
+    } catch {}
+    this.ttsSpeaking = false;
+  }
+
+  toggleLectureSpeech(lesson) {
+    if (!lesson) return;
+    if (this.ttsSpeaking) {
+      this.stopLectureSpeech();
+      this.renderLectureStage();
+      return;
+    }
+
+    const speechText = `${lesson.title}. ${lesson.summary.slice(0, 3).join('. ')}. Gợi ý thực hành: ${lesson.example}`;
+    const synth = typeof window !== 'undefined' ? window.speechSynthesis : null;
+    if (synth && typeof window.SpeechSynthesisUtterance === 'function') {
+      try {
+        synth.cancel();
+        const utter = new window.SpeechSynthesisUtterance(speechText);
+        utter.lang = 'vi-VN';
+        utter.rate = 0.88;
+        utter.pitch = 0.98;
+        const voices = synth.getVoices?.() || [];
+        const viVoice = voices.find((v) => String(v.lang || '').toLowerCase().startsWith('vi'));
+        if (viVoice) utter.voice = viVoice;
+        this.ttsSpeaking = true;
+        utter.onend = () => {
+          this.ttsSpeaking = false;
+          if (this.activeScreen === 'lecture') this.renderLectureStage();
+        };
+        utter.onerror = () => {
+          this.ttsSpeaking = false;
+          if (this.activeScreen === 'lecture') this.renderLectureStage();
+        };
+        synth.speak(utter);
+        this.playBellTone(288, 1.4);
+        this.renderLectureStage();
+        return;
+      } catch {}
+    }
+
+    // Fallback when SpeechSynthesis is unavailable
+    this.playBellTone(260, 2.0);
+    this.playVoiceAudio(lesson.audio);
+    this.audioPlaying = true;
+    this.renderLectureStage();
+  }
+
+  updateActivityHubBadge() {
+    const badge = document.getElementById('nav-activity-badge');
+    if (!badge) return;
+    const todayKey = getLocalDateKey();
+    this.activityHub = ensureDailyMissionDate(this.activityHub, todayKey);
+    const canCheckin = this.activityHub?.lastCheckinDate !== todayKey ? 1 : 0;
+    const dailyMissions = getDailyMissionsWithProgress(this.activityHub, todayKey);
+    const chapters = getExplorationChaptersStatus(this.activityHub, this.spiritual);
+    const quests = getQuestsWithProgress(this.activityHub, this.spiritual, this.completedLessons.size);
+    const claimableDaily = dailyMissions.filter((m) => m.claimable).length;
+    const claimableChaps = chapters.filter((c) => c.claimable).length;
+    const claimableQuests = quests.filter((q) => q.claimable).length;
+    const mails = getMailboxWithStatus(this.activityHub, { includeExtended: true, spiritualState: this.spiritual });
+    const unclaimedMails = mails.filter((m) => !m.claimed).length;
+    const total = canCheckin + claimableDaily + claimableChaps + claimableQuests + unclaimedMails;
+
+    if (total > 0) {
+      badge.style.display = 'inline-flex';
+      badge.textContent = String(total);
+    } else {
+      badge.style.display = 'none';
     }
   }
 
@@ -1550,6 +1520,7 @@ export class ChuaOnlineApp {
     }
     this.updateMeritCounterHUD();
     this.updateUGCMilestoneHUD();
+    this.updateActivityHubBadge();
   }
 
   updateMeritCounterHUD() {
@@ -1883,22 +1854,22 @@ export class ChuaOnlineApp {
         : 'Lễ Phật tại Chánh điện',
       `
       <div style="display:grid;grid-template-columns:220px 1fr;gap:18px;align-items:center;">
-        <div style="background:#173925;color:#fff8ea;padding:16px;border-radius:20px;text-align:center;">
+        <div style="background:#3E2413;color:#fff8ea;padding:16px;border-radius:20px;text-align:center;">
           <img src="${charProf.previewImg}" alt="${charProf.name}" style="width:124px;height:165px;object-fit:cover;border-radius:14px;border:2px solid rgba(255,215,140,0.45);margin-bottom:8px;" />
           <div style="font-size:15.5px;font-weight:700;color:#f6cd72;">${charProf.name}</div>
           <div style="font-size:13px;opacity:0.9;margin-top:3px;">Đã lễ: <strong>${this.spiritual.bowCount} lạy</strong></div>
         </div>
         <div style="display:flex;flex-direction:column;gap:10px;">
           <div style="background:#fffdf8;border:1px solid rgba(150,110,60,0.25);padding:11px 15px;border-radius:14px;">
-            <strong style="color:#154c2b;">Lạy thứ nhất — Kính lễ Phật:</strong>
+            <strong style="color:#5C381F;">Lạy thứ nhất — Kính lễ Phật:</strong>
             <p style="font-size:13.5px;color:#4a2f18;margin-top:3px;">Nhớ ơn Đức Phật, bậc thầy sáng suốt chỉ lối sống hiền lành và tỉnh thức.</p>
           </div>
           <div style="background:#fffdf8;border:1px solid rgba(150,110,60,0.25);padding:11px 15px;border-radius:14px;">
-            <strong style="color:#154c2b;">Lạy thứ hai — Kính lễ Pháp:</strong>
+            <strong style="color:#5C381F;">Lạy thứ hai — Kính lễ Pháp:</strong>
             <p style="font-size:13.5px;color:#4a2f18;margin-top:3px;">Nương theo lời Phật dạy để giữ lòng yên ổn và bớt phiền muộn.</p>
           </div>
           <div style="background:#fffdf8;border:1px solid rgba(150,110,60,0.25);padding:11px 15px;border-radius:14px;">
-            <strong style="color:#154c2b;">Lạy thứ ba — Kính lễ Tăng:</strong>
+            <strong style="color:#5C381F;">Lạy thứ ba — Kính lễ Tăng:</strong>
             <p style="font-size:13.5px;color:#4a2f18;margin-top:3px;">Quý trọng chư Tăng Ni và những người cùng giữ nếp sống thiện lành.</p>
           </div>
           <div style="display:flex;gap:10px;margin-top:4px;flex-wrap:wrap;">
@@ -1956,9 +1927,9 @@ export class ChuaOnlineApp {
             .map(
               (s) => `
             <div style="padding:12px;border-radius:16px;border:2px solid ${
-              s.n <= step ? '#185832' : 'rgba(140,100,60,0.25)'
-            };background:${s.n === step ? '#e5f5eb' : '#fffdf8'};">
-              <div style="font-size:13px;font-weight:700;color:${s.n <= step ? '#185832' : '#7a5838'};">Bước ${s.n}/4</div>
+              s.n <= step ? '#5C381F' : 'rgba(140,100,60,0.25)'
+            };background:${s.n === step ? '#F6E9D2' : '#fffdf8'};">
+              <div style="font-size:13px;font-weight:700;color:${s.n <= step ? '#5C381F' : '#7a5838'};">Bước ${s.n}/4</div>
               <div style="font-size:15px;font-weight:800;margin:4px 0;">${s.title}</div>
               <div style="font-size:13px;color:#52361c;line-height:1.4;">${s.desc}</div>
             </div>
@@ -1967,7 +1938,7 @@ export class ChuaOnlineApp {
             .join('')}
         </div>
 
-        <div style="background:#1c3d29;color:#fff8ea;padding:16px 20px;border-radius:18px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;">
+        <div style="background:#3E2413;color:#fff8ea;padding:16px 20px;border-radius:18px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;">
           <div>
             <div style="font-size:16px;font-weight:700;color:#f6cd72;">Đã dâng hương ${this.spiritual.incenseOfferings} lần</div>
             <div style="font-size:14px;opacity:0.92;margin-top:3px;">Làn khói nhang trầm đang bay nhẹ trước sân chùa.</div>
@@ -1991,6 +1962,9 @@ export class ChuaOnlineApp {
     document.getElementById('btn-incense-next-step')?.addEventListener('click', () => {
       const r = performSpiritualAction(this.spiritual, 'DANG_HUONG_STEP');
       this.spiritual = r.state;
+      if ((this.spiritual.incenseStep || 1) >= 4) {
+        this.activityHub = recordDailyMissionMetric(this.activityHub, 'dailyIncense', 1);
+      }
       this.saveState();
       this.updateActionBadges();
       this.world3d?.setIncenseBoost(true);
@@ -2001,6 +1975,7 @@ export class ChuaOnlineApp {
     document.getElementById('btn-incense-complete-now')?.addEventListener('click', () => {
       const r = performSpiritualAction(this.spiritual, 'DANG_HUONG_COMPLETE');
       this.spiritual = r.state;
+      this.activityHub = recordDailyMissionMetric(this.activityHub, 'dailyIncense', 1);
       this.saveState();
       this.updateActionBadges();
       this.world3d?.setIncenseBoost(true);
@@ -2012,6 +1987,7 @@ export class ChuaOnlineApp {
     document.getElementById('btn-open-ugc-from-incense')?.addEventListener('click', () => {
       const r = performSpiritualAction(this.spiritual, 'DANG_HUONG_COMPLETE');
       this.spiritual = r.state;
+      this.activityHub = recordDailyMissionMetric(this.activityHub, 'dailyIncense', 1);
       this.saveState();
       this.updateActionBadges();
       this.openUGCStudioModal();
@@ -2021,6 +1997,7 @@ export class ChuaOnlineApp {
   triggerDangHoa() {
     const res = performSpiritualAction(this.spiritual, 'DANG_HOA');
     this.spiritual = res.state;
+    this.activityHub = recordDailyMissionMetric(this.activityHub, 'dailyLotus', 1);
     this.saveState();
     this.updateActionBadges();
     this.updateEquippedTags();
@@ -2040,7 +2017,7 @@ export class ChuaOnlineApp {
       <div style="display:grid;grid-template-columns:220px 1fr;gap:18px;align-items:center;">
         <div style="background:#fffdf8;border:1.5px solid rgba(150,110,60,0.28);border-radius:20px;padding:14px;text-align:center;">
           <img src="/Thiết kế giao diện/Vật phẩm 3D/fixed/fixed_chum_sanh_hoa_sen.png" alt="Chum sành hoa sen" style="width:100%;height:165px;object-fit:contain;border-radius:12px;" />
-          <div style="font-weight:700;color:#154c2b;margin-top:8px;">Đã dâng: ${this.spiritual.lotusOfferings} bình hoa</div>
+          <div style="font-weight:700;color:#5C381F;margin-top:8px;">Đã dâng: ${this.spiritual.lotusOfferings} bình hoa</div>
         </div>
         <div style="display:flex;flex-direction:column;gap:10px;">
           <p style="font-size:15px;line-height:1.5;color:#3d2410;">
@@ -2055,9 +2032,9 @@ export class ChuaOnlineApp {
             ]
               .map(
                 (wish, idx) => `
-              <button class="wish-choice-btn" data-wish="${wish}" style="padding:11px 14px;border-radius:14px;border:1.5px solid rgba(24,88,50,0.35);background:${
-                idx === 0 ? '#e6f5ec' : '#fffdf8'
-              };color:#1b3b26;font-size:13.5px;font-weight:700;text-align:left;cursor:pointer;">
+              <button class="wish-choice-btn" data-wish="${wish}" style="padding:11px 14px;border-radius:14px;border:1.5px solid rgba(92,56,31,0.35);background:${
+                idx === 0 ? '#F6E9D2' : '#fffdf8'
+              };color:#3E2413;font-size:13.5px;font-weight:700;text-align:left;cursor:pointer;">
                 ${wish}
               </button>
             `
@@ -2109,34 +2086,102 @@ export class ChuaOnlineApp {
       'Nam Mô Bổn Sư Thích Ca Mâu Ni Phật',
       'Án Ma Ni Bát Di Hồng'
     ];
+    const eqMala = this.storeProfile?.equipped?.mala || 'trang_hat_bo_de_108_store';
+    const isTram = String(eqMala).includes('tram');
+    const woodDark = isTram ? '#3E2212' : '#7D4E28';
+    const woodLight = isTram ? '#6B3E23' : '#A9713E';
+    const woodDone = '#C9962E';
+
+    const curBeads = this.spiritual.malaBeads || 0;
+    const totalShownBeads = 54;
+    const activeBeadPos = curBeads % totalShownBeads;
+    const cx = 132;
+    const cy = 122;
+    const rad = 98;
+    const beadsSvg = Array.from({ length: totalShownBeads }, (_, i) => {
+      const angle = ((i + 0.5) / totalShownBeads) * Math.PI * 2 + Math.PI / 2;
+      const bx = (cx + Math.cos(angle) * rad).toFixed(1);
+      const by = (cy + Math.sin(angle) * rad).toFixed(1);
+      const isActive = i === activeBeadPos;
+      const isPassed = i < activeBeadPos;
+      const isDivider = i === 13 || i === 27 || i === 40;
+      const rBead = isActive ? 7.4 : isDivider ? 6.2 : 5.0;
+      const fill = isActive ? '#FFE082' : isPassed ? woodDone : isDivider ? '#8C5327' : woodLight;
+      const stroke = isActive ? '#B84518' : woodDark;
+      return `<circle cx="${bx}" cy="${by}" r="${rBead}" fill="${fill}" stroke="${stroke}" stroke-width="${isActive ? 2.2 : 1.1}"/>`;
+    }).join('');
+
+    const fmtSec = (sec) => {
+      const m = Math.floor(Math.max(0, sec) / 60);
+      const s = Math.floor(Math.max(0, sec) % 60);
+      return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    };
+    const dailyMindfulSec = this.activityHub?.dailyMetrics?.dailyMindfulSeconds || 0;
+    const mindfulPct = Math.min(100, Math.round((dailyMindfulSec / 300) * 100));
 
     this.openModal(
-      'Niệm Phật & Lần chuỗi bồ đề',
+      'Niệm Phật · Lần Tràng Hạt 108 & Thiền 5 Phút',
       `
-      <div style="display:grid;grid-template-columns:280px 1fr;gap:20px;align-items:center;">
-        <div class="mala-ring-box">
-          <button class="mala-counter-circle" id="btn-pull-bead" title="Bấm để lần từng hạt chuỗi">
-            <span class="mala-big-num" id="mala-bead-num">${this.spiritual.malaBeads}/108</span>
-            <span class="mala-sub-label">Bấm để lần từng hạt</span>
-            <span style="font-size:12px;color:#f6cd72;margin-top:4px;">Đã lần đủ: ${this.spiritual.malaCycles} chuỗi</span>
-          </button>
-          <div style="display:flex;gap:8px;width:100%;">
-            <button id="btn-strike-bell" class="product-detail-btn" style="flex:1;height:40px;font-size:14px;background:#8c4b1e;">Thỉnh chuông</button>
-            <button id="btn-auto-108" class="product-detail-btn" style="flex:1;height:40px;font-size:14px;">Lần thêm 10 hạt</button>
+      <div class="mala-modal-grid">
+        <div class="mala-real-stage">
+          <div class="mala-wood-tag">
+            ${isTram ? '🟤 Tràng hạt Trầm Hương 108' : '📿 Tràng hạt gỗ Bồ Đề 108'}
+          </div>
+          <div class="mala-svg-wrap" id="btn-pull-bead" role="button" tabindex="0" title="Chạm lần từng hạt chuỗi">
+            <svg viewBox="0 0 264 268" width="250" height="254" class="mala-svg-ring">
+              <circle cx="${cx}" cy="${cy}" r="${rad}" fill="none" stroke="#8C6239" stroke-width="2.2" stroke-dasharray="3 2"/>
+              ${beadsSvg}
+              <!-- Guru Bead (Hạt Cái) + Crimson Silk Tassel at bottom 6 o'clock -->
+              <circle cx="${cx}" cy="${cy + rad + 2}" r="9.5" fill="#8C5327" stroke="#FFD875" stroke-width="2.2"/>
+              <path d="M ${cx - 4} ${cy + rad + 12} L ${cx - 11} ${cy + rad + 42} L ${cx} ${cy + rad + 38} L ${cx + 11} ${cy + rad + 42} L ${cx + 4} ${cy + rad + 12} Z" fill="#B82925" stroke="#7E1714" stroke-width="1.2"/>
+              <path d="M ${cx} ${cy + rad + 12} L ${cx} ${cy + rad + 41}" stroke="#F6CD72" stroke-width="1.4"/>
+            </svg>
+            <div class="mala-center-readout">
+              <span class="mala-big-num" id="mala-bead-num">${curBeads}/108</span>
+              <span class="mala-tap-hint">👆 Chạm lần hạt</span>
+              <span class="mala-cycles-lbl">Đủ ${this.spiritual.malaCycles} vòng</span>
+            </div>
+          </div>
+
+          <div class="mala-actions-row">
+            <button id="btn-strike-bell" class="product-detail-btn" style="flex:1;min-height:44px;font-size:14px;background:#8c4b1e;">🔔 Thỉnh chuông</button>
+            <button id="btn-auto-108" class="product-detail-btn" style="flex:1;min-height:44px;font-size:14px;background:#5C381F;">📿 Lần 10 hạt</button>
           </div>
         </div>
 
         <div style="display:flex;flex-direction:column;gap:12px;">
+          <div class="mindfulness-timer-card">
+            <div class="mindful-head">
+              <div>
+                <div class="mindful-title">🧘 Thực hành Chánh Niệm 5 Phút mỗi ngày</div>
+                <div class="mindful-sub">Hôm nay: <strong id="mindful-daily-sec">${Math.floor(dailyMindfulSec / 60)} phút ${dailyMindfulSec % 60} giây</strong> / 5 phút (${mindfulPct}%)</div>
+              </div>
+              <div class="mindful-clock" id="mindful-clock-display">${fmtSec(this.mindfulnessTimer.remainingSec)}</div>
+            </div>
+            <div class="quest-progress-track" style="margin:6px 0 8px;">
+              <div class="quest-progress-fill" id="mindful-progress-bar" style="width:${mindfulPct}%"></div>
+            </div>
+            <div class="mindful-breath-cue" id="mindful-breath-cue">
+              Hít vào nhẹ nhàng trong 4 nhịp · Thở ra thư thả buông lo âu.
+            </div>
+            <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
+              <button type="button" id="btn-mindful-toggle" class="quest-claim-btn" style="flex:1;min-height:44px;font-size:14px;">
+                ${this.mindfulnessTimer.running ? '⏸ Tạm dừng thiền' : this.mindfulnessTimer.remainingSec < 300 && this.mindfulnessTimer.remainingSec > 0 ? '▶ Tiếp tục thiền 5 phút' : '🧘 Bắt đầu thiền 5 phút'}
+              </button>
+              <button type="button" id="btn-mindful-reset" class="quest-go-btn" style="min-height:44px;padding:0 16px;">↺ Đặt lại</button>
+            </div>
+          </div>
+
           <div>
-            <div style="font-size:14px;font-weight:700;color:#5c3a1d;margin-bottom:6px;">Chọn câu niệm Phật:</div>
+            <div style="font-size:14px;font-weight:800;color:#5c3a1d;margin-bottom:6px;">Chọn câu niệm Phật:</div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
               ${chants
                 .map(
                   (c) => `
-                <button class="chant-select-btn" data-chant="${c}" style="padding:10px 12px;border-radius:12px;border:1.5px solid ${
-                    this.spiritual.activeChant === c ? '#175631' : 'rgba(130,90,50,0.28)'
+                <button class="chant-select-btn" data-chant="${c}" style="min-height:44px;padding:9px 12px;border-radius:12px;border:1.5px solid ${
+                    this.spiritual.activeChant === c ? '#5C381F' : 'rgba(130,90,50,0.28)'
                   };background:${
-                    this.spiritual.activeChant === c ? '#175631' : '#fffdf8'
+                    this.spiritual.activeChant === c ? '#5C381F' : '#fffdf8'
                   };color:${this.spiritual.activeChant === c ? '#fff' : '#241409'};font-weight:700;font-size:13.5px;cursor:pointer;">
                   ${c}
                 </button>
@@ -2146,43 +2191,110 @@ export class ChuaOnlineApp {
             </div>
           </div>
 
-          <div style="background:#fffdf8;border:1px solid rgba(150,110,60,0.25);padding:14px 16px;border-radius:16px;">
-            <div style="font-size:15px;font-weight:800;color:#154c2b;margin-bottom:4px;">Lời kệ niệm Phật</div>
-            <p style="font-size:14px;line-height:1.55;color:#4a2f18;">
+          <div style="background:#fffdf8;border:1px solid rgba(150,110,60,0.25);padding:12px 15px;border-radius:14px;">
+            <div style="font-size:14.5px;font-weight:800;color:#5C381F;margin-bottom:4px;">Lời kệ niệm Phật</div>
+            <p style="font-size:13.5px;line-height:1.5;color:#4a2f18;">
               "A Di Đà Phật thân sắc vàng, tướng tốt không gì sánh ngang. Hào quang chiếu khắp mười phương cõi, nhiếp thụ chúng sanh niệm danh Ngài."
             </p>
           </div>
 
-          <div style="display:flex;gap:10px;">
-            <button id="btn-play-chant-audio" class="product-detail-btn" style="flex:1;background:#6e3c16;">
-              Nghe tiếng niệm Phật
-            </button>
-          </div>
+          <button id="btn-play-chant-audio" class="product-detail-btn" style="width:100%;min-height:44px;background:#6e3c16;">
+            🔊 Nghe tiếng niệm Phật &amp; chuông mõ đạo tràng
+          </button>
         </div>
       </div>
       `
     );
 
-    document.getElementById('btn-pull-bead')?.addEventListener('click', () => {
-      const r = performSpiritualAction(this.spiritual, 'NIEM_PHAT_BEAD', { count: 1 });
-      this.spiritual = r.state;
-      this.saveState();
-      this.updateActionBadges();
-      this.playMokugyoTap();
-      if (this.spiritual.malaBeads === 0 || this.spiritual.malaBeads % 27 === 0) {
-        this.playBellTone(216, 2.5);
+    const stopMindfulLoop = () => {
+      if (this.mindfulnessTimer.intervalId) {
+        clearInterval(this.mindfulnessTimer.intervalId);
+        this.mindfulnessTimer.intervalId = null;
       }
+      this.mindfulnessTimer.running = false;
+    };
+
+    const startMindfulLoop = () => {
+      stopMindfulLoop();
+      this.mindfulnessTimer.running = true;
+      if (this.mindfulnessTimer.remainingSec <= 0) {
+        this.mindfulnessTimer.remainingSec = 300;
+      }
+      this.playBellTone(216, 2.2);
+      this.mindfulnessTimer.intervalId = setInterval(() => {
+        if (!document.getElementById('mindful-clock-display')) {
+          stopMindfulLoop();
+          return;
+        }
+        this.mindfulnessTimer.remainingSec = Math.max(0, this.mindfulnessTimer.remainingSec - 1);
+        this.activityHub = recordDailyMissionMetric(this.activityHub, 'dailyMindfulSeconds', 1);
+        const curSec = this.activityHub?.dailyMetrics?.dailyMindfulSeconds || 0;
+        const pct = Math.min(100, Math.round((curSec / 300) * 100));
+
+        const clk = document.getElementById('mindful-clock-display');
+        if (clk) clk.textContent = fmtSec(this.mindfulnessTimer.remainingSec);
+        const secEl = document.getElementById('mindful-daily-sec');
+        if (secEl) secEl.textContent = `${Math.floor(curSec / 60)} phút ${curSec % 60} giây`;
+        const barEl = document.getElementById('mindful-progress-bar');
+        if (barEl) barEl.style.width = `${pct}%`;
+        const cueEl = document.getElementById('mindful-breath-cue');
+        if (cueEl) {
+          const phase = this.mindfulnessTimer.remainingSec % 8;
+          cueEl.textContent = phase >= 4
+            ? '🌬️ Hít vào thật sâu, cảm nhận hơi thở an lành đang vào...'
+            : '🍃 Thở ra chậm rãi, buông nhẹ mọi muộn phiền...';
+        }
+        if (this.mindfulnessTimer.remainingSec > 0 && this.mindfulnessTimer.remainingSec % 60 === 0) {
+          this.playBellTone(260, 2.0);
+        }
+        if (this.mindfulnessTimer.remainingSec <= 0) {
+          stopMindfulLoop();
+          this.saveState();
+          this.updateActivityHubBadge();
+          this.playBellTone(216, 3.6);
+          const tog = document.getElementById('btn-mindful-toggle');
+          if (tog) tog.textContent = '✓ Hoàn thành 5 phút Chánh Niệm!';
+          this.showToast('🧘 Viên mãn 5 phút Chánh Niệm', 'Cô bác có thể mở Hành trình → Nhiệm vụ để nhận lộc công đức hôm nay!', 4600, false);
+        } else if (curSec % 5 === 0) {
+          this.saveState();
+          this.updateActivityHubBadge();
+        }
+      }, 1000);
+    };
+
+    document.getElementById('btn-mindful-toggle')?.addEventListener('click', () => {
+      if (this.mindfulnessTimer.running) {
+        stopMindfulLoop();
+        this.saveState();
+        this.renderNiemPhatModal();
+      } else {
+        startMindfulLoop();
+        const tog = document.getElementById('btn-mindful-toggle');
+        if (tog) tog.textContent = '⏸ Tạm dừng thiền';
+      }
+    });
+
+    document.getElementById('btn-mindful-reset')?.addEventListener('click', () => {
+      stopMindfulLoop();
+      this.mindfulnessTimer.remainingSec = 300;
       this.renderNiemPhatModal();
     });
 
-    document.getElementById('btn-auto-108')?.addEventListener('click', () => {
-      const r = performSpiritualAction(this.spiritual, 'NIEM_PHAT_BEAD', { count: 10 });
+    const pullBead = (count) => {
+      const r = performSpiritualAction(this.spiritual, 'NIEM_PHAT_BEAD', { count });
       this.spiritual = r.state;
+      this.activityHub = recordDailyMissionMetric(this.activityHub, 'dailyBeads', count);
       this.saveState();
       this.updateActionBadges();
-      this.playBellTone(260, 2.2);
+      this.playMokugyoTap();
+      if (this.spiritual.malaBeads === 0 || this.spiritual.malaBeads % 27 === 0 || count >= 10) {
+        this.playBellTone(216, 2.4);
+      }
       this.renderNiemPhatModal();
-    });
+    };
+
+    document.getElementById('btn-pull-bead')?.addEventListener('click', () => pullBead(1));
+    document.getElementById('btn-auto-108')?.addEventListener('click', () => pullBead(10));
 
     document.getElementById('btn-strike-bell')?.addEventListener('click', () => {
       const r = performSpiritualAction(this.spiritual, 'RING_BELL');
@@ -2279,10 +2391,10 @@ export class ChuaOnlineApp {
             <div style="position:absolute;top:8px;left:10px;display:flex;gap:6px;">
               ${CHARACTER_PROFILES.map(
                 (c) => `
-                <button class="tryon-char-btn" data-char="${c.key}" style="padding:4px 10px;border-radius:999px;border:1px solid #165632;background:${
-                  activeChar === c.key ? '#165632' : 'rgba(255,255,255,0.92)'
+                <button class="tryon-char-btn" data-char="${c.key}" style="padding:4px 10px;border-radius:999px;border:1px solid #5C381F;background:${
+                  activeChar === c.key ? '#5C381F' : 'rgba(255,255,255,0.92)'
                 };color:${
-                  activeChar === c.key ? '#fff' : '#165632'
+                  activeChar === c.key ? '#fff' : '#5C381F'
                 };font-size:11.5px;font-weight:700;cursor:pointer;">
                   Thử: ${c.name.split('(')[0].trim()}
                 </button>
@@ -2290,7 +2402,7 @@ export class ChuaOnlineApp {
               ).join('')}
             </div>
             <div style="position:absolute;bottom:8px;left:10px;right:10px;display:flex;justify-content:space-between;align-items:center;pointer-events:none;">
-              <span style="background:rgba(22,68,40,0.9);color:#fff;font-size:11.5px;font-weight:700;padding:4px 10px;border-radius:999px;">
+              <span style="background:rgba(71,41,21,0.9);color:#fff;font-size:11.5px;font-weight:700;padding:4px 10px;border-radius:999px;">
                 Kéo để xoay xem các mặt
               </span>
               <span style="background:rgba(90,52,20,0.88);color:#ffe9c2;font-size:11.5px;font-weight:700;padding:4px 10px;border-radius:999px;">
@@ -2300,7 +2412,7 @@ export class ChuaOnlineApp {
           </div>
           <div style="display:flex;gap:8px;margin-top:10px;">
             <button id="btn-equip-3d-item" class="product-detail-btn" style="flex:1;height:42px;font-size:14px;background:${
-              isEquipped ? '#8a3918' : '#185832'
+              isEquipped ? '#8a3918' : '#5C381F'
             };">
               ${isEquipped ? '✓ Đang mang trên người' : 'Mang thử lên nhân vật'}
             </button>
@@ -2311,9 +2423,9 @@ export class ChuaOnlineApp {
         </div>
 
         <div style="display:flex;flex-direction:column;gap:10px;">
-          <div style="font-size:22px;font-weight:800;color:#144929;">${item.name}</div>
+          <div style="font-size:22px;font-weight:800;color:#472915;">${item.name}</div>
           <div style="font-size:14.5px;color:#5b3b1e;font-weight:600;">${item.subtitle}</div>
-          <div style="font-size:20px;font-weight:800;color:#b84518;">${item.price.toLocaleString('vi-VN')} VNĐ <span style="font-size:13px;font-weight:600;color:#175832;">(Giao tận nhà toàn quốc)</span></div>
+          <div style="font-size:20px;font-weight:800;color:#b84518;">${item.price.toLocaleString('vi-VN')} VNĐ <span style="font-size:13px;font-weight:600;color:#5C381F;">(Giao tận nhà toàn quốc)</span></div>
 
           <div style="background:#fffdf8;border:1px solid rgba(150,110,60,0.25);border-radius:14px;padding:12px 14px;font-size:13.5px;line-height:1.5;">
             <div><strong>Kích thước:</strong> ${item.dimensions}</div>
@@ -2353,6 +2465,7 @@ export class ChuaOnlineApp {
       });
       this.spiritual = r.state;
       this.saveState();
+      this.syncStoreVisualsTo3D();
       this.updateEquippedTags();
       this.playBellTone(320, 1.5);
       this.openProductDetailModal(productId, activeChar);
@@ -2376,7 +2489,7 @@ export class ChuaOnlineApp {
       `
       <div style="display:grid;grid-template-columns:1.1fr 1fr;gap:20px;align-items:start;">
         <div style="display:flex;flex-direction:column;gap:10px;">
-          <div style="font-size:16px;font-weight:800;color:#144929;">Vật phẩm đã chọn (${summary.totalCount})</div>
+          <div style="font-size:16px;font-weight:800;color:#472915;">Vật phẩm đã chọn (${summary.totalCount})</div>
           ${
             this.cart.length === 0
               ? `<div style="padding:24px;background:#fffdf8;border-radius:16px;text-align:center;color:#6b4a2b;">Giỏ hàng đang trống. Mời bạn chọn món quà lưu niệm tại cửa hàng.</div>`
@@ -2407,7 +2520,7 @@ export class ChuaOnlineApp {
         </div>
 
         <form id="checkout-order-form" style="background:#fffdf8;border:1px solid rgba(150,110,60,0.28);padding:16px;border-radius:18px;display:flex;flex-direction:column;gap:10px;">
-          <div style="font-size:16px;font-weight:800;color:#144929;">Thông tin nhận quà</div>
+          <div style="font-size:16px;font-weight:800;color:#472915;">Thông tin nhận quà</div>
           <input id="order-name" type="text" placeholder="Họ và tên người nhận *" required style="padding:10px 12px;border-radius:10px;border:1px solid #bfa07a;font-size:14px;" />
           <input id="order-phone" type="tel" placeholder="Số điện thoại liên hệ (VD: 0912345678) *" required style="padding:10px 12px;border-radius:10px;border:1px solid #bfa07a;font-size:14px;" />
           <textarea id="order-address" rows="2" placeholder="Địa chỉ nhận hàng *" required style="padding:10px 12px;border-radius:10px;border:1px solid #bfa07a;font-size:14px;"></textarea>
@@ -2468,7 +2581,7 @@ export class ChuaOnlineApp {
         'Đã ghi nhận đơn quà lưu niệm',
         `
         <div style="text-align:center;padding:14px;">
-          <div style="font-size:22px;font-weight:800;color:#144929;margin-bottom:8px;">Mã đơn: ${orderCode}</div>
+          <div style="font-size:22px;font-weight:800;color:#472915;margin-bottom:8px;">Mã đơn: ${orderCode}</div>
           <p style="font-size:15px;color:#4a2f18;line-height:1.5;max-width:520px;margin:0 auto 16px;">
             Quầy lưu niệm Chùa Vĩnh Tràng đã nhận đơn của <strong>${form.name}</strong> (${form.phone}). Quà sẽ được gói cẩn thận và gửi về địa chỉ: <em>${form.address}</em>.
           </p>
@@ -2481,7 +2594,7 @@ export class ChuaOnlineApp {
   }
 
   /* ========================================================================
-     GIẢNG ĐƯỜNG PHẬT PHÁP RENDERING (Reference Image 3 & Lesson Study Stack)
+     GIẢNG ĐƯỜNG PHẬT PHÁP RENDERING (Live Animated 3D Hall + Elder Mobile UX)
      ======================================================================== */
   renderLectureStage() {
     const stage = document.getElementById('lecture-center-stage');
@@ -2491,30 +2604,39 @@ export class ChuaOnlineApp {
       btn.classList.toggle('active', btn.getAttribute('data-lecture-tab') === this.lectureTab);
     });
 
-    const lesson =
-      LECTURE_LESSONS.find((l) => l.id === this.activeLessonId) || LECTURE_LESSONS[0];
+    const lessonIdx = Math.max(0, LECTURE_LESSONS.findIndex((l) => l.id === this.activeLessonId));
+    const lesson = LECTURE_LESSONS[lessonIdx] || LECTURE_LESSONS[0];
+    const conciseBullets = lesson.summary.slice(1, 3);
 
     if (this.lectureTab === 'listen') {
       stage.innerHTML = `
-        <div class="lesson-study-stack" style="max-width:680px;margin-top:auto;margin-bottom:14px;">
-          <div class="lesson-cream-card" style="background:rgba(255,246,229,0.95);border:2px solid #C9962E;">
-            <div style="display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;">
-              <div>
-                <div style="font-size:12.5px;font-weight:800;color:#1C5A34;text-transform:uppercase;letter-spacing:0.04em;">Pháp âm Giảng đường</div>
-                <div style="font-size:20px;font-weight:800;color:#4A3222;margin-top:3px;">${lesson.title}</div>
-                <div style="font-size:13.5px;color:#6b4c32;margin-top:2px;">Nguồn: ${lesson.sourceBook} · Thời lượng: ${lesson.duration}</div>
+        <div class="lesson-study-stack lecture-listen-dock-wrap">
+          <div class="lesson-cream-card lecture-translucent-card">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
+              <div style="flex:1;min-width:210px;">
+                <div style="font-size:12.5px;font-weight:800;color:#5C381F;text-transform:uppercase;letter-spacing:0.04em;">Giảng đường 3D trực tiếp · Bài ${lesson.id}</div>
+                <div class="lesson-card-big-title" style="text-align:left;font-size:clamp(19px,2.2vw,24px);margin-top:2px;">${lesson.title}</div>
+                <div class="lesson-card-meta" style="margin-bottom:0;">${lesson.sourceBook} · ${lesson.duration}</div>
               </div>
-              <button id="btn-toggle-lecture-listen" class="product-detail-btn" style="width:auto;padding:0 22px;height:44px;background:${this.audioPlaying ? '#C96F4A' : '#1C5A34'};">
-                ${this.audioPlaying ? '❚❚ Tạm dừng pháp âm' : '▶ Nghe giảng ngay'}
-              </button>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <button id="btn-listen-tts" class="lecture-tts-btn ${this.ttsSpeaking ? 'speaking' : ''}" type="button">
+                  ${this.ttsSpeaking ? '⏹ Dừng đọc' : '🔊 Nghe Thầy Giảng'}
+                </button>
+                <button id="btn-toggle-lecture-listen" class="product-detail-btn" style="width:auto;padding:0 18px;min-height:48px;background:${this.audioPlaying ? '#C96F4A' : '#5C381F'};">
+                  ${this.audioPlaying ? '❚❚ Tạm dừng pháp âm' : '▶ Phát pháp âm'}
+                </button>
+              </div>
             </div>
-            <p style="font-size:14.5px;color:#4A3222;margin-top:10px;line-height:1.55;">
-              "${lesson.summary[0]}"
+            <p class="lesson-summary-lead" style="margin-top:10px;margin-bottom:0;">
+              “${lesson.summary[0]}”
             </p>
           </div>
         </div>
       `;
 
+      document.getElementById('btn-listen-tts')?.addEventListener('click', () => {
+        this.toggleLectureSpeech(lesson);
+      });
       document.getElementById('btn-toggle-lecture-listen')?.addEventListener('click', () => {
         if (this.audioPlaying) {
           this.audioEl.pause();
@@ -2531,35 +2653,40 @@ export class ChuaOnlineApp {
     if (this.lectureTab === 'lesson') {
       stage.innerHTML = `
         <div class="lesson-study-stack">
-          <div class="lesson-cream-card lesson-header-card">
+          <div class="lesson-cream-card lesson-header-card lecture-translucent-card">
             <div class="lesson-card-big-title">${lesson.title}</div>
-            <div class="lesson-card-meta">Bài ${lesson.id} · ${lesson.duration} · Nguồn: ${lesson.sourceBook}</div>
-            <button class="lesson-listen-btn" id="btn-lesson-play-audio">
-              <span style="display:inline-flex;align-items:center;gap:10px;">
-                <span>🎧</span>
-                <span>${this.audioPlaying ? 'Đang nghe bài học (Bấm để dừng)' : 'Nghe bài học'}</span>
-              </span>
-              <span class="play-circle">${this.audioPlaying ? '❚❚' : '▶'}</span>
-            </button>
-          </div>
-
-          <div class="lesson-cream-card">
-            <div class="lesson-summary-lead">${lesson.summary[0]}</div>
-            <ul class="lesson-bullet-list">
-              ${lesson.summary.slice(1).map((s) => `<li>${s}</li>`).join('')}
-            </ul>
-            <div class="lesson-example-box">
-              <strong>Ứng dụng tại Chùa Vĩnh Tràng:</strong> ${lesson.example}
+            <div class="lesson-card-meta">Bài ${lesson.id} (${lessonIdx + 1}/${LECTURE_LESSONS.length}) · ${lesson.duration} · ${lesson.sourceBook}</div>
+            <div class="lecture-audio-pair-row">
+              <button class="lecture-tts-btn ${this.ttsSpeaking ? 'speaking' : ''}" id="btn-lesson-tts" type="button">
+                <span>${this.ttsSpeaking ? '⏹ Dừng Thầy đọc' : '🔊 Nghe Thầy Giảng'}</span>
+              </button>
+              <button class="lesson-listen-btn" id="btn-lesson-play-audio" type="button">
+                <span style="display:inline-flex;align-items:center;gap:8px;">
+                  <span>🎧</span>
+                  <span>${this.audioPlaying ? 'Đang phát (Bấm dừng)' : 'Pháp âm chùa'}</span>
+                </span>
+                <span class="play-circle">${this.audioPlaying ? '❚❚' : '▶'}</span>
+              </button>
             </div>
           </div>
 
-          <div class="lesson-cream-card">
+          <div class="lesson-cream-card lecture-translucent-card">
+            <div class="lesson-summary-lead">${lesson.summary[0]}</div>
+            <ul class="lesson-bullet-list">
+              ${conciseBullets.map((s) => `<li>${s}</li>`).join('')}
+            </ul>
+            <div class="lesson-example-box">
+              <strong>Thực hành giản dị mỗi ngày:</strong> ${lesson.example}
+            </div>
+          </div>
+
+          <div class="lesson-cream-card lecture-translucent-card">
             <div class="lesson-quiz-heading">${lesson.quiz.question}</div>
             <div class="lesson-quiz-options">
               ${lesson.quiz.options
                 .map(
                   (opt, idx) => `
-                <button class="lesson-quiz-option ${this.selectedQuizOption === idx ? 'selected' : ''}" data-quiz-idx="${idx}">
+                <button class="lesson-quiz-option ${this.selectedQuizOption === idx ? 'selected' : ''}" data-quiz-idx="${idx}" type="button">
                   <span class="radio-dot"></span>
                   <span>${opt}</span>
                 </button>
@@ -2569,23 +2696,35 @@ export class ChuaOnlineApp {
             </div>
             ${
               this.quizFeedback
-                ? `<div style="margin-top:10px;padding:10px 14px;border-radius:12px;background:${
-                    this.quizFeedback.correct ? '#dff3e5' : '#fce8e6'
+                ? `<div style="margin-top:10px;padding:12px 14px;border-radius:14px;background:${
+                    this.quizFeedback.correct ? '#F6E9D2' : '#fce8e6'
                   };color:${
-                    this.quizFeedback.correct ? '#14532d' : '#991b1b'
-                  };font-size:14px;font-weight:700;">
-                    ${this.quizFeedback.correct ? '✓ Chính xác! ' : '💡 Giải thích: '}${this.quizFeedback.explanation}
+                    this.quizFeedback.correct ? '#5C381F' : '#991b1b'
+                  };font-size:15px;font-weight:700;line-height:1.45;">
+                    ${this.quizFeedback.correct ? '✓ Hoan hỷ! ' : '💡 Gợi ý: '}${this.quizFeedback.explanation}
                   </div>`
                 : ''
             }
           </div>
 
-          <button class="lesson-next-green-btn" id="btn-lesson-continue">
-            <span>Tiếp tục</span>
-            <span>→</span>
-          </button>
+          <div class="lecture-nav-footer">
+            <button class="lecture-prev-btn" id="btn-lesson-prev" type="button">
+              ← Bài trước
+            </button>
+            <button class="lecture-choose-btn" id="btn-lesson-choose-other" type="button">
+              📖 Chọn bài
+            </button>
+            <button class="lesson-next-green-btn" id="btn-lesson-continue" type="button">
+              <span>Bài tiếp theo</span>
+              <span>→</span>
+            </button>
+          </div>
         </div>
       `;
+
+      document.getElementById('btn-lesson-tts')?.addEventListener('click', () => {
+        this.toggleLectureSpeech(lesson);
+      });
 
       document.getElementById('btn-lesson-play-audio')?.addEventListener('click', () => {
         if (this.audioPlaying) {
@@ -2603,19 +2742,42 @@ export class ChuaOnlineApp {
           this.selectedQuizOption = Number(btn.getAttribute('data-quiz-idx') || 0);
           this.quizFeedback = gradeLessonQuiz(lesson.id, this.selectedQuizOption);
           if (this.quizFeedback.correct) {
+            const wasNew = !this.completedLessons.has(lesson.id);
             this.completedLessons.add(lesson.id);
+            if (wasNew) {
+              this.activityHub = recordDailyMissionMetric(this.activityHub, 'dailyLessons', 1);
+            }
             this.saveState();
+            this.updateActionBadges();
             this.playBellTone(324, 1.8);
           }
           this.renderLectureStage();
         });
       });
 
+      document.getElementById('btn-lesson-prev')?.addEventListener('click', () => {
+        this.stopLectureSpeech();
+        const prevLesson = LECTURE_LESSONS[(lessonIdx - 1 + LECTURE_LESSONS.length) % LECTURE_LESSONS.length];
+        this.activeLessonId = prevLesson.id;
+        this.activePathId = prevLesson.pathId;
+        this.selectedQuizOption = prevLesson.quiz.correctIndex;
+        this.quizFeedback = null;
+        this.playMokugyoTap();
+        this.renderLectureStage();
+      });
+
+      document.getElementById('btn-lesson-choose-other')?.addEventListener('click', () => {
+        this.lectureTab = 'package';
+        this.renderLectureStage();
+      });
+
       document.getElementById('btn-lesson-continue')?.addEventListener('click', () => {
+        this.stopLectureSpeech();
         this.completedLessons.add(lesson.id);
+        this.activityHub = recordDailyMissionMetric(this.activityHub, 'dailyLessons', 1);
         this.saveState();
-        const idx = LECTURE_LESSONS.findIndex((l) => l.id === lesson.id);
-        const nextLesson = LECTURE_LESSONS[(idx + 1) % LECTURE_LESSONS.length];
+        this.updateActionBadges();
+        const nextLesson = LECTURE_LESSONS[(lessonIdx + 1) % LECTURE_LESSONS.length];
         this.activeLessonId = nextLesson.id;
         this.activePathId = nextLesson.pathId;
         this.selectedQuizOption = nextLesson.quiz.correctIndex;
@@ -2630,50 +2792,50 @@ export class ChuaOnlineApp {
       const lessonsInPath = getLessonsByPath(this.activePathId);
       stage.innerHTML = `
         <div class="lesson-study-stack" style="max-width:860px;">
-          <div class="lesson-cream-card">
-            <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:6px;">
-              <div style="font-size:23px;font-weight:800;color:#144929;">
+          <div class="lesson-cream-card lecture-translucent-card">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px;">
+              <div style="font-size:22px;font-weight:800;color:#472915;">
                 4 Chủ đề học Phật · 24 Bài đọc
               </div>
-              <button id="btn-open-pdf-library-inline" class="product-detail-btn" style="width:auto;padding:0 16px;height:36px;font-size:13.5px;background:#8c4b1e;">
+              <button id="btn-open-pdf-library-inline" class="product-detail-btn" style="width:auto;padding:0 16px;min-height:44px;font-size:14px;background:#8c4b1e;">
                 Tủ sách Phật học (PDF)
               </button>
             </div>
-            <p style="font-size:14px;color:#5b3a1d;margin-bottom:12px;">
-              Đã hoàn thành: <strong>${this.completedLessons.size}/24 bài học</strong> — Biên soạn sát theo <em>Phật Học Phổ Thông</em> (HT. Thích Thiện Hoa), <em>Đức Phật Dạy Những Gì</em> (HT. Walpola Rahula), <em>Phương Pháp Thiền Căn Bản</em> (Ajahn Brahm) & <em>Tích Truyện Pháp Cú</em>.
+            <p style="font-size:15px;color:#5b3a1d;margin-bottom:12px;line-height:1.45;">
+              Đã hoàn thành: <strong>${this.completedLessons.size}/24 bài học</strong> — Biên soạn ngắn gọn, dễ hiểu cho cô bác Phật tử theo 10 quyển kinh sách.
             </p>
-            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px;">
+            <div class="lecture-paths-grid">
               ${LECTURE_PATHS.map(
                 (p) => `
-                <button class="path-tab-btn" data-path-id="${p.id}" style="padding:11px;border-radius:16px;border:2px solid ${
-                  this.activePathId === p.id ? '#165632' : 'rgba(130,90,50,0.25)'
+                <button class="path-tab-btn" data-path-id="${p.id}" style="min-height:54px;padding:11px;border-radius:16px;border:2px solid ${
+                  this.activePathId === p.id ? '#5C381F' : 'rgba(130,90,50,0.25)'
                 };background:${
-                  this.activePathId === p.id ? '#165632' : '#fffdf8'
+                  this.activePathId === p.id ? '#5C381F' : '#fffdf8'
                 };color:${
                   this.activePathId === p.id ? '#fff' : '#241409'
                 };text-align:left;cursor:pointer;">
-                  <div style="font-size:12px;font-weight:800;opacity:0.85;">${p.code}</div>
-                  <div style="font-size:14px;font-weight:800;margin-top:3px;">${p.title}</div>
+                  <div style="font-size:12.5px;font-weight:800;opacity:0.85;">${p.code}</div>
+                  <div style="font-size:14.5px;font-weight:800;margin-top:3px;">${p.title}</div>
                 </button>
               `
               ).join('')}
             </div>
 
-            <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;">
+            <div class="lecture-lessons-grid">
               ${lessonsInPath
                 .map((l) => {
                   const done = this.completedLessons.has(l.id);
                   return `
-                  <button class="select-lesson-card" data-lesson-id="${l.id}" style="padding:11px 14px;border-radius:14px;border:1.5px solid ${
-                    this.activeLessonId === l.id ? '#165632' : 'rgba(130,90,50,0.25)'
+                  <button class="select-lesson-card" data-lesson-id="${l.id}" style="min-height:56px;padding:12px 14px;border-radius:14px;border:1.5px solid ${
+                    this.activeLessonId === l.id ? '#5C381F' : 'rgba(130,90,50,0.25)'
                   };background:#fffdf8;color:#241409;text-align:left;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:10px;">
                     <div>
-                      <div style="font-size:12px;font-weight:800;color:#7a4e25;">Bài ${l.id} · ${l.sourceBook}</div>
-                      <div style="font-size:14.5px;font-weight:800;margin-top:2px;">${l.title}</div>
+                      <div style="font-size:12.5px;font-weight:800;color:#7a4e25;">Bài ${l.id} · ${l.sourceBook}</div>
+                      <div style="font-size:15px;font-weight:800;margin-top:2px;">${l.title}</div>
                     </div>
-                    <span style="padding:4px 10px;border-radius:999px;background:${
-                      done ? '#dcfce7' : '#f3e4cb'
-                    };color:${done ? '#15803d' : '#6b4522'};font-size:12px;font-weight:800;flex-shrink:0;">
+                    <span style="padding:5px 11px;border-radius:999px;background:${
+                      done ? '#F6E9D2' : '#f3e4cb'
+                    };color:${done ? '#5C381F' : '#6b4522'};font-size:12.5px;font-weight:800;flex-shrink:0;">
                       ${done ? '✓ Đã học' : 'Học ngay'}
                     </span>
                   </button>
@@ -2703,6 +2865,7 @@ export class ChuaOnlineApp {
         btn.addEventListener('click', () => {
           const lid = btn.getAttribute('data-lesson-id');
           if (lid) {
+            this.stopLectureSpeech();
             this.activeLessonId = lid;
             this.lectureTab = 'lesson';
             this.quizFeedback = null;
@@ -2726,11 +2889,11 @@ export class ChuaOnlineApp {
             (b) => `
             <div style="background:#fffdf8;border:1.5px solid rgba(140,100,60,0.28);border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;justify-content:space-between;gap:8px;">
               <div>
-                <div style="font-size:15px;font-weight:800;color:#144929;">${b.title}</div>
+                <div style="font-size:15px;font-weight:800;color:#472915;">${b.title}</div>
                 <div style="font-size:12.5px;font-weight:700;color:#8c4b1e;margin-top:2px;">Tác giả / Dịch giả: ${b.author}</div>
                 <p style="font-size:13px;color:#4a2f18;margin-top:5px;line-height:1.42;">${b.coreTeachings}</p>
               </div>
-              <a href="${b.pdfPath}" target="_blank" download style="display:inline-flex;align-items:center;justify-content:center;height:36px;border-radius:999px;background:#165632;color:#fff;font-size:13px;font-weight:700;text-decoration:none;">
+              <a href="${b.pdfPath}" target="_blank" download style="display:inline-flex;align-items:center;justify-content:center;height:36px;border-radius:999px;background:#5C381F;color:#fff;font-size:13px;font-weight:700;text-decoration:none;">
                 Đọc sách (PDF)
               </a>
             </div>
@@ -2755,14 +2918,14 @@ export class ChuaOnlineApp {
             (track) => `
             <button class="audio-track-btn" data-file="${track.file}" style="padding:12px 16px;border-radius:14px;border:1.5px solid ${
               this.currentAudioFile === track.file && this.audioPlaying
-                ? '#165632'
+                ? '#5C381F'
                 : 'rgba(140,100,60,0.28)'
             };background:#fffdf8;color:#241409;text-align:left;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:10px;">
               <div>
                 <div style="font-weight:800;font-size:14.5px;">${track.title}</div>
                 <div style="font-size:12.5px;color:#7a5229;margin-top:2px;">Thời lượng: ${track.duration}</div>
               </div>
-              <span style="width:34px;height:34px;border-radius:50%;background:#165632;color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;">▶</span>
+              <span style="width:34px;height:34px;border-radius:50%;background:#5C381F;color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;">▶</span>
             </button>
           `
           ).join('')}
@@ -2801,15 +2964,15 @@ export class ChuaOnlineApp {
       `
       <div style="display:flex;flex-direction:column;gap:14px;">
         <div id="ugc-milestone-banner" style="padding:12px 16px;border-radius:16px;border:1.5px solid ${
-          milestoneStatus.unlocked ? '#165632' : '#d97706'
+          milestoneStatus.unlocked ? '#5C381F' : '#d97706'
         };background:${
           milestoneStatus.unlocked
-            ? 'linear-gradient(90deg,#e6f5ec 0%,#f4fbf7 100%)'
+            ? 'linear-gradient(90deg,#F6E9D2 0%,#FFF9EE 100%)'
             : 'linear-gradient(90deg,#fef3c7 0%,#fffbeb 100%)'
         };display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
           <div>
             <div style="font-size:15px;font-weight:800;color:${
-              milestoneStatus.unlocked ? '#14532d' : '#92400e'
+              milestoneStatus.unlocked ? '#472915' : '#92400e'
             };">
               ${
                 milestoneStatus.unlocked
@@ -2829,15 +2992,15 @@ export class ChuaOnlineApp {
               <button id="btn-ugc-quick-lotus" class="product-detail-btn" style="width:auto;padding:0 14px;height:36px;font-size:12.5px;background:#8c4b1e;">Dâng hoa sen</button>
             </div>
           `
-              : `<span style="padding:5px 12px;border-radius:999px;background:#165632;color:#fff;font-size:12px;font-weight:700;">Sẵn sàng lưu ảnh</span>`
+              : `<span style="padding:5px 12px;border-radius:999px;background:#5C381F;color:#fff;font-size:12px;font-weight:700;">Sẵn sàng lưu ảnh</span>`
           }
         </div>
 
         <div style="display:grid;grid-template-columns:1.15fr 1fr;gap:18px;align-items:start;">
           <div>
             <div style="position:relative;">
-              <canvas id="ugc-composite-canvas" width="760" height="500" style="width:100%;height:auto;border-radius:18px;border:2.5px solid #c8963e;box-shadow:0 12px 30px rgba(0,0,0,0.32);background:#1b3b26;"></canvas>
-              <div id="ugc-output-status-badge" style="position:absolute;top:12px;right:12px;background:rgba(22,86,50,0.92);color:#fff;padding:5px 12px;border-radius:999px;font-size:12px;font-weight:700;border:1px solid #f6cd72;">
+              <canvas id="ugc-composite-canvas" width="760" height="500" style="width:100%;height:auto;border-radius:18px;border:2.5px solid #c8963e;box-shadow:0 12px 30px rgba(0,0,0,0.32);background:#2D1B10;"></canvas>
+              <div id="ugc-output-status-badge" style="position:absolute;top:12px;right:12px;background:rgba(71,41,21,0.92);color:#fff;padding:5px 12px;border-radius:999px;font-size:12px;font-weight:700;border:1px solid #f6cd72;">
                 ${
                   this.uploadedUserPhotoDataUrl
                     ? '✓ Đã ghép ảnh của bạn'
@@ -2847,7 +3010,7 @@ export class ChuaOnlineApp {
             </div>
 
             <div style="display:flex;gap:10px;margin-top:10px;">
-              <button id="btn-ugc-download" class="product-detail-btn" style="flex:1;height:44px;font-size:14.5px;background:#165632;">
+              <button id="btn-ugc-download" class="product-detail-btn" style="flex:1;height:44px;font-size:14.5px;background:#5C381F;">
                 Tải ảnh về máy (.PNG)
               </button>
               <button id="btn-ugc-publish" class="shop-cart-cta" style="flex:1;margin:0;height:44px;font-size:15px;">
@@ -2858,14 +3021,14 @@ export class ChuaOnlineApp {
 
           <div style="display:flex;flex-direction:column;gap:10px;">
             <div class="ugc-upload-dropzone" id="ugc-upload-dropzone">
-              <div style="font-size:14px;font-weight:800;color:#144929;">
+              <div style="font-size:14px;font-weight:800;color:#472915;">
                 1. Chọn ảnh của bạn hoặc gia đình
               </div>
               <p style="font-size:12.5px;color:#3d2410;margin:4px 0 8px;">
                 Chọn ảnh từ điện thoại hoặc máy tính để ghép vào khung cảnh Chùa Vĩnh Tràng:
               </p>
               <div style="display:flex;gap:8px;justify-content:center;align-items:center;flex-wrap:wrap;">
-                <label for="ugc-user-photo-input" style="display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:999px;background:#165632;color:#fff;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 4px 12px rgba(22,86,50,0.3);">
+                <label for="ugc-user-photo-input" style="display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:999px;background:#5C381F;color:#fff;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 4px 12px rgba(92,56,31,0.3);">
                   Chọn ảnh từ máy
                 </label>
                 <input id="ugc-user-photo-input" type="file" accept="image/*" style="display:none;" />
@@ -2876,7 +3039,7 @@ export class ChuaOnlineApp {
                   Ảnh mẫu Gia đình
                 </button>
               </div>
-              <div id="ugc-upload-filename" style="margin-top:6px;font-size:12px;font-weight:700;color:#15803d;">
+              <div id="ugc-upload-filename" style="margin-top:6px;font-size:12px;font-weight:700;color:#8C5327;">
                 ${
                   this.uploadedUserPhotoDataUrl
                     ? '✓ Đã chọn ảnh để ghép'
@@ -2886,11 +3049,11 @@ export class ChuaOnlineApp {
             </div>
 
             <div>
-              <div style="font-size:13.5px;font-weight:800;color:#144929;margin-bottom:5px;">
+              <div style="font-size:13.5px;font-weight:800;color:#472915;margin-bottom:5px;">
                 2. Chọn góc cảnh chùa:
               </div>
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
-                <button class="ugc-bg-btn" data-bg="live_3d_view" style="padding:8px 10px;border-radius:10px;border:1.5px solid #165632;background:#e5f5eb;font-size:12.5px;font-weight:700;text-align:left;cursor:pointer;">
+                <button class="ugc-bg-btn" data-bg="live_3d_view" style="padding:8px 10px;border-radius:10px;border:1.5px solid #5C381F;background:#F6E9D2;font-size:12.5px;font-weight:700;text-align:left;cursor:pointer;">
                   Góc nhìn hiện tại
                 </button>
                 ${UGC_BACKDROPS.map(
@@ -2904,7 +3067,7 @@ export class ChuaOnlineApp {
             </div>
 
             <div>
-              <div style="font-size:13.5px;font-weight:800;color:#144929;margin-bottom:5px;">
+              <div style="font-size:13.5px;font-weight:800;color:#472915;margin-bottom:5px;">
                 3. Nhân vật đi cùng:
               </div>
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
@@ -2917,8 +3080,8 @@ export class ChuaOnlineApp {
                   .map(
                     (m, i) => `
                   <button class="ugc-char-btn" data-cmode="${m.id}" style="padding:7px 10px;border-radius:10px;border:1.5px solid ${
-                      i === 0 ? '#165632' : 'rgba(130,90,50,0.28)'
-                    };background:${i === 0 ? '#e5f5eb' : '#fffdf8'};font-size:12px;font-weight:700;text-align:left;cursor:pointer;">
+                      i === 0 ? '#5C381F' : 'rgba(130,90,50,0.28)'
+                    };background:${i === 0 ? '#F6E9D2' : '#fffdf8'};font-size:12px;font-weight:700;text-align:left;cursor:pointer;">
                     ${m.label}
                   </button>
                 `
@@ -2935,7 +3098,7 @@ export class ChuaOnlineApp {
         </div>
 
         <div style="margin-top:8px;border-top:1.5px solid rgba(140,100,60,0.25);padding-top:12px;">
-          <div style="font-size:15.5px;font-weight:800;color:#144929;margin-bottom:8px;">
+          <div style="font-size:15.5px;font-weight:800;color:#472915;margin-bottom:8px;">
             Sổ kỷ niệm đi chùa (${this.ugcGallery.length} bức ảnh)
           </div>
           <div id="ugc-gallery-feed" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;"></div>
@@ -2975,7 +3138,7 @@ export class ChuaOnlineApp {
           <div style="background:#fffdf8;border:1px solid rgba(140,100,60,0.28);border-radius:14px;padding:10px 12px;display:flex;flex-direction:column;justify-content:space-between;gap:6px;">
             <div>
               <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;">
-                <span style="font-size:13px;font-weight:800;color:#165632;">${post.author}</span>
+                <span style="font-size:13px;font-weight:800;color:#5C381F;">${post.author}</span>
                 <span style="font-size:11px;font-weight:700;color:#8c4b1e;background:#fef3db;padding:2px 7px;border-radius:999px;">✓ ${
                   post.milestoneBadge || 'Lễ Phật'
                 }</span>
@@ -3045,8 +3208,8 @@ export class ChuaOnlineApp {
 
         // Warm golden temple atmosphere vignette
         const grad = ctx.createLinearGradient(0, h * 0.48, 0, h);
-        grad.addColorStop(0, 'rgba(20, 42, 28, 0)');
-        grad.addColorStop(1, 'rgba(14, 34, 22, 0.94)');
+        grad.addColorStop(0, 'rgba(36, 20, 9, 0)');
+        grad.addColorStop(1, 'rgba(30, 16, 7, 0.94)');
         ctx.fillStyle = grad;
         ctx.fillRect(0, 0, w, h);
 
@@ -3056,7 +3219,7 @@ export class ChuaOnlineApp {
         ctx.strokeRect(10, 10, w - 20, h - 20);
 
         // Top Golden Temple Stamp + Completed Milestone Badge
-        ctx.fillStyle = 'rgba(20, 58, 35, 0.94)';
+        ctx.fillStyle = 'rgba(71, 41, 21, 0.94)';
         ctx.strokeStyle = '#f3c65f';
         ctx.lineWidth = 2;
         ctx.beginPath();
@@ -3135,7 +3298,7 @@ export class ChuaOnlineApp {
           ctx.restore();
 
           // Label badge below portrait frame ("Ảnh Check-in của bạn tại Chùa Vĩnh Tràng")
-          ctx.fillStyle = '#165632';
+          ctx.fillStyle = '#5C381F';
           ctx.strokeStyle = '#f6cd72';
           ctx.lineWidth = 2;
           ctx.beginPath();
@@ -3233,8 +3396,8 @@ export class ChuaOnlineApp {
         selectedCharMode = btn.getAttribute('data-cmode') || 'family_3';
         document.querySelectorAll('.ugc-char-btn').forEach((b) => {
           const act = b.getAttribute('data-cmode') === selectedCharMode;
-          b.style.background = act ? '#e5f5eb' : '#fffdf8';
-          b.style.borderColor = act ? '#165632' : 'rgba(130,90,50,0.28)';
+          b.style.background = act ? '#F6E9D2' : '#fffdf8';
+          b.style.borderColor = act ? '#5C381F' : 'rgba(130,90,50,0.28)';
         });
         drawComposite();
       });
@@ -3245,8 +3408,8 @@ export class ChuaOnlineApp {
         selectedBackdropId = btn.getAttribute('data-bg') || 'live_3d_view';
         document.querySelectorAll('.ugc-bg-btn').forEach((b) => {
           const act = b.getAttribute('data-bg') === selectedBackdropId;
-          b.style.background = act ? '#e5f5eb' : '#fffdf8';
-          b.style.borderColor = act ? '#165632' : 'rgba(130,90,50,0.28)';
+          b.style.background = act ? '#F6E9D2' : '#fffdf8';
+          b.style.borderColor = act ? '#5C381F' : 'rgba(130,90,50,0.28)';
         });
         drawComposite();
       });
@@ -3293,22 +3456,76 @@ export class ChuaOnlineApp {
   }
 
   /* ========================================================================
-     KHÁM PHÁ MODAL (9 Walkable 3D Zones + Dấu Ấn Hành Trình 9 Cánh Sen + 18 La Hán)
+     KHÁM PHÁ MODAL (Bản đồ · Nhiệm vụ · Mua đồ & Lễ vật · Dấu Ấn · 18 La Hán · Quét lá)
      ======================================================================== */
-  openExploreModal(initialSubTab = 'stations') {
+  executeQuestActionHint(actionHint) {
+    this.closeModal();
+    if (actionHint === 'checkin') {
+      this.openActivityHubModal('checkin');
+    } else if (actionHint === 'le_phat') {
+      this.switchScreen('courtyard');
+      this.triggerLePhat();
+    } else if (actionHint === 'dang_huong') {
+      this.switchScreen('courtyard');
+      this.triggerDangHuong();
+    } else if (actionHint === 'dang_hoa') {
+      this.switchScreen('courtyard');
+      this.triggerDangHoa();
+    } else if (actionHint === 'niem_phat') {
+      this.switchScreen('courtyard');
+      this.triggerNiemPhat();
+    } else if (actionHint === 'dharma_quote') {
+      this.showDailyDharmaModal({ markSeenToday: false });
+    } else if (actionHint === 'share') {
+      this.openActivityHubModal('share_feedback');
+    } else if (actionHint === 'explore') {
+      this.openExploreModal('stations');
+    } else if (actionHint === 'lecture') {
+      this.switchScreen('lecture');
+    }
+  }
+
+  activateGuidedBeacon(stationKey) {
+    if (!stationKey) {
+      this.activeGuidedBeacon = null;
+      this.world3d?.setGuidedBeacon?.(null);
+      return;
+    }
+    const dest = findAnyTempleDestination(stationKey);
+    this.activeGuidedBeacon = stationKey;
+    this.world3d?.setGuidedBeacon?.(stationKey);
+    this.closeModal();
+    this.switchScreen('courtyard');
+    if (this.world3d?.insideInterior) {
+      this.toggleInteriorHallIn3D(false);
+    }
+    this.showToast(
+      `🧭 Đang bật cột sáng dẫn đường tới ${dest?.name || 'điểm hành hương'}`,
+      'Nhìn theo tia sáng vàng trên bầu trời 3D để đi tới tận nơi!',
+      4200,
+      false
+    );
+  }
+
+  openExploreModal(initialSubTab = 'stations', initialArhatIdx = 0) {
     const imprint = calculateJourneyImprint(this.spiritual);
+    let currentSub = initialSubTab;
+    let shopCatFilter = this.marketStallTab || 'huong_hoa';
+    let selectedArhatIdx = Math.max(0, Math.min(17, Number(initialArhatIdx || 0)));
 
     this.openModal(
       `Khám phá Chùa Vĩnh Tràng (${imprint.litCount}/9 nơi đã ghé)`,
       `
       <div style="display:flex;flex-direction:column;gap:14px;">
-        <div style="display:flex;gap:8px;flex-wrap:wrap;">
-          <button class="explore-sub-btn product-detail-btn" data-sub="stations" style="width:auto;padding:0 16px;height:38px;font-size:13.5px;">Bản đồ khuôn viên</button>
-          <button class="explore-sub-btn product-detail-btn" data-sub="imprint" style="width:auto;padding:0 16px;height:38px;font-size:13.5px;background:#1C5A34;">Dấu ấn đi chùa (${imprint.litCount}/9)</button>
-          <button class="explore-sub-btn product-detail-btn" data-sub="arhats" style="width:auto;padding:0 16px;height:38px;font-size:13.5px;background:#6d4422;">18 vị La Hán</button>
-          <button class="explore-sub-btn product-detail-btn" data-sub="sweep" style="width:auto;padding:0 16px;height:38px;font-size:13.5px;background:#3a5c28;">Quét lá sân chùa</button>
-          <button id="btn-explore-open-interior" class="product-detail-btn" style="width:auto;padding:0 16px;height:38px;font-size:13.5px;background:#784820;">Vào Chánh điện</button>
-          <button id="btn-explore-open-ugc" class="product-detail-btn" style="width:auto;padding:0 16px;height:38px;font-size:13.5px;background:#C96F4A;">Lưu ảnh kỷ niệm</button>
+        <div class="explore-tabs-bar">
+          <button class="explore-sub-btn product-detail-btn" data-sub="stations">🗺️ Bản đồ</button>
+          <button class="explore-sub-btn product-detail-btn" data-sub="quests">🎯 Nhiệm vụ</button>
+          <button class="explore-sub-btn product-detail-btn" data-sub="shop_offerings">🛍️ Mua đồ &amp; Lễ vật</button>
+          <button class="explore-sub-btn product-detail-btn" data-sub="imprint">🪷 Dấu ấn (${imprint.litCount}/9)</button>
+          <button class="explore-sub-btn product-detail-btn" data-sub="arhats">🙏 18 vị La Hán</button>
+          <button class="explore-sub-btn product-detail-btn" data-sub="sweep">🧹 Quét lá</button>
+          <button id="btn-explore-open-interior" class="product-detail-btn" style="background:#784820;">🏛️ Vào Chánh điện</button>
+          <button id="btn-explore-open-ugc" class="product-detail-btn" style="background:#C96F4A;">📸 Lưu ảnh</button>
         </div>
 
         <div id="explore-sub-content"></div>
@@ -3317,6 +3534,16 @@ export class ChuaOnlineApp {
     );
 
     const renderSub = (sub) => {
+      currentSub = sub;
+      if (sub !== 'arhats' && this._arhatStageDispose) {
+        try {
+          this._arhatStageDispose();
+        } catch {}
+        this._arhatStageDispose = null;
+      }
+      document.querySelectorAll('.explore-sub-btn').forEach((b) => {
+        b.classList.toggle('active', b.getAttribute('data-sub') === sub);
+      });
       const box = document.getElementById('explore-sub-content');
       if (!box) return;
 
@@ -3333,7 +3560,7 @@ export class ChuaOnlineApp {
           <div style="background:#f6ebd6;border:2px solid #C9962E;border-radius:18px;padding:12px 14px;margin-bottom:12px;box-shadow:inset 0 2px 10px rgba(74,50,34,0.1);">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:8px;">
               <div>
-                <strong style="font-size:15px;color:#1C5A34;">Mặt bằng Tổng thể Chùa Vĩnh Tràng (Bám sát thực tế 136m × 114m)</strong>
+                <strong style="font-size:15px;color:#5C381F;">Mặt bằng Tổng thể Chùa Vĩnh Tràng (Bám sát thực tế 136m × 114m)</strong>
                 <span style="font-size:12px;color:#6E5034;margin-left:8px;">Bấm vào điểm bất kỳ để nhân vật hành hương tới</span>
               </div>
               <div style="font-size:12px;font-weight:700;color:#B84518;background:#fffdf8;padding:4px 10px;border-radius:999px;border:1px solid #C9962E;">
@@ -3374,13 +3601,13 @@ export class ChuaOnlineApp {
               <text x="${mapX(-8)}" y="${mapY(-37) + 3}" text-anchor="middle" fill="#241409" font-size="8" font-weight="800">Bảo Tháp</text>
 
               <circle cx="${mapX(-8)}" cy="${mapY(-25)}" r="18" fill="#fffdf8" stroke="#4E86A8" stroke-width="2"/>
-              <text x="${mapX(-8)}" y="${mapY(-25) + 3}" text-anchor="middle" fill="#1C5A34" font-size="8" font-weight="900">A Di Đà</text>
+              <text x="${mapX(-8)}" y="${mapY(-25) + 3}" text-anchor="middle" fill="#5C381F" font-size="8" font-weight="900">A Di Đà</text>
 
               <!-- West Discovery Wing -->
-              <circle cx="${mapX(-54)}" cy="${mapY(-4)}" r="21" fill="#d9c6a3" stroke="#1C5A34" stroke-width="1.8"/>
-              <text x="${mapX(-54)}" y="${mapY(-4) + 3}" text-anchor="middle" fill="#1C5A34" font-size="8.2" font-weight="800">Hòn Non Bộ</text>
-              <rect x="${mapX(-53.5) - 42}" y="${mapY(22) - 14}" width="84" height="28" rx="8" fill="#E6EFE0" stroke="#1C5A34" stroke-width="1.8"/>
-              <text x="${mapX(-53.5)}" y="${mapY(22) + 4}" text-anchor="middle" fill="#1C5A34" font-size="8.5" font-weight="800">Vườn Lâm Tỳ Ni</text>
+              <circle cx="${mapX(-54)}" cy="${mapY(-4)}" r="21" fill="#d9c6a3" stroke="#5C381F" stroke-width="1.8"/>
+              <text x="${mapX(-54)}" y="${mapY(-4) + 3}" text-anchor="middle" fill="#5C381F" font-size="8.2" font-weight="800">Hòn Non Bộ</text>
+              <rect x="${mapX(-53.5) - 42}" y="${mapY(22) - 14}" width="84" height="28" rx="8" fill="#F6E9D2" stroke="#5C381F" stroke-width="1.8"/>
+              <text x="${mapX(-53.5)}" y="${mapY(22) + 4}" text-anchor="middle" fill="#5C381F" font-size="8.5" font-weight="800">Vườn Lâm Tỳ Ni</text>
 
               <!-- Core Main Temple Area (Chùa Chính Chữ Quốc Complex x=10..36, z=-31..8) -->
               <rect x="${axisX - 58}" y="${mapY(-31)}" width="116" height="${mapY(8) - mapY(-31)}" rx="8" fill="#D9A441" stroke="#7E2A22" stroke-width="2.5"/>
@@ -3390,8 +3617,8 @@ export class ChuaOnlineApp {
               <text x="${axisX}" y="${mapY(-26)}" text-anchor="middle" fill="#241409" font-size="7.5" font-weight="800">Nhà Tổ · Nhà Hậu</text>
 
               <!-- West Plaza: Phật Di Lặc -->
-              <circle cx="${mapX(-24.5)}" cy="${mapY(4)}" r="21" fill="#fffdf8" stroke="#1C5A34" stroke-width="2"/>
-              <text x="${mapX(-24.5)}" y="${mapY(4) + 3}" text-anchor="middle" fill="#1C5A34" font-size="8.5" font-weight="800">Phật Di Lặc</text>
+              <circle cx="${mapX(-24.5)}" cy="${mapY(4)}" r="21" fill="#fffdf8" stroke="#5C381F" stroke-width="2"/>
+              <text x="${mapX(-24.5)}" y="${mapY(4) + 3}" text-anchor="middle" fill="#5C381F" font-size="8.5" font-weight="800">Phật Di Lặc</text>
 
               <!-- East Wing -->
               <rect x="${mapX(44) - 36}" y="${mapY(-18) - 14}" width="72" height="28" rx="7" fill="#8A4A34" stroke="#f6cd72" stroke-width="1.8"/>
@@ -3409,7 +3636,7 @@ export class ChuaOnlineApp {
 
               <rect x="${axisX - 50}" y="${mapY(41.5) - 10}" width="100" height="20" rx="5" fill="#7E2A22" stroke="#FFD875" stroke-width="1.8"/>
               <text x="${axisX}" y="${mapY(41.5) + 4}" text-anchor="middle" fill="#FFD875" font-size="8.4" font-weight="800">TAM QUAN</text>
-              <rect x="${mapX(40.5) - 32}" y="${mapY(41.5) - 10}" width="64" height="20" rx="5" fill="#1C5A34" stroke="#FFD875" stroke-width="1.6"/>
+              <rect x="${mapX(40.5) - 32}" y="${mapY(41.5) - 10}" width="64" height="20" rx="5" fill="#5C381F" stroke="#FFD875" stroke-width="1.6"/>
               <text x="${mapX(40.5)}" y="${mapY(41.5) + 4}" text-anchor="middle" fill="#FFF6E5" font-size="8.2" font-weight="800">CỔNG PHỤ</text>
 
               ${PILGRIMAGE_STATIONS.map((st) => {
@@ -3429,7 +3656,7 @@ export class ChuaOnlineApp {
                 const isAct = this.activeStationKey === st.key;
                 return `
                   <g class="map2d-station-pin" data-station-key="${st.key}" style="cursor:pointer;">
-                    <circle cx="${sx}" cy="${sy}" r="${isAct ? 9.5 : 7.5}" fill="${isAct ? '#C96F4A' : '#1C5A34'}" stroke="#FFF6E5" stroke-width="2"/>
+                    <circle cx="${sx}" cy="${sy}" r="${isAct ? 9.5 : 7.5}" fill="${isAct ? '#C96F4A' : '#5C381F'}" stroke="#FFF6E5" stroke-width="2"/>
                     <text x="${sx}" y="${sy + 2.8}" text-anchor="middle" fill="#FFF6E5" font-size="8" font-weight="900">${st.id + 1}</text>
                   </g>
                 `;
@@ -3465,30 +3692,33 @@ export class ChuaOnlineApp {
             </svg>
           </div>
 
-          <div style="font-size:14.5px;font-weight:800;color:#1C5A34;margin-bottom:6px;">9 Điểm Hành Hương Chính (Dấu Ấn Sen Vàng)</div>
+          <div style="font-size:14.5px;font-weight:800;color:#5C381F;margin-bottom:6px;">9 Điểm Hành Hương Chính (Dấu Ấn Sen Vàng)</div>
           <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px;">
             ${PILGRIMAGE_STATIONS.map((st) => {
               const visited = this.spiritual.visitedStations.includes(st.id);
               return `
               <div style="background:#fffdf8;border:1.5px solid ${
-                visited ? '#1C5A34' : 'rgba(140,100,60,0.28)'
+                visited ? '#5C381F' : 'rgba(140,100,60,0.28)'
               };border-radius:16px;padding:12px 14px;display:flex;flex-direction:column;justify-content:space-between;gap:8px;">
                 <div>
                   <div style="display:flex;justify-content:space-between;align-items:center;">
-                    <span style="font-size:11.5px;font-weight:700;color:#1C5A34;">${st.zoneCode}</span>
-                    <span style="font-size:11px;font-weight:700;color:${visited ? '#15803d' : '#8a623c'};">${
+                    <span style="font-size:11.5px;font-weight:700;color:#5C381F;">${st.zoneCode}</span>
+                    <span style="font-size:11px;font-weight:700;color:${visited ? '#8C5327' : '#8a623c'};">${
                       visited ? 'Đã ghé' : 'Chưa ghé'
                     }</span>
                   </div>
                   <div style="font-size:15px;font-weight:800;margin-top:3px;">${st.name}</div>
                   <p style="font-size:12.5px;color:#52361c;margin-top:4px;line-height:1.4;">${st.subtitle}</p>
                 </div>
-                <div style="display:flex;gap:6px;">
-                  <button class="visit-station-btn product-detail-btn" data-station-key="${st.key}" style="flex:1;height:36px;font-size:12.5px;">
+                <div style="display:flex;gap:5px;flex-wrap:wrap;">
+                  <button class="visit-station-btn product-detail-btn" data-station-key="${st.key}" style="flex:1;height:34px;font-size:12px;">
                     Đi tới
                   </button>
-                  <button class="teleport-station-btn product-detail-btn" data-station-key="${st.key}" style="width:auto;padding:0 12px;height:36px;font-size:12.5px;background:#C96F4A;">
+                  <button class="teleport-station-btn product-detail-btn" data-station-key="${st.key}" style="width:auto;padding:0 10px;height:34px;font-size:12px;background:#C96F4A;">
                     Tới thẳng
+                  </button>
+                  <button class="guide-station-btn product-detail-btn" data-guide-station="${st.key}" style="width:auto;padding:0 9px;height:34px;font-size:12px;background:#9A6E1C;" title="Bật tia sáng dẫn đường 3D">
+                    🧭 Dẫn đường
                   </button>
                 </div>
               </div>
@@ -3503,17 +3733,20 @@ export class ChuaOnlineApp {
                 <div>
                   <div style="display:flex;justify-content:space-between;align-items:center;">
                     <span style="font-size:11.5px;font-weight:800;color:#7E2A22;">${dz.zoneCode} · Khu ${String.fromCharCode(65 + idx)}</span>
-                    <span style="font-size:11px;font-weight:700;color:#1C5A34;">Mở rộng</span>
+                    <span style="font-size:11px;font-weight:700;color:#8C5327;">Mở rộng</span>
                   </div>
                   <div style="font-size:14.5px;font-weight:800;margin-top:3px;color:#241409;">${dz.name}</div>
                   <p style="font-size:12px;color:#52361c;margin-top:4px;line-height:1.4;">${dz.subtitle}</p>
                 </div>
-                <div style="display:flex;gap:6px;">
+                <div style="display:flex;gap:5px;flex-wrap:wrap;">
                   <button class="visit-station-btn product-detail-btn" data-station-key="${dz.key}" style="flex:1;height:34px;font-size:12px;">
                     Đi tới
                   </button>
                   <button class="teleport-station-btn product-detail-btn" data-station-key="${dz.key}" style="width:auto;padding:0 10px;height:34px;font-size:12px;background:#7E2A22;">
                     Tới thẳng
+                  </button>
+                  <button class="guide-station-btn product-detail-btn" data-guide-station="${dz.key}" style="width:auto;padding:0 9px;height:34px;font-size:12px;background:#9A6E1C;" title="Bật tia sáng dẫn đường 3D">
+                    🧭 Dẫn đường
                   </button>
                 </div>
               </div>
@@ -3536,10 +3769,171 @@ export class ChuaOnlineApp {
             this.teleportToStationIn3D(key);
           });
         });
+        box.querySelectorAll('.guide-station-btn').forEach((b) => {
+          b.addEventListener('click', () => {
+            const key = b.getAttribute('data-guide-station') || 'chanh_dien';
+            this.activateGuidedBeacon(key);
+          });
+        });
+      } else if (sub === 'quests') {
+        const quests = getQuestsWithProgress(this.activityHub, this.spiritual, this.completedLessons.size);
+        box.innerHTML = `
+          <div class="activity-banner-row">
+            <div>
+              <div style="font-size:16px;font-weight:800;color:#FFD875;">🎯 Nhiệm vụ Hành hương &amp; Công đức</div>
+              <div style="font-size:13px;color:#FFF6E5;margin-top:2px;">Hoàn thành mỗi việc lành nhận thêm điểm Sen 🪷 và Ngọc 💎 để thỉnh lễ vật, áo tràng.</div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <span class="store-wallet-pill">🪷 ${this.storeProfile.lotusPoints}</span>
+              <span class="store-wallet-pill">💎 ${this.storeProfile.gems}</span>
+            </div>
+          </div>
+          <div class="quests-grid">
+            ${quests.map((q) => {
+              const pct = Math.min(100, Math.round((q.current / q.target) * 100));
+              return `
+              <div class="quest-card ${q.claimed ? 'claimed' : q.claimable ? 'claimable' : ''}">
+                <div class="quest-card-head">
+                  <span class="quest-cat-pill">${q.icon} ${q.category}</span>
+                  <span class="quest-reward-text">+${q.rewardLotus} 🪷 · +${q.rewardGems} 💎</span>
+                </div>
+                <div class="quest-card-title">${q.title}</div>
+                <div class="quest-card-desc">${q.desc}</div>
+                <div class="quest-progress-track">
+                  <div class="quest-progress-fill" style="width:${pct}%"></div>
+                </div>
+                <div class="quest-card-foot">
+                  <span class="quest-progress-lbl">Tiến độ: ${q.current}/${q.target}</span>
+                  ${
+                    q.claimed
+                      ? `<span class="quest-done-tag">✓ Đã nhận thưởng</span>`
+                      : q.claimable
+                      ? `<button type="button" class="quest-claim-btn" data-explore-claim-quest="${q.id}">🎁 Nhận thưởng</button>`
+                      : `<button type="button" class="quest-go-btn" data-explore-go-quest="${q.actionHint}">Làm ngay →</button>`
+                  }
+                </div>
+              </div>`;
+            }).join('')}
+          </div>
+        `;
+        box.querySelectorAll('[data-explore-claim-quest]').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            const qid = btn.getAttribute('data-explore-claim-quest');
+            const res = claimQuestReward(
+              this.activityHub,
+              this.storeProfile,
+              this.spiritual,
+              this.completedLessons.size,
+              qid
+            );
+            this.activityHub = res.activity;
+            this.storeProfile = res.storeProfile;
+            this.saveState();
+            this.updateActionBadges();
+            if (res.ok) {
+              this.playBellTone(324, 2.0);
+              this.showToast('🎁 Nhận thưởng nhiệm vụ', res.message, 3600, false);
+            }
+            renderSub('quests');
+          });
+        });
+        box.querySelectorAll('[data-explore-go-quest]').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            this.executeQuestActionHint(btn.getAttribute('data-explore-go-quest'));
+          });
+        });
+      } else if (sub === 'shop_offerings') {
+        const items = filterMarketplaceItems(shopCatFilter);
+        box.innerHTML = `
+          <div class="activity-banner-row">
+            <div>
+              <div style="font-size:16px;font-weight:800;color:#FFD875;">🛍️ Mua Đồ Chay · Nhang Đèn · Lễ Vật Dâng Phật</div>
+              <div style="font-size:13px;color:#FFF6E5;margin-top:2px;">Dùng điểm Sen 🪷 để thỉnh lễ vật dâng cúng ngay hoặc thêm vào giỏ quà lưu niệm.</div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <span class="store-wallet-pill">🪷 ${this.storeProfile.lotusPoints}</span>
+              <button type="button" id="btn-explore-open-9tab-store" class="quest-claim-btn" style="background:#C96F4A;">Tủ đồ Áo tràng 3D</button>
+            </div>
+          </div>
+          <div class="market-tabs-row">
+            ${MARKETPLACE_STALL_CATEGORIES.map((cat) => `
+              <button type="button" class="market-tab-pill ${shopCatFilter === cat.id ? 'active' : ''}" data-explore-shop-cat="${cat.id}">
+                <span>${cat.icon}</span><span>${cat.label}</span>
+              </button>
+            `).join('')}
+          </div>
+          <div class="market-items-grid" style="max-height:46vh;overflow-y:auto;padding-right:4px;">
+            ${items.map((item) => `
+              <article class="market-item-card">
+                <div class="market-item-top">
+                  <div class="market-item-icon">
+                    ${
+                      item.image
+                        ? `<img src="${item.image}" alt="${item.name}" class="market-item-thumb-img" onerror="this.style.display='none';if(this.nextElementSibling)this.nextElementSibling.style.display='inline';" /><span style="display:none;">${item.icon}</span>`
+                        : `<span>${item.icon}</span>`
+                    }
+                  </div>
+                  <div style="flex:1;min-width:0;">
+                    <div class="market-item-title">${item.name}</div>
+                    <div class="market-item-prices">
+                      <span class="market-price-vnd">${item.priceVnd.toLocaleString('vi-VN')}đ</span>
+                      <span class="market-price-lotus">🪷 ${item.lotusCost}</span>
+                    </div>
+                  </div>
+                </div>
+                <p class="market-item-desc">${item.desc}</p>
+                <div class="market-item-actions">
+                  <button type="button" class="market-btn-use" data-explore-use="${item.id}">Thỉnh dâng ngay</button>
+                  <button type="button" class="market-btn-cart" data-explore-cart="${item.id}">+ Giỏ hàng</button>
+                </div>
+              </article>
+            `).join('')}
+          </div>
+        `;
+        document.getElementById('btn-explore-open-9tab-store')?.addEventListener('click', () => {
+          this.openNineTabStoreModal('ao_trang');
+        });
+        box.querySelectorAll('[data-explore-shop-cat]').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            shopCatFilter = btn.getAttribute('data-explore-shop-cat') || 'huong_hoa';
+            renderSub('shop_offerings');
+          });
+        });
+        box.querySelectorAll('[data-explore-use]').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            const id = btn.getAttribute('data-explore-use');
+            const res = purchaseMarketplaceItem(this.storeProfile, this.spiritual, this.cart, id, 'use_now');
+            if (!res.ok) {
+              this.showToast('Chưa đủ điểm Sen', res.message, 3200);
+              return;
+            }
+            this.storeProfile = res.storeProfile;
+            this.spiritual = res.spiritual;
+            this.cart = res.cart;
+            this.saveState();
+            this.updateActionBadges();
+            this.playBellTone(324, 1.8);
+            this.showToast('🪷 Đã thỉnh lễ vật', res.message, 3600, false);
+            renderSub('shop_offerings');
+          });
+        });
+        box.querySelectorAll('[data-explore-cart]').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            const id = btn.getAttribute('data-explore-cart');
+            const res = purchaseMarketplaceItem(this.storeProfile, this.spiritual, this.cart, id, 'cart');
+            if (res.ok) {
+              this.cart = res.cart;
+              this.saveState();
+              this.updateActionBadges();
+              this.playMokugyoTap();
+              this.showToast('🛒 Đã thêm vào giỏ quà', res.message, 2800, false);
+            }
+          });
+        });
       } else if (sub === 'imprint') {
         const curImprint = calculateJourneyImprint(this.spiritual);
         box.innerHTML = `
-          <div style="background:#1C5A34;color:#FFF6E5;padding:16px 20px;border-radius:18px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;">
+          <div style="background:#5C381F;color:#FFF6E5;padding:16px 20px;border-radius:18px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;">
             <div>
               <div style="font-size:18px;font-weight:800;color:#FFD875;">Những nơi đã ghé thăm</div>
               <div style="font-size:13.5px;opacity:0.92;margin-top:3px;">Mỗi cánh sen sáng lên khi bạn dạo bước ghé thăm một góc trong khuôn viên Chùa Vĩnh Tràng.</div>
@@ -3563,7 +3957,7 @@ export class ChuaOnlineApp {
                 p.lit ? '#C9962E' : 'rgba(140,100,60,0.25)'
               };border-radius:14px;padding:12px 14px;">
                 <div style="display:flex;justify-content:space-between;align-items:center;">
-                  <strong style="font-size:14px;color:#1C5A34;">${p.pinLabel}</strong>
+                  <strong style="font-size:14px;color:#5C381F;">${p.pinLabel}</strong>
                   <span style="font-size:12px;font-weight:800;color:${p.lit ? '#C9962E' : '#8a623c'};">
                     ${p.lit ? '🪷 Đã ghé thăm' : '○ Chưa ghé'}
                   </span>
@@ -3576,23 +3970,99 @@ export class ChuaOnlineApp {
           </div>
         `;
       } else if (sub === 'arhats') {
-        box.innerHTML = `
-          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-height:52vh;overflow-y:auto;padding-right:4px;">
-            ${EIGHTEEN_ARHATS.map(
-              (a) => `
-              <div style="background:#fffdf8;border:1px solid rgba(140,100,60,0.28);border-radius:14px;padding:11px 13px;">
-                <div style="font-size:12px;font-weight:800;color:#8c4b1e;">Vị thứ ${a.id}/18 · ${a.title}</div>
-                <div style="font-size:14.5px;font-weight:800;color:#144929;margin:3px 0;">${a.name}</div>
-                <p style="font-size:12.5px;color:#4a2f18;line-height:1.4;">${a.meaning}</p>
+        const renderArhatMuseum = () => {
+          const a = EIGHTEEN_ARHATS[selectedArhatIdx] || EIGHTEEN_ARHATS[0];
+          box.innerHTML = `
+            <div class="arhat-museum-layout">
+              <div class="arhat-stage-panel">
+                <div class="arhat-3d-viewport">
+                  <canvas id="arhat-3d-canvas"></canvas>
+                  <span class="profile-stage-hint">Kéo để xoay 360°</span>
+                  <span class="arhat-idx-chip">Tôn tượng ${a.id}/18</span>
+                </div>
+                <button type="button" id="btn-arhat-goto-hall" class="product-detail-btn" style="width:100%;height:44px;background:#7E2A22;">
+                  🏛️ Tới tượng trong Chánh điện
+                </button>
               </div>
-            `
-            ).join('')}
-          </div>
-        `;
+
+              <div class="arhat-plaque-card">
+                <div>
+                  <div class="arhat-plaque-eyebrow">Vị thứ ${a.id}/18 · ${a.title}</div>
+                  <h4 class="arhat-plaque-name">${a.name}</h4>
+                  <div class="arhat-emblem-pill">🪷 Pháp bảo &amp; Linh thú: ${a.emblem}</div>
+                  <p class="arhat-plaque-meaning">${a.meaning}</p>
+                </div>
+
+                <div class="arhat-plaque-actions">
+                  <button type="button" id="btn-arhat-prev" class="daily-dharma-secondary-btn">← Vị trước</button>
+                  <button type="button" id="btn-arhat-tts" class="daily-dharma-primary-btn">🔊 Nghe giới thiệu</button>
+                  <button type="button" id="btn-arhat-next" class="daily-dharma-secondary-btn">Vị tiếp →</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="arhat-rail-18" role="tablist" aria-label="Chọn 1 trong 18 vị La Hán">
+              ${EIGHTEEN_ARHATS.map(
+                (item, idx) => `
+                <button type="button" class="arhat-rail-btn ${idx === selectedArhatIdx ? 'active' : ''}" data-arhat-jump="${idx}" title="${item.title} — ${item.name}">
+                  <span class="arhat-rail-num">${item.id}</span>
+                  <span class="arhat-rail-title">${item.title.replace(' La Hán', '')}</span>
+                </button>
+              `
+              ).join('')}
+            </div>
+          `;
+
+          this.mountArhat3DStage('arhat-3d-canvas', selectedArhatIdx);
+
+          document.getElementById('btn-arhat-prev')?.addEventListener('click', () => {
+            selectedArhatIdx = (selectedArhatIdx + 17) % 18;
+            this.playMokugyoTap();
+            renderArhatMuseum();
+          });
+          document.getElementById('btn-arhat-next')?.addEventListener('click', () => {
+            selectedArhatIdx = (selectedArhatIdx + 1) % 18;
+            this.playMokugyoTap();
+            renderArhatMuseum();
+          });
+          document.getElementById('btn-arhat-tts')?.addEventListener('click', () => {
+            const text = `Vị thứ ${a.id}: ${a.title}, ${a.name}. Đặc trưng: ${a.emblem}. ${a.meaning}`;
+            if ('speechSynthesis' in window) {
+              try {
+                window.speechSynthesis.cancel();
+                const utter = new SpeechSynthesisUtterance(text);
+                utter.lang = 'vi-VN';
+                utter.rate = 0.92;
+                window.speechSynthesis.speak(utter);
+              } catch {}
+            }
+            this.playBellTone(360, 1.4);
+            this.showToast(`🙏 ${a.title}`, a.meaning, 4200, false);
+          });
+          document.getElementById('btn-arhat-goto-hall')?.addEventListener('click', () => {
+            const targetIdx = selectedArhatIdx;
+            this.closeModal();
+            this.switchScreen('courtyard');
+            if (!this.world3d?.insideInterior) {
+              this.toggleInteriorHallIn3D(true);
+            }
+            setTimeout(() => {
+              this.world3d?.focusInteriorArhat?.(targetIdx);
+            }, 350);
+          });
+          box.querySelectorAll('[data-arhat-jump]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+              selectedArhatIdx = Number(btn.getAttribute('data-arhat-jump') || 0);
+              this.playMokugyoTap();
+              renderArhatMuseum();
+            });
+          });
+        };
+        renderArhatMuseum();
       } else if (sub === 'sweep') {
         box.innerHTML = `
           <div style="background:#fffdf8;border:1.5px solid rgba(140,100,60,0.28);border-radius:18px;padding:18px;text-align:center;">
-            <div style="font-size:19px;font-weight:800;color:#144929;">Quét lá sân chùa</div>
+            <div style="font-size:19px;font-weight:800;color:#472915;">Quét lá sân chùa</div>
             <p style="font-size:14px;color:#4a2f18;margin:6px auto 14px;max-width:520px;">
               "Chổi tre quét sạch lá vàng, lòng người nhẹ bớt ngổn ngang bụi trần." Bạn đã quét sạch <strong>${this.spiritual.leavesSwept}</strong> đợt lá rụng trên sân Chánh điện.
             </p>
@@ -3647,9 +4117,21 @@ export class ChuaOnlineApp {
       ].includes(item.id)
     );
 
+    const storeWearables = STORE_ITEMS_CATALOG.filter((item) => {
+      const wearableSlot = ['robe', 'hat', 'mat', 'mala', 'handItem', 'instrument', 'cloud', 'pet'].includes(item.slot);
+      if (!wearableSlot) return false;
+      const owned = (this.storeProfile?.ownedCounts?.[item.id] || 0) > 0;
+      const equipped = this.storeProfile?.equipped?.[item.slot] === item.id;
+      return owned || equipped;
+    });
+
     const activeProf =
       CHARACTER_PROFILES.find((c) => c.key === this.characterModelKey) || CHARACTER_PROFILES[0];
     this.profilePreviewPose = this.profilePreviewPose || 'Dung';
+    const activeVisual = this.buildStoreVisualPayload();
+    const activeOutfitText = activeVisual.robeName
+      ? `${activeVisual.robeName}${activeVisual.bag ? ' & Túi vải sen' : ''}`
+      : activeProf.outfitName;
 
     this.openModal(
       'Hồ sơ & Trang phục đi chùa',
@@ -3666,7 +4148,7 @@ export class ChuaOnlineApp {
             </div>
           </div>
           <div class="profile-char-name">${activeProf.name} (${activeProf.heightLabel})</div>
-          <div class="profile-char-sub">${activeProf.outfitName}</div>
+          <div class="profile-char-sub">${activeOutfitText}</div>
           <div class="profile-char-switch-row">
             ${CHARACTER_PROFILES.map(
               (c) => `
@@ -3686,12 +4168,49 @@ export class ChuaOnlineApp {
             <div><div class="profile-stat-val">${this.completedLessons.size}/24</div><div class="profile-stat-lbl">Bài đã học</div></div>
           </div>
 
+          ${
+            storeWearables.length > 0
+              ? `
+              <div>
+                <div class="profile-wardrobe-heading" style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
+                  <span>Áo tràng &amp; Pháp khí đã thỉnh từ Cửa hàng:</span>
+                  <button type="button" id="btn-wardrobe-open-9tab" class="quest-go-btn" style="min-height:32px;font-size:12px;">🛍️ Thỉnh thêm Áo tràng</button>
+                </div>
+                <div class="profile-wardrobe-grid">
+                  ${storeWearables
+                    .map((item) => {
+                      const active = this.storeProfile?.equipped?.[item.slot] === item.id;
+                      const dotHtml = item.swatchHex
+                        ? `<span style="width:14px;height:14px;border-radius:50%;background:${item.swatchHex};border:1.5px solid #4A3222;display:inline-block;flex-shrink:0;"></span>`
+                        : '';
+                      return `
+                      <button type="button" class="store-wardrobe-toggle-btn profile-wardrobe-card ${active ? 'active' : ''}" data-store-slot="${item.slot}" data-store-id="${item.id}">
+                        <span class="profile-wardrobe-name" style="display:flex;align-items:center;gap:7px;">${dotHtml}<span>${item.name}</span></span>
+                        <span class="profile-wardrobe-status">${active ? '✓ Đang mặc' : 'Mặc vào 3D'}</span>
+                      </button>
+                    `;
+                    })
+                    .join('')}
+                </div>
+              </div>
+              `
+              : `
+              <div class="store-quest-cta-strip">
+                <span>👕 Cô bác chưa thỉnh thêm Áo tràng mới? Hãy ghé Cửa hàng để xem thử 12 mẫu Áo tràng &amp; Pháp phục 3D!</span>
+                <button type="button" id="btn-wardrobe-open-9tab" class="quest-claim-btn">🛍️ Xem 12 mẫu Áo tràng</button>
+              </div>
+              `
+          }
+
           <div>
-            <div class="profile-wardrobe-heading">Trang phục &amp; đồ mang theo:</div>
+            <div class="profile-wardrobe-heading">Hành trang &amp; đồ mang theo mặc định:</div>
             <div class="profile-wardrobe-grid">
               ${wearableItems
                 .map((item) => {
-                  const active = Object.values(this.spiritual.equippedItems).includes(item.id);
+                  const active =
+                    item.id === 'ao_trang_phat_tu'
+                      ? !this.storeProfile?.equipped?.robe && this.spiritual.equippedItems.outfit === 'ao_trang_phat_tu'
+                      : Object.values(this.spiritual.equippedItems).includes(item.id);
                   return `
                   <button type="button" class="wardrobe-toggle-btn profile-wardrobe-card ${active ? 'active' : ''}" data-slot="${item.equipSlot}" data-id="${item.id}">
                     <span class="profile-wardrobe-name">${item.name}</span>
@@ -3704,9 +4223,34 @@ export class ChuaOnlineApp {
           </div>
 
           <div class="profile-cta-row">
-            <button type="button" id="btn-account-open-dharma" class="product-detail-btn" style="width:100%;background:#1C5A34;">Lời dạy hôm nay</button>
+            <button type="button" id="btn-account-open-dharma" class="product-detail-btn" style="width:100%;background:#5C381F;">Lời dạy hôm nay</button>
             <button type="button" id="btn-account-open-ugc" class="product-detail-btn" style="width:100%;background:#9c4119;">Lưu ảnh kỷ niệm</button>
-            <button type="button" id="btn-account-open-shop" class="product-detail-btn" style="width:100%;">Cửa hàng lưu niệm</button>
+            <button type="button" id="btn-account-open-shop" class="product-detail-btn" style="width:100%;">Quà lưu niệm</button>
+          </div>
+
+          <div class="backup-code-box">
+            <div class="backup-code-title">🔐 Sao lưu &amp; Khôi phục Hồ sơ (Mã khôi phục)</div>
+            <p class="backup-code-desc">
+              Tạo và lưu lại mã <code>VT1-...</code> để khi chuyển sang điện thoại khác cô bác vẫn giữ nguyên số lạy, công đức, áo tràng và bài đã học.
+            </p>
+            <div class="backup-code-row">
+              <button type="button" id="btn-generate-backup-code" class="product-detail-btn" style="width:auto;padding:0 16px;height:38px;font-size:13px;background:#5C381F;">
+                📋 Tạo &amp; Sao chép mã
+              </button>
+              <input id="backup-code-display" type="text" readonly value="${encodeProfileBackupCode({
+                characterModelKey: this.characterModelKey,
+                spiritual: this.spiritual,
+                storeProfile: this.storeProfile,
+                activityHub: this.activityHub,
+                completedLessons: Array.from(this.completedLessons)
+              })}" aria-label="Mã sao lưu hồ sơ của bạn" />
+            </div>
+            <div class="backup-code-row" style="margin-top:8px;">
+              <input id="restore-code-input" type="text" placeholder="Dán mã khôi phục VT1-... tại đây" aria-label="Nhập mã khôi phục" />
+              <button type="button" id="btn-restore-backup-code" class="product-detail-btn" style="width:auto;padding:0 16px;height:38px;font-size:13px;background:#9A6E1C;">
+                Khôi phục
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -3736,8 +4280,31 @@ export class ChuaOnlineApp {
         const key = btn.getAttribute('data-char') || 'nu';
         this.characterModelKey = key;
         this.world3d?.switchCharacter(key);
+        this.syncStoreVisualsTo3D();
         this.saveState();
         this.updateEquippedTags();
+        this.openAccountModal();
+      });
+    });
+
+    document.querySelectorAll('.store-wardrobe-toggle-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const slot = btn.getAttribute('data-store-slot');
+        const itemId = btn.getAttribute('data-store-id');
+        if (!slot || !itemId) return;
+        const currentlyEquipped = this.storeProfile.equipped[slot] === itemId;
+        this.storeProfile.equipped[slot] = currentlyEquipped ? null : itemId;
+        this.storeProfile.tryingItemId = null;
+        if (slot === 'robe' && !currentlyEquipped) {
+          this.spiritual.equippedItems.outfit = null;
+        }
+        if (itemId === 'non_la_theu_sen_store') {
+          this.spiritual.equippedItems.hat = currentlyEquipped ? null : 'non_la_theu_sen';
+        }
+        this.saveState();
+        this.syncStoreVisualsTo3D();
+        this.updateEquippedTags();
+        this.playMokugyoTap();
         this.openAccountModal();
       });
     });
@@ -3746,12 +4313,22 @@ export class ChuaOnlineApp {
       btn.addEventListener('click', () => {
         const slot = btn.getAttribute('data-slot') || 'hand';
         const itemKey = btn.getAttribute('data-id');
+        if (itemKey === 'ao_trang_phat_tu') {
+          this.storeProfile.equipped.robe = null;
+          this.storeProfile.tryingItemId = null;
+        }
         const r = performSpiritualAction(this.spiritual, 'EQUIP_ITEM', { slot, itemKey });
         this.spiritual = r.state;
         this.saveState();
+        this.syncStoreVisualsTo3D();
         this.updateEquippedTags();
+        this.playMokugyoTap();
         this.openAccountModal();
       });
+    });
+
+    document.getElementById('btn-wardrobe-open-9tab')?.addEventListener('click', () => {
+      this.openNineTabStoreModal('ao_trang');
     });
 
     document.getElementById('btn-account-open-dharma')?.addEventListener('click', () => {
@@ -3766,6 +4343,603 @@ export class ChuaOnlineApp {
       this.closeModal();
       this.switchScreen('shop');
     });
+
+    document.getElementById('btn-generate-backup-code')?.addEventListener('click', async () => {
+      const code = encodeProfileBackupCode({
+        characterModelKey: this.characterModelKey,
+        spiritual: this.spiritual,
+        storeProfile: this.storeProfile,
+        activityHub: this.activityHub,
+        completedLessons: Array.from(this.completedLessons)
+      });
+      const disp = document.getElementById('backup-code-display');
+      if (disp) disp.value = code;
+      try {
+        await navigator.clipboard?.writeText(code);
+        this.showToast('📋 Đã sao chép mã khôi phục', 'Cô bác hãy dán và lưu giữ mã VT1 này vào ghi chú hoặc Zalo.', 3800, false);
+      } catch {
+        this.showToast('🔐 Đã tạo mã khôi phục', 'Cô bác hãy chọn toàn bộ ô mã bên cạnh để sao chép nhé.', 3800, false);
+      }
+    });
+
+    document.getElementById('btn-restore-backup-code')?.addEventListener('click', () => {
+      const inp = document.getElementById('restore-code-input');
+      const res = decodeProfileBackupCode(inp?.value || '');
+      if (!res.ok || !res.data) {
+        this.showToast('Chưa khôi phục được', res.message || 'Mã khôi phục không hợp lệ.', 3800, false);
+        return;
+      }
+      this.characterModelKey = res.data.characterModelKey;
+      this.spiritual = res.data.spiritual;
+      this.storeProfile = res.data.storeProfile;
+      this.activityHub = res.data.activityHub;
+      this.completedLessons = new Set(res.data.completedLessons);
+      this.world3d?.switchCharacter?.(this.characterModelKey);
+      this.syncStoreVisualsTo3D();
+      this.saveState();
+      this.updateActionBadges();
+      this.updateEquippedTags();
+      this.playBellTone(324, 2.2);
+      this.showToast('✅ Đã khôi phục hồ sơ thành công!', 'Toàn bộ công đức, vật phẩm và bài học của cô bác đã trở lại.', 4200, false);
+      this.openAccountModal();
+    });
+  }
+
+  /* ========================================================================
+     HÀNH TRÌNH MODAL (Điểm danh 7 ngày · Nhiệm vụ & Chặng · Hộp thư · Hướng dẫn · Chia sẻ & Góp ý)
+     ======================================================================== */
+  openActivityHubModal(initialTab = 'checkin') {
+    let activeTab = initialTab;
+    let mailFilter = 'all';
+    let feedbackRating = 5;
+    const feedbackTags = new Set();
+    let feedbackComment = '';
+
+    const renderHub = () => {
+      const todayKey = getLocalDateKey();
+      this.activityHub = ensureDailyMissionDate(this.activityHub, todayKey);
+      const canCheckinToday = this.activityHub.lastCheckinDate !== todayKey;
+      const dailyMissions = getDailyMissionsWithProgress(this.activityHub, todayKey);
+      const chapters = getExplorationChaptersStatus(this.activityHub, this.spiritual);
+      const quests = getQuestsWithProgress(this.activityHub, this.spiritual, this.completedLessons.size);
+      const allMails = getMailboxWithStatus(this.activityHub, {
+        includeExtended: true,
+        spiritualState: this.spiritual
+      });
+      const shownMails = mailFilter === 'unclaimed' ? allMails.filter((m) => !m.claimed) : allMails;
+
+      const claimableDailyCount = dailyMissions.filter((m) => m.claimable).length;
+      const claimableChapCount = chapters.filter((c) => c.claimable).length;
+      const claimableQCount = quests.filter((q) => q.claimable).length + claimableDailyCount + claimableChapCount;
+      const unclaimedMailCount = allMails.filter((m) => !m.claimed).length;
+
+      let bodyHtml = '';
+      if (activeTab === 'checkin') {
+        bodyHtml = `
+          <div class="activity-banner-row">
+            <div>
+              <div style="font-size:17px;font-weight:800;color:#FFD875;">📅 Điểm danh lễ chùa 7 ngày liên tiếp</div>
+              <div style="font-size:13.5px;color:#FFF6E5;margin-top:2px;">
+                Chuỗi hiện tại: <strong>${this.activityHub.streakDays}/7 ngày</strong> · Tổng cộng ${this.activityHub.checkinCount} ngày tinh tấn · Mở khóa thêm Thư &amp; Chặng khám phá mới mỗi ngày!
+              </div>
+            </div>
+            <button type="button" id="btn-claim-daily-checkin" class="quest-claim-btn" ${canCheckinToday ? '' : 'disabled'} style="min-height:46px;padding:0 20px;font-size:14.5px;${canCheckinToday ? '' : 'opacity:0.65;cursor:default;'}">
+              ${canCheckinToday ? '🎁 Điểm danh nhận lộc hôm nay' : '✓ Hôm nay đã điểm danh'}
+            </button>
+          </div>
+          <div class="checkin-grid-7">
+            ${DAILY_CHECKIN_REWARDS.map((d) => {
+              const claimed = this.activityHub.claimedDays.includes(d.day);
+              const nextDay = (this.activityHub.streakDays % 7) + 1;
+              const isTodayTarget = canCheckinToday && d.day === nextDay;
+              return `
+              <div class="checkin-day-card ${claimed ? 'claimed' : ''} ${isTodayTarget ? 'today-target' : ''}">
+                <div class="checkin-day-num">Ngày ${d.day}</div>
+                <div class="checkin-day-title">${d.label.split('·')[1]?.trim() || d.label}</div>
+                <div class="checkin-day-gift">+${d.lotus} 🪷<br/>+${d.gems} 💎</div>
+                <div class="checkin-day-status">${claimed ? '✓ Đã nhận' : isTodayTarget ? 'Hôm nay' : 'Chờ nhận'}</div>
+              </div>`;
+            }).join('')}
+          </div>
+        `;
+      } else if (activeTab === 'quests') {
+        bodyHtml = `
+          <div class="activity-banner-row">
+            <div>
+              <div style="font-size:16.5px;font-weight:800;color:#FFD875;">🌅 Nhiệm vụ Hôm nay &amp; Hành trình 7 Ngày Khám phá</div>
+              <div style="font-size:13px;color:#FFF6E5;margin-top:2px;">Thực hành nhẹ nhàng mỗi ngày để tích điểm Sen 🪷 &amp; Ngọc 💎 thỉnh Áo tràng đẹp.</div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <span class="store-wallet-pill">🪷 ${this.storeProfile.lotusPoints}</span>
+              <span class="store-wallet-pill">💎 ${this.storeProfile.gems}</span>
+            </div>
+          </div>
+
+          <div class="hub-section-heading">🌅 Nhiệm vụ Hôm nay (làm mới mỗi ngày)</div>
+          <div class="quests-grid">
+            ${dailyMissions
+              .map((m) => {
+                const pct = Math.min(100, Math.round((m.current / m.target) * 100));
+                return `
+                <div class="quest-card ${m.claimed ? 'claimed' : m.claimable ? 'claimable' : ''}">
+                  <div class="quest-card-head">
+                    <span class="quest-cat-pill">${m.icon} Hằng ngày</span>
+                    <span class="quest-reward-text">+${m.rewardLotus} 🪷 · +${m.rewardGems} 💎</span>
+                  </div>
+                  <div class="quest-card-title">${m.title}</div>
+                  <div class="quest-card-desc">${m.desc}</div>
+                  <div class="quest-progress-track">
+                    <div class="quest-progress-fill" style="width:${pct}%"></div>
+                  </div>
+                  <div class="quest-card-foot">
+                    <span class="quest-progress-lbl">${m.current}/${m.target}</span>
+                    ${
+                      m.claimed
+                        ? `<span class="quest-done-tag">✓ Đã nhận hôm nay</span>`
+                        : m.claimable
+                        ? `<button type="button" class="quest-claim-btn" data-claim-daily="${m.id}">🎁 Nhận lộc</button>`
+                        : `<button type="button" class="quest-go-btn" data-hub-go-quest="${m.actionHint}">Làm ngay →</button>`
+                    }
+                  </div>
+                </div>`;
+              })
+              .join('')}
+          </div>
+
+          <div class="hub-section-heading">🗓️ 7 Chặng Khám phá Chùa Vĩnh Tràng (Nhiều ngày không chán)</div>
+          <div class="quests-grid">
+            ${chapters
+              .map((ch) => {
+                const pct = Math.min(100, Math.round((ch.visitedCount / ch.requiredStations) * 100));
+                return `
+                <div class="quest-card ${ch.claimed ? 'claimed' : ch.claimable ? 'claimable' : ''}">
+                  <div class="quest-card-head">
+                    <span class="quest-cat-pill">🗓️ Chặng ${ch.dayUnlock}/7</span>
+                    <span class="quest-reward-text">+${ch.rewardLotus} 🪷 · +${ch.rewardGems} 💎</span>
+                  </div>
+                  <div class="quest-card-title">${ch.title}</div>
+                  <div class="quest-card-desc">${ch.desc}</div>
+                  <div class="quest-progress-track">
+                    <div class="quest-progress-fill" style="width:${pct}%"></div>
+                  </div>
+                  <div class="quest-card-foot">
+                    <span class="quest-progress-lbl">Ghé ${ch.visitedCount}/${ch.requiredStations} điểm</span>
+                    ${
+                      ch.claimed
+                        ? `<span class="quest-done-tag">✓ Đã hoàn thành</span>`
+                        : ch.claimable
+                        ? `<button type="button" class="quest-claim-btn" data-claim-chapter="${ch.id}">🎁 Nhận thưởng chặng</button>`
+                        : `<button type="button" class="quest-go-btn" data-guide-walk="${ch.stationKey}">🚶 Đi tới ngay</button>`
+                    }
+                  </div>
+                </div>`;
+              })
+              .join('')}
+          </div>
+
+          <div class="hub-section-heading">🏆 Dấu mốc Thực hành Trọn đời</div>
+          <div class="quests-grid">
+            ${quests
+              .map((q) => {
+                const pct = Math.min(100, Math.round((q.current / q.target) * 100));
+                return `
+                <div class="quest-card ${q.claimed ? 'claimed' : q.claimable ? 'claimable' : ''}">
+                  <div class="quest-card-head">
+                    <span class="quest-cat-pill">${q.icon} ${q.category}</span>
+                    <span class="quest-reward-text">+${q.rewardLotus} 🪷 · +${q.rewardGems} 💎</span>
+                  </div>
+                  <div class="quest-card-title">${q.title}</div>
+                  <div class="quest-card-desc">${q.desc}</div>
+                  <div class="quest-progress-track">
+                    <div class="quest-progress-fill" style="width:${pct}%"></div>
+                  </div>
+                  <div class="quest-card-foot">
+                    <span class="quest-progress-lbl">${q.current}/${q.target}</span>
+                    ${
+                      q.claimed
+                        ? `<span class="quest-done-tag">✓ Đã nhận</span>`
+                        : q.claimable
+                        ? `<button type="button" class="quest-claim-btn" data-hub-claim-quest="${q.id}">🎁 Nhận thưởng</button>`
+                        : `<button type="button" class="quest-go-btn" data-hub-go-quest="${q.actionHint}">Thực hiện →</button>`
+                    }
+                  </div>
+                </div>`;
+              })
+              .join('')}
+          </div>
+        `;
+      } else if (activeTab === 'mailbox') {
+        bodyHtml = `
+          <div class="activity-banner-row">
+            <div>
+              <div style="font-size:16.5px;font-weight:800;color:#FFD875;">✉️ Hộp thư Nhà Chùa &amp; Hồi âm Tri ân</div>
+              <div style="font-size:13px;color:#FFF6E5;margin-top:2px;">Nhận quà công đức và chạm chọn lời hồi âm để nhận thêm +15 🪷 mỗi bức thư!</div>
+            </div>
+            <span class="store-wallet-pill">Còn ${unclaimedMailCount} thư chưa nhận quà</span>
+          </div>
+
+          <div class="mail-filter-row">
+            <button type="button" class="mail-filter-pill ${mailFilter === 'all' ? 'active' : ''}" data-mail-filter="all">
+              📬 Tất cả thư (${allMails.length})
+            </button>
+            <button type="button" class="mail-filter-pill ${mailFilter === 'unclaimed' ? 'active' : ''}" data-mail-filter="unclaimed">
+              🎁 Chưa nhận quà (${unclaimedMailCount})
+            </button>
+          </div>
+
+          <div class="mailbox-list">
+            ${
+              shownMails.length === 0
+                ? `<div class="mail-card"><p class="mail-body" style="text-align:center;font-weight:700;">Cô bác đã nhận hết quà trong hộp thư hôm nay rồi ạ! Ngày mai điểm danh sẽ có thêm thư mới từ Nhà Chùa.</p></div>`
+                : shownMails
+                    .map(
+                      (m) => `
+                <article class="mail-card ${m.claimed ? 'claimed' : ''}">
+                  <div class="mail-card-head">
+                    <div>
+                      <div class="mail-sender">${m.sender} · <span style="opacity:0.75;">${m.dateLabel}</span></div>
+                      <div class="mail-title">${m.title}</div>
+                    </div>
+                    <div class="mail-rewards-pill">+${m.rewardLotus} 🪷 · +${m.rewardGems} 💎</div>
+                  </div>
+                  <p class="mail-body">${m.body}</p>
+                  <div class="mail-reply-chips">
+                    ${(m.replyOptions || [])
+                      .map(
+                        (opt, optIdx) => `
+                        <button type="button" class="mail-reply-btn ${m.replyText === opt ? 'replied' : ''}" data-reply-mail="${m.id}" data-reply-idx="${optIdx}">
+                          ${m.replyText === opt ? '✓ ' : '💬 '}${opt}
+                        </button>
+                      `
+                      )
+                      .join('')}
+                  </div>
+                  <div class="mail-card-foot">
+                    <span class="quest-progress-lbl">${m.replyText ? 'Đã gửi hồi âm (+15 🪷)' : 'Chạm chọn lời hồi âm nhận +15 🪷'}</span>
+                    ${
+                      m.claimed
+                        ? `<span class="quest-done-tag">✓ Đã nhận quà thư này</span>`
+                        : `<button type="button" class="quest-claim-btn" data-claim-mail="${m.id}">✉️ Nhận quà ngay</button>`
+                    }
+                  </div>
+                </article>`
+                    )
+                    .join('')
+            }
+          </div>
+        `;
+      } else if (activeTab === 'guide') {
+        bodyHtml = `
+          <div class="activity-banner-row">
+            <div>
+              <div style="font-size:16.5px;font-weight:800;color:#FFD875;">🧭 Hướng dẫn Hành hương Chùa Vĩnh Tràng (6 bước chuẩn nghi lễ)</div>
+              <div style="font-size:13px;color:#FFF6E5;margin-top:2px;">
+                Trên điện thoại: chạm trực tiếp lên sân chùa để đi tới điểm hành hương hoặc kéo ngón tay để xoay góc nhìn. Trên máy tính: dùng phím <strong>W A S D</strong> / mũi tên và kéo chuột.
+              </div>
+            </div>
+            ${
+              this.activeGuidedBeacon
+                ? `<button type="button" id="btn-clear-beacon" class="quest-go-btn" style="background:#FFF6E5;color:#7E2A22;">✕ Tắt đèn dẫn đường</button>`
+                : ''
+            }
+          </div>
+          <div class="guide-steps-grid">
+            ${PILGRIMAGE_GUIDE_STEPS.map(
+              (s) => `
+              <div class="guide-step-card">
+                <div class="guide-step-title">${s.title}</div>
+                <p class="guide-step-desc">${s.desc}</p>
+                <div class="guide-step-actions">
+                  <button type="button" class="quest-go-btn" data-guide-walk="${s.stationKey}">🚶 Đi tới đây</button>
+                  <button type="button" class="quest-claim-btn" data-guide-beacon="${s.stationKey}">🧭 Dẫn đường 3D</button>
+                </div>
+              </div>`
+            ).join('')}
+          </div>
+        `;
+      } else if (activeTab === 'share_feedback') {
+        const shareText = buildPilgrimageShareText({
+          characterModelKey: this.characterModelKey,
+          spiritual: this.spiritual,
+          storeProfile: this.storeProfile,
+          activityHub: this.activityHub,
+          completedLessonsCount: this.completedLessons.size
+        });
+        const quickTags = ['Chữ to dễ đọc', 'Tượng & Chánh điện đẹp', 'Âm thanh chuông mõ êm dịu', 'Muốn thêm hướng dẫn'];
+        bodyHtml = `
+          <div class="share-feedback-grid">
+            <div class="mail-card">
+              <div class="mail-card-head">
+                <div class="mail-title">💌 Thiệp Chia sẻ Hành hương gửi Người thân</div>
+                <span class="mail-rewards-pill">+30 🪷 · +5 💎 / ngày</span>
+              </div>
+              <p class="mail-body">Sao chép tấm thiệp ghi lại số lạy, chuỗi niệm Phật và dấu ấn hành hương để gửi qua Zalo, Facebook cho con cháu &amp; bạn đạo:</p>
+              <pre class="share-card-preview">${shareText}</pre>
+              <button type="button" id="btn-copy-share-card" class="daily-dharma-primary-btn" style="width:100%;">
+                📋 Sao chép Thiệp Chia sẻ (+30 🪷 &amp; +5 💎)
+              </button>
+              <div class="quest-progress-lbl" style="text-align:center;">Cô bác đã chia sẻ ${this.activityHub.shareCount || 0} lần.</div>
+            </div>
+
+            <div class="mail-card">
+              <div class="mail-card-head">
+                <div class="mail-title">📝 Góp ý Cải thiện Chùa Online</div>
+                <span class="mail-rewards-pill">+25 🪷 tri ân</span>
+              </div>
+              <p class="mail-body">Cô bác thấy Chùa Vĩnh Tràng 3D hôm nay thế nào? Mọi góp ý giúp nhà chùa làm ứng dụng dễ dùng hơn cho người lớn tuổi:</p>
+              <div class="feedback-stars-row" role="group" aria-label="Đánh giá sao">
+                ${[1, 2, 3, 4, 5]
+                  .map(
+                    (st) => `
+                  <button type="button" class="feedback-star-btn ${st <= feedbackRating ? 'active' : ''}" data-fb-star="${st}">
+                    ★
+                  </button>
+                `
+                  )
+                  .join('')}
+                <span class="quest-progress-lbl" style="margin-left:6px;">${feedbackRating}/5 sao</span>
+              </div>
+              <div class="mail-reply-chips">
+                ${quickTags
+                  .map(
+                    (tag) => `
+                  <button type="button" class="feedback-tag-chip ${feedbackTags.has(tag) ? 'active' : ''}" data-fb-tag="${tag}">
+                    ${feedbackTags.has(tag) ? '✓ ' : '+ '}${tag}
+                  </button>
+                `
+                  )
+                  .join('')}
+              </div>
+              <textarea id="feedback-comment-input" class="feedback-textarea" rows="3" placeholder="Cô bác có thể nhắn thêm lời góp ý tại đây (không bắt buộc)...">${feedbackComment}</textarea>
+              <button type="button" id="btn-submit-feedback" class="quest-claim-btn" style="min-height:46px;font-size:15px;width:100%;">
+                🙏 Gửi Góp ý cho Nhà Chùa (+25 🪷)
+              </button>
+            </div>
+          </div>
+        `;
+      }
+
+      this.openModal(
+        'Hành trình Tu tập & Hướng dẫn Đi chùa',
+        `
+        <div style="display:flex;flex-direction:column;gap:14px;">
+          <div class="activity-tabs-row" role="tablist">
+            <button type="button" class="activity-tab-pill ${activeTab === 'checkin' ? 'active' : ''}" data-hub-tab="checkin">
+              📅 Điểm danh ${canCheckinToday ? '<span class="hub-dot"></span>' : ''}
+            </button>
+            <button type="button" class="activity-tab-pill ${activeTab === 'quests' ? 'active' : ''}" data-hub-tab="quests">
+              🎯 Nhiệm vụ ${claimableQCount > 0 ? `<span class="hub-count">${claimableQCount}</span>` : ''}
+            </button>
+            <button type="button" class="activity-tab-pill ${activeTab === 'mailbox' ? 'active' : ''}" data-hub-tab="mailbox">
+              ✉️ Hộp thư ${unclaimedMailCount > 0 ? `<span class="hub-count">${unclaimedMailCount}</span>` : ''}
+            </button>
+            <button type="button" class="activity-tab-pill ${activeTab === 'guide' ? 'active' : ''}" data-hub-tab="guide">
+              🧭 Hướng dẫn đi
+            </button>
+            <button type="button" class="activity-tab-pill ${activeTab === 'share_feedback' ? 'active' : ''}" data-hub-tab="share_feedback">
+              💌 Chia sẻ &amp; Góp ý
+            </button>
+          </div>
+          ${bodyHtml}
+        </div>
+        `
+      );
+
+      document.querySelectorAll('[data-hub-tab]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          activeTab = btn.getAttribute('data-hub-tab') || 'checkin';
+          renderHub();
+        });
+      });
+
+      document.getElementById('btn-claim-daily-checkin')?.addEventListener('click', () => {
+        const res = claimDailyCheckin(this.activityHub, this.storeProfile, getLocalDateKey());
+        if (!res.ok) {
+          this.showToast('Điểm danh hằng ngày', res.message, 3200, false);
+          return;
+        }
+        this.activityHub = res.activity;
+        this.storeProfile = res.storeProfile;
+        this.saveState();
+        this.updateActionBadges();
+        this.playBellTone(324, 2.2);
+        this.showToast('📅 Điểm danh thành công!', res.message, 4200, false);
+        renderHub();
+      });
+
+      document.querySelectorAll('[data-claim-daily]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const mid = btn.getAttribute('data-claim-daily');
+          const res = claimDailyMissionReward(this.activityHub, this.storeProfile, mid, getLocalDateKey());
+          this.activityHub = res.activity;
+          this.storeProfile = res.storeProfile;
+          this.saveState();
+          this.updateActionBadges();
+          if (res.ok) {
+            this.playBellTone(324, 2.0);
+            this.showToast('🎁 Nhận lộc nhiệm vụ hôm nay', res.message, 3600, false);
+          } else {
+            this.showToast('Nhiệm vụ hôm nay', res.message, 3200, false);
+          }
+          renderHub();
+        });
+      });
+
+      document.querySelectorAll('[data-claim-chapter]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const cid = btn.getAttribute('data-claim-chapter');
+          const res = claimExplorationChapterReward(this.activityHub, this.storeProfile, this.spiritual, cid);
+          this.activityHub = res.activity;
+          this.storeProfile = res.storeProfile;
+          this.saveState();
+          this.updateActionBadges();
+          if (res.ok) {
+            this.playBellTone(324, 2.2);
+            this.showToast('🗓️ Hoàn thành chặng khám phá', res.message, 3800, false);
+          }
+          renderHub();
+        });
+      });
+
+      document.querySelectorAll('[data-hub-claim-quest]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const qid = btn.getAttribute('data-hub-claim-quest');
+          const res = claimQuestReward(
+            this.activityHub,
+            this.storeProfile,
+            this.spiritual,
+            this.completedLessons.size,
+            qid
+          );
+          this.activityHub = res.activity;
+          this.storeProfile = res.storeProfile;
+          this.saveState();
+          this.updateActionBadges();
+          if (res.ok) {
+            this.playBellTone(324, 2.0);
+            this.showToast('🎁 Nhận thưởng nhiệm vụ', res.message, 3600, false);
+          }
+          renderHub();
+        });
+      });
+
+      document.querySelectorAll('[data-hub-go-quest]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          this.executeQuestActionHint(btn.getAttribute('data-hub-go-quest'));
+        });
+      });
+
+      document.querySelectorAll('[data-mail-filter]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          mailFilter = btn.getAttribute('data-mail-filter') || 'all';
+          renderHub();
+        });
+      });
+
+      document.querySelectorAll('[data-reply-mail]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const mailId = btn.getAttribute('data-reply-mail');
+          const optIdx = Number(btn.getAttribute('data-reply-idx') || 0);
+          const res = replyToMailboxMessage(this.activityHub, this.storeProfile, mailId, optIdx);
+          if (res.ok) {
+            this.activityHub = res.activity;
+            this.storeProfile = res.storeProfile;
+            this.saveState();
+            this.updateActionBadges();
+            this.playMokugyoTap();
+            this.showToast('💬 Hồi âm Nhà Chùa', res.message, 3400, false);
+            renderHub();
+          }
+        });
+      });
+
+      document.querySelectorAll('[data-claim-mail]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const mailId = btn.getAttribute('data-claim-mail');
+          const res = claimMailboxReward(this.activityHub, this.storeProfile, mailId);
+          this.activityHub = res.activity;
+          this.storeProfile = res.storeProfile;
+          this.saveState();
+          this.updateActionBadges();
+          if (res.ok) {
+            this.playBellTone(288, 2.2);
+            this.showToast('✉️ Đã nhận quà từ Hộp thư', res.message, 4000, false);
+          }
+          renderHub();
+        });
+      });
+
+      document.querySelectorAll('[data-guide-walk]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const key = btn.getAttribute('data-guide-walk') || 'chanh_dien';
+          this.closeModal();
+          this.switchScreen('courtyard');
+          if (this.world3d?.insideInterior) {
+            this.toggleInteriorHallIn3D(false);
+          }
+          this.walkToStationIn3D(key);
+        });
+      });
+
+      document.querySelectorAll('[data-guide-beacon]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const key = btn.getAttribute('data-guide-beacon') || 'chanh_dien';
+          this.activateGuidedBeacon(key);
+        });
+      });
+
+      document.getElementById('btn-clear-beacon')?.addEventListener('click', () => {
+        this.activateGuidedBeacon(null);
+        renderHub();
+      });
+
+      document.getElementById('btn-copy-share-card')?.addEventListener('click', async () => {
+        const shareText = buildPilgrimageShareText({
+          characterModelKey: this.characterModelKey,
+          spiritual: this.spiritual,
+          storeProfile: this.storeProfile,
+          activityHub: this.activityHub,
+          completedLessonsCount: this.completedLessons.size
+        });
+        try {
+          await navigator.clipboard?.writeText(shareText);
+        } catch {}
+        const res = recordPilgrimageShare(this.activityHub, this.storeProfile, getLocalDateKey());
+        this.activityHub = res.activity;
+        this.storeProfile = res.storeProfile;
+        this.saveState();
+        this.updateActionBadges();
+        this.playBellTone(324, 1.8);
+        this.showToast('💌 Chia sẻ Hành hương', res.message, 4000, false);
+        renderHub();
+      });
+
+      document.querySelectorAll('[data-fb-star]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          feedbackRating = Number(btn.getAttribute('data-fb-star') || 5);
+          feedbackComment = document.getElementById('feedback-comment-input')?.value || feedbackComment;
+          this.playMokugyoTap();
+          renderHub();
+        });
+      });
+
+      document.querySelectorAll('[data-fb-tag]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const tag = btn.getAttribute('data-fb-tag');
+          feedbackComment = document.getElementById('feedback-comment-input')?.value || feedbackComment;
+          if (tag) {
+            if (feedbackTags.has(tag)) feedbackTags.delete(tag);
+            else feedbackTags.add(tag);
+          }
+          renderHub();
+        });
+      });
+
+      document.getElementById('btn-submit-feedback')?.addEventListener('click', () => {
+        const commentVal = document.getElementById('feedback-comment-input')?.value || feedbackComment;
+        const res = submitUserFeedback(
+          this.activityHub,
+          this.storeProfile,
+          { rating: feedbackRating, tags: Array.from(feedbackTags), comment: commentVal },
+          getLocalDateKey()
+        );
+        if (!res.ok) {
+          this.showToast('Góp ý Nhà Chùa', res.message, 3200, false);
+          return;
+        }
+        this.activityHub = res.activity;
+        this.storeProfile = res.storeProfile;
+        feedbackTags.clear();
+        feedbackComment = '';
+        this.saveState();
+        this.updateActionBadges();
+        this.playBellTone(324, 2.0);
+        this.showToast('🙏 Đã gửi góp ý', res.message, 4000, false);
+        renderHub();
+      });
+    };
+
+    renderHub();
   }
 
   async mountProfileCharacterStage(canvasId, { charKey = 'nu', pose = 'Dung' }) {
@@ -3801,7 +4975,7 @@ export class ChuaOnlineApp {
       const keyLight = new THREE.DirectionalLight(0xFFE7BA, 1.55);
       keyLight.position.set(2.5, 4.5, 3.2);
       scene.add(keyLight);
-      const rimLight = new THREE.DirectionalLight(0xB8E0C8, 0.65);
+      const rimLight = new THREE.DirectionalLight(0xFFE4B0, 0.72);
       rimLight.position.set(-2.4, 2.2, -2.5);
       scene.add(rimLight);
 
@@ -3862,40 +5036,32 @@ export class ChuaOnlineApp {
         cloned.position.y = -geomBox.min.y * scale;
         stageGroup.add(cloned);
 
-        // Equipped props preview on full-body character
-        const eq = this.spiritual?.equippedItems || {};
-        if (eq.hat === 'non_la_theu_sen') {
-          const hatMesh = this.build3DItemMesh(THREE, 'non_la_theu_sen');
-          const hatY = pose === 'Quỳ' ? targetH * 0.64 : targetH - 0.14;
-          hatMesh.position.set(0, hatY, 0.02);
-          hatMesh.scale.setScalar(0.95);
-          stageGroup.add(hatMesh);
-        }
-        if (eq.hand && pose === 'Dung') {
-          const handId = eq.hand === 'hoa_sen' ? 'hoa_sen_tuoi' : eq.hand;
-          const handMesh = this.build3DItemMesh(THREE, handId);
-          handMesh.position.set(0.30, targetH * 0.45, 0.14);
-          handMesh.scale.setScalar(0.68);
-          stageGroup.add(handMesh);
-        }
-        if (eq.bag === 'tui_vai_theu_sen') {
-          const bag = new THREE.Mesh(
-            new THREE.BoxGeometry(0.16, 0.20, 0.06),
-            new THREE.MeshStandardMaterial({ color: 0xE5D4B3, roughness: 0.85 })
-          );
-          bag.position.set(-0.23, pose === 'Quỳ' ? targetH * 0.34 : targetH * 0.46, 0.04);
-          bag.rotation.z = 0.12;
-          stageGroup.add(bag);
-        }
-        if (eq.scarf === 'khan_ran_nam_bo') {
-          const scarf = new THREE.Mesh(
-            new THREE.TorusGeometry(0.11, 0.030, 8, 22),
-            new THREE.MeshStandardMaterial({ color: 0x3A2E28, roughness: 0.88 })
-          );
-          scarf.rotation.x = Math.PI / 2;
-          scarf.position.set(0, pose === 'Quỳ' ? targetH * 0.52 : targetH * 0.80, 0.01);
-          stageGroup.add(scarf);
-        }
+        // Unified Store Robes + Bespoke 3D Wearables + Equipped Props Preview (bone-weighted)
+        const storeVisual = this.buildStoreVisualPayload();
+        clearRiggedBoneProps(cloned);
+        recolorGarmentOnScene(THREE, cloned, {
+          robeTint: storeVisual.robeTint,
+          upperTint: storeVisual.upperTint,
+          lowerTint: storeVisual.lowerTint,
+          trimTint: storeVisual.trimTint,
+          sashTint: storeVisual.sashTint,
+          robeStyle: storeVisual.robeStyle
+        });
+        const bespokeRobe = createBespokeRobeGroup(THREE, {
+          ...storeVisual,
+          charKey,
+          h: targetH,
+          modelRoot: cloned
+        });
+        stageGroup.add(bespokeRobe);
+        const accGroup = createStoreAccessoryGroup(THREE, storeVisual, {
+          charKey,
+          h: targetH,
+          modelRoot: cloned,
+          propMeshCache: this.world3d?.propMeshCache || null,
+          fitPropFn: this.world3d ? (sc, sz, o) => this.world3d.fitProp(sc, sz, o) : null
+        });
+        stageGroup.add(accGroup);
 
         const norm = (s) =>
           String(s || '')
@@ -3982,6 +5148,98 @@ export class ChuaOnlineApp {
     } catch {}
   }
 
+  async mountArhat3DStage(canvasId, arhatIdx = 0) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return;
+    if (this._arhatStageDispose) {
+      try {
+        this._arhatStageDispose();
+      } catch {}
+      this._arhatStageDispose = null;
+    }
+
+    try {
+      const THREE = await import('three');
+      const wrap = canvas.parentElement;
+      const rect = wrap.getBoundingClientRect();
+      const w = Math.max(240, rect.width || 280);
+      const h = Math.max(240, rect.height || 280);
+
+      const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+      renderer.setSize(w, h, false);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+      renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(34, w / h, 0.1, 30);
+
+      scene.add(new THREE.HemisphereLight(0xFFF6DF, 0x5C3A21, 1.45));
+      const key = new THREE.DirectionalLight(0xFFE2A8, 1.75);
+      key.position.set(2.4, 4.2, 3.2);
+      scene.add(key);
+      const rim = new THREE.DirectionalLight(0xF6C978, 0.72);
+      rim.position.set(-2.4, 2.0, -2.5);
+      scene.add(rim);
+
+      const stageGroup = new THREE.Group();
+      scene.add(stageGroup);
+
+      const statue = createSculptedArhatShowcase(arhatIdx, THREE);
+      const box = new THREE.Box3().setFromObject(statue);
+      const center = new THREE.Vector3();
+      const size = new THREE.Vector3();
+      box.getCenter(center);
+      box.getSize(size);
+      statue.position.set(-center.x, -box.min.y, -center.z);
+      stageGroup.add(statue);
+
+      const maxDim = Math.max(1.2, size.y, size.x * 1.15);
+      camera.position.set(0, size.y * 0.56, maxDim * 2.15);
+      camera.lookAt(0, size.y * 0.48, 0);
+
+      let disposed = false;
+      let dragging = false;
+      let prevX = 0;
+      const onDown = (e) => {
+        dragging = true;
+        prevX = e.clientX;
+      };
+      const onUp = () => {
+        dragging = false;
+      };
+      const onMove = (e) => {
+        if (!dragging) return;
+        stageGroup.rotation.y += (e.clientX - prevX) * 0.012;
+        prevX = e.clientX;
+      };
+      canvas.addEventListener('pointerdown', onDown);
+      window.addEventListener('pointerup', onUp);
+      window.addEventListener('pointermove', onMove);
+
+      this._arhatStageDispose = () => {
+        disposed = true;
+        canvas.removeEventListener('pointerdown', onDown);
+        window.removeEventListener('pointerup', onUp);
+        window.removeEventListener('pointermove', onMove);
+        renderer.dispose();
+      };
+
+      stageGroup.rotation.y = 0.25;
+      renderer.render(scene, camera);
+
+      const tick = () => {
+        if (disposed || !document.body.contains(canvas)) {
+          if (!disposed) this._arhatStageDispose?.();
+          return;
+        }
+        if (!dragging) stageGroup.rotation.y += 0.0065;
+        renderer.render(scene, camera);
+        setTimeout(() => requestAnimationFrame(tick), 33);
+      };
+      tick();
+    } catch {}
+  }
+
   /* ========================================================================
      THREE.JS INTERACTIVE 3D STAGE (Loads Real Rigged GLBs + 3D Shop Kiosk + 3D Items)
      ======================================================================== */
@@ -3998,16 +5256,20 @@ export class ChuaOnlineApp {
       const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
       renderer.setSize(w, h, false);
       renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+      renderer.outputColorSpace = THREE.SRGBColorSpace;
 
       const scene = new THREE.Scene();
       const camera = new THREE.PerspectiveCamera(40, w / h, 0.1, 100);
       camera.position.set(0, 0.65, 2.25);
-      camera.lookAt(0, 0.25, 0);
+      camera.lookAt(0, 0.22, 0);
 
-      scene.add(new THREE.AmbientLight(0xfff6e5, 1.45));
-      const dir = new THREE.DirectionalLight(0xffdf9e, 1.7);
+      scene.add(new THREE.HemisphereLight(0xFFF9EA, 0x7A5A3A, 1.35));
+      const dir = new THREE.DirectionalLight(0xffdf9e, 1.75);
       dir.position.set(3, 5, 4);
       scene.add(dir);
+      const rim = new THREE.DirectionalLight(0xFFE4B0, 0.65);
+      rim.position.set(-2.5, 2.4, -2.5);
+      scene.add(rim);
 
       const ped = new THREE.Mesh(
         new THREE.CylinderGeometry(0.65, 0.72, 0.08, 32),
@@ -4019,83 +5281,152 @@ export class ChuaOnlineApp {
       const stageGroup = new THREE.Group();
       scene.add(stageGroup);
 
-      // Build procedural 3D mesh for item or 3D Shop Kiosk
-      const mesh3d = this.build3DItemMesh(THREE, item?.procedural3dId || item?.id || 'non_la_theu_sen');
+      const fitPropToPedestal = (sceneObj, targetSize) => {
+        const clone = sceneObj.clone(true);
+        const toRemove = [];
+        clone.traverse((o) => {
+          if (o.isMesh) {
+            if (o.geometry && !o.geometry.getAttribute('normal')) {
+              o.geometry.computeVertexNormals();
+            }
+            const cb = new THREE.Box3().setFromObject(o);
+            const cs = new THREE.Vector3();
+            cb.getSize(cs);
+            if (Math.max(cs.x, cs.z) > 40 && cs.y < Math.max(cs.x, cs.z) * 0.08) {
+              toRemove.push(o);
+            }
+          }
+        });
+        for (const rem of toRemove) {
+          rem.parent?.remove(rem);
+        }
+        const box = new THREE.Box3().setFromObject(clone);
+        const sz = new THREE.Vector3();
+        const ctr = new THREE.Vector3();
+        box.getSize(sz);
+        box.getCenter(ctr);
+        const maxDim = Math.max(0.05, sz.x, sz.y, sz.z);
+        const s = targetSize / maxDim;
+        clone.scale.setScalar(s);
+        clone.position.x = -ctr.x * s;
+        clone.position.z = -ctr.z * s;
+        const box2 = new THREE.Box3().setFromObject(clone);
+        clone.position.y = -box2.min.y;
+        return clone;
+      };
+
+      // Instant procedural placeholder while/if real GLB loads
+      let activeItemObj = this.build3DItemMesh(THREE, item?.procedural3dId || item?.id || 'non_la_theu_sen');
       if (charKey) {
-        mesh3d.position.set(0.32, -0.15, 0.18);
+        activeItemObj.position.set(0.32, -0.15, 0.18);
       } else {
-        mesh3d.position.set(0, -0.15, 0);
-        mesh3d.scale.setScalar(1.35);
+        activeItemObj.position.set(0, -0.15, 0);
+        activeItemObj.scale.setScalar(1.35);
       }
-      stageGroup.add(mesh3d);
+      stageGroup.add(activeItemObj);
+
+      // Load real GLB asset if provided on catalog item
+      if (item?.glb) {
+        const loadGlbForPreview = async () => {
+          let cachedScene = this.cachedGLBProps[item.glb];
+          if (!cachedScene) {
+            const { GLTFLoader } = await import('three/addons/loaders/GLTFLoader.js');
+            const loader = new GLTFLoader();
+            const gltf = await loader.loadAsync(encodeURI(item.glb));
+            if (gltf?.scene) {
+              this.cachedGLBProps[item.glb] = gltf.scene;
+              cachedScene = gltf.scene;
+            }
+          }
+          if (!cachedScene || !document.body.contains(canvas)) return;
+          const fitted = fitPropToPedestal(cachedScene, charKey ? 0.45 : 0.96);
+          if (charKey) {
+            fitted.position.x += 0.34;
+            fitted.position.z += 0.16;
+          }
+          fitted.position.y -= 0.34;
+          stageGroup.remove(activeItemObj);
+          stageGroup.add(fitted);
+          activeItemObj = fitted;
+        };
+        loadGlbForPreview().catch(() => {});
+      }
 
       // Load rigged 3D character GLB if charKey specified
       if (charKey) {
         this.loadRiggedCharacterGLB(THREE, charKey).then((charMesh) => {
-          if (charMesh) {
+          if (charMesh && document.body.contains(canvas)) {
             stageGroup.add(charMesh);
           }
         });
       }
 
       let dragging = false;
+      const isSoftPreview = (() => {
+        try {
+          const gl = renderer.getContext();
+          const ext = gl?.getExtension('WEBGL_debug_renderer_info');
+          const gpu = ext ? String(gl.getParameter(ext.UNMASKED_RENDERER_WEBGL)) : '';
+          return /SwiftShader|llvmpipe|softpipe|Software/i.test(gpu);
+        } catch {
+          return false;
+        }
+      })();
       let prevX = 0;
-      canvas.addEventListener('pointerdown', (e) => {
+      const onDown = (e) => {
         dragging = true;
         prevX = e.clientX;
-      });
-      window.addEventListener('pointerup', () => {
+      };
+      const onUp = () => {
         dragging = false;
-      });
-      canvas.addEventListener('pointermove', (e) => {
+      };
+      const onMove = (e) => {
         if (!dragging) return;
         stageGroup.rotation.y += (e.clientX - prevX) * 0.012;
         prevX = e.clientX;
-      });
+        if (isSoftPreview) renderer.render(scene, camera);
+      };
+      canvas.addEventListener('pointerdown', onDown);
+      window.addEventListener('pointerup', onUp);
+      window.addEventListener('pointermove', onMove);
+
+      let disposed = false;
+      let rafId = null;
+      let timerId = null;
+      const cleanup = () => {
+        if (disposed) return;
+        disposed = true;
+        if (timerId) clearTimeout(timerId);
+        if (rafId) cancelAnimationFrame(rafId);
+        canvas.removeEventListener('pointerdown', onDown);
+        window.removeEventListener('pointerup', onUp);
+        window.removeEventListener('pointermove', onMove);
+        renderer.dispose();
+        try {
+          renderer.forceContextLoss?.();
+        } catch {}
+      };
+      this._profileStageDispose = cleanup;
 
       const animate = () => {
-        if (!document.body.contains(canvas)) {
-          renderer.dispose();
+        if (disposed || !document.body.contains(canvas)) {
+          cleanup();
           return;
         }
-        if (!dragging) stageGroup.rotation.y += 0.01;
+        if (!dragging) stageGroup.rotation.y += 0.008;
         renderer.render(scene, camera);
-        setTimeout(() => requestAnimationFrame(animate), 33);
+        if (!isSoftPreview) {
+          timerId = setTimeout(() => {
+            if (!disposed) rafId = requestAnimationFrame(animate);
+          }, 33);
+        }
       };
       animate();
     } catch {}
   }
 
   buildStoreVisualPayload(profile = this.storeProfile) {
-    const findItem = (id) => (id ? STORE_ITEMS_CATALOG.find((x) => x.id === id) || null : null);
-    const tryingItem = findItem(profile.tryingItemId);
-    const eqRobe = findItem(profile.equipped?.robe);
-    const eqMat = findItem(profile.equipped?.mat);
-    const eqHand = findItem(profile.equipped?.handItem || profile.equipped?.instrument || profile.equipped?.offering);
-    const eqTree = findItem(profile.equipped?.tree);
-    const eqCloud = findItem(profile.equipped?.cloud);
-    const eqPet = findItem(profile.equipped?.pet);
-
-    const activeRobe = tryingItem?.slot === 'robe' ? tryingItem : eqRobe;
-    const activeHat = tryingItem?.slot === 'hat' ? tryingItem : findItem(profile.equipped?.hat);
-    const activeMat = tryingItem?.slot === 'mat' ? tryingItem : eqMat;
-    const activeHand =
-      tryingItem && ['handItem', 'instrument', 'offering'].includes(tryingItem.slot)
-        ? tryingItem
-        : eqHand;
-    const activeTree = tryingItem?.slot === 'tree' ? tryingItem : eqTree;
-    const activeCloud = tryingItem?.slot === 'cloud' ? tryingItem : eqCloud;
-    const activePet = tryingItem?.slot === 'pet' ? tryingItem : eqPet;
-
-    return {
-      robeTint: activeRobe?.robeTint || null,
-      hat: Boolean(activeHat),
-      mat: activeMat?.prop3d || null,
-      handProp: activeHand?.prop3d || null,
-      treeProp: activeTree?.prop3d || null,
-      cloudColor: activeCloud?.cloudColor || null,
-      petType: activePet?.petType || null
-    };
+    return unifyEquippedVisualPayload(profile, this.spiritual);
   }
 
   syncStoreVisualsTo3D() {
@@ -4106,10 +5437,23 @@ export class ChuaOnlineApp {
     if (initialCategory) {
       this.storeCategory = initialCategory;
     }
+    this.storeTryOnPose = this.storeTryOnPose || 'Dung';
 
     const renderStoreBody = (preserveScrollTop = 0) => {
       const items = filterStoreItems(this.storeCategory);
       const profile = this.storeProfile;
+      const activeVisual = this.buildStoreVisualPayload(profile);
+      const tryingItem = profile.tryingItemId
+        ? STORE_ITEMS_CATALOG.find((x) => x.id === profile.tryingItemId)
+        : null;
+      const activeProf =
+        CHARACTER_PROFILES.find((c) => c.key === this.characterModelKey) || CHARACTER_PROFILES[0];
+      const activeDressLabel = tryingItem
+        ? `Đang mặc thử: ${tryingItem.name}`
+        : activeVisual.robeName
+        ? `Đang mặc: ${activeVisual.robeName}`
+        : `Mặc định: ${activeProf.outfitName.split('(')[0].trim()}`;
+
       const html = `
         <div class="store-currency-bar">
           <div class="store-wallet-pills">
@@ -4120,6 +5464,34 @@ export class ChuaOnlineApp {
           <button type="button" class="store-physical-btn" id="btn-open-physical-shop">
             🛍️ Quà lưu niệm giao tận nhà
           </button>
+        </div>
+
+        <div class="store-tryon-preview">
+          <div class="store-tryon-canvas-wrap">
+            <canvas id="store-tryon-3d-canvas"></canvas>
+          </div>
+          <div class="store-tryon-meta">
+            <div class="store-tryon-title">${activeDressLabel}</div>
+            <div class="store-tryon-controls">
+              ${CHARACTER_PROFILES.map(
+                (c) => `
+                <button type="button" class="store-tryon-mini-btn ${this.characterModelKey === c.key ? 'active' : ''}" data-store-char="${c.key}">
+                  ${c.name.split('(')[0].replace('Phật tử ', '').trim()}
+                </button>
+              `
+              ).join('')}
+              <button type="button" class="store-tryon-mini-btn ${this.storeTryOnPose === 'Dung' ? 'active' : ''}" data-store-pose="Dung">Đứng</button>
+              <button type="button" class="store-tryon-mini-btn ${this.storeTryOnPose === 'Chắp tay' ? 'active' : ''}" data-store-pose="Chắp tay">Chắp tay</button>
+              ${
+                tryingItem
+                  ? `<button type="button" class="store-tryon-mini-btn" id="btn-store-clear-try">Bỏ thử</button>`
+                  : ''
+              }
+            </div>
+            <div style="font-size:11.5px;color:#5C4330;line-height:1.35;">
+              Kéo hình 3D để xoay 360° · Bấm <strong>Mặc thử 3D</strong> hoặc <strong>Thỉnh / Mặc ngay</strong> để mặc trực tiếp lên nhân vật.
+            </div>
+          </div>
         </div>
 
         <div class="store-tabs-wrap" role="tablist">
@@ -4144,21 +5516,39 @@ export class ChuaOnlineApp {
               const levelLocked = profile.level < reqLevel;
               const showOwnedCount = item.stackable || item.category === 'cay_phat';
 
-              const hasLotusMotif = item.id === 'ao_hoa_sen' || item.id === 'ao_vu_lan_hong';
-              const hasCloudTrim = item.id === 'ao_may_bac';
+              const hasLotusMotif =
+                item.id === 'ao_hoa_sen' ||
+                item.id === 'ao_vu_lan_hong' ||
+                item.id === 'ao_ba_ba_trang_sen';
+              const hasCloudTrim = item.id === 'ao_may_bac' || item.id === 'ao_gam_le_hoi';
+              const isBaBa = item.robeStyle?.startsWith('ba_ba');
+              const isAoDai = item.robeStyle === 'dai_lam_le';
+              const isVuLan = item.id === 'ao_vu_lan_hong';
+              const isLam = item.id === 'ao_lam_truyen_thong' || item.id === 'ao_dai_lam_le_phat';
+              const pantsColor = item.secondarySwatchHex || item.swatchHex;
+              const trimColor = hasCloudTrim ? '#F5FAFF' : '#D99E3A';
               const thumbHtml = item.swatchHex
-                ? `<div class="store-swatch-badge" style="background:linear-gradient(155deg,rgba(255,250,238,0.92),rgba(232,216,184,0.88));padding:4px;">
+                ? `<div class="store-swatch-badge" style="background:linear-gradient(155deg,rgba(255,250,238,0.94),rgba(232,216,184,0.88));padding:4px;">
                     <svg viewBox="0 0 64 64" width="44" height="44" aria-hidden="true">
-                      <path d="M21 12 L10 22 L15 29 L21 24 L20 54 L44 54 L43 24 L49 29 L54 22 L43 12 L37 15 Q32 18 27 15 Z" fill="${item.swatchHex}" stroke="#4A3222" stroke-width="2" stroke-linejoin="round"/>
-                      <path d="M27 15 L32 23 L32 54" fill="none" stroke="${hasCloudTrim ? '#F5FAFF' : '#D99E3A'}" stroke-width="1.8"/>
-                      <circle cx="33.5" cy="24" r="1.2" fill="#D99E3A"/>
-                      <circle cx="33.5" cy="29" r="1.2" fill="#D99E3A"/>
-                      <circle cx="33.5" cy="34" r="1.2" fill="#D99E3A"/>
+                      <path d="M22 44 L21 57 L30 57 L32 47 L34 57 L43 57 L42 44 Z" fill="${pantsColor}" stroke="#4A3222" stroke-width="1.6" stroke-linejoin="round"/>
+                      <path d="M21 12 L10 22 L15 29 L21 24 L20 ${isAoDai ? '52' : isBaBa ? '42' : '48'} L44 ${isAoDai ? '52' : isBaBa ? '42' : '48'} L43 24 L49 29 L54 22 L43 12 L37 15 Q32 18 27 15 Z" fill="${item.swatchHex}" stroke="#4A3222" stroke-width="1.9" stroke-linejoin="round"/>
                       ${
-                        hasLotusMotif
-                          ? '<path d="M38 41 Q40 36 42 41 Q40 43 38 41 Z" fill="#FFF3F8" stroke="#B83B68" stroke-width="0.9"/>'
+                        isBaBa
+                          ? `<path d="M32 18 L32 42" fill="none" stroke="${trimColor}" stroke-width="1.6"/>`
+                          : `<path d="M27 15 L32 23 L32 48" fill="none" stroke="${trimColor}" stroke-width="1.8"/>`
+                      }
+                      <circle cx="33.8" cy="24" r="1.15" fill="${trimColor}"/>
+                      <circle cx="33.8" cy="29" r="1.15" fill="${trimColor}"/>
+                      <circle cx="33.8" cy="34" r="1.15" fill="${trimColor}"/>
+                      ${
+                        isVuLan
+                          ? '<circle cx="39" cy="25" r="2.8" fill="#E6396A" stroke="#FFF4F7" stroke-width="0.9"/>'
+                          : hasLotusMotif
+                          ? '<path d="M37 40 Q40 34 43 40 Q40 42.5 37 40 Z" fill="#FFF3F8" stroke="#B83B68" stroke-width="0.9"/>'
                           : hasCloudTrim
-                          ? '<path d="M23 43 Q26 40 29 43" fill="none" stroke="#FFFFFF" stroke-width="1.4" stroke-linecap="round"/>'
+                          ? '<path d="M23 40 Q26 37 29 40" fill="none" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round"/>'
+                          : isLam
+                          ? '<circle cx="39.5" cy="25" r="2.2" fill="none" stroke="#F4D378" stroke-width="1.1"/>'
                           : ''
                       }
                     </svg>
@@ -4168,10 +5558,10 @@ export class ChuaOnlineApp {
                 : `<img src="${item.image}" alt="${item.name}" />`;
 
               const priceIcon = item.currency === 'gem' ? '💎' : '🪷';
-              let priceLabel = `${priceIcon} ${item.price}`;
+              let priceLabel = `${priceIcon} Thỉnh ${item.price}`;
               let priceClass = item.currency === 'lotus' && levelLocked ? 'lotus-locked' : '';
               if (ownedCount > 0 && !item.stackable) {
-                priceLabel = isEquipped ? '✓ Đang dùng' : 'Trang bị';
+                priceLabel = isEquipped ? '✓ Đang mặc' : 'Mặc ngay';
                 if (isEquipped) priceClass = 'owned-equipped';
               }
 
@@ -4186,8 +5576,13 @@ export class ChuaOnlineApp {
                     </div>
                     <div class="store-item-desc">${item.description}</div>
                     ${
+                      item.elderBenefit
+                        ? `<div class="store-elder-benefit">✨ ${item.elderBenefit}</div>`
+                        : ''
+                    }
+                    ${
                       levelLocked
-                        ? `<div class="store-level-lock">🔒 Cần cấp ${reqLevel}</div>`
+                        ? `<div class="store-level-lock">🔒 Cần cấp ${reqLevel} (lạy Phật &amp; ghé chùa để lên cấp)</div>`
                         : ''
                     }
                   </div>
@@ -4195,7 +5590,7 @@ export class ChuaOnlineApp {
                     ${
                       item.tryable
                         ? `<button type="button" class="store-try-btn ${isPreviewing ? 'active' : ''}" data-try-id="${item.id}">
-                            ${isPreviewing ? '✓ Đang thử' : '✨ Xem thử'}
+                            ${isPreviewing ? '✓ Đang mặc thử' : '✨ Mặc thử 3D'}
                           </button>`
                         : ''
                     }
@@ -4212,6 +5607,11 @@ export class ChuaOnlineApp {
 
       this.openModal('Cửa hàng', html, { variant: 'store' });
 
+      this.mountProfileCharacterStage('store-tryon-3d-canvas', {
+        charKey: this.characterModelKey,
+        pose: this.storeTryOnPose || 'Dung'
+      });
+
       const scrollEl = document.getElementById('store-items-scroll');
       if (scrollEl && preserveScrollTop > 0) {
         scrollEl.scrollTop = preserveScrollTop;
@@ -4220,6 +5620,31 @@ export class ChuaOnlineApp {
       document.getElementById('btn-open-physical-shop')?.addEventListener('click', () => {
         this.closeModal();
         this.switchScreen('shop');
+      });
+
+      document.querySelectorAll('[data-store-char]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const ck = btn.getAttribute('data-store-char') || 'nu';
+          this.characterModelKey = ck;
+          this.world3d?.switchCharacter(ck);
+          this.syncStoreVisualsTo3D();
+          this.saveState();
+          this.updateEquippedTags();
+          renderStoreBody(document.getElementById('store-items-scroll')?.scrollTop || 0);
+        });
+      });
+
+      document.querySelectorAll('[data-store-pose]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          this.storeTryOnPose = btn.getAttribute('data-store-pose') || 'Dung';
+          renderStoreBody(document.getElementById('store-items-scroll')?.scrollTop || 0);
+        });
+      });
+
+      document.getElementById('btn-store-clear-try')?.addEventListener('click', () => {
+        this.storeProfile.tryingItemId = null;
+        this.syncStoreVisualsTo3D();
+        renderStoreBody(document.getElementById('store-items-scroll')?.scrollTop || 0);
       });
 
       document.querySelectorAll('[data-store-cat]').forEach((btn) => {
@@ -4243,9 +5668,9 @@ export class ChuaOnlineApp {
           this.playMokugyoTap();
           if (res.previewing && res.item) {
             this.showToast(
-              `✨ Đang thử: ${res.item.name}`,
-              'Nhìn nhân vật 3D bên phải để xem trực tiếp trên sân chùa.',
-              3200
+              `✨ Đang mặc thử 3D: ${res.item.name}`,
+              'Cô bác xoay khung 3D ngay phía trên hoặc đóng Cửa hàng để ngắm trên sân chùa nhé!',
+              3400
             );
           }
           renderStoreBody(prevScroll);
@@ -4260,13 +5685,20 @@ export class ChuaOnlineApp {
           const res = purchaseStoreItem(this.storeProfile, itemId);
           this.storeProfile = res.state;
           if (!res.ok) {
-            this.showToast('Chưa thể thỉnh vật phẩm', res.message, 3600);
+            this.showToast('Chưa đủ điểm Sen hoặc Ngọc', `${res.message} Cô bác hãy vào Hành trình -> Nhiệm vụ để nhận thêm nhé!`, 4200);
             return;
+          }
+          if (res.item?.slot === 'robe') {
+            this.spiritual.equippedItems.outfit = res.equippedNow ? null : 'ao_trang_phat_tu';
+          }
+          if (itemId === 'non_la_theu_sen_store') {
+            this.spiritual.equippedItems.hat = res.equippedNow ? 'non_la_theu_sen' : null;
           }
           this.saveState();
           this.syncStoreVisualsTo3D();
+          this.updateEquippedTags();
           this.playBellTone(324, 1.8);
-          this.showToast('🪷 Đã cập nhật hành trang', res.message, 3600);
+          this.showToast(res.equippedNow ? '🪷 Đã mặc lên nhân vật 3D' : '📦 Đã cất vào tủ đồ', res.message, 3600);
           renderStoreBody(prevScroll);
         });
       });
@@ -4293,7 +5725,7 @@ export class ChuaOnlineApp {
       const html = `
         <div class="market-stall-banner">
           <div>
-            <div style="font-size:15px;font-weight:800;color:#1C5A34;">Nhà Tạp Hóa Cổng Phụ · Đường Nguyễn Trung Trực, Mỹ Tho</div>
+            <div style="font-size:15px;font-weight:800;color:#5C381F;">Nhà Tạp Hóa Cổng Phụ · Đường Nguyễn Trung Trực, Mỹ Tho</div>
             <div style="font-size:13px;color:#4A3222;margin-top:2px;">
               Đầy đủ nhang đèn, hoa sen, thủ công truyền thống, nước dừa xiêm tủ mát và bánh chay Nam Bộ (${MARKETPLACE_STALL_CATALOG.length} mặt hàng).
             </div>
@@ -4468,6 +5900,17 @@ export class ChuaOnlineApp {
   }
 
   closeModal() {
+    if (this.mindfulnessTimer?.intervalId) {
+      clearInterval(this.mindfulnessTimer.intervalId);
+      this.mindfulnessTimer.intervalId = null;
+      this.mindfulnessTimer.running = false;
+    }
+    if (this._arhatStageDispose) {
+      try {
+        this._arhatStageDispose();
+      } catch {}
+      this._arhatStageDispose = null;
+    }
     if (this._profileStageDispose) {
       try {
         this._profileStageDispose();
@@ -4498,8 +5941,14 @@ export class ChuaOnlineApp {
       this.walkToStationIn3D('chanh_dien');
     });
 
-    document.getElementById('nav-btn-ambient-audio')?.addEventListener('click', () => {
-      this.toggleAmbientAudio();
+    document.querySelectorAll('[data-time-of-day]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const key = btn.getAttribute('data-time-of-day');
+        if (key) this.setTimeOfDay(key, false, true);
+      });
+    });
+    document.getElementById('nav-btn-activity')?.addEventListener('click', () => {
+      this.openActivityHubModal('checkin');
     });
     document.getElementById('nav-btn-merit')?.addEventListener('click', () => {
       this.openMeritSummaryModal();
@@ -4516,13 +5965,6 @@ export class ChuaOnlineApp {
     document.getElementById('nav-btn-account')?.addEventListener('click', () => {
       this.openAccountModal();
     });
-
-    // Unlock and begin gentle bird & leaf ambient loop on first user interaction
-    const unlockAmbientOnce = () => {
-      this.startAmbientNatureSound();
-    };
-    window.addEventListener('pointerdown', unlockAmbientOnce, { once: true });
-    window.addEventListener('keydown', unlockAmbientOnce, { once: true });
 
     // Interior Chữ Quốc 6-hall + Trai Đường quick navigation bar + Cutaway & Historical Source modal
     document.querySelectorAll('[data-interior-zone]').forEach((btn) => {
@@ -4580,12 +6022,12 @@ export class ChuaOnlineApp {
               .join('')}
           </div>
           <div style="background:#f5edd9;border-radius:16px;padding:14px;border:1px solid rgba(126,42,34,0.22);">
-            <div style="font-size:14px;font-weight:800;color:#1C5A34;margin-bottom:8px;">Mặt bằng 6 không gian Chữ Quốc (國) bên trong Chùa Chính</div>
+            <div style="font-size:14px;font-weight:800;color:#5C381F;margin-bottom:8px;">Mặt bằng 6 không gian Chữ Quốc (國) bên trong Chùa Chính</div>
             <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px;">
               ${CHU_QUOC_ZONES.map(
                 (z) => `
                 <div style="background:#fffdf8;padding:9px 11px;border-radius:12px;border:1px solid rgba(140,100,60,0.25);">
-                  <div style="font-size:13px;font-weight:800;color:#1C5A34;">${z.name}</div>
+                  <div style="font-size:13px;font-weight:800;color:#5C381F;">${z.name}</div>
                   <div style="font-size:12px;color:#52361c;margin-top:2px;line-height:1.4;">${z.subtitle}</div>
                 </div>
               `
@@ -4671,26 +6113,6 @@ export class ChuaOnlineApp {
       this.teleportToStationIn3D(this.activeStationKey || 'chanh_dien');
     });
 
-    // Bottom-Left D-Pad ("Di chuyển" — Supports both continuous hold and single tap)
-    document.querySelectorAll('.dpad-btn').forEach((btn) => {
-      const dir = btn.getAttribute('data-dir');
-      if (!dir) return;
-      btn.addEventListener('pointerdown', (e) => {
-        e.preventDefault();
-        this.world3d?.setHeldDirection(dir, true);
-        this.handleMoveDirection(dir);
-      });
-      const stopHold = () => {
-        this.world3d?.setHeldDirection(dir, false);
-      };
-      btn.addEventListener('pointerup', stopHold);
-      btn.addEventListener('pointerleave', stopHold);
-      btn.addEventListener('pointercancel', stopHold);
-      btn.addEventListener('click', () => {
-        this.handleMoveDirection(dir);
-      });
-    });
-
     const keyMap = {
       ArrowUp: 'up',
       KeyW: 'up',
@@ -4773,6 +6195,8 @@ export class ChuaOnlineApp {
 
     // Lecture Screen Controls
     document.getElementById('btn-lecture-back')?.addEventListener('click', () => this.switchScreen('courtyard'));
+    document.getElementById('btn-lecture-font-dec')?.addEventListener('click', () => this.stepElderFontScale(-1));
+    document.getElementById('btn-lecture-font-inc')?.addEventListener('click', () => this.stepElderFontScale(1));
     document.getElementById('btn-lecture-daily-dharma')?.addEventListener('click', () => this.showDailyDharmaModal({ markSeenToday: false }));
     document.getElementById('btn-lecture-textbooks')?.addEventListener('click', () => this.openTextbooksModal());
     document.getElementById('btn-lecture-recordings')?.addEventListener('click', () => this.openAudioRecordingsModal());

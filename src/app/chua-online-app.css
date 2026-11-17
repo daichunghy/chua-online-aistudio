@@ -5,19 +5,19 @@
 
 :root {
   /* Perceptual OKLCH & OKLab Heritage Design Tokens (meodai/skill.color-expert) */
-  --oklch-jade-deep: oklch(0.39 0.082 152);      /* #1C5A34 Xanh rêu đậm */
+  --oklch-jade-deep: oklch(0.39 0.068 50);      /* #5C381F Nâu gỗ chùa ấm */
   --oklch-cream-base: oklch(0.97 0.024 84);      /* #FFF6E5 Nền kem ấm */
   --oklch-walnut-ink: oklch(0.34 0.048 52);      /* #4A3222 Chữ nâu ấm */
   --oklch-gold-ochre: oklch(0.71 0.132 78);      /* #C9962E Điểm vàng */
   --oklch-lotus-pink: oklch(0.73 0.148 352);     /* #EE7FAE Hồng sen */
   --oklch-terracotta: oklch(0.61 0.128 42);      /* #C96F4A Cam đất */
 
-  --green-deep: #1b432c;
-  --green-pill: color-mix(in oklab, var(--oklch-jade-deep) 88%, #0f291a);
-  --green-btn: #1C5A34;
-  --green-btn-dark: color-mix(in oklab, #1C5A34 78%, #091f12);
-  --green-dpad-bg: rgba(28, 72, 46, 0.94);
-  --green-dpad-well: #163020;
+  --green-deep: #472915;
+  --green-pill: color-mix(in oklab, var(--oklch-jade-deep) 88%, #2E1A0D);
+  --green-btn: #5C381F;
+  --green-btn-dark: color-mix(in oklab, #5C381F 78%, #241409);
+  --green-dpad-bg: rgba(71, 41, 21, 0.94);
+  --green-dpad-well: #382010;
   --brown-action-top: color-mix(in oklab, #784e2a 92%, var(--oklch-gold-ochre));
   --brown-action-bot: color-mix(in oklab, #54341a 90%, #241409);
   --brown-action-border: rgba(232, 196, 148, 0.46);
@@ -46,7 +46,7 @@ body {
   width: 100%;
   height: 100%;
   overflow: hidden;
-  background: #14261c;
+  background: #241409;
   font-family: 'Be Vietnam Pro', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   color: #fff;
 }
@@ -67,7 +67,7 @@ select {
   width: 100vw;
   height: 100vh;
   overflow: hidden;
-  background: #1a3324;
+  background: #2D1B10;
 }
 
 #scene-stage {
@@ -138,7 +138,7 @@ select {
   display: flex;
   align-items: center;
   gap: 5px;
-  background: rgba(20, 48, 31, 0.92);
+  background: rgba(42, 24, 14, 0.93);
   border: 1.5px solid rgba(242, 206, 134, 0.42);
   border-radius: 999px;
   padding: 5px 10px;
@@ -180,7 +180,7 @@ select {
 /* Milestone-Unlocked UGC Check-in Pill in Courtyard HUD */
 .ugc-milestone-pill {
   position: absolute;
-  left: 184px;
+  left: 16px;
   bottom: 28px;
   z-index: 26;
   display: inline-flex;
@@ -200,7 +200,7 @@ select {
 }
 
 .ugc-milestone-pill.locked {
-  background: rgba(29, 58, 40, 0.94);
+  background: rgba(54, 33, 19, 0.94);
   border: 1.5px solid rgba(255, 255, 255, 0.28);
   color: rgba(255, 248, 235, 0.88);
 }
@@ -216,8 +216,8 @@ select {
 }
 
 .ugc-upload-dropzone {
-  border: 2px dashed #165632;
-  background: linear-gradient(180deg, #f3fbf6 0%, #e6f5ec 100%);
+  border: 2px dashed #5C381F;
+  background: linear-gradient(180deg, #FFF9EE 0%, #F5E6CA 100%);
   border-radius: 16px;
   padding: 12px 14px;
   text-align: center;
@@ -226,8 +226,8 @@ select {
 }
 
 .ugc-upload-dropzone:hover {
-  background: #dcfce7;
-  border-color: #0f3d22;
+  background: #EFE0C0;
+  border-color: #3D2110;
 }
 
 /* ==========================================================================
@@ -236,12 +236,13 @@ select {
 
 .top-hud-bar {
   position: absolute;
-  top: 16px;
-  left: 18px;
-  right: 18px;
+  top: 14px;
+  left: 14px;
+  right: 14px;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 10px;
   z-index: 30;
   pointer-events: none;
 }
@@ -250,13 +251,15 @@ select {
   pointer-events: auto;
   display: inline-flex;
   align-items: center;
-  gap: 12px;
-  background: linear-gradient(180deg, #275e3e 0%, #1C5A34 55%, #164427 100%);
+  gap: 9px;
+  background: linear-gradient(180deg, #734828 0%, #5C381F 55%, #472915 100%);
   border: 2px solid rgba(255, 246, 229, 0.38);
   border-radius: 999px;
-  padding: 10px 24px 10px 18px;
-  box-shadow: 0 10px 24px rgba(17, 41, 26, 0.32), inset 0 2px 3px rgba(255, 246, 229, 0.25);
+  padding: 8px 18px 8px 14px;
+  box-shadow: 0 10px 24px rgba(36, 20, 9, 0.34), inset 0 2px 3px rgba(255, 246, 229, 0.25);
   color: #FFF6E5;
+  white-space: nowrap;
+  flex-shrink: 0;
   cursor: pointer;
   transition: transform 0.16s ease, box-shadow 0.16s ease;
 }
@@ -267,51 +270,65 @@ select {
 }
 
 .brand-pill .lotus-logo {
-  width: 34px;
-  height: 26px;
+  width: 30px;
+  height: 23px;
   flex-shrink: 0;
 }
 
 .brand-pill .brand-main {
-  font-size: 21px;
+  font-size: 18px;
   font-weight: 800;
   letter-spacing: -0.01em;
+  white-space: nowrap;
 }
 
 .brand-pill .brand-divider {
   width: 1.5px;
-  height: 22px;
+  height: 20px;
   background: rgba(255, 255, 255, 0.45);
+  flex-shrink: 0;
 }
 
 .brand-pill .brand-sub {
-  font-size: 18px;
+  font-size: 15.5px;
   font-weight: 500;
   color: rgba(255, 255, 255, 0.96);
+  white-space: nowrap;
 }
 
 .top-nav-group {
   pointer-events: auto;
   display: flex;
   align-items: center;
-  gap: 10px;
+  justify-content: flex-start;
+  margin-left: auto;
+  flex-wrap: nowrap;
+  gap: 6px;
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.top-nav-group::-webkit-scrollbar {
+  display: none;
 }
 
 .nav-pill-btn {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  background: linear-gradient(180deg, #275e3e 0%, #1C5A34 55%, #164427 100%);
+  gap: 5px;
+  background: linear-gradient(180deg, #734828 0%, #5C381F 55%, #472915 100%);
   border: 2px solid rgba(255, 246, 229, 0.36);
   border-radius: 999px;
-  padding: 10px 18px;
+  padding: 7px 12px;
   color: #FFF6E5;
-  font-size: 15.5px;
+  font-size: 13.5px;
   font-weight: 700;
   white-space: nowrap;
   flex-shrink: 0;
   cursor: pointer;
-  box-shadow: 0 8px 20px rgba(17, 41, 26, 0.28), inset 0 2px 3px rgba(255, 246, 229, 0.24);
+  box-shadow: 0 8px 20px rgba(36, 20, 9, 0.30), inset 0 2px 3px rgba(255, 246, 229, 0.24);
   transition: transform 0.16s ease, background 0.16s ease, box-shadow 0.16s ease;
 }
 
@@ -330,9 +347,9 @@ select {
 
 .nav-pill-btn:hover,
 .nav-pill-btn.active {
-  background: linear-gradient(180deg, #32744e 0%, #22663c 100%);
+  background: linear-gradient(180deg, #8C5327 0%, #6B3F20 100%);
   transform: translateY(-2px);
-  box-shadow: 0 11px 24px rgba(17, 41, 26, 0.34), inset 0 2px 4px rgba(255, 246, 229, 0.32);
+  box-shadow: 0 11px 24px rgba(36, 20, 9, 0.36), inset 0 2px 4px rgba(255, 246, 229, 0.32);
 }
 
 .nav-pill-btn svg {
@@ -359,7 +376,7 @@ select {
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  background: linear-gradient(180deg, #285738 0%, #1c4129 100%);
+  background: linear-gradient(180deg, #734828 0%, #4E2F1A 100%);
   border: 1.5px solid rgba(255, 255, 255, 0.45);
   border-radius: 999px;
   padding: 7px 16px 7px 12px;
@@ -373,7 +390,7 @@ select {
 
 .scene-pin:hover {
   transform: translate(-50%, -54%) scale(1.05);
-  background: linear-gradient(180deg, #316b45 0%, #224f32 100%);
+  background: linear-gradient(180deg, #8C5327 0%, #5C381F 100%);
 }
 
 .scene-pin::after {
@@ -388,7 +405,7 @@ select {
 }
 
 .scene-pin.secondary-pin {
-  background: rgba(34, 72, 48, 0.88);
+  background: rgba(71, 41, 21, 0.90);
   font-size: 13.5px;
   padding: 6px 13px;
   opacity: 0.92;
@@ -420,7 +437,7 @@ select {
 }
 
 .equip-tag-chip {
-  background: rgba(27, 67, 44, 0.88);
+  background: rgba(71, 41, 21, 0.90);
   border: 1px solid rgba(255, 232, 185, 0.52);
   color: #fff6e0;
   font-size: 11px;
@@ -428,93 +445,6 @@ select {
   padding: 2px 9px;
   border-radius: 999px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.28);
-}
-
-/* ==========================================================================
-   BOTTOM-LEFT D-PAD ("Di chuyển" — Matches Reference Image 1)
-   ========================================================================== */
-
-.dpad-card {
-  position: absolute;
-  left: 20px;
-  bottom: 24px;
-  width: 154px;
-  height: 170px;
-  background: linear-gradient(180deg, rgba(44, 92, 62, 0.96) 0%, rgba(28, 66, 43, 0.98) 100%);
-  border: 2px solid rgba(255, 246, 229, 0.34);
-  border-radius: 26px;
-  box-shadow: 0 14px 32px rgba(16, 36, 24, 0.38), inset 0 2px 4px rgba(255, 246, 229, 0.22);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 10px 12px 12px;
-  z-index: 25;
-}
-
-.dpad-title {
-  font-size: 15px;
-  font-weight: 700;
-  color: #ffffff;
-  margin-bottom: 6px;
-  letter-spacing: 0.01em;
-}
-
-.dpad-grid {
-  position: relative;
-  width: 124px;
-  height: 124px;
-}
-
-.dpad-btn {
-  position: absolute;
-  width: 38px;
-  height: 38px;
-  background: #173021;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: 10px;
-  color: #ffffff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.08), 0 3px 8px rgba(0, 0, 0, 0.35);
-  transition: background 0.12s ease, transform 0.1s ease;
-}
-
-.dpad-btn:hover {
-  background: #224932;
-}
-
-.dpad-btn:active,
-.dpad-btn.pressed {
-  background: #2e6645;
-  transform: scale(0.93);
-}
-
-.dpad-btn svg {
-  width: 16px;
-  height: 16px;
-  fill: currentColor;
-}
-
-.dpad-up {
-  top: 0;
-  left: 43px;
-}
-
-.dpad-left {
-  top: 43px;
-  left: 0;
-}
-
-.dpad-right {
-  top: 43px;
-  right: 0;
-}
-
-.dpad-down {
-  bottom: 0;
-  left: 43px;
 }
 
 /* ==========================================================================
@@ -598,7 +528,7 @@ select {
   transform: translateY(-10px);
   width: 340px;
   max-width: calc(100vw - 40px);
-  background: rgba(26, 56, 38, 0.94);
+  background: rgba(48, 28, 16, 0.95);
   border: 1.5px solid rgba(240, 206, 146, 0.55);
   border-radius: 18px;
   padding: 10px 16px;
@@ -640,7 +570,7 @@ select {
   z-index: 40;
   display: none;
   flex-direction: column;
-  background: #1d3c29;
+  background: #26150B;
   overflow: hidden;
 }
 
@@ -696,7 +626,7 @@ select {
 .shop-main-title {
   font-size: clamp(26px, 3vw, 36px);
   font-weight: 800;
-  color: #124b2a;
+  color: #472915;
   letter-spacing: -0.02em;
   text-align: center;
   margin-top: 0;
@@ -749,10 +679,10 @@ select {
 }
 
 .shop-tab-pill.active {
-  background: linear-gradient(180deg, #1b5c36 0%, #124427 100%);
+  background: linear-gradient(180deg, #6F4427 0%, #472915 100%);
   color: #ffffff;
   border-color: rgba(255, 255, 255, 0.35);
-  box-shadow: 0 8px 20px rgba(18, 68, 39, 0.32);
+  box-shadow: 0 8px 20px rgba(71, 41, 21, 0.32);
 }
 
 /* 3-Column Product Grid */
@@ -809,7 +739,7 @@ select {
   position: absolute;
   top: 8px;
   right: 8px;
-  background: rgba(22, 74, 43, 0.92);
+  background: rgba(71, 41, 21, 0.92);
   color: #fff8eb;
   font-size: 12.5px;
   font-weight: 700;
@@ -841,12 +771,12 @@ select {
   height: 40px;
   border-radius: 999px;
   border: none;
-  background: linear-gradient(180deg, #1b5e38 0%, #124326 100%);
+  background: linear-gradient(180deg, #6F4427 0%, #472915 100%);
   color: #ffffff;
   font-size: 15.5px;
   font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 6px 14px rgba(18, 67, 38, 0.28);
+  box-shadow: 0 6px 14px rgba(71, 41, 21, 0.28);
   transition: filter 0.15s ease, transform 0.12s ease;
 }
 
@@ -918,9 +848,9 @@ select {
 }
 
 .shop-close-pill {
-  background: rgba(25, 68, 42, 0.14);
-  border: 1.5px solid rgba(25, 68, 42, 0.3);
-  color: #16482b;
+  background: rgba(92, 56, 31, 0.14);
+  border: 1.5px solid rgba(92, 56, 31, 0.32);
+  color: #472915;
   font-size: 14.5px;
   font-weight: 700;
   padding: 9px 16px;
@@ -940,11 +870,7 @@ select {
   display: none;
   flex-direction: column;
   justify-content: space-between;
-  background-color: #2c180c;
-  background-image: url('/Thiết kế giao diện/giang-duong-khong-gian-chung-v2.png');
-  background-size: cover;
-  background-position: center center;
-  background-repeat: no-repeat;
+  background: transparent;
   overflow: hidden;
 }
 
@@ -955,16 +881,18 @@ select {
 /* Top Bar of Giảng đường Phật pháp */
 .lecture-top-bar {
   margin: 14px auto 0;
-  width: calc(100% - 36px);
+  width: calc(100% - 28px);
   max-width: 1120px;
-  height: 62px;
+  min-height: 62px;
   background: linear-gradient(180deg, rgba(48, 28, 16, 0.94) 0%, rgba(34, 19, 11, 0.96) 100%);
-  border: 1.5px solid rgba(235, 192, 132, 0.36);
+  border: 1.5px solid rgba(235, 192, 132, 0.42);
   border-radius: 20px;
-  padding: 0 18px 0 24px;
+  padding: 8px 16px 8px 20px;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
   z-index: 10;
 }
@@ -972,7 +900,48 @@ select {
 .lecture-top-left {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.lecture-top-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.lecture-font-controls {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 224, 178, 0.35);
+  border-radius: 999px;
+  padding: 2px;
+  gap: 2px;
+}
+
+.lecture-font-btn {
+  min-width: 38px;
+  height: 34px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: none;
+  background: transparent;
+  color: #ffe8b3;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.lecture-font-btn:hover:not(:disabled) {
+  background: rgba(230, 174, 71, 0.35);
+  color: #ffffff;
+}
+
+.lecture-font-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
 }
 
 .lecture-back-courtyard {
@@ -1159,12 +1128,12 @@ select {
 
 .lesson-quiz-option:hover {
   background: #fff9ef;
-  border-color: #265938;
+  border-color: #6F4427;
 }
 
 .lesson-quiz-option.selected {
-  background: #eef7f0;
-  border-color: #1d5733;
+  background: #F7EBD4;
+  border-color: #5C381F;
 }
 
 .lesson-quiz-option .radio-dot {
@@ -1179,7 +1148,7 @@ select {
 }
 
 .lesson-quiz-option.selected .radio-dot {
-  border-color: #1d5733;
+  border-color: #5C381F;
 }
 
 .lesson-quiz-option.selected .radio-dot::after {
@@ -1187,7 +1156,7 @@ select {
   width: 12px;
   height: 12px;
   border-radius: 50%;
-  background: #1d5733;
+  background: #5C381F;
 }
 
 .lesson-next-green-btn {
@@ -1195,7 +1164,7 @@ select {
   height: 56px;
   border-radius: 999px;
   border: 1.5px solid rgba(255, 255, 255, 0.25);
-  background: linear-gradient(180deg, #214e32 0%, #153521 100%);
+  background: linear-gradient(180deg, #6F4427 0%, #472915 100%);
   color: #ffffff;
   font-size: 20px;
   font-weight: 800;
@@ -1267,7 +1236,7 @@ select {
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(12, 24, 17, 0.72);
+  background: rgba(24, 14, 8, 0.72);
   z-index: 80;
   display: none;
   align-items: center;
@@ -1295,7 +1264,7 @@ select {
 
 .modal-header {
   padding: 18px 24px;
-  background: linear-gradient(180deg, #1b4d2e 0%, #143a22 100%);
+  background: linear-gradient(180deg, #5C381F 0%, #412512 100%);
   color: #ffffff;
   display: flex;
   align-items: center;
@@ -1355,7 +1324,7 @@ select {
   width: 164px;
   height: 164px;
   border-radius: 50%;
-  background: radial-gradient(circle, #305f3e 0%, #173422 100%);
+  background: radial-gradient(circle, #6F4427 0%, #3D2110 100%);
   border: 4px solid #e2ae48;
   color: #fff8eb;
   display: flex;
@@ -1466,9 +1435,9 @@ select {
   align-items: center;
   gap: 8px;
   align-self: flex-start;
-  background: rgba(28, 90, 52, 0.11);
-  color: #1C5A34;
-  border: 1.5px solid rgba(28, 90, 52, 0.25);
+  background: rgba(92, 56, 31, 0.11);
+  color: #5C381F;
+  border: 1.5px solid rgba(92, 56, 31, 0.28);
   border-radius: 999px;
   padding: 6px 15px;
   font-size: 13px;
@@ -1495,7 +1464,7 @@ select {
   margin-top: 12px;
   font-size: 14px;
   font-weight: 700;
-  color: #1C5A34;
+  color: #5C381F;
 }
 
 .daily-dharma-reflection {
@@ -1521,16 +1490,16 @@ select {
   height: 44px;
   padding: 0 18px;
   border-radius: 999px;
-  border: 1.5px solid rgba(28, 90, 52, 0.35);
+  border: 1.5px solid rgba(92, 56, 31, 0.35);
   background: #fffdf8;
-  color: #1C5A34;
+  color: #5C381F;
   font-size: 14.5px;
   font-weight: 700;
   cursor: pointer;
 }
 
 .daily-dharma-secondary-btn:hover {
-  background: #eef7f1;
+  background: #F6E9D2;
 }
 
 .daily-dharma-primary-btn {
@@ -1538,12 +1507,12 @@ select {
   padding: 0 24px;
   border-radius: 999px;
   border: none;
-  background: linear-gradient(180deg, #1f643a 0%, #1C5A34 55%, #16492a 100%);
+  background: linear-gradient(180deg, #6F4427 0%, #5C381F 55%, #472915 100%);
   color: #FFF6E5;
   font-size: 15px;
   font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 6px 16px rgba(22, 73, 42, 0.28);
+  box-shadow: 0 6px 16px rgba(71, 41, 21, 0.28);
 }
 
 .daily-dharma-primary-btn:hover {
@@ -1554,7 +1523,7 @@ select {
    9-TAB CỬA HÀNG OVERLAY (Matches Reference Screenshots 1 & 2 + Live 3D Try-On)
    ========================================================================== */
 .modal-backdrop.store-mode {
-  background: rgba(18, 30, 22, 0.22);
+  background: rgba(30, 18, 10, 0.22);
   justify-content: flex-start;
   align-items: stretch;
   padding: 16px;
@@ -1643,11 +1612,22 @@ select {
 
 .store-tabs-wrap {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 7px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 4px;
+}
+
+.store-tabs-wrap::-webkit-scrollbar {
+  display: none;
 }
 
 .store-cat-pill {
+  flex-shrink: 0;
+  white-space: nowrap;
+  min-height: 40px;
   border: 1px solid rgba(168, 126, 81, 0.2);
   background: #EFE3CD;
   color: #4A3222;
@@ -1668,6 +1648,84 @@ select {
   color: #FFF6E5;
   border-color: #35281C;
   box-shadow: 0 4px 12px rgba(53, 40, 28, 0.24);
+}
+
+.store-tryon-preview {
+  display: grid;
+  grid-template-columns: 146px minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+  background: linear-gradient(135deg, #F5E6CA 0%, #EAD3AB 100%);
+  border: 1.5px solid rgba(154, 108, 48, 0.38);
+  border-radius: 18px;
+  padding: 8px 12px;
+  flex-shrink: 0;
+}
+
+.store-tryon-canvas-wrap {
+  position: relative;
+  width: 146px;
+  height: 156px;
+  border-radius: 14px;
+  background: radial-gradient(circle at 50% 35%, #FFF8EA 0%, #DEC394 100%);
+  border: 1px solid rgba(120, 82, 42, 0.28);
+  overflow: hidden;
+}
+
+.store-tryon-canvas-wrap canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  cursor: grab;
+}
+
+.store-tryon-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.store-tryon-title {
+  font-size: 13.5px;
+  font-weight: 800;
+  color: #3E2413;
+  line-height: 1.3;
+}
+
+.store-tryon-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.store-tryon-mini-btn {
+  padding: 4px 9px;
+  border-radius: 999px;
+  border: 1px solid rgba(92, 56, 31, 0.35);
+  background: #FFFDF8;
+  color: #472915;
+  font-size: 11.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.store-tryon-mini-btn.active {
+  background: #5C381F;
+  color: #FFF6E5;
+  border-color: #5C381F;
+}
+
+@media (max-width: 520px) {
+  .store-tryon-preview {
+    grid-template-columns: 120px minmax(0, 1fr);
+    gap: 10px;
+    padding: 8px 10px;
+  }
+  .store-tryon-canvas-wrap {
+    width: 120px;
+    height: 136px;
+  }
 }
 
 .store-items-scroll {
@@ -1802,9 +1860,9 @@ select {
 }
 
 .store-try-btn.active {
-  background: #1C5A34;
+  background: #5C381F;
   color: #FFF6E5;
-  border-color: #1C5A34;
+  border-color: #5C381F;
 }
 
 .store-price-btn {
@@ -1828,9 +1886,9 @@ select {
 }
 
 .store-price-btn.owned-equipped {
-  background: #1C5A34;
+  background: #5C381F;
   color: #FFF6E5;
-  border-color: #1C5A34;
+  border-color: #5C381F;
 }
 
 .store-price-btn:hover:not(:disabled) {
@@ -1894,9 +1952,9 @@ select {
   gap: 5px;
   padding: 7px 13px;
   border-radius: 999px;
-  border: 1.5px solid rgba(28, 90, 52, 0.32);
+  border: 1.5px solid rgba(92, 56, 31, 0.32);
   background: #FFFDF8;
-  color: #1C5A34;
+  color: #5C381F;
   font-size: 13px;
   font-weight: 700;
   cursor: pointer;
@@ -1904,17 +1962,28 @@ select {
 }
 
 .market-secondary-pill:hover {
-  background: #EDF5EE;
+  background: #F6E9D2;
 }
 
 .market-tabs-row {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 8px;
   margin-bottom: 14px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 4px;
+}
+
+.market-tabs-row::-webkit-scrollbar {
+  display: none;
 }
 
 .market-tab-pill {
+  flex-shrink: 0;
+  white-space: nowrap;
+  min-height: 42px;
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -1934,10 +2003,10 @@ select {
 }
 
 .market-tab-pill.active {
-  background: #1C5A34;
+  background: #5C381F;
   color: #FFF6E5;
-  border-color: #1C5A34;
-  box-shadow: 0 4px 12px rgba(28, 90, 52, 0.22);
+  border-color: #5C381F;
+  box-shadow: 0 4px 12px rgba(92, 56, 31, 0.22);
 }
 
 .market-items-grid {
@@ -2045,7 +2114,7 @@ select {
   padding: 6px 10px;
   border-radius: 999px;
   border: none;
-  background: #1C5A34;
+  background: #5C381F;
   color: #FFF6E5;
   font-size: 12.5px;
   font-weight: 800;
@@ -2089,12 +2158,12 @@ select {
   padding: 10px 18px;
   border-radius: 999px;
   background: #FFF6E5;
-  border: 2px solid #1C5A34;
-  color: #1C5A34;
+  border: 2px solid #5C381F;
+  color: #5C381F;
   font-size: 14.5px;
   font-weight: 800;
   cursor: pointer;
-  box-shadow: 0 10px 26px rgba(17, 41, 26, 0.34);
+  box-shadow: 0 10px 26px rgba(36, 20, 9, 0.34);
   transition: transform 0.16s ease, background 0.16s ease;
 }
 
@@ -2111,7 +2180,7 @@ select {
   height: 24px;
   padding: 0 7px;
   border-radius: 8px;
-  background: #1C5A34;
+  background: #5C381F;
   color: #FFF6E5;
   font-size: 12px;
   font-weight: 800;
@@ -2129,12 +2198,12 @@ select {
   max-width: calc(100vw - 32px);
   padding: 7px 14px 7px 18px;
   border-radius: 999px;
-  background: #1C5A34;
+  background: #5C381F;
   border: 1.5px solid #E6B84C;
   color: #FFF6E5;
   font-size: 13.5px;
   font-weight: 700;
-  box-shadow: 0 8px 22px rgba(17, 41, 26, 0.35);
+  box-shadow: 0 8px 22px rgba(36, 20, 9, 0.35);
 }
 
 .entrance-tour-skip-btn {
@@ -2156,6 +2225,24 @@ select {
 }
 
 /* Responsive adjustments */
+@media (max-width: 1180px) {
+  .brand-pill {
+    padding: 7px 14px 7px 11px;
+    gap: 7px;
+  }
+  .brand-pill .brand-main {
+    font-size: 16px;
+  }
+  .brand-pill .brand-sub {
+    font-size: 13.5px;
+  }
+  .nav-pill-btn {
+    padding: 6px 10px;
+    font-size: 12.5px;
+    gap: 4px;
+  }
+}
+
 @media (max-width: 900px) {
   .shop-products-grid {
     grid-template-columns: repeat(2, minmax(180px, 1fr));
@@ -2164,11 +2251,9 @@ select {
     width: 92px;
     height: 92px;
   }
-  .brand-pill .brand-main {
-    font-size: 17px;
-  }
+  .brand-pill .brand-divider,
   .brand-pill .brand-sub {
-    font-size: 14px;
+    display: none;
   }
 }
 
@@ -2183,33 +2268,25 @@ select {
     gap: 8px;
   }
   .top-nav-group {
-    justify-content: center;
+    justify-content: flex-start;
   }
   .quick-walk-bar,
-  .interior-zone-bar {
-    top: 124px;
+  .interior-zone-bar,
+  .auto-walk-objective-banner {
+    top: 112px;
   }
-  .dpad-card {
-    width: 126px;
-    height: 142px;
+  .auto-walk-objective-banner {
+    max-width: calc(100vw - 24px);
+    font-size: 12px;
+    padding: 5px 12px;
+    text-align: center;
+  }
+  .ugc-milestone-pill {
     left: 10px;
-    bottom: 14px;
-  }
-  .dpad-grid {
-    width: 104px;
-    height: 104px;
-  }
-  .dpad-btn {
-    width: 32px;
-    height: 32px;
-  }
-  .dpad-up,
-  .dpad-down {
-    left: 36px;
-  }
-  .dpad-left,
-  .dpad-right {
-    top: 36px;
+    bottom: 98px;
+    max-width: calc(100vw - 20px);
+    padding: 7px 12px;
+    font-size: 12px;
   }
   .spiritual-actions-bar {
     right: 10px;
@@ -2236,7 +2313,7 @@ select {
 }
 
 .merit-hero-banner {
-  background: linear-gradient(135deg, #1C5A34 0%, #143D24 100%);
+  background: linear-gradient(135deg, #5C381F 0%, #3E2413 100%);
   border: 1.5px solid #E6B84C;
   border-radius: 20px;
   padding: 16px 20px;
@@ -2282,7 +2359,7 @@ select {
 .merit-stat-val {
   font-size: 28px;
   font-weight: 800;
-  color: #1C5A34;
+  color: #5C381F;
   font-variant-numeric: tabular-nums;
 }
 
@@ -2303,7 +2380,7 @@ select {
   height: 36px;
   border-radius: 999px;
   border: none;
-  background: #1C5A34;
+  background: #5C381F;
   color: #FFF6E5;
   font-size: 13px;
   font-weight: 700;
@@ -2384,7 +2461,7 @@ select {
   padding: 4px 9px;
   border-radius: 999px;
   border: 1px solid rgba(255, 246, 229, 0.65);
-  background: rgba(28, 90, 52, 0.82);
+  background: rgba(92, 56, 31, 0.85);
   color: #FFF6E5;
   font-size: 11px;
   font-weight: 700;
@@ -2401,7 +2478,7 @@ select {
 .profile-char-name {
   font-size: 16.5px;
   font-weight: 800;
-  color: #144929;
+  color: #472915;
   margin-top: 10px;
 }
 
@@ -2423,9 +2500,9 @@ select {
 .char-switch-btn {
   padding: 6px 12px;
   border-radius: 999px;
-  border: 1.5px solid #165632;
+  border: 1.5px solid #5C381F;
   background: #fff;
-  color: #165632;
+  color: #5C381F;
   font-size: 12.5px;
   font-weight: 700;
   cursor: pointer;
@@ -2434,7 +2511,7 @@ select {
 }
 
 .char-switch-btn.active {
-  background: #165632;
+  background: #5C381F;
   color: #fff;
 }
 
@@ -2446,7 +2523,7 @@ select {
 }
 
 .profile-stats-banner {
-  background: linear-gradient(135deg, #184229 0%, #11321E 100%);
+  background: linear-gradient(135deg, #4B2B17 0%, #341D0F 100%);
   color: #fff8ea;
   padding: 14px 16px;
   border-radius: 18px;
@@ -2473,7 +2550,7 @@ select {
 .profile-wardrobe-heading {
   font-size: 15px;
   font-weight: 800;
-  color: #144929;
+  color: #472915;
   margin-bottom: 8px;
 }
 
@@ -2500,12 +2577,12 @@ select {
 
 .profile-wardrobe-card:hover {
   transform: translateY(-1px);
-  border-color: #165632;
+  border-color: #5C381F;
 }
 
 .profile-wardrobe-card.active {
-  border-color: #165632;
-  background: #e6f5ec;
+  border-color: #5C381F;
+  background: #F6E9D2;
 }
 
 .profile-wardrobe-name {
@@ -2528,7 +2605,7 @@ select {
 }
 
 .profile-wardrobe-card.active .profile-wardrobe-status {
-  background: #165632;
+  background: #5C381F;
   color: #FFF6E5;
 }
 
@@ -2552,17 +2629,27 @@ select {
 }
 
 /* ==========================================================================
-   AMBIENT NATURE AUDIO TOGGLE & INTERIOR 4-ZONE BAR
+   INTERIOR 4-ZONE BAR & AUTO-WALK OBJECTIVE BANNER
    ========================================================================== */
-.nav-ambient-btn {
-  background: linear-gradient(180deg, #276442 0%, #194d2f 100%);
-  border-color: rgba(255, 224, 150, 0.45);
-}
-
-.nav-ambient-btn.muted {
-  background: linear-gradient(180deg, #4b3d32 0%, #31261e 100%);
-  border-color: rgba(255, 246, 229, 0.25);
-  color: rgba(255, 246, 229, 0.78);
+.auto-walk-objective-banner {
+  position: fixed;
+  top: 76px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 26;
+  background: rgba(71, 41, 21, 0.94);
+  color: #FFF6E5;
+  border: 1.5px solid #C9962E;
+  border-radius: 999px;
+  padding: 6px 18px;
+  font-size: 13.5px;
+  font-weight: 700;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.24);
+  pointer-events: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: calc(100vw - 32px);
 }
 
 .interior-zone-bar {
@@ -2597,3 +2684,998 @@ select {
   background: #b83226;
   color: #fff6e5;
 }
+
+/* ==========================================================================
+   TIME-OF-DAY SWITCHER, HÀNH TRÌNH HUB, GIẢNG ĐƯỜNG ELDER MOBILE & BACKUP CODE
+   ========================================================================== */
+.time-toggle-group {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(48, 28, 16, 0.92);
+  border: 2px solid rgba(255, 232, 175, 0.42);
+  border-radius: 999px;
+  padding: 3px;
+  gap: 3px;
+  box-shadow: 0 6px 16px rgba(36, 20, 9, 0.25);
+}
+
+.time-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: none;
+  background: transparent;
+  color: #fff6e5;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.time-toggle-btn:hover {
+  background: rgba(255, 246, 229, 0.14);
+}
+
+.time-toggle-btn.active {
+  background: linear-gradient(180deg, #eec15a 0%, #c98b23 100%);
+  color: #241409;
+  font-weight: 800;
+}
+
+.nav-activity-btn {
+  position: relative;
+  background: linear-gradient(180deg, #9c5222 0%, #7b3d14 100%);
+  border-color: rgba(255, 222, 146, 0.65);
+}
+
+.nav-activity-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: #dc2626;
+  color: #ffffff;
+  font-size: 11.5px;
+  font-weight: 900;
+  border: 1.5px solid #fff6e5;
+}
+
+/* Live Animated 3D Giảng Đường Cards + Elder Font Scales */
+.lecture-translucent-card {
+  background: linear-gradient(180deg, rgba(253, 244, 225, 0.92) 0%, rgba(245, 228, 198, 0.90) 100%);
+  border: 2px solid rgba(201, 150, 46, 0.65);
+}
+
+.lecture-listen-dock-wrap {
+  max-width: 720px;
+  margin-top: auto;
+  margin-bottom: 10px;
+}
+
+.lecture-audio-pair-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.lecture-audio-pair-row .lesson-listen-btn {
+  margin: 0;
+  flex: 1;
+  min-width: 220px;
+  max-width: 310px;
+  min-height: 48px;
+}
+
+.lecture-tts-btn {
+  min-height: 48px;
+  padding: 0 20px;
+  border-radius: 999px;
+  border: 2px solid #fbe09c;
+  background: linear-gradient(180deg, #734726 0%, #4A2B15 100%);
+  color: #fff8ea;
+  font-size: 16.5px;
+  font-weight: 800;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 6px 16px rgba(48, 28, 16, 0.35);
+}
+
+.lecture-tts-btn.speaking {
+  background: linear-gradient(180deg, #c9562e 0%, #993514 100%);
+}
+
+.lecture-nav-footer {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  gap: 10px;
+  align-items: center;
+}
+
+.lecture-prev-btn,
+.lecture-choose-btn {
+  min-height: 52px;
+  padding: 0 18px;
+  border-radius: 999px;
+  border: 1.5px solid rgba(235, 192, 132, 0.55);
+  background: rgba(48, 28, 16, 0.92);
+  color: #fff6e5;
+  font-size: 16px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.lecture-paths-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.lecture-lessons-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+/* Elder-Friendly Typography Scaling (A- / A+) */
+#lecture-screen[data-font-scale="large"] .lesson-card-big-title {
+  font-size: clamp(25px, 2.8vw, 33px);
+}
+#lecture-screen[data-font-scale="large"] .lesson-card-meta,
+#lecture-screen[data-font-scale="large"] .lesson-example-box {
+  font-size: 17px;
+}
+#lecture-screen[data-font-scale="large"] .lesson-summary-lead {
+  font-size: clamp(21px, 2.4vw, 27px);
+}
+#lecture-screen[data-font-scale="large"] .lesson-bullet-list,
+#lecture-screen[data-font-scale="large"] .lesson-quiz-option {
+  font-size: 18px;
+}
+#lecture-screen[data-font-scale="large"] .lesson-quiz-heading {
+  font-size: 22px;
+}
+
+#lecture-screen[data-font-scale="xlarge"] .lesson-card-big-title {
+  font-size: clamp(28px, 3.2vw, 37px);
+}
+#lecture-screen[data-font-scale="xlarge"] .lesson-card-meta,
+#lecture-screen[data-font-scale="xlarge"] .lesson-example-box {
+  font-size: 19px;
+}
+#lecture-screen[data-font-scale="xlarge"] .lesson-summary-lead {
+  font-size: clamp(24px, 2.8vw, 30px);
+}
+#lecture-screen[data-font-scale="xlarge"] .lesson-bullet-list,
+#lecture-screen[data-font-scale="xlarge"] .lesson-quiz-option {
+  font-size: 20px;
+}
+#lecture-screen[data-font-scale="xlarge"] .lesson-quiz-heading {
+  font-size: 24px;
+}
+
+/* Explore Sub Tabs (Single-Row Horizontal Scroll, Anti-Wrap Clutter) */
+.explore-tabs-bar {
+  display: flex;
+  gap: 7px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 4px;
+}
+
+.explore-tabs-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.explore-tabs-bar .explore-sub-btn,
+.explore-tabs-bar > button {
+  flex-shrink: 0;
+  white-space: nowrap;
+  width: auto;
+  padding: 0 14px;
+  min-height: 42px;
+  height: 42px;
+  font-size: 13.5px;
+  background: #6E4A29;
+}
+
+.explore-tabs-bar .explore-sub-btn.active {
+  background: #5C381F;
+  box-shadow: 0 0 0 2px #FFD875;
+}
+
+/* Activity Hub (Điểm danh, Nhiệm vụ, Hộp thư, Hướng dẫn đi, Chia sẻ & Góp ý) */
+.activity-tabs-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 4px;
+}
+
+.activity-tabs-row::-webkit-scrollbar {
+  display: none;
+}
+
+.activity-tab-pill {
+  flex-shrink: 0;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: 999px;
+  border: 1.5px solid rgba(140, 100, 60, 0.35);
+  background: #fffdf8;
+  color: #3a2310;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.activity-tab-pill.active {
+  background: #5C381F;
+  border-color: #5C381F;
+  color: #fff6e5;
+}
+
+.hub-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ef4444;
+  display: inline-block;
+}
+
+.hub-count {
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: #dc2626;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.activity-banner-row {
+  background: linear-gradient(135deg, #5C381F 0%, #3E2413 100%);
+  border: 1.5px solid #e6b84c;
+  border-radius: 18px;
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.checkin-grid-7 {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.checkin-day-card {
+  background: #fffdf8;
+  border: 1.5px solid rgba(140, 100, 60, 0.28);
+  border-radius: 14px;
+  padding: 10px 8px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.checkin-day-card.claimed {
+  background: #F6E9D2;
+  border-color: #5C381F;
+}
+
+.checkin-day-card.today-target {
+  background: #fff5db;
+  border-color: #d49622;
+  box-shadow: 0 0 0 2px rgba(212, 150, 34, 0.35);
+}
+
+.checkin-day-num {
+  font-size: 12px;
+  font-weight: 900;
+  color: #7e2a22;
+}
+
+.checkin-day-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: #4a3222;
+}
+
+.checkin-day-gift {
+  font-size: 12.5px;
+  font-weight: 800;
+  color: #5C381F;
+  line-height: 1.35;
+}
+
+.checkin-day-status {
+  font-size: 11px;
+  font-weight: 800;
+  color: #7a5838;
+}
+
+.quests-grid,
+.guide-steps-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.quest-card,
+.guide-step-card,
+.mail-card {
+  background: #fffdf8;
+  border: 1.5px solid rgba(140, 100, 60, 0.28);
+  border-radius: 16px;
+  padding: 13px 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.quest-card.claimable {
+  border-color: #c9962e;
+  background: #fff8e6;
+}
+
+.quest-card.claimed,
+.mail-card.claimed {
+  opacity: 0.85;
+  background: #f5f2ea;
+}
+
+.quest-card-head,
+.quest-card-foot,
+.mail-card-head,
+.mail-card-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.quest-cat-pill,
+.mail-rewards-pill {
+  font-size: 11.5px;
+  font-weight: 800;
+  color: #5C381F;
+  background: #F6E9D2;
+  padding: 3px 9px;
+  border-radius: 999px;
+}
+
+.quest-reward-text {
+  font-size: 12.5px;
+  font-weight: 800;
+  color: #9a5b14;
+}
+
+.quest-card-title,
+.guide-step-title,
+.mail-title {
+  font-size: 15px;
+  font-weight: 800;
+  color: #241409;
+}
+
+.quest-card-desc,
+.guide-step-desc,
+.mail-body {
+  font-size: 13px;
+  color: #52361c;
+  line-height: 1.45;
+}
+
+.mail-sender {
+  font-size: 12px;
+  font-weight: 800;
+  color: #7e2a22;
+}
+
+.mailbox-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.quest-progress-track {
+  height: 7px;
+  border-radius: 999px;
+  background: rgba(140, 100, 60, 0.16);
+  overflow: hidden;
+}
+
+.quest-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #5C381F 0%, #C9962E 100%);
+}
+
+.quest-progress-lbl {
+  font-size: 12px;
+  font-weight: 700;
+  color: #6b4c32;
+}
+
+.quest-claim-btn {
+  min-height: 36px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1.5px solid #fbe09c;
+  background: linear-gradient(180deg, #d96b27 0%, #9e3810 100%);
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.quest-go-btn {
+  min-height: 36px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1.5px solid rgba(92, 56, 31, 0.35);
+  background: #F6E9D2;
+  color: #5C381F;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.quest-done-tag {
+  font-size: 12.5px;
+  font-weight: 800;
+  color: #8C5327;
+}
+
+.guide-step-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 2px;
+}
+
+/* Profile Backup & Restore Box */
+.backup-code-box {
+  background: #fffdf8;
+  border: 1.5px solid rgba(140, 100, 60, 0.32);
+  border-radius: 16px;
+  padding: 12px 14px;
+}
+
+.backup-code-title {
+  font-size: 14px;
+  font-weight: 800;
+  color: #5C381F;
+}
+
+.backup-code-desc {
+  font-size: 12.5px;
+  color: #52361c;
+  margin: 4px 0 8px;
+  line-height: 1.4;
+}
+
+.backup-code-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.backup-code-row input {
+  flex: 1;
+  min-width: 0;
+  height: 38px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1.5px solid rgba(140, 100, 60, 0.32);
+  font-size: 12.5px;
+  font-family: monospace;
+  color: #241409;
+  background: #faf5e9;
+}
+
+@media (max-width: 768px) {
+  .lecture-top-bar {
+    width: calc(100% - 16px);
+    padding: 8px 12px;
+  }
+  .lecture-center-stage {
+    padding: 8px 10px;
+  }
+  .lesson-cream-card {
+    padding: 14px 15px;
+    border-radius: 18px;
+  }
+  .lecture-paths-grid,
+  .lecture-lessons-grid,
+  .quests-grid,
+  .guide-steps-grid {
+    grid-template-columns: 1fr;
+  }
+  .checkin-grid-7 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .lecture-nav-footer {
+    grid-template-columns: 1fr 1fr;
+  }
+  .lecture-nav-footer .lesson-next-green-btn {
+    grid-column: 1 / -1;
+  }
+  .lecture-bottom-dock {
+    width: calc(100% - 16px);
+    height: 60px;
+    margin-bottom: 10px;
+  }
+  .lecture-dock-tab {
+    font-size: 14.5px;
+    gap: 6px;
+  }
+  .time-toggle-btn span {
+    display: none;
+  }
+  .backup-code-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+/* ==========================================================================
+   REALISTIC 108-BEAD MALA & 5-MIN MINDFULNESS TIMER
+   ========================================================================== */
+.mala-modal-grid {
+  display: grid;
+  grid-template-columns: 288px minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.mala-real-stage {
+  background: linear-gradient(180deg, #FFFDF8 0%, #F7EAD0 100%);
+  border: 1.5px solid rgba(201, 150, 46, 0.45);
+  border-radius: 22px;
+  padding: 14px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.mala-wood-tag {
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: #EFE1C6;
+  border: 1px solid rgba(140, 100, 60, 0.3);
+  color: #4A3222;
+  font-size: 12.5px;
+  font-weight: 800;
+}
+
+.mala-svg-wrap {
+  position: relative;
+  width: 250px;
+  height: 254px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.1s ease;
+}
+
+.mala-svg-wrap:active {
+  transform: scale(0.97);
+}
+
+.mala-svg-ring {
+  filter: drop-shadow(0 6px 14px rgba(74, 50, 34, 0.16));
+}
+
+.mala-center-readout {
+  position: absolute;
+  top: 45%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 128px;
+  height: 128px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #6F4427 0%, #3E2413 100%);
+  border: 3px solid #E6B84C;
+  box-shadow: 0 8px 20px rgba(36, 20, 9, 0.34);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  text-align: center;
+}
+
+.mala-center-readout .mala-big-num {
+  font-size: 27px;
+  font-weight: 900;
+  color: #FFD875;
+  font-variant-numeric: tabular-nums;
+}
+
+.mala-tap-hint {
+  font-size: 12px;
+  font-weight: 800;
+  color: #FFF6E5;
+  margin-top: 3px;
+}
+
+.mala-cycles-lbl {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #F6CD72;
+  margin-top: 2px;
+}
+
+.mala-actions-row {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+
+.mindfulness-timer-card {
+  background: #FFFDF8;
+  border: 1.5px solid rgba(92, 56, 31, 0.38);
+  border-radius: 18px;
+  padding: 13px 15px;
+  box-shadow: 0 6px 16px rgba(92, 56, 31, 0.08);
+}
+
+.mindful-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.mindful-title {
+  font-size: 15px;
+  font-weight: 800;
+  color: #5C381F;
+}
+
+.mindful-sub {
+  font-size: 12.5px;
+  color: #4A3222;
+  margin-top: 2px;
+}
+
+.mindful-clock {
+  font-size: 28px;
+  font-weight: 900;
+  color: #5C381F;
+  background: #F6E9D2;
+  border: 1.5px solid rgba(92, 56, 31, 0.35);
+  border-radius: 12px;
+  padding: 4px 12px;
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+
+.mindful-breath-cue {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #7E2A22;
+  background: #FFF6E5;
+  border-radius: 10px;
+  padding: 7px 11px;
+}
+
+/* ==========================================================================
+   18 VỊ LA HÁN 3D MUSEUM SHOWCASE
+   ========================================================================== */
+.arhat-museum-layout {
+  display: grid;
+  grid-template-columns: 290px minmax(0, 1fr);
+  gap: 16px;
+  align-items: stretch;
+}
+
+.arhat-stage-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.arhat-3d-viewport {
+  position: relative;
+  height: 272px;
+  border-radius: 18px;
+  overflow: hidden;
+  background: radial-gradient(circle at 50% 35%, #FFFBF2 0%, #EFE1C2 62%, #D8BA88 100%);
+  border: 1.5px solid rgba(190, 148, 72, 0.45);
+  cursor: grab;
+}
+
+.arhat-3d-viewport:active {
+  cursor: grabbing;
+}
+
+.arhat-3d-viewport canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.arhat-idx-chip {
+  position: absolute;
+  right: 10px;
+  top: 8px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(126, 42, 34, 0.9);
+  color: #FFD875;
+  font-size: 11.5px;
+  font-weight: 800;
+  pointer-events: none;
+}
+
+.arhat-plaque-card {
+  background: #FFFDF8;
+  border: 1.5px solid rgba(190, 148, 72, 0.42);
+  border-radius: 18px;
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.arhat-plaque-eyebrow {
+  font-size: 13.5px;
+  font-weight: 800;
+  color: #8C4B1E;
+}
+
+.arhat-plaque-name {
+  font-size: 22px;
+  font-weight: 800;
+  color: #472915;
+  margin: 5px 0 10px;
+  line-height: 1.3;
+}
+
+.arhat-emblem-pill {
+  display: inline-block;
+  padding: 6px 13px;
+  border-radius: 999px;
+  background: #F6E9CE;
+  border: 1px solid rgba(201, 150, 46, 0.45);
+  color: #4A3222;
+  font-size: 13.5px;
+  font-weight: 800;
+  margin-bottom: 12px;
+}
+
+.arhat-plaque-meaning {
+  font-size: 16px;
+  line-height: 1.55;
+  color: #241409;
+}
+
+.arhat-plaque-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.arhat-rail-18 {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 10px 2px 4px;
+  scrollbar-width: thin;
+}
+
+.arhat-rail-btn {
+  flex-shrink: 0;
+  min-height: 44px;
+  padding: 4px 12px;
+  border-radius: 12px;
+  border: 1.5px solid rgba(140, 100, 60, 0.3);
+  background: #FFFDF8;
+  color: #3A2310;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+.arhat-rail-btn.active {
+  background: #5C381F;
+  border-color: #5C381F;
+  color: #FFF6E5;
+  box-shadow: 0 4px 12px rgba(92, 56, 31, 0.25);
+}
+
+.arhat-rail-num {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(201, 150, 46, 0.24);
+  color: #7E2A22;
+  font-size: 11.5px;
+  font-weight: 900;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.arhat-rail-btn.active .arhat-rail-num {
+  background: #FFD875;
+  color: #241409;
+}
+
+/* ==========================================================================
+   ACTIVITY HUB SECTIONS, MAILBOX REPLIES, SHARE/FEEDBACK & ELDER STORE CTA
+   ========================================================================== */
+.hub-section-heading {
+  font-size: 15.5px;
+  font-weight: 800;
+  color: #5C381F;
+  margin-top: 12px;
+  margin-bottom: 6px;
+}
+
+.mail-filter-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.mail-filter-pill {
+  min-height: 38px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1.5px solid rgba(140, 100, 60, 0.32);
+  background: #FFFDF8;
+  color: #4A3222;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.mail-filter-pill.active {
+  background: #5C381F;
+  border-color: #5C381F;
+  color: #FFF6E5;
+}
+
+.mail-reply-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.mail-reply-btn,
+.feedback-tag-chip {
+  min-height: 36px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1.5px solid rgba(92, 56, 31, 0.32);
+  background: #FAF2E2;
+  color: #5C381F;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.mail-reply-btn.replied,
+.feedback-tag-chip.active {
+  background: #5C381F;
+  border-color: #5C381F;
+  color: #FFF6E5;
+}
+
+.share-feedback-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.share-card-preview {
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #241409;
+  background: #FFF6E5;
+  border: 1.5px dashed #C9962E;
+  border-radius: 14px;
+  padding: 12px 14px;
+}
+
+.feedback-stars-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.feedback-star-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  border: 1.5px solid rgba(201, 150, 46, 0.38);
+  background: #FFFDF8;
+  color: #C4B49C;
+  font-size: 22px;
+  cursor: pointer;
+}
+
+.feedback-star-btn.active {
+  background: #FFF2CC;
+  border-color: #C9962E;
+  color: #D4890B;
+}
+
+.feedback-textarea {
+  width: 100%;
+  border-radius: 14px;
+  border: 1.5px solid rgba(140, 100, 60, 0.35);
+  background: #FFFDF8;
+  color: #241409;
+  padding: 10px 12px;
+  font-size: 14px;
+  resize: vertical;
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.store-quest-cta-strip {
+  background: #FFF4DC;
+  border: 1.5px solid rgba(201, 150, 46, 0.45);
+  border-radius: 14px;
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 12.5px;
+  color: #4A3222;
+}
+
+.store-elder-benefit {
+  font-size: 12px;
+  font-weight: 700;
+  color: #5C381F;
+  margin-top: 2px;
+}
+
+@media (max-width: 768px) {
+  .mala-modal-grid,
+  .arhat-museum-layout,
+  .share-feedback-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+
