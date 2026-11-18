@@ -3,14 +3,14 @@
    Thứ tự @import = thứ tự cascade, KHÔNG đổi thứ tự. Thêm style mới vào đúng file chủ đề
    trong src/styles/ (xem docs/ARCHITECTURE.md).
    ========================================================================== */
-@import url('/src/styles/01-viewport-hud.css'); /* Khung nhìn chính, thanh điều hướng, pin, nút hành động, toast */
-@import url('/src/styles/02-shop-screen.css'); /* Màn Cửa hàng lưu niệm & vật phẩm 3D */
-@import url('/src/styles/03-lecture-shared-modals.css'); /* Giảng đường + modal dùng chung (chi tiết sản phẩm, giỏ hàng, niệm Phật, dâng hương) */
-@import url('/src/styles/04-store-drawer-stalls.css'); /* Cuộn lời Phật dạy, cửa hàng 9 tab, sạp hàng cổng chùa */
-@import url('/src/styles/05-proximity-merit-profile.css'); /* Gợi ý gần quán, tour camera, sổ công đức, hồ sơ & trang phục, thanh khu trong điện */
-@import url('/src/styles/06-time-mala-arhat.css'); /* Giờ trong ngày, hub hành trình, chuỗi 108 hạt, bảo tàng 18 La Hán */
-@import url('/src/styles/07-hub-dock-garden.css'); /* Activity hub, dock hành hương, mục tiêu, vườn thiền, nhịp chuông, sổ di sản */
-@import url('/src/styles/08-arrival-audio-30day.css'); /* Cutscene xe tới, bộ trộn âm, modal tiền hành hương, hoa đăng, 30 ngày & nhật ký */
-@import url('/src/styles/09-academy.css'); /* Học viện Phật học */
-@import url('/src/styles/10-blessing-tower.css'); /* Tháp đèn Dược Sư cầu an · ghi tên cầu phước */
-@import url('/src/styles/11-sutra-study.css'); /* Học kinh tương tác & gõ mõ tụng kinh */
+@import url('../styles/01-viewport-hud.css'); /* Khung nhìn chính, thanh điều hướng, pin, nút hành động, toast */
+@import url('../styles/02-shop-screen.css'); /* Màn Cửa hàng lưu niệm & vật phẩm 3D */
+@import url('../styles/03-lecture-shared-modals.css'); /* Giảng đường + modal dùng chung (chi tiết sản phẩm, giỏ hàng, niệm Phật, dâng hương) */
+@import url('../styles/04-store-drawer-stalls.css'); /* Cuộn lời Phật dạy, cửa hàng 9 tab, sạp hàng cổng chùa */
+@import url('../styles/05-proximity-merit-profile.css'); /* Gợi ý gần quán, tour camera, sổ công đức, hồ sơ & trang phục, thanh khu trong điện */
+@import url('../styles/06-time-mala-arhat.css'); /* Giờ trong ngày, hub hành trình, chuỗi 108 hạt, bảo tàng 18 La Hán */
+@import url('../styles/07-hub-dock-garden.css'); /* Activity hub, dock hành hương, mục tiêu, vườn thiền, nhịp chuông, sổ di sản */
+@import url('../styles/08-arrival-audio-30day.css'); /* Cutscene xe tới, bộ trộn âm, modal tiền hành hương, hoa đăng, 30 ngày & nhật ký */
+@import url('../styles/09-academy.css'); /* Học viện Phật học */
+@import url('../styles/10-blessing-tower.css'); /* Tháp đèn Dược Sư cầu an · ghi tên cầu phước */
+@import url('../styles/11-sutra-study.css'); /* Học kinh tương tác & gõ mõ tụng kinh */

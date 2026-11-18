@@ -111,18 +111,18 @@ import {
   BLESSING_TOWER_CATEGORIES,
   createBlessingTowerState,
   registerBlessingTowerPrayer
-} from '/src/logic/chua-online-logic.mjs';
-import { createSutraStudyState } from '/src/logic/sutra-study-logic.mjs';
-import { SutraStudyController } from '/src/app/sutra-study-ui.mjs';
-import { VinhTrang3DWorld } from '/src/app/vinh-trang-3d-world.mjs';
-import { TempleAudioEngine } from '/src/app/audio-engine.mjs';
+} from '../../logic/chua-online-logic.mjs';
+import { createSutraStudyState } from '../../logic/sutra-study-logic.mjs';
+import { SutraStudyController } from '../sutra-study-ui.mjs';
+import { VinhTrang3DWorld } from '../vinh-trang-3d-world.mjs';
+import { TempleAudioEngine } from '../audio-engine.mjs';
 import {
   recolorGarmentOnScene,
   clearRiggedBoneProps,
   createBespokeRobeGroup,
   createStoreAccessoryGroup,
   createSculptedArhatShowcase
-} from '/src/app/garment-and-showcase-3d.mjs';
+} from '../garment-and-showcase-3d.mjs';
 
 export const STORAGE_KEY = 'chua_online_vinh_trang_state_v11';
 

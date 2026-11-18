@@ -160,11 +160,11 @@ export class VinhTrang3DWorld {
     this.clock = new THREE.Clock();
     this.gltfLoader = new GLTFLoader();
 
-    // Spawn on front entrance plaza overlooking quiet closed Cổng Chính & busy wide-open Cổng Phụ
+    // Spawn right at Cổng Phụ Tịnh Độ Huyền Môn looking straight down the tree-shaded entrance lane
     this.playerState = {
-      x: 35.5,
-      z: 50.8,
-      yaw: Math.PI - 0.16,
+      x: 40.5,
+      z: 43.8,
+      yaw: Math.PI,
       moving: false,
       charKey: callbacks.initialCharKey || 'nu',
       pose: 'Dung',
@@ -173,7 +173,7 @@ export class VinhTrang3DWorld {
     this.heldDirs = new Set();
     this.currentStationId = 0;
     this.inInterior = false;
-    this.cameraBaseYaw = Math.PI - 0.16;
+    this.cameraBaseYaw = Math.PI;
     this.cameraAzimuthOffset = 0;
     this.cameraPitchOffset = 0;
     this.cameraZoomOffset = 0;

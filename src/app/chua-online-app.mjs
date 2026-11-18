@@ -21,7 +21,7 @@ import { modalAndEventsMethods } from './ui/modal-and-events.mjs';
 export class ChuaOnlineApp {
   constructor() {
     this.saved = this.loadState();
-    this.playerPos = { x: 35.5, z: 50.8, yaw: Math.PI - 0.16, moving: false };
+    this.playerPos = { x: 40.5, z: 43.8, yaw: Math.PI, moving: false };
     this.nearbyStallTrigger = null;
     this.nearbyInteractPrompt = null;
     this._lastChanhDienBellAt = 0;

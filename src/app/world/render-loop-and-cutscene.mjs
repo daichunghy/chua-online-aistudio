@@ -520,11 +520,11 @@ export const renderLoopAndCutsceneMethods = {
     }
     this.arrivalCutscene = null;
     this.playerContainer.visible = true;
-    this.playerState.x = 35.5;
-    this.playerState.z = 50.8;
-    this.playerState.yaw = Math.PI - 0.16;
+    this.playerState.x = 40.5;
+    this.playerState.z = 43.8;
+    this.playerState.yaw = Math.PI;
     this.playerState.moving = false;
-    this.cameraBaseYaw = Math.PI - 0.16;
+    this.cameraBaseYaw = Math.PI;
     this.cameraAzimuthOffset = 0;
     this.syncPlayerTransform();
     if (!silent && typeof cs.onComplete === 'function') {
@@ -560,7 +560,7 @@ export const renderLoopAndCutsceneMethods = {
       return;
     }
 
-    // 2.8 -> 6.8s: step out of vehicle onto plaza & walk gracefully through Cổng Phụ toward Chùa Vĩnh Tràng
+    // 2.8 -> 6.8s: step out of vehicle onto plaza & align straight into Cổng Phụ looking down the shaded lane
     if (!cs.cuedArrival) {
       cs.cuedArrival = true;
       this.playerContainer.visible = true;
@@ -570,9 +570,9 @@ export const renderLoopAndCutsceneMethods = {
     }
     if (cs.timer < 6.8) {
       const w = (cs.timer - 2.8) / 4.0;
-      const sx = THREE.MathUtils.lerp(49.5, 35.5, w);
-      const sz = THREE.MathUtils.lerp(51.2, 50.8, w);
-      this.playerState.yaw = Math.atan2(35.5 - sx, 50.8 - sz);
+      const sx = THREE.MathUtils.lerp(49.5, 40.5, w);
+      const sz = THREE.MathUtils.lerp(51.2, 43.8, w);
+      this.playerState.yaw = THREE.MathUtils.lerp(Math.atan2(40.5 - 49.5, 43.8 - 51.2), Math.PI, Math.min(1, w * 1.35));
       this.playerState.x = sx;
       this.playerState.z = sz;
       this.playerState.moving = true;
@@ -583,14 +583,14 @@ export const renderLoopAndCutsceneMethods = {
         cs.onCue('enter_gate');
       }
       this.camera.position.set(
-        THREE.MathUtils.lerp(44.5, 37.8, w),
-        THREE.MathUtils.lerp(3.6, 2.5, w),
-        THREE.MathUtils.lerp(63.5, 57.5, w)
+        THREE.MathUtils.lerp(44.5, 40.5, w),
+        THREE.MathUtils.lerp(3.6, 2.1, w),
+        THREE.MathUtils.lerp(63.5, 50.8, w)
       );
       this.camera.lookAt(
-        THREE.MathUtils.lerp(39.0, 29.0, w),
-        THREE.MathUtils.lerp(2.4, 3.4, w),
-        THREE.MathUtils.lerp(46.0, 38.0, w)
+        40.5,
+        THREE.MathUtils.lerp(2.6, 3.2, w),
+        THREE.MathUtils.lerp(41.5, 20.0, w)
       );
       return;
     }

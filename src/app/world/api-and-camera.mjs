@@ -50,27 +50,27 @@ export const apiAndCameraMethods = {
   startEntranceCameraTour() {
     if (this.inInterior) return;
     if (!this.entranceTour.posCurve) {
-      // Tour path matching exact Vĩnh Tràng visitor arrival in image_bb72a8b0.png & image_97204806.png:
-      // 1) Quiet closed Cổng Chính -> 2) Busy wide-open ceramic mosaic Cổng Phụ ("Tịnh Độ Huyền Môn")
-      // -> 3) Glide in through Cổng Phụ past Nhà Tạp Hóa Vĩnh Tràng & Yellow Welcome Banner
-      // -> 4) Bougainvillea right side path past Đài Quán Thế Âm -> settle behind player at entrance plaza
+      // Tour path:
+      // 1) Quiet closed Cổng Chính -> 2) Wide-open ceramic mosaic Cổng Phụ ("Tịnh Độ Huyền Môn")
+      // -> 3) Glide straight down the tree-shaded lane (x = 40.5) to the souvenir plaza & left-turn shoe veranda (z = -14.5)
+      // -> 4) Settle behind player at Cổng Phụ (x = 40.5, z = 43.8) facing straight down the entrance lane
       this.entranceTour.posCurve = new THREE.CatmullRomCurve3([
         new THREE.Vector3(24.5, 3.0, 54.5),
-        new THREE.Vector3(38.5, 3.6, 51.5),
-        new THREE.Vector3(40.5, 3.2, 41.0),
-        new THREE.Vector3(40.5, 3.3, 33.0),
-        new THREE.Vector3(36.2, 3.4, 21.5),
-        new THREE.Vector3(34.8, 3.0, 13.0),
-        new THREE.Vector3(37.2, 2.5, 57.6)
+        new THREE.Vector3(38.5, 3.5, 51.5),
+        new THREE.Vector3(40.5, 3.0, 41.0),
+        new THREE.Vector3(40.5, 2.8, 18.0),
+        new THREE.Vector3(40.5, 2.6, -12.0),
+        new THREE.Vector3(40.5, 2.4, 32.0),
+        new THREE.Vector3(40.5, 2.1, 50.8)
       ]);
       this.entranceTour.lookCurve = new THREE.CatmullRomCurve3([
         new THREE.Vector3(23.0, 4.4, 41.5),
         new THREE.Vector3(40.5, 4.2, 41.5),
-        new THREE.Vector3(44.5, 2.8, 35.5),
-        new THREE.Vector3(36.0, 2.5, 22.0),
-        new THREE.Vector3(32.5, 3.2, 11.0),
-        new THREE.Vector3(35.5, 3.4, 38.0),
-        new THREE.Vector3(36.8, 3.4, 39.5)
+        new THREE.Vector3(40.5, 2.8, 22.0),
+        new THREE.Vector3(40.5, 2.4, -14.5),
+        new THREE.Vector3(35.2, 2.4, -14.5),
+        new THREE.Vector3(40.5, 2.8, 12.0),
+        new THREE.Vector3(40.5, 3.2, 20.0)
       ]);
     }
     this.entranceTour.active = true;

@@ -426,8 +426,8 @@ test('Temple Entrance Grocery House & continuous Chữ Quốc walkway routing wo
   assert.equal(cartRes.cart[0].id, 'quat_nan_gio_may');
 
   const chanhDien = PILGRIMAGE_STATIONS.find((s) => s.key === 'chanh_dien');
-  assert.equal(chanhDien.standPos.x, 30.2);
-  assert.equal(chanhDien.standPos.z, 12.2); // Approaches via cửa hông courtyard before entering Tiền đường -> Chánh điện
+  assert.equal(chanhDien.standPos.x, 38.4);
+  assert.equal(chanhDien.standPos.z, -14.5); // Walks straight down Cổng Phụ lane (x=40.5) and turns left to shoe-removal veranda
   assert.ok(chanhDien.via.length >= 2);
 });
 
