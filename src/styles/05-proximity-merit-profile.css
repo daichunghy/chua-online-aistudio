@@ -1,0 +1,599 @@
+/* ==========================================================================
+   VIETNAMESE STALL PROXIMITY PROMPT & ENTRANCE CAMERA TOUR BANNER
+   ========================================================================== */
+.stall-proximity-prompt {
+  position: absolute;
+  left: 50%;
+  bottom: 138px;
+  transform: translateX(-50%);
+  z-index: 29;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 18px;
+  border-radius: 999px;
+  background: #FFF6E5;
+  border: 2px solid #5C381F;
+  color: #5C381F;
+  font-size: 14.5px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 10px 26px rgba(36, 20, 9, 0.34);
+  transition: transform 0.16s ease, background 0.16s ease;
+}
+
+.stall-proximity-prompt:hover {
+  background: #FFFDF8;
+  transform: translateX(-50%) translateY(-2px);
+}
+
+.stall-proximity-key {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 7px;
+  border-radius: 8px;
+  background: #5C381F;
+  color: #FFF6E5;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.entrance-tour-banner {
+  position: fixed;
+  top: 78px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 27;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  max-width: calc(100vw - 32px);
+  padding: 7px 14px 7px 18px;
+  border-radius: 999px;
+  background: #5C381F;
+  border: 1.5px solid #E6B84C;
+  color: #FFF6E5;
+  font-size: 13.5px;
+  font-weight: 700;
+  box-shadow: 0 8px 22px rgba(36, 20, 9, 0.35);
+}
+
+.entrance-tour-skip-btn {
+  padding: 4px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 246, 229, 0.45);
+  background: #C96F4A;
+  color: #FFF6E5;
+  font-size: 12.5px;
+  font-weight: 800;
+  white-space: nowrap;
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: filter 0.15s ease;
+}
+
+.entrance-tour-skip-btn:hover {
+  filter: brightness(1.08);
+}
+
+/* Responsive adjustments */
+@media (max-width: 1520px) {
+  .brand-pill {
+    padding: 6px 12px 6px 10px;
+    gap: 6px;
+  }
+  .brand-pill .brand-main {
+    font-size: 15.5px;
+  }
+  .brand-pill .brand-divider,
+  .brand-pill .brand-sub {
+    display: none;
+  }
+  .top-nav-group {
+    gap: 5px;
+  }
+  .nav-pill-btn {
+    padding: 6px 9px;
+    font-size: 12.2px;
+    gap: 4px;
+  }
+  .nav-pill-btn svg {
+    width: 16px;
+    height: 16px;
+  }
+  .nav-rank-pill {
+    display: none;
+  }
+}
+
+@media (max-width: 1180px) {
+  .brand-pill {
+    padding: 6px 10px 6px 9px;
+    gap: 5px;
+  }
+  .brand-pill .brand-main {
+    font-size: 14.5px;
+  }
+  .nav-pill-btn {
+    padding: 5px 8px;
+    font-size: 11.8px;
+    gap: 3px;
+  }
+}
+
+@media (max-width: 900px) {
+  .shop-products-grid {
+    grid-template-columns: repeat(2, minmax(180px, 1fr));
+  }
+  .action-square-btn {
+    width: 92px;
+    height: 92px;
+  }
+  .brand-pill .brand-divider,
+  .brand-pill .brand-sub {
+    display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .shop-products-grid,
+  .market-items-grid {
+    grid-template-columns: 1fr;
+  }
+  .top-hud-bar {
+    top: 8px;
+    left: 8px;
+    right: 8px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+  .brand-pill {
+    padding: 5px 12px 5px 10px;
+    gap: 6px;
+  }
+  .brand-pill .lotus-logo {
+    width: 22px;
+    height: 17px;
+  }
+  .brand-pill .brand-main {
+    font-size: 14.5px;
+  }
+  .top-nav-group {
+    width: 100%;
+    margin-left: 0;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    overflow-x: visible;
+    gap: 5px;
+  }
+  .nav-pill-btn {
+    padding: 5px 9px;
+    font-size: 11.5px;
+    gap: 4px;
+    border-width: 1.5px;
+  }
+  .nav-pill-btn svg {
+    width: 15px;
+    height: 15px;
+  }
+  .nav-rank-pill {
+    display: none;
+  }
+  .quick-walk-bar,
+  .interior-zone-bar,
+  .auto-walk-objective-banner {
+    top: 118px;
+  }
+  .auto-walk-objective-banner {
+    max-width: calc(100vw - 24px);
+    font-size: 12px;
+    padding: 5px 12px;
+    text-align: center;
+  }
+  .ugc-milestone-pill {
+    left: 10px;
+    bottom: 98px;
+    max-width: calc(100vw - 20px);
+    padding: 7px 12px;
+    font-size: 12px;
+  }
+  .spiritual-actions-bar {
+    right: 8px;
+    bottom: 12px;
+    gap: 6px;
+  }
+  .action-square-btn {
+    width: 68px;
+    height: 76px;
+    border-radius: 16px;
+  }
+  .action-square-btn .action-label {
+    font-size: 12px;
+  }
+}
+
+/* ==========================================================================
+   SỔ CÔNG ĐỨC THỰC HÀNH MODAL
+   ========================================================================== */
+.merit-summary-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.merit-hero-banner {
+  background: linear-gradient(135deg, #5C381F 0%, #3E2413 100%);
+  border: 1.5px solid #E6B84C;
+  border-radius: 20px;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.merit-total-num {
+  font-size: 32px;
+  font-weight: 800;
+  color: #FFD875;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.15;
+  margin-top: 2px;
+}
+
+.merit-breakdown-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.merit-stat-card {
+  background: #FFFDF8;
+  border: 1.5px solid rgba(168, 126, 81, 0.28);
+  border-radius: 20px;
+  padding: 16px 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 6px;
+  box-shadow: 0 6px 16px rgba(74, 50, 34, 0.06);
+}
+
+.merit-stat-icon {
+  font-size: 30px;
+}
+
+.merit-stat-val {
+  font-size: 28px;
+  font-weight: 800;
+  color: #5C381F;
+  font-variant-numeric: tabular-nums;
+}
+
+.merit-stat-label {
+  font-size: 15px;
+  font-weight: 800;
+  color: #4A3222;
+}
+
+.merit-stat-sub {
+  font-size: 12px;
+  color: #7A5C43;
+}
+
+.merit-quick-btn {
+  margin-top: 6px;
+  width: 100%;
+  height: 36px;
+  border-radius: 999px;
+  border: none;
+  background: #5C381F;
+  color: #FFF6E5;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.merit-quick-btn:hover {
+  filter: brightness(1.08);
+}
+
+@media (max-width: 640px) {
+  .merit-breakdown-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ==========================================================================
+   HỒ SƠ & TRANG PHỤC ĐI CHÙA (Redesigned Profile Modal + 3D Character Stage)
+   ========================================================================== */
+.profile-modal-layout {
+  display: grid;
+  grid-template-columns: 310px minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.profile-stage-card {
+  background: #FFFDF8;
+  border: 1.5px solid rgba(140, 100, 60, 0.28);
+  border-radius: 22px;
+  padding: 14px;
+  text-align: center;
+  box-shadow: 0 8px 22px rgba(74, 50, 34, 0.08);
+}
+
+.profile-3d-viewport {
+  position: relative;
+  height: 292px;
+  border-radius: 18px;
+  overflow: hidden;
+  background: radial-gradient(circle at 50% 34%, #FFFBF2 0%, #EFE2C6 65%, #DFC89E 100%);
+  border: 1.5px solid rgba(190, 148, 72, 0.35);
+  cursor: grab;
+}
+
+.profile-3d-viewport:active {
+  cursor: grabbing;
+}
+
+.profile-3d-viewport canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.profile-stage-hint {
+  position: absolute;
+  left: 10px;
+  top: 8px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: rgba(34, 21, 12, 0.58);
+  color: #FFF6E5;
+  font-size: 11px;
+  font-weight: 700;
+  pointer-events: none;
+}
+
+.profile-pose-pills {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  display: flex;
+  gap: 4px;
+}
+
+.profile-pose-btn {
+  padding: 4px 9px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 246, 229, 0.65);
+  background: rgba(92, 56, 31, 0.85);
+  color: #FFF6E5;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.profile-pose-btn.active {
+  background: #E6B84C;
+  color: #241409;
+  border-color: #7E2A22;
+}
+
+.profile-char-name {
+  font-size: 16.5px;
+  font-weight: 800;
+  color: #472915;
+  margin-top: 10px;
+}
+
+.profile-char-sub {
+  font-size: 12.5px;
+  color: #5b3a1d;
+  margin-top: 3px;
+  line-height: 1.4;
+}
+
+.profile-char-switch-row {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 11px;
+}
+
+.char-switch-btn {
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1.5px solid #5C381F;
+  background: #fff;
+  color: #5C381F;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.char-switch-btn.active {
+  background: #5C381F;
+  color: #fff;
+}
+
+.profile-right-col {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+.profile-stats-banner {
+  background: linear-gradient(135deg, #4B2B17 0%, #341D0F 100%);
+  color: #fff8ea;
+  padding: 14px 16px;
+  border-radius: 18px;
+  border: 1.5px solid rgba(230, 184, 76, 0.45);
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  text-align: center;
+}
+
+.profile-stat-val {
+  font-size: 21px;
+  font-weight: 800;
+  color: #f6cd72;
+  font-variant-numeric: tabular-nums;
+}
+
+.profile-stat-lbl {
+  font-size: 12px;
+  opacity: 0.92;
+  margin-top: 2px;
+}
+
+.profile-wardrobe-heading {
+  font-size: 15px;
+  font-weight: 800;
+  color: #472915;
+  margin-bottom: 8px;
+}
+
+.profile-wardrobe-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.profile-wardrobe-card {
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1.5px solid rgba(130, 90, 50, 0.28);
+  background: #fffdf8;
+  color: #241409;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  transition: border-color 0.15s ease, background 0.15s ease, transform 0.12s ease;
+}
+
+.profile-wardrobe-card:hover {
+  transform: translateY(-1px);
+  border-color: #5C381F;
+}
+
+.profile-wardrobe-card.active {
+  border-color: #5C381F;
+  background: #F6E9D2;
+}
+
+.profile-wardrobe-name {
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.32;
+  color: #241409;
+  min-width: 0;
+}
+
+.profile-wardrobe-status {
+  flex-shrink: 0;
+  white-space: nowrap;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 800;
+  background: rgba(138, 98, 60, 0.11);
+  color: #7c522c;
+}
+
+.profile-wardrobe-card.active .profile-wardrobe-status {
+  background: #5C381F;
+  color: #FFF6E5;
+}
+
+.profile-cta-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+@media (max-width: 820px) {
+  .profile-modal-layout {
+    grid-template-columns: 1fr;
+  }
+  .profile-wardrobe-grid,
+  .profile-cta-row {
+    grid-template-columns: 1fr;
+  }
+  .profile-stats-banner {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* ==========================================================================
+   INTERIOR 4-ZONE BAR & AUTO-WALK OBJECTIVE BANNER
+   ========================================================================== */
+.auto-walk-objective-banner {
+  position: fixed;
+  top: 76px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 26;
+  background: rgba(71, 41, 21, 0.94);
+  color: #FFF6E5;
+  border: 1.5px solid #C9962E;
+  border-radius: 999px;
+  padding: 6px 18px;
+  font-size: 13.5px;
+  font-weight: 700;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.24);
+  pointer-events: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: calc(100vw - 32px);
+}
+
+.interior-zone-bar {
+  position: absolute;
+  top: 76px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 28;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(34, 18, 10, 0.92);
+  border: 1.5px solid rgba(255, 216, 117, 0.52);
+  border-radius: 999px;
+  padding: 5px 10px;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.42);
+  max-width: calc(100vw - 24px);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.interior-zone-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.interior-exit-chip {
+  background: rgba(158, 36, 28, 0.85);
+  border-color: rgba(255, 216, 117, 0.55);
+}
+
+.interior-exit-chip:hover {
+  background: #b83226;
+  color: #fff6e5;
+}

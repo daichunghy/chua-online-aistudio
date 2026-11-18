@@ -1,0 +1,763 @@
+/* ==========================================================================
+   HỌC KINH TƯƠNG TÁC & GÕ MÕ TỤNG KINH (Elder-Friendly >=48px)
+   ========================================================================== */
+.sutra-study-shell {
+  width: 100%;
+  max-width: 920px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sutra-main-card {
+  border-radius: 24px;
+  padding: 14px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  color: #241307;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+}
+
+.sutra-top-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.sutra-title-block {
+  flex: 1;
+  min-width: 240px;
+}
+
+.sutra-eyebrow {
+  font-size: 12.5px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: #844519;
+}
+
+.sutra-active-title {
+  margin: 3px 0 4px;
+  font-size: clamp(22px, 2.5vw, 29px);
+  font-weight: 800;
+  color: #231106;
+  line-height: 1.24;
+}
+
+.sutra-active-meta {
+  font-size: 14.5px;
+  font-weight: 600;
+  color: #5c3a1e;
+}
+
+.sutra-change-book-btn {
+  min-height: 50px;
+  padding: 0 18px;
+  border-radius: 16px;
+  border: 1.5px solid rgba(92, 56, 31, 0.4);
+  background: #fffdf8;
+  color: #472915;
+  font-size: 15.5px;
+  font-weight: 800;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.sutra-change-book-btn:hover {
+  background: #f5e6c8;
+}
+
+.sutra-ghost-btn {
+  min-height: 48px;
+  padding: 0 16px;
+  border-radius: 14px;
+  border: 1.5px solid rgba(92, 56, 31, 0.35);
+  background: #fffdf8;
+  color: #472915;
+  font-size: 14.5px;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.sutra-shelf-drawer {
+  background: #fffaf0;
+  border: 1.5px solid rgba(201, 150, 46, 0.55);
+  border-radius: 18px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sutra-shelf-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.sutra-shelf-sub {
+  font-size: 14px;
+  color: #5b3a1d;
+  margin-top: 2px;
+}
+
+.sutra-books-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.sutra-book-card {
+  min-height: 112px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  border: 1.5px solid rgba(140, 100, 60, 0.32);
+  background: #fffdf8;
+  color: #241409;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  transition: border-color 0.15s ease, background 0.15s ease, transform 0.12s ease;
+}
+
+.sutra-book-card:hover {
+  background: #fdf2dc;
+  border-color: #8c4b1e;
+}
+
+.sutra-book-card.active {
+  background: #5c381f;
+  border-color: #e5b24c;
+  color: #fff8ea;
+}
+
+.sutra-book-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.sutra-book-icon {
+  font-size: 22px;
+  line-height: 1;
+}
+
+.sutra-book-status {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #7c491d;
+}
+
+.sutra-book-card.active .sutra-book-status {
+  color: #ffd875;
+}
+
+.sutra-book-title {
+  font-size: 16.5px;
+  font-weight: 800;
+  line-height: 1.3;
+}
+
+.sutra-book-desc {
+  font-size: 13.5px;
+  line-height: 1.4;
+  color: #59391e;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.sutra-book-card.active .sutra-book-desc {
+  color: rgba(255, 246, 229, 0.88);
+}
+
+.sutra-mode-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.sutra-mode-tab {
+  min-height: 52px;
+  padding: 8px 12px;
+  border-radius: 16px;
+  border: 1.5px solid rgba(120, 78, 40, 0.34);
+  background: #fffaf0;
+  color: #472915;
+  font-size: 16px;
+  font-weight: 800;
+  white-space: nowrap;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.sutra-mode-tab.active {
+  background: linear-gradient(180deg, #6f4427 0%, #472915 100%);
+  border-color: #e5b24c;
+  color: #fff8ea;
+}
+
+.sutra-chant-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.sutra-audio-source-group {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.sutra-audio-chip,
+.sutra-meaning-toggle {
+  min-height: 48px;
+  padding: 8px 14px;
+  border-radius: 14px;
+  border: 1.5px solid rgba(120, 78, 40, 0.34);
+  background: #fffdf8;
+  color: #472915;
+  font-size: 14.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.sutra-audio-chip.active,
+.sutra-meaning-toggle.active {
+  background: #7e2a22;
+  border-color: #e5b24c;
+  color: #fff6e5;
+}
+
+.sutra-simple-tip {
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: rgba(255, 250, 236, 0.9);
+  border: 1px solid rgba(180, 130, 52, 0.35);
+  font-size: 14.5px;
+  line-height: 1.45;
+  color: #492c14;
+}
+
+.sutra-verses-scroll {
+  max-height: clamp(165px, 26vh, 225px);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-right: 4px;
+}
+
+.sutra-verse-row {
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: rgba(255, 252, 244, 0.85);
+  border: 1.5px solid rgba(154, 112, 66, 0.25);
+  cursor: pointer;
+  transition: background 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
+}
+
+.sutra-verse-row.active {
+  background: #fffdf8;
+  border: 2px solid #c9962e;
+  box-shadow: 0 8px 22px rgba(92, 56, 31, 0.16);
+}
+
+.sutra-verse-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.sutra-verse-num {
+  font-size: 13px;
+  font-weight: 800;
+  color: #844519;
+}
+
+.sutra-verse-listen-btn {
+  min-height: 44px;
+  padding: 0 14px;
+  border-radius: 12px;
+  border: 1.5px solid rgba(92, 56, 31, 0.32);
+  background: #fbf0d8;
+  color: #472915;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.sutra-verse-listen-btn:hover {
+  background: #f5dfaf;
+}
+
+.sutra-verse-line {
+  font-size: clamp(19px, 2.2vw, 24px);
+  font-weight: 800;
+  line-height: 1.55;
+  color: #231106;
+}
+
+.sutra-beat-unit {
+  display: inline-block;
+  padding: 2px 6px;
+  margin: 2px 2px 2px 0;
+  border-radius: 8px;
+  transition: background 0.14s ease, color 0.14s ease, transform 0.12s ease;
+}
+
+.sutra-beat-unit small {
+  font-size: 0.72em;
+  opacity: 0.7;
+  margin-left: 2px;
+}
+
+.sutra-beat-unit.active {
+  background: #f6ce67;
+  color: #2c1405;
+  box-shadow: 0 2px 8px rgba(180, 120, 20, 0.25);
+}
+
+.sutra-verse-meaning {
+  margin-top: 10px;
+  padding: 10px 13px;
+  border-radius: 12px;
+  background: #f8ecd4;
+  border: 1px solid rgba(180, 130, 52, 0.35);
+  font-size: 15.5px;
+  line-height: 1.5;
+  color: #3d220d;
+}
+
+.sutra-verse-practice {
+  margin-top: 5px;
+  font-size: 14.5px;
+  color: #5b3819;
+}
+
+.sutra-rhythm-deck {
+  background: #fff9ec;
+  border: 1.5px solid rgba(180, 130, 52, 0.48);
+  border-radius: 18px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sutra-progress-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: 14px;
+  color: #5c3a1e;
+}
+
+.sutra-progress-track {
+  width: 100%;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(140, 100, 60, 0.2);
+  overflow: hidden;
+}
+
+.sutra-progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #d89d33 0%, #f0c45d 100%);
+  transition: width 0.2s ease;
+}
+
+.sutra-controls-trio {
+  display: grid;
+  grid-template-columns: 1fr 1.6fr 1.25fr;
+  gap: 10px;
+}
+
+.sutra-bell-btn,
+.sutra-mo-pad-btn,
+.sutra-auto-btn {
+  min-height: 60px;
+  padding: 8px 14px;
+  border-radius: 16px;
+  font-size: 16px;
+  font-weight: 800;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  transition: transform 0.12s ease, filter 0.15s ease, box-shadow 0.15s ease;
+}
+
+.sutra-bell-btn {
+  border: 2px solid #d4962a;
+  background: linear-gradient(180deg, #fff5dc 0%, #f6dfab 100%);
+  color: #472915;
+}
+
+.sutra-mo-pad-btn {
+  border: 2px solid #ffd875;
+  background: linear-gradient(180deg, #8b4a1f 0%, #5c2e10 100%);
+  color: #fff9eb;
+  box-shadow: 0 8px 20px rgba(71, 41, 21, 0.35);
+}
+
+.sutra-mo-pad-btn.mo-pulsing,
+.sutra-mo-pad-btn:active {
+  transform: scale(0.96);
+}
+
+.sutra-mo-btn-copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  line-height: 1.2;
+}
+
+.sutra-mo-btn-copy small {
+  font-size: 13px;
+  font-weight: 600;
+  color: #ffe39c;
+  margin-top: 2px;
+}
+
+.sutra-auto-btn {
+  border: 2px solid #ecc05b;
+  background: linear-gradient(180deg, #ebb84d 0%, #d29427 100%);
+  color: #2c1808;
+}
+
+.sutra-auto-btn.playing {
+  border-color: #ffb8a8;
+  background: linear-gradient(180deg, #9f3524 0%, #732013 100%);
+  color: #fff6e5;
+}
+
+.sutra-btn-icon {
+  font-size: 22px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.sutra-round-complete-banner {
+  background: #fdf0cf;
+  border: 2px solid #c9962e;
+  border-radius: 18px;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.sutra-complete-title {
+  font-size: 17px;
+  font-weight: 800;
+  color: #472915;
+}
+
+.sutra-complete-sub {
+  font-size: 14px;
+  color: #5b3a1d;
+  margin-top: 2px;
+}
+
+.sutra-complete-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.sutra-gold-cta,
+.sutra-wood-cta {
+  min-height: 48px;
+  padding: 0 18px;
+  border-radius: 14px;
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.sutra-gold-cta {
+  border: 1.5px solid #c9962e;
+  background: linear-gradient(180deg, #f3c868 0%, #d99f32 100%);
+  color: #2c1808;
+}
+
+.sutra-wood-cta {
+  border: 1.5px solid #e5b24c;
+  background: linear-gradient(180deg, #6f4427 0%, #472915 100%);
+  color: #fff8ea;
+}
+
+.sutra-story-card,
+.sutra-game-card,
+.sutra-keepsake-card {
+  background: #fffaf0;
+  border: 1.5px solid rgba(180, 130, 52, 0.45);
+  border-radius: 18px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sutra-story-head,
+.sutra-game-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.sutra-story-title,
+.sutra-keepsake-title {
+  margin: 2px 0 0;
+  font-size: 19px;
+  font-weight: 800;
+  color: #241307;
+}
+
+.sutra-story-text {
+  margin: 0;
+  font-size: 16.5px;
+  line-height: 1.6;
+  color: #3d220d;
+}
+
+.sutra-game-score {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: #5c3a1e;
+  margin-top: 2px;
+}
+
+.sutra-puzzle-verse {
+  padding: 16px 18px;
+  border-radius: 16px;
+  background: #fffdf8;
+  border: 1.5px solid rgba(201, 150, 46, 0.55);
+  font-size: clamp(19px, 2.2vw, 24px);
+  font-weight: 800;
+  line-height: 1.5;
+  color: #231106;
+  text-align: center;
+}
+
+.sutra-blank-slot {
+  display: inline-block;
+  padding: 2px 14px;
+  margin: 0 4px;
+  border-radius: 10px;
+  background: #f5dfb0;
+  border: 2px dashed #9e5c1f;
+  color: #6b3810;
+}
+
+.sutra-blank-filled {
+  display: inline-block;
+  padding: 2px 14px;
+  margin: 0 4px;
+  border-radius: 10px;
+  background: #dcfce7;
+  border: 2px solid #16a34a;
+  color: #14532d;
+}
+
+.sutra-puzzle-options {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.sutra-word-tile {
+  min-height: 58px;
+  padding: 10px 14px;
+  border-radius: 16px;
+  border: 2px solid rgba(130, 90, 50, 0.35);
+  background: #fffdf8;
+  color: #231106;
+  font-size: 18px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform 0.12s ease, background 0.15s ease, border-color 0.15s ease;
+}
+
+.sutra-word-tile:hover {
+  background: #fbeecf;
+  border-color: #8c4b1e;
+}
+
+.sutra-word-tile.correct {
+  background: #dcfce7;
+  border-color: #16a34a;
+  color: #14532d;
+}
+
+.sutra-word-tile.wrong {
+  background: #fee2e2;
+  border-color: #dc2626;
+  color: #7f1d1d;
+}
+
+.sutra-puzzle-feedback {
+  padding: 12px 14px;
+  border-radius: 14px;
+  font-size: 15.5px;
+  font-weight: 700;
+  line-height: 1.5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.sutra-puzzle-feedback.ok {
+  background: #ecfdf3;
+  border: 1.5px solid #2e8555;
+  color: #155734;
+}
+
+.sutra-puzzle-feedback.hint {
+  background: #fff4df;
+  border: 1.5px solid #d4962a;
+  color: #5c381f;
+}
+
+.sutra-reflection-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.sutra-reflection-btn {
+  min-height: 50px;
+  padding: 8px 14px;
+  border-radius: 14px;
+  border: 1.5px solid rgba(130, 90, 50, 0.32);
+  background: #fffdf8;
+  color: #472915;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  text-align: left;
+}
+
+.sutra-reflection-btn.active {
+  background: #5c381f;
+  border-color: #e5b24c;
+  color: #fff8ea;
+}
+
+.sutra-save-keepsake-btn {
+  min-height: 58px;
+  padding: 12px 18px;
+  border-radius: 16px;
+  border: 2px solid #ffd875;
+  background: linear-gradient(180deg, #7e2a22 0%, #581b15 100%);
+  color: #fff8ea;
+  font-size: 17px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.sutra-keepsake-saved-note {
+  padding: 11px 14px;
+  border-radius: 14px;
+  background: #ecfdf3;
+  border: 1.5px solid #2e8555;
+  color: #155734;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+/* Elder Font Scale for Học Kinh (A- / A+) */
+#lecture-screen[data-font-scale="large"] .sutra-active-title {
+  font-size: clamp(25px, 2.9vw, 33px);
+}
+#lecture-screen[data-font-scale="large"] .sutra-verse-line,
+#lecture-screen[data-font-scale="large"] .sutra-puzzle-verse {
+  font-size: clamp(22px, 2.5vw, 27px);
+}
+#lecture-screen[data-font-scale="large"] .sutra-verse-meaning,
+#lecture-screen[data-font-scale="large"] .sutra-story-text {
+  font-size: 18px;
+}
+
+#lecture-screen[data-font-scale="xlarge"] .sutra-active-title {
+  font-size: clamp(28px, 3.3vw, 37px);
+}
+#lecture-screen[data-font-scale="xlarge"] .sutra-verse-line,
+#lecture-screen[data-font-scale="xlarge"] .sutra-puzzle-verse {
+  font-size: clamp(25px, 2.9vw, 31px);
+}
+#lecture-screen[data-font-scale="xlarge"] .sutra-verse-meaning,
+#lecture-screen[data-font-scale="xlarge"] .sutra-story-text {
+  font-size: 20px;
+}
+
+@media (max-width: 768px) {
+  .sutra-main-card {
+    padding: 14px;
+    border-radius: 18px;
+  }
+  .sutra-books-grid {
+    grid-template-columns: 1fr;
+  }
+  .sutra-mode-tabs {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+  }
+  .sutra-mode-tab {
+    min-height: 48px;
+    padding: 6px 6px;
+    font-size: 13px;
+    line-height: 1.25;
+    white-space: normal;
+    text-align: center;
+  }
+  .sutra-verses-scroll {
+    max-height: clamp(150px, 24vh, 210px);
+  }
+  .sutra-controls-trio {
+    grid-template-columns: 1fr 1fr;
+  }
+  .sutra-mo-pad-btn {
+    grid-column: 1 / -1;
+    order: -1;
+  }
+  .sutra-puzzle-options,
+  .sutra-reflection-grid {
+    grid-template-columns: 1fr;
+  }
+}

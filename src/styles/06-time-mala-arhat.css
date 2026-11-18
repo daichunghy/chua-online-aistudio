@@ -1,0 +1,893 @@
+/* ==========================================================================
+   TIME-OF-DAY SWITCHER, HÀNH TRÌNH HUB, GIẢNG ĐƯỜNG ELDER MOBILE & BACKUP CODE
+   ========================================================================== */
+.time-toggle-group {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(48, 28, 16, 0.92);
+  border: 2px solid rgba(255, 232, 175, 0.42);
+  border-radius: 999px;
+  padding: 3px;
+  gap: 3px;
+  box-shadow: 0 6px 16px rgba(36, 20, 9, 0.25);
+}
+
+.time-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: none;
+  background: transparent;
+  color: #fff6e5;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.time-toggle-btn:hover {
+  background: rgba(255, 246, 229, 0.14);
+}
+
+.time-toggle-btn.active {
+  background: linear-gradient(180deg, #eec15a 0%, #c98b23 100%);
+  color: #241409;
+  font-weight: 800;
+}
+
+.nav-activity-btn {
+  position: relative;
+  background: linear-gradient(180deg, #9c5222 0%, #7b3d14 100%);
+  border-color: rgba(255, 222, 146, 0.65);
+}
+
+.nav-activity-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: #dc2626;
+  color: #ffffff;
+  font-size: 11.5px;
+  font-weight: 900;
+  border: 1.5px solid #fff6e5;
+}
+
+/* Live Animated 3D Giảng Đường Cards + Elder Font Scales */
+.lecture-translucent-card {
+  background: linear-gradient(180deg, rgba(253, 244, 225, 0.92) 0%, rgba(245, 228, 198, 0.90) 100%);
+  border: 2px solid rgba(201, 150, 46, 0.65);
+}
+
+.lecture-listen-dock-wrap {
+  max-width: 720px;
+  margin-top: auto;
+  margin-bottom: 10px;
+}
+
+.lecture-audio-pair-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.lecture-audio-pair-row .lesson-listen-btn {
+  margin: 0;
+  flex: 1;
+  min-width: 220px;
+  max-width: 310px;
+  min-height: 48px;
+}
+
+.lecture-tts-btn {
+  min-height: 48px;
+  padding: 0 20px;
+  border-radius: 999px;
+  border: 2px solid #fbe09c;
+  background: linear-gradient(180deg, #734726 0%, #4A2B15 100%);
+  color: #fff8ea;
+  font-size: 16.5px;
+  font-weight: 800;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 6px 16px rgba(48, 28, 16, 0.35);
+}
+
+.lecture-tts-btn.speaking {
+  background: linear-gradient(180deg, #c9562e 0%, #993514 100%);
+}
+
+.lecture-nav-footer {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  gap: 10px;
+  align-items: center;
+}
+
+.lecture-prev-btn,
+.lecture-choose-btn {
+  min-height: 52px;
+  padding: 0 18px;
+  border-radius: 999px;
+  border: 1.5px solid rgba(235, 192, 132, 0.55);
+  background: rgba(48, 28, 16, 0.92);
+  color: #fff6e5;
+  font-size: 16px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.lecture-paths-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.lecture-lessons-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+/* Elder-Friendly Typography Scaling (A- / A+) */
+#lecture-screen[data-font-scale="large"] .lesson-card-big-title {
+  font-size: clamp(25px, 2.8vw, 33px);
+}
+#lecture-screen[data-font-scale="large"] .lesson-card-meta,
+#lecture-screen[data-font-scale="large"] .lesson-example-box {
+  font-size: 17px;
+}
+#lecture-screen[data-font-scale="large"] .lesson-summary-lead {
+  font-size: clamp(21px, 2.4vw, 27px);
+}
+#lecture-screen[data-font-scale="large"] .lesson-bullet-list,
+#lecture-screen[data-font-scale="large"] .lesson-quiz-option {
+  font-size: 18px;
+}
+#lecture-screen[data-font-scale="large"] .lesson-quiz-heading {
+  font-size: 22px;
+}
+
+#lecture-screen[data-font-scale="xlarge"] .lesson-card-big-title {
+  font-size: clamp(28px, 3.2vw, 37px);
+}
+#lecture-screen[data-font-scale="xlarge"] .lesson-card-meta,
+#lecture-screen[data-font-scale="xlarge"] .lesson-example-box {
+  font-size: 19px;
+}
+#lecture-screen[data-font-scale="xlarge"] .lesson-summary-lead {
+  font-size: clamp(24px, 2.8vw, 30px);
+}
+#lecture-screen[data-font-scale="xlarge"] .lesson-bullet-list,
+#lecture-screen[data-font-scale="xlarge"] .lesson-quiz-option {
+  font-size: 20px;
+}
+#lecture-screen[data-font-scale="xlarge"] .lesson-quiz-heading {
+  font-size: 24px;
+}
+
+/* Explore Sub Tabs (Single-Row Horizontal Scroll, Anti-Wrap Clutter) */
+.explore-tabs-bar {
+  display: flex;
+  gap: 7px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 4px;
+}
+
+.explore-tabs-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.explore-tabs-bar .explore-sub-btn,
+.explore-tabs-bar > button {
+  flex-shrink: 0;
+  white-space: nowrap;
+  width: auto;
+  padding: 0 14px;
+  min-height: 42px;
+  height: 42px;
+  font-size: 13.5px;
+  background: #6E4A29;
+}
+
+.explore-tabs-bar .explore-sub-btn.active {
+  background: #5C381F;
+  box-shadow: 0 0 0 2px #FFD875;
+}
+
+/* Activity Hub (Điểm danh, Nhiệm vụ, Hộp thư, Hướng dẫn đi, Chia sẻ & Góp ý) */
+.activity-tabs-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 4px;
+}
+
+.activity-tabs-row::-webkit-scrollbar {
+  display: none;
+}
+
+.activity-tab-pill {
+  flex-shrink: 0;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: 999px;
+  border: 1.5px solid rgba(140, 100, 60, 0.35);
+  background: #fffdf8;
+  color: #3a2310;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.activity-tab-pill.active {
+  background: #5C381F;
+  border-color: #5C381F;
+  color: #fff6e5;
+}
+
+.hub-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ef4444;
+  display: inline-block;
+}
+
+.hub-count {
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: #dc2626;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.activity-banner-row {
+  background: linear-gradient(135deg, #5C381F 0%, #3E2413 100%);
+  border: 1.5px solid #e6b84c;
+  border-radius: 18px;
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.checkin-grid-7 {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.checkin-day-card {
+  background: #fffdf8;
+  border: 1.5px solid rgba(140, 100, 60, 0.28);
+  border-radius: 14px;
+  padding: 10px 8px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.checkin-day-card.claimed {
+  background: #F6E9D2;
+  border-color: #5C381F;
+}
+
+.checkin-day-card.today-target {
+  background: #fff5db;
+  border-color: #d49622;
+  box-shadow: 0 0 0 2px rgba(212, 150, 34, 0.35);
+}
+
+.checkin-day-num {
+  font-size: 12px;
+  font-weight: 900;
+  color: #7e2a22;
+}
+
+.checkin-day-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: #4a3222;
+}
+
+.checkin-day-gift {
+  font-size: 12.5px;
+  font-weight: 800;
+  color: #5C381F;
+  line-height: 1.35;
+}
+
+.checkin-day-status {
+  font-size: 11px;
+  font-weight: 800;
+  color: #7a5838;
+}
+
+.quests-grid,
+.guide-steps-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.quest-card,
+.guide-step-card,
+.mail-card {
+  background: #fffdf8;
+  border: 1.5px solid rgba(140, 100, 60, 0.28);
+  border-radius: 16px;
+  padding: 13px 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.quest-card.claimable {
+  border-color: #c9962e;
+  background: #fff8e6;
+}
+
+.quest-card.claimed,
+.mail-card.claimed {
+  opacity: 0.85;
+  background: #f5f2ea;
+}
+
+.quest-card-head,
+.quest-card-foot,
+.mail-card-head,
+.mail-card-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.quest-cat-pill,
+.mail-rewards-pill {
+  font-size: 11.5px;
+  font-weight: 800;
+  color: #5C381F;
+  background: #F6E9D2;
+  padding: 3px 9px;
+  border-radius: 999px;
+}
+
+.quest-reward-text {
+  font-size: 12.5px;
+  font-weight: 800;
+  color: #9a5b14;
+}
+
+.quest-card-title,
+.guide-step-title,
+.mail-title {
+  font-size: 15px;
+  font-weight: 800;
+  color: #241409;
+}
+
+.quest-card-desc,
+.guide-step-desc,
+.mail-body {
+  font-size: 13px;
+  color: #52361c;
+  line-height: 1.45;
+}
+
+.mail-sender {
+  font-size: 12px;
+  font-weight: 800;
+  color: #7e2a22;
+}
+
+.mailbox-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.quest-progress-track {
+  height: 7px;
+  border-radius: 999px;
+  background: rgba(140, 100, 60, 0.16);
+  overflow: hidden;
+}
+
+.quest-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #5C381F 0%, #C9962E 100%);
+}
+
+.quest-progress-lbl {
+  font-size: 12px;
+  font-weight: 700;
+  color: #6b4c32;
+}
+
+.quest-claim-btn {
+  min-height: 36px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1.5px solid #fbe09c;
+  background: linear-gradient(180deg, #d96b27 0%, #9e3810 100%);
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.quest-go-btn {
+  min-height: 36px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1.5px solid rgba(92, 56, 31, 0.35);
+  background: #F6E9D2;
+  color: #5C381F;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.quest-done-tag {
+  font-size: 12.5px;
+  font-weight: 800;
+  color: #8C5327;
+}
+
+.guide-step-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 2px;
+}
+
+/* Profile Backup & Restore Box */
+.backup-code-box {
+  background: #fffdf8;
+  border: 1.5px solid rgba(140, 100, 60, 0.32);
+  border-radius: 16px;
+  padding: 12px 14px;
+}
+
+.backup-code-title {
+  font-size: 14px;
+  font-weight: 800;
+  color: #5C381F;
+}
+
+.backup-code-desc {
+  font-size: 12.5px;
+  color: #52361c;
+  margin: 4px 0 8px;
+  line-height: 1.4;
+}
+
+.backup-code-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.backup-code-row input {
+  flex: 1;
+  min-width: 0;
+  height: 38px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1.5px solid rgba(140, 100, 60, 0.32);
+  font-size: 12.5px;
+  font-family: monospace;
+  color: #241409;
+  background: #faf5e9;
+}
+
+@media (max-width: 768px) {
+  .lecture-top-bar {
+    width: calc(100% - 16px);
+    margin: 8px auto 0;
+    padding: 8px 10px;
+    gap: 6px;
+    min-height: 52px;
+  }
+  .lecture-top-left {
+    width: 100%;
+    justify-content: space-between;
+    flex-wrap: nowrap;
+  }
+  .lecture-hall-heading {
+    font-size: 17.5px;
+    white-space: nowrap;
+  }
+  .lecture-top-actions {
+    width: 100%;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    gap: 6px;
+    padding-bottom: 2px;
+  }
+  .lecture-top-actions::-webkit-scrollbar {
+    display: none;
+  }
+  .lecture-top-actions > * {
+    flex-shrink: 0;
+  }
+  .lecture-back-courtyard,
+  .lecture-audio-gold-btn {
+    min-height: 44px;
+    padding: 6px 11px;
+    font-size: 13px;
+    white-space: nowrap;
+  }
+  .lecture-font-btn {
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0 9px;
+  }
+  .lecture-center-stage {
+    padding: 8px 10px;
+  }
+  .lesson-cream-card {
+    padding: 14px 15px;
+    border-radius: 18px;
+  }
+  .lecture-paths-grid,
+  .lecture-lessons-grid,
+  .quests-grid,
+  .guide-steps-grid {
+    grid-template-columns: 1fr;
+  }
+  .checkin-grid-7 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .lecture-nav-footer {
+    grid-template-columns: 1fr 1fr;
+  }
+  .lecture-nav-footer .lesson-next-green-btn {
+    grid-column: 1 / -1;
+  }
+  .lecture-bottom-dock {
+    width: calc(100% - 16px);
+    height: 64px;
+    margin-bottom: 8px;
+  }
+  .lecture-dock-tab {
+    flex-direction: column;
+    font-size: 12px;
+    gap: 3px;
+    padding: 4px 2px;
+    line-height: 1.15;
+  }
+  .lecture-dock-tab svg {
+    width: 19px;
+    height: 19px;
+  }
+  .time-toggle-btn span {
+    display: none;
+  }
+  .backup-code-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+/* ==========================================================================
+   REALISTIC 108-BEAD MALA & 5-MIN MINDFULNESS TIMER
+   ========================================================================== */
+.mala-modal-grid {
+  display: grid;
+  grid-template-columns: 288px minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.mala-real-stage {
+  background: linear-gradient(180deg, #FFFDF8 0%, #F7EAD0 100%);
+  border: 1.5px solid rgba(201, 150, 46, 0.45);
+  border-radius: 22px;
+  padding: 14px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.mala-wood-tag {
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: #EFE1C6;
+  border: 1px solid rgba(140, 100, 60, 0.3);
+  color: #4A3222;
+  font-size: 12.5px;
+  font-weight: 800;
+}
+
+.mala-svg-wrap {
+  position: relative;
+  width: 250px;
+  height: 254px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.1s ease;
+}
+
+.mala-svg-wrap:active {
+  transform: scale(0.97);
+}
+
+.mala-svg-ring {
+  filter: drop-shadow(0 6px 14px rgba(74, 50, 34, 0.16));
+}
+
+.mala-center-readout {
+  position: absolute;
+  top: 45%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 128px;
+  height: 128px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #6F4427 0%, #3E2413 100%);
+  border: 3px solid #E6B84C;
+  box-shadow: 0 8px 20px rgba(36, 20, 9, 0.34);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  text-align: center;
+}
+
+.mala-center-readout .mala-big-num {
+  font-size: 27px;
+  font-weight: 900;
+  color: #FFD875;
+  font-variant-numeric: tabular-nums;
+}
+
+.mala-tap-hint {
+  font-size: 12px;
+  font-weight: 800;
+  color: #FFF6E5;
+  margin-top: 3px;
+}
+
+.mala-cycles-lbl {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #F6CD72;
+  margin-top: 2px;
+}
+
+.mala-actions-row {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+
+.mindfulness-timer-card {
+  background: #FFFDF8;
+  border: 1.5px solid rgba(92, 56, 31, 0.38);
+  border-radius: 18px;
+  padding: 13px 15px;
+  box-shadow: 0 6px 16px rgba(92, 56, 31, 0.08);
+}
+
+.mindful-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.mindful-title {
+  font-size: 15px;
+  font-weight: 800;
+  color: #5C381F;
+}
+
+.mindful-sub {
+  font-size: 12.5px;
+  color: #4A3222;
+  margin-top: 2px;
+}
+
+.mindful-clock {
+  font-size: 28px;
+  font-weight: 900;
+  color: #5C381F;
+  background: #F6E9D2;
+  border: 1.5px solid rgba(92, 56, 31, 0.35);
+  border-radius: 12px;
+  padding: 4px 12px;
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+
+.mindful-breath-cue {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #7E2A22;
+  background: #FFF6E5;
+  border-radius: 10px;
+  padding: 7px 11px;
+}
+
+/* ==========================================================================
+   18 VỊ LA HÁN 3D MUSEUM SHOWCASE
+   ========================================================================== */
+.arhat-museum-layout {
+  display: grid;
+  grid-template-columns: 290px minmax(0, 1fr);
+  gap: 16px;
+  align-items: stretch;
+}
+
+.arhat-stage-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.arhat-3d-viewport {
+  position: relative;
+  height: 272px;
+  border-radius: 18px;
+  overflow: hidden;
+  background: radial-gradient(circle at 50% 35%, #FFFBF2 0%, #EFE1C2 62%, #D8BA88 100%);
+  border: 1.5px solid rgba(190, 148, 72, 0.45);
+  cursor: grab;
+}
+
+.arhat-3d-viewport:active {
+  cursor: grabbing;
+}
+
+.arhat-3d-viewport canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.arhat-idx-chip {
+  position: absolute;
+  right: 10px;
+  top: 8px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(126, 42, 34, 0.9);
+  color: #FFD875;
+  font-size: 11.5px;
+  font-weight: 800;
+  pointer-events: none;
+}
+
+.arhat-plaque-card {
+  background: #FFFDF8;
+  border: 1.5px solid rgba(190, 148, 72, 0.42);
+  border-radius: 18px;
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.arhat-plaque-eyebrow {
+  font-size: 13.5px;
+  font-weight: 800;
+  color: #8C4B1E;
+}
+
+.arhat-plaque-name {
+  font-size: 22px;
+  font-weight: 800;
+  color: #472915;
+  margin: 5px 0 10px;
+  line-height: 1.3;
+}
+
+.arhat-emblem-pill {
+  display: inline-block;
+  padding: 6px 13px;
+  border-radius: 999px;
+  background: #F6E9CE;
+  border: 1px solid rgba(201, 150, 46, 0.45);
+  color: #4A3222;
+  font-size: 13.5px;
+  font-weight: 800;
+  margin-bottom: 12px;
+}
+
+.arhat-plaque-meaning {
+  font-size: 16px;
+  line-height: 1.55;
+  color: #241409;
+}
+
+.arhat-plaque-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.arhat-rail-18 {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 10px 2px 4px;
+  scrollbar-width: thin;
+}
+
+.arhat-rail-btn {
+  flex-shrink: 0;
+  min-height: 44px;
+  padding: 4px 12px;
+  border-radius: 12px;
+  border: 1.5px solid rgba(140, 100, 60, 0.3);
+  background: #FFFDF8;
+  color: #3A2310;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+.arhat-rail-btn.active {
+  background: #5C381F;
+  border-color: #5C381F;
+  color: #FFF6E5;
+  box-shadow: 0 4px 12px rgba(92, 56, 31, 0.25);
+}
+
+.arhat-rail-num {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(201, 150, 46, 0.24);
+  color: #7E2A22;
+  font-size: 11.5px;
+  font-weight: 900;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.arhat-rail-btn.active .arhat-rail-num {
+  background: #FFD875;
+  color: #241409;
+}

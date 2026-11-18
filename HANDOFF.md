@@ -2,6 +2,8 @@
 
 Tài liệu này giúp bạn làm việc song song trên **hai AI Studio khác nhau** (commit từ máy/studio này và pull sang studio kia) mà **không bị xung đột merge (merge conflict)** hoặc gãy import.
 
+> **Cập nhật 18/11/2026:** Toàn bộ các file lớn (`chua-online-logic.mjs`, `chua-online-app.mjs`, `vinh-trang-3d-world.mjs`, `chua-online-app.css`) đã được tách nhỏ thành các module theo chủ đề trong `src/logic/modules/`, `src/app/ui/`, `src/app/world/`, và `src/styles/` (giữ nguyên import cũ). Xem bản đồ **"Sửa gì thì mở file nào"** tại [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md).
+
 ---
 
 ## 1. Kiến trúc Module & Ranh giới chỉnh sửa

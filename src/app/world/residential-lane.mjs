@@ -5,6 +5,7 @@
  * Click/Phím E ở quán -> stallType 'local_eatery' -> openLocalEateryModal() trong app.
  */
 import * as THREE from 'three';
+import { makeHippedRoofMesh, makeTextTex } from './shared.mjs';
 
 export function buildResidentialFoodHouses() {
   const M = this.MAT;

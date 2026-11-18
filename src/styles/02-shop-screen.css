@@ -1,0 +1,297 @@
+/* ==========================================================================
+   2. CỬA HÀNG LƯU NIỆM & VẬT PHẨM 3D (Matches Reference Image 2: image_43ca3fb3.png)
+   ========================================================================== */
+
+#shop-screen {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  display: none;
+  flex-direction: column;
+  background: #26150B;
+  overflow: hidden;
+}
+
+#shop-screen.open {
+  display: flex;
+}
+
+/* Upper Kiosk Scene from Reference Image 2 (cropped below baked top bar) */
+.shop-kiosk-hero {
+  position: relative;
+  width: 100%;
+  height: 28vh;
+  min-height: 200px;
+  max-height: 265px;
+  background-image: url('/public/assets/aistudio/image_43ca3fb3.png');
+  background-size: 104% auto;
+  background-position: center 9%;
+  background-repeat: no-repeat;
+  flex-shrink: 0;
+}
+
+/* Lower Cream Bottom Sheet with Curved Lotus Crest */
+.shop-sheet-body {
+  position: relative;
+  flex: 1;
+  background: linear-gradient(180deg, #fef7e8 0%, #f8ebd2 100%);
+  border-top-left-radius: 42px;
+  border-top-right-radius: 42px;
+  margin-top: -32px;
+  padding: 8px 28px 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-shadow: 0 -12px 36px rgba(0, 0, 0, 0.28);
+  overflow-y: auto;
+  color: var(--dark-ink);
+}
+
+/* Curved Top Arch Crest for Pink Lotus */
+.shop-lotus-crest {
+  width: 210px;
+  height: 54px;
+  margin-top: -36px;
+  background: #fef7e8;
+  border-radius: 120px 120px 0 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-top: 6px;
+  flex-shrink: 0;
+}
+
+.shop-main-title {
+  font-size: clamp(26px, 3vw, 36px);
+  font-weight: 800;
+  color: #472915;
+  letter-spacing: -0.02em;
+  text-align: center;
+  margin-top: 0;
+}
+
+.shop-main-subtitle {
+  font-size: clamp(14px, 1.4vw, 18px);
+  font-weight: 600;
+  color: #5b3a1d;
+  text-align: center;
+  margin-top: 2px;
+  margin-bottom: 10px;
+}
+
+/* 3 Category Pill Tabs */
+.shop-tabs-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  width: 100%;
+  max-width: 960px;
+  margin-bottom: 12px;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.shop-tab-pill {
+  flex: 1;
+  min-width: 200px;
+  max-width: 290px;
+  height: 48px;
+  border-radius: 999px;
+  border: 1.5px solid rgba(138, 96, 54, 0.2);
+  background: #f3dec0;
+  color: #5a391e;
+  font-size: 17px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  box-shadow: 0 4px 12px rgba(90, 57, 30, 0.08);
+}
+
+.shop-tab-pill:hover {
+  background: #ecd1ab;
+}
+
+.shop-tab-pill.active {
+  background: linear-gradient(180deg, #6F4427 0%, #472915 100%);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.35);
+  box-shadow: 0 8px 20px rgba(71, 41, 21, 0.32);
+}
+
+/* 3-Column Product Grid */
+.shop-products-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(220px, 1fr));
+  gap: 16px;
+  width: 100%;
+  max-width: 960px;
+  margin-bottom: 12px;
+}
+
+.shop-product-card {
+  background: #fffbf2;
+  border: 1.5px solid rgba(168, 126, 81, 0.22);
+  border-radius: 24px;
+  padding: 10px 10px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-shadow: 0 8px 24px rgba(85, 52, 22, 0.09);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.shop-product-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 14px 30px rgba(85, 52, 22, 0.16);
+}
+
+.product-thumb-box {
+  position: relative;
+  width: 100%;
+  height: 178px;
+  border-radius: 16px;
+  overflow: hidden;
+  background: #efe2cb;
+  margin-bottom: 8px;
+}
+
+.product-thumb-crop {
+  width: 100%;
+  height: 100%;
+  background-repeat: no-repeat;
+}
+
+.product-thumb-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.product-price-tag {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(71, 41, 21, 0.92);
+  color: #fff8eb;
+  font-size: 12.5px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+
+.product-card-title {
+  font-size: 19px;
+  font-weight: 800;
+  color: #1f1710;
+  text-align: center;
+  margin-bottom: 4px;
+  line-height: 1.22;
+}
+
+.product-delivery-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: #6b4522;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.product-detail-btn {
+  width: 92%;
+  height: 40px;
+  border-radius: 999px;
+  border: none;
+  background: linear-gradient(180deg, #6F4427 0%, #472915 100%);
+  color: #ffffff;
+  font-size: 15.5px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 6px 14px rgba(71, 41, 21, 0.28);
+  transition: filter 0.15s ease, transform 0.12s ease;
+}
+
+.product-detail-btn:hover {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+}
+
+/* Bottom Footer Bar of Shop: "🎧 Cần hỗ trợ?" + Large Terracotta "🛒 Giỏ hàng" */
+.shop-footer-bar {
+  position: sticky;
+  bottom: -14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 960px;
+  margin-top: auto;
+  padding: 10px 12px 10px;
+  background: linear-gradient(180deg, rgba(250, 238, 215, 0.96) 0%, #f8ebd2 38%);
+  border-top: 1px solid rgba(168, 126, 81, 0.18);
+  gap: 20px;
+  flex-shrink: 0;
+  z-index: 15;
+}
+
+.shop-support-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  background: transparent;
+  border: none;
+  color: #5b381b;
+  font-size: 17px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 14px;
+}
+
+.shop-support-btn:hover {
+  background: rgba(139, 94, 52, 0.1);
+}
+
+.shop-cart-cta {
+  flex: 1;
+  max-width: 500px;
+  height: 52px;
+  border-radius: 999px;
+  border: 2px solid rgba(255, 224, 192, 0.55);
+  background: linear-gradient(180deg, #dd713c 0%, #a53b16 100%);
+  color: #ffffff;
+  font-size: 20px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  cursor: pointer;
+  box-shadow: 0 10px 26px rgba(165, 59, 22, 0.38);
+  transition: transform 0.15s ease, filter 0.15s ease;
+  margin-right: auto;
+  margin-left: 24px;
+}
+
+.shop-cart-cta:hover {
+  filter: brightness(1.06);
+  transform: translateY(-2px);
+}
+
+.shop-close-pill {
+  background: rgba(92, 56, 31, 0.14);
+  border: 1.5px solid rgba(92, 56, 31, 0.32);
+  color: #472915;
+  font-size: 14.5px;
+  font-weight: 700;
+  padding: 9px 16px;
+  border-radius: 999px;
+  cursor: pointer;
+}

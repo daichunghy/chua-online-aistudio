@@ -1,0 +1,576 @@
+/* ==========================================================================
+   Chùa Online | Chùa Vĩnh Tràng — Master Stylesheet
+   Faithful to Reference Images 1, 2, 3, 4 + Lesson Study Card Design
+   ========================================================================== */
+
+:root {
+  /* Perceptual OKLCH & OKLab Heritage Design Tokens (meodai/skill.color-expert) */
+  --oklch-jade-deep: oklch(0.39 0.068 50);      /* #5C381F Nâu gỗ chùa ấm */
+  --oklch-cream-base: oklch(0.97 0.024 84);      /* #FFF6E5 Nền kem ấm */
+  --oklch-walnut-ink: oklch(0.34 0.048 52);      /* #4A3222 Chữ nâu ấm */
+  --oklch-gold-ochre: oklch(0.71 0.132 78);      /* #C9962E Điểm vàng */
+  --oklch-lotus-pink: oklch(0.73 0.148 352);     /* #EE7FAE Hồng sen */
+  --oklch-terracotta: oklch(0.61 0.128 42);      /* #C96F4A Cam đất */
+
+  --green-deep: #472915;
+  --green-pill: color-mix(in oklab, var(--oklch-jade-deep) 88%, #2E1A0D);
+  --green-btn: #5C381F;
+  --green-btn-dark: color-mix(in oklab, #5C381F 78%, #241409);
+  --green-dpad-bg: rgba(71, 41, 21, 0.94);
+  --green-dpad-well: #382010;
+  --brown-action-top: color-mix(in oklab, #784e2a 92%, var(--oklch-gold-ochre));
+  --brown-action-bot: color-mix(in oklab, #54341a 90%, #241409);
+  --brown-action-border: rgba(232, 196, 148, 0.46);
+  --cream-sheet: #FFF6E5;
+  --cream-card: color-mix(in oklab, #FFF6E5 65%, #ffffff);
+  --tan-pill: color-mix(in oklab, #FFF6E5 78%, #d6ab70);
+  --walnut-text: #4A3222;
+  --dark-ink: #241409;
+  --terracotta-top: color-mix(in oklab, #C96F4A 88%, #f08b58);
+  --terracotta-bot: color-mix(in oklab, #C96F4A 78%, #7e2a10);
+  --lecture-bar: rgba(44, 25, 14, 0.88);
+  --gold-pill: #C9962E;
+  --ao-lam: #9a8f99;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #241409;
+  font-family: 'Be Vietnam Pro', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: #fff;
+}
+
+button,
+input,
+textarea,
+select {
+  font-family: inherit;
+}
+
+/* ==========================================================================
+   1. MAIN VIEWPORT & COURTYARD SCENE (Reference Image 1: image_dbddfac8.png)
+   ========================================================================== */
+
+#app-root {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background: #2D1B10;
+}
+
+#scene-stage {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+#courtyard-backdrop {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: none;
+}
+
+#fx-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 3;
+}
+
+/* Primary Live Walkable 3D World Fullscreen Canvas (Default Viewport) */
+#world3d-container {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: block;
+  background: linear-gradient(180deg, #6ab2e8 0%, #cbe5f8 55%, #d6cbb5 100%);
+}
+
+#world3d-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  cursor: grab;
+}
+
+#world3d-canvas:active {
+  cursor: grabbing;
+}
+
+/* Subtle Warm-Wood Crossfade Veil when stepping through temple doors (never yellow, stays behind HUD) */
+#temple-transition-veil {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  pointer-events: none;
+  opacity: 0;
+  background: rgba(16, 10, 6, 0.52);
+  transition: opacity 0.2s ease;
+}
+
+#temple-transition-veil.active {
+  opacity: 1;
+}
+
+/* Quick-Walk 3D Landmark Bar (Walk to Lotus Pond, Buddha Statues, Main Hall, Interior, Shop, Lecture) */
+.quick-walk-bar {
+  position: absolute;
+  top: 76px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 26;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(42, 24, 14, 0.93);
+  border: 1.5px solid rgba(242, 206, 134, 0.42);
+  border-radius: 999px;
+  padding: 5px 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  max-width: calc(100vw - 28px);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.quick-walk-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.walk-chip-btn {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 232, 185, 0.28);
+  border-radius: 999px;
+  padding: 4px 10px;
+  color: #fff8eb;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.12s ease, border-color 0.15s ease;
+  white-space: nowrap;
+}
+
+.walk-chip-btn:hover,
+.walk-chip-btn.active {
+  background: linear-gradient(180deg, #e5b24c 0%, #c68624 100%);
+  color: #231205;
+  border-color: #fff2cc;
+  transform: translateY(-1px);
+}
+
+/* Milestone-Unlocked UGC Check-in Pill in Courtyard HUD */
+.ugc-milestone-pill {
+  position: absolute;
+  left: 16px;
+  bottom: 28px;
+  z-index: 26;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 440px;
+  padding: 9px 14px;
+  border-radius: 16px;
+  font-size: 13px;
+  font-weight: 800;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  transition: transform 0.16s ease, box-shadow 0.16s ease;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.38);
+}
+
+.ugc-milestone-pill.locked {
+  background: rgba(54, 33, 19, 0.94);
+  border: 1.5px solid rgba(255, 255, 255, 0.28);
+  color: rgba(255, 248, 235, 0.88);
+}
+
+.ugc-milestone-pill.unlocked {
+  background: linear-gradient(180deg, #d96b27 0%, #9e3810 100%);
+  border: 2px solid #fbe09c;
+  color: #ffffff;
+}
+
+.ugc-milestone-pill:hover {
+  transform: translateY(-2px);
+}
+
+.ugc-upload-dropzone {
+  border: 2px dashed #5C381F;
+  background: linear-gradient(180deg, #FFF9EE 0%, #F5E6CA 100%);
+  border-radius: 16px;
+  padding: 12px 14px;
+  text-align: center;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.ugc-upload-dropzone:hover {
+  background: #EFE0C0;
+  border-color: #3D2110;
+}
+
+/* ==========================================================================
+   TOP NAVIGATION BAR (Matches Reference Image 1 & 2)
+   ========================================================================== */
+
+.top-hud-bar {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  right: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  z-index: 30;
+  pointer-events: none;
+}
+
+.brand-pill {
+  pointer-events: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  background: linear-gradient(180deg, #734828 0%, #5C381F 55%, #472915 100%);
+  border: 2px solid rgba(255, 246, 229, 0.38);
+  border-radius: 999px;
+  padding: 8px 18px 8px 14px;
+  box-shadow: 0 10px 24px rgba(36, 20, 9, 0.34), inset 0 2px 3px rgba(255, 246, 229, 0.25);
+  color: #FFF6E5;
+  white-space: nowrap;
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: transform 0.16s ease, box-shadow 0.16s ease;
+}
+
+.brand-pill:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.36);
+}
+
+.brand-pill .lotus-logo {
+  width: 30px;
+  height: 23px;
+  flex-shrink: 0;
+}
+
+.brand-pill .brand-main {
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
+.brand-pill .brand-divider {
+  width: 1.5px;
+  height: 20px;
+  background: rgba(255, 255, 255, 0.45);
+  flex-shrink: 0;
+}
+
+.brand-pill .brand-sub {
+  font-size: 15.5px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.96);
+  white-space: nowrap;
+}
+
+.top-nav-group {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  margin-left: auto;
+  flex-wrap: nowrap;
+  gap: 6px;
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.top-nav-group::-webkit-scrollbar {
+  display: none;
+}
+
+.nav-pill-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: linear-gradient(180deg, #734828 0%, #5C381F 55%, #472915 100%);
+  border: 2px solid rgba(255, 246, 229, 0.36);
+  border-radius: 999px;
+  padding: 7px 12px;
+  color: #FFF6E5;
+  font-size: 13.5px;
+  font-weight: 700;
+  white-space: nowrap;
+  flex-shrink: 0;
+  cursor: pointer;
+  box-shadow: 0 8px 20px rgba(36, 20, 9, 0.30), inset 0 2px 3px rgba(255, 246, 229, 0.24);
+  transition: transform 0.16s ease, background 0.16s ease, box-shadow 0.16s ease;
+}
+
+.nav-pill-btn.nav-merit-btn {
+  background: linear-gradient(180deg, #8F5E24 0%, #6E4518 65%, #553411 100%);
+  border-color: rgba(255, 222, 146, 0.72);
+  color: #FFF6E5;
+}
+
+.nav-pill-btn.nav-merit-btn strong {
+  font-variant-numeric: tabular-nums;
+  color: #FFD875;
+  font-weight: 800;
+  margin-left: 2px;
+}
+
+.nav-rank-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 7px;
+  margin-left: 2px;
+  border-radius: 999px;
+  background: rgba(36, 20, 9, 0.55);
+  border: 1px solid rgba(255, 216, 117, 0.55);
+  color: #FFE4A0;
+  font-size: 11px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.nav-pill-btn:hover,
+.nav-pill-btn.active {
+  background: linear-gradient(180deg, #8C5327 0%, #6B3F20 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 11px 24px rgba(36, 20, 9, 0.36), inset 0 2px 4px rgba(255, 246, 229, 0.32);
+}
+
+.nav-pill-btn svg {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+/* ==========================================================================
+   FLOATING SCENE PINS (📍 Chánh điện + Interactive Hotspots)
+   ========================================================================== */
+
+#scene-pins-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 15;
+}
+
+.scene-pin {
+  pointer-events: auto;
+  position: absolute;
+  transform: translate(-50%, -50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: linear-gradient(180deg, #734828 0%, #4E2F1A 100%);
+  border: 1.5px solid rgba(255, 255, 255, 0.45);
+  border-radius: 999px;
+  padding: 7px 16px 7px 12px;
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+  transition: transform 0.18s ease, background 0.18s ease;
+}
+
+.scene-pin:hover {
+  transform: translate(-50%, -54%) scale(1.05);
+  background: linear-gradient(180deg, #8C5327 0%, #5C381F 100%);
+}
+
+.scene-pin::after {
+  content: '';
+  position: absolute;
+  bottom: -9px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-top: 9px solid #ffffff;
+}
+
+.scene-pin.secondary-pin {
+  background: rgba(71, 41, 21, 0.90);
+  font-size: 13.5px;
+  padding: 6px 13px;
+  opacity: 0.92;
+}
+
+/* Interactive Character Hotspot & Equipped Badge Overlay in Courtyard */
+#protagonist-hotspot {
+  position: absolute;
+  left: 44%;
+  top: 63%;
+  width: 100px;
+  height: 210px;
+  transform: translate(-50%, -50%);
+  z-index: 14;
+  cursor: pointer;
+}
+
+.equipped-floating-tags {
+  position: absolute;
+  bottom: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.equip-tag-chip {
+  background: rgba(71, 41, 21, 0.90);
+  border: 1px solid rgba(255, 232, 185, 0.52);
+  color: #fff6e0;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 9px;
+  border-radius: 999px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.28);
+}
+
+/* ==========================================================================
+   BOTTOM-RIGHT 4 SPIRITUAL ACTION BUTTONS (Matches Reference Image 1)
+   ========================================================================== */
+
+.spiritual-actions-bar {
+  position: absolute;
+  right: 18px;
+  bottom: 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  z-index: 25;
+}
+
+.action-square-btn {
+  width: 114px;
+  height: 112px;
+  background: linear-gradient(180deg, #8b5c34 0%, #684220 55%, #513216 100%);
+  border: 2px solid rgba(255, 236, 200, 0.52);
+  border-radius: 26px;
+  color: #FFF6E5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  box-shadow: 0 12px 26px rgba(34, 18, 8, 0.36), inset 0 2px 4px rgba(255, 244, 222, 0.32), inset 0 -3px 6px rgba(36, 20, 9, 0.25);
+  transition: transform 0.16s ease, box-shadow 0.16s ease, filter 0.16s ease;
+  position: relative;
+}
+
+.action-square-btn:hover {
+  transform: translateY(-3px);
+  filter: brightness(1.08);
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.46), inset 0 1px 2px rgba(255, 232, 198, 0.35);
+}
+
+.action-square-btn:active {
+  transform: translateY(0) scale(0.97);
+}
+
+.action-square-btn .action-icon {
+  width: 48px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.action-square-btn .action-label {
+  font-size: 16px;
+  font-weight: 700;
+  color: #fff9ef;
+  letter-spacing: -0.01em;
+}
+
+.action-badge-count {
+  position: absolute;
+  top: 7px;
+  right: 8px;
+  background: rgba(230, 178, 74, 0.95);
+  color: #2b1708;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 999px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+/* ==========================================================================
+   SUBTLE RITUAL TOAST / CHÚ TIỂU AN NARRATION BANNER
+   ========================================================================== */
+
+#ritual-toast {
+  position: absolute;
+  right: 20px;
+  top: 122px;
+  transform: translateY(-10px);
+  width: 340px;
+  max-width: calc(100vw - 40px);
+  background: rgba(48, 28, 16, 0.95);
+  border: 1.5px solid rgba(240, 206, 146, 0.55);
+  border-radius: 18px;
+  padding: 10px 16px;
+  color: #fff8eb;
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.42);
+  z-index: 95;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  text-align: left;
+}
+
+#ritual-toast.visible {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+#ritual-toast .toast-title {
+  font-size: 16px;
+  font-weight: 800;
+  color: #f9d47e;
+  margin-bottom: 4px;
+}
+
+#ritual-toast .toast-desc {
+  font-size: 14.5px;
+  line-height: 1.45;
+  color: #fff6e6;
+}

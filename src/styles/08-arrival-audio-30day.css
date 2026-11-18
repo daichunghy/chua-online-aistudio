@@ -1,0 +1,663 @@
+/* ============================================================================
+   CAR ARRIVAL CUTSCENE BANNER, SEASONAL PILL & 3-CHANNEL AUDIO MIXER POPOVER
+   ============================================================================ */
+.arrival-cutscene-banner {
+  position: fixed;
+  top: 78px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 30;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  max-width: calc(100vw - 24px);
+  padding: 8px 14px 8px 18px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #4a2815 0%, #2c170b 100%);
+  border: 2px solid #e6b84c;
+  color: #fff6e5;
+  font-size: 14px;
+  font-weight: 700;
+  box-shadow: 0 12px 32px rgba(24, 12, 4, 0.45);
+}
+
+.nav-pill-btn.nav-seasonal-pill {
+  background: rgba(126, 42, 34, 0.88);
+  border-color: rgba(255, 216, 117, 0.55);
+  color: #fff6e5;
+}
+
+.nav-pill-btn.nav-audio-btn {
+  background: rgba(62, 36, 19, 0.9);
+  border-color: rgba(230, 184, 76, 0.55);
+  color: #fff6e5;
+}
+
+.nav-pill-btn.nav-audio-btn.muted {
+  background: rgba(126, 42, 34, 0.92);
+  border-color: #fca5a5;
+  color: #fee2e2;
+}
+
+.audio-mixer-popover {
+  position: fixed;
+  top: 72px;
+  right: 18px;
+  z-index: 42;
+  width: min(350px, calc(100vw - 24px));
+  background: #fff8eb;
+  border: 2px solid #c9962e;
+  border-radius: 20px;
+  padding: 16px;
+  color: #3d2410;
+  box-shadow: 0 18px 46px rgba(24, 12, 4, 0.42);
+}
+
+.audio-mixer-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+  font-size: 15.5px;
+  color: #472915;
+}
+
+.audio-mute-toggle-btn {
+  width: 100%;
+  min-height: 48px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  border: 1.5px solid #5c381f;
+  background: #5c381f;
+  color: #fff6e5;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  margin-bottom: 12px;
+  transition: filter 0.15s ease;
+}
+
+.audio-mute-toggle-btn.muted {
+  background: #991b1b;
+  border-color: #fca5a5;
+}
+
+.audio-mute-toggle-btn:hover {
+  filter: brightness(1.08);
+}
+
+.audio-slider-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 0;
+  border-top: 1px solid rgba(140, 100, 60, 0.2);
+}
+
+.audio-slider-row label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #472915;
+}
+
+.audio-slider-row strong {
+  color: #7e2a22;
+  font-variant-numeric: tabular-nums;
+}
+
+.audio-slider-row input[type='range'] {
+  width: 100%;
+  height: 28px;
+  accent-color: #8c4b1e;
+  cursor: pointer;
+}
+
+/* ============================================================================
+   PRE-ENTRY NATIONALITY / CHARACTER / PILGRIMAGE MODE MODAL & PROFILE PILLS
+   ============================================================================ */
+.arrival-modal-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.seasonal-festival-banner {
+  background: linear-gradient(135deg, #6b261d 0%, #441c13 100%);
+  border: 1.5px solid #e6b84c;
+  border-radius: 16px;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.arrival-section-block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.arrival-step-heading {
+  font-size: 15px;
+  font-weight: 800;
+  color: #472915;
+}
+
+.arrival-nat-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.arrival-choice-card {
+  min-height: 54px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1.5px solid rgba(140, 100, 60, 0.3);
+  background: #fffdf8;
+  color: #241409;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.arrival-choice-card.active {
+  background: #fff3d6;
+  border-color: #8c4b1e;
+  box-shadow: inset 0 0 0 1.5px #c9962e;
+}
+
+.arrival-choice-top {
+  font-size: 14px;
+  font-weight: 800;
+  color: #472915;
+}
+
+.arrival-choice-sub {
+  font-size: 12px;
+  color: #6e5034;
+  line-height: 1.35;
+}
+
+.arrival-greeting-box {
+  background: #f6e9d2;
+  border: 1px solid rgba(140, 100, 60, 0.32);
+  border-radius: 12px;
+  padding: 9px 12px;
+  font-size: 13.5px;
+  color: #472915;
+  line-height: 1.45;
+}
+
+.arrival-char-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 8px;
+}
+
+.arrival-char-pill {
+  min-height: 54px;
+  padding: 9px 12px;
+  border-radius: 14px;
+  border: 1.5px solid rgba(140, 100, 60, 0.3);
+  background: #fffdf8;
+  color: #241409;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.arrival-char-pill strong {
+  font-size: 13.5px;
+  font-weight: 800;
+  color: #472915;
+}
+
+.arrival-char-pill span {
+  font-size: 11.5px;
+  color: #6e5034;
+}
+
+.arrival-char-pill.active {
+  background: #5c381f;
+  border-color: #c9962e;
+  color: #fff6e5;
+}
+
+.arrival-char-pill.active strong,
+.arrival-char-pill.active span {
+  color: #fff6e5;
+}
+
+.arrival-mode-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.arrival-mode-card {
+  min-height: 68px;
+  padding: 11px 13px;
+  border-radius: 14px;
+  border: 1.5px solid rgba(140, 100, 60, 0.3);
+  background: #fffdf8;
+  color: #241409;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.arrival-mode-card.active {
+  background: #fff3d6;
+  border-color: #7e2a22;
+  box-shadow: inset 0 0 0 1.5px #c9962e;
+}
+
+.arrival-mode-title {
+  font-size: 14px;
+  font-weight: 800;
+  color: #472915;
+}
+
+.arrival-mode-desc {
+  font-size: 12.5px;
+  color: #5b3a1d;
+  line-height: 1.38;
+}
+
+.arrival-mode-meta {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #7e2a22;
+  margin-top: auto;
+}
+
+.arrival-footer-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+.arrival-primary-btn {
+  flex: 1.3;
+  min-height: 50px;
+  padding: 10px 18px;
+  border-radius: 14px;
+  border: 1.5px solid #ffd875;
+  background: linear-gradient(135deg, #8c4b1e 0%, #5c381f 100%);
+  color: #fff6e5;
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 6px 18px rgba(92, 56, 31, 0.28);
+}
+
+.arrival-primary-btn:disabled {
+  opacity: 0.62;
+  cursor: default;
+}
+
+.arrival-primary-btn:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+.arrival-secondary-btn {
+  min-height: 50px;
+  padding: 10px 16px;
+  border-radius: 14px;
+  border: 1.5px solid rgba(140, 100, 60, 0.45);
+  background: #f6e9d2;
+  color: #472915;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.profile-nat-pills,
+.profile-mode-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 6px;
+}
+
+.profile-chip-btn {
+  min-height: 44px;
+  padding: 8px 13px;
+  border-radius: 12px;
+  border: 1.5px solid rgba(140, 100, 60, 0.32);
+  background: #fffdf8;
+  color: #472915;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.profile-chip-btn.active {
+  background: #5c381f;
+  border-color: #c9962e;
+  color: #fff6e5;
+}
+
+/* ============================================================================
+   HOA ĐĂNG NGUYỆN ƯỚC HỒ SEN MODAL
+   ============================================================================ */
+.hoadang-modal-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.hoadang-compose-card {
+  background: #fffdf8;
+  border: 1.5px solid #c9962e;
+  border-radius: 16px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.hoadang-form-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.hoadang-label {
+  font-size: 13.5px;
+  font-weight: 800;
+  color: #472915;
+}
+
+.hoadang-input {
+  min-height: 46px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  border: 1.5px solid rgba(140, 100, 60, 0.38);
+  background: #fff;
+  color: #241409;
+  font-size: 14.5px;
+  font-family: inherit;
+}
+
+.hoadang-color-row,
+.hoadang-presets-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.hoadang-color-chip {
+  min-height: 44px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1.5px solid rgba(140, 100, 60, 0.3);
+  background: #fffdf8;
+  color: #472915;
+  font-size: 13px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  cursor: pointer;
+}
+
+.hoadang-color-chip.active {
+  border-color: #7e2a22;
+  background: #fff3d6;
+  box-shadow: inset 0 0 0 1px #c9962e;
+}
+
+.hoadang-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1px solid rgba(71, 41, 21, 0.45);
+  display: inline-block;
+}
+
+.hoadang-wishes-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.hoadang-wish-item {
+  background: #fffdf8;
+  border: 1.5px solid rgba(140, 100, 60, 0.25);
+  border-radius: 14px;
+  padding: 10px 12px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.hoadang-wish-glow {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 3px;
+  box-shadow: 0 0 10px rgba(230, 184, 76, 0.85);
+  border: 1.5px solid rgba(92, 56, 31, 0.35);
+}
+
+.hoadang-wish-author {
+  font-size: 13px;
+  font-weight: 800;
+  color: #472915;
+}
+
+.hoadang-wish-time {
+  font-weight: 600;
+  color: #7a5838;
+  font-size: 12px;
+}
+
+.hoadang-wish-text {
+  font-size: 13px;
+  color: #3d2410;
+  margin-top: 3px;
+  line-height: 1.4;
+}
+
+/* ============================================================================
+   30-DAY PILGRIMAGE RETREAT & NHẬT KÝ AN TÂM TABS
+   ============================================================================ */
+.thirty-week-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.thirty-week-pill {
+  min-height: 54px;
+  padding: 8px 10px;
+  border-radius: 14px;
+  border: 1.5px solid rgba(140, 100, 60, 0.3);
+  background: #fffdf8;
+  color: #472915;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.thirty-week-pill strong {
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.thirty-week-pill span {
+  font-size: 11.5px;
+  color: #6e5034;
+}
+
+.thirty-week-pill.active {
+  background: #5c381f;
+  border-color: #c9962e;
+  color: #fff6e5;
+}
+
+.thirty-week-pill.active span {
+  color: #ffd875;
+}
+
+.thirty-day-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.thirty-day-card {
+  min-height: 82px;
+  padding: 10px 11px;
+  border-radius: 14px;
+  border: 1.5px solid rgba(140, 100, 60, 0.28);
+  background: #fffdf8;
+  color: #241409;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.thirty-day-card.done {
+  background: #eef6ef;
+  border-color: #3d6b4a;
+}
+
+.thirty-day-card.selected {
+  box-shadow: 0 0 0 2.5px #c9962e;
+  background: #fff5db;
+}
+
+.thirty-day-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11.5px;
+  font-weight: 800;
+  color: #7e2a22;
+}
+
+.thirty-day-num {
+  color: #472915;
+}
+
+.thirty-day-title {
+  font-size: 13px;
+  font-weight: 800;
+  color: #241409;
+  line-height: 1.3;
+}
+
+.thirty-day-badge {
+  margin-top: auto;
+  font-size: 11px;
+  font-weight: 800;
+  color: #8c4b1e;
+}
+
+.thirty-day-detail-card {
+  background: #fff8e6;
+  border: 1.5px solid #c9962e;
+  border-radius: 16px;
+  padding: 14px 16px;
+}
+
+.journal-compose-card {
+  background: #fffdf8;
+  border: 1.5px solid #c9962e;
+  border-radius: 16px;
+  padding: 14px;
+}
+
+.journal-moods-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.journal-mood-btn {
+  min-height: 44px;
+  padding: 7px 13px;
+  border-radius: 999px;
+  border: 1.5px solid rgba(140, 100, 60, 0.3);
+  background: #fffdf8;
+  color: #472915;
+  font-size: 13.5px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.journal-mood-btn.active {
+  background: #5c381f;
+  border-color: #c9962e;
+  color: #fff6e5;
+}
+
+.journal-entries-list {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.journal-entry-card {
+  background: #fffdf8;
+  border: 1.5px solid rgba(140, 100, 60, 0.25);
+  border-radius: 14px;
+  padding: 11px 14px;
+}
+
+.journal-entry-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.journal-entry-mood {
+  font-size: 13px;
+  font-weight: 800;
+  color: #7e2a22;
+}
+
+.journal-entry-date {
+  font-size: 12px;
+  color: #7a5838;
+  font-weight: 600;
+}
+
+.journal-entry-text {
+  margin: 6px 0 0;
+  font-size: 14px;
+  color: #241409;
+  line-height: 1.48;
+}
