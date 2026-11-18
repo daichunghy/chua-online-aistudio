@@ -40,3 +40,7 @@ yarn.lock
 pnpm-lock.yaml
 *.tmp
 
+
+# Ảnh chụp kiểm thử tạm
+.tmp_shots/
+public/verify_*.png
