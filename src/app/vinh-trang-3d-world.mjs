@@ -20,6 +20,8 @@ import { movementMethods } from './world/movement.mjs';
 import { timeAndInteriorMethods } from './world/time-and-interior.mjs';
 import { playerAndInteractionMethods } from './world/player-and-interaction.mjs';
 import { renderLoopAndCutsceneMethods } from './world/render-loop-and-cutscene.mjs';
+import { offeringRitualFxMethods } from './world/offering-ritual-fx.mjs';
+import { npcCourtyardInteractionMethods } from './world/npc-courtyard-interaction.mjs';
 
 export class VinhTrang3DWorld {
   constructor(canvas, callbacks = {}) {
@@ -38,6 +40,8 @@ export class VinhTrang3DWorld {
     this._lastInteriorZone = 'chanh_dien';
     this.onStallProximity = callbacks.onStallProximity || (() => {});
     this.onInteractProximity = callbacks.onInteractProximity || (() => {});
+    this.onNpcSpeechUpdate = callbacks.onNpcSpeechUpdate || (() => {});
+    this.activeCourtyardNpcId = null;
     this.onEntranceTourChange = callbacks.onEntranceTourChange || (() => {});
     this.onStepSound = callbacks.onStepSound || (() => {});
     this._stepAudioTimer = 0;
@@ -193,6 +197,7 @@ export class VinhTrang3DWorld {
     this.companionRecords = [];
     this.kneelingRecords = [];
     this.interiorKneelingRecords = [];
+    this.interiorWalkingRecords = [];
     this.interiorNonBoClickTargets = [];
     this.interiorKhuThoClickTargets = [];
     this.interiorTraiDuongClickTargets = [];
@@ -269,6 +274,9 @@ export class VinhTrang3DWorld {
     this.smokeColumns = [];
     this.incenseSticksGroup = new THREE.Group();
     this.offeredLotusesGroup = new THREE.Group();
+    this.activeOfferingAnimations = [];
+    this.interiorIncenseGroup = new THREE.Group();
+    this.interiorOfferedLotusesGroup = new THREE.Group();
 
     this.stationMarkers = [];
     this.autoWalkWaypoints = [];
@@ -321,7 +329,9 @@ applyMixins(VinhTrang3DWorld,
   movementMethods,
   timeAndInteriorMethods,
   playerAndInteractionMethods,
-  renderLoopAndCutsceneMethods
+  renderLoopAndCutsceneMethods,
+  offeringRitualFxMethods,
+  npcCourtyardInteractionMethods
 );
 
 export {

@@ -185,19 +185,19 @@ export const playerAndInteractionMethods = {
     if (this.inInterior) {
       const px = this.playerState.x;
       const pz = this.playerState.z;
-      const maxCamX = px > 20.2 ? 31.4 : 20.05;
+      const maxCamX = 24.1;
       cx = Math.max(-20.05, Math.min(maxCamX, cx));
       cz = Math.max(-20.05, Math.min(20.05, cz));
-      // Keep camera inside the active gallery corridor so courtyard balustrades (±10.6) & lattice doors (-11.55) never occlude altars
-      if (px > 10.9 && px <= 20.4 && Math.abs(pz) < 10.4 && cx < 11.15) {
+      // Keep camera inside the active gallery corridor so courtyard balustrades (±10.6) & lattice doors (-12.45) never occlude altars
+      if (px > 10.9 && px <= 24.1 && Math.abs(pz) < 10.4 && cx < 11.15) {
         cx = 11.15;
-      } else if (px > 10.9 && px <= 20.4 && pz >= 10.4 && cx < 11.15 && Math.sin(lookAngle) > 0.35) {
+      } else if (px > 10.9 && px <= 24.1 && pz >= 10.4 && cx < 11.15 && Math.sin(lookAngle) > 0.35) {
         cx = 11.15;
       } else if (px < -10.9 && cx > -11.15 && Math.sin(lookAngle) < -0.35) {
         cx = -11.15;
       }
-      if (pz < -11.75 && Math.abs(px) < 10.2 && cz > -11.88) {
-        cz = -11.88;
+      if (pz < -12.65 && Math.abs(px) < 10.2 && cz > -12.78) {
+        cz = -12.78;
       } else if (pz > 10.9 && Math.abs(px) < 10.2 && cz < 11.15 && Math.cos(lookAngle) > 0.35) {
         cz = 11.15;
       }
@@ -226,32 +226,32 @@ export const playerAndInteractionMethods = {
       const px = this.playerState.x;
       const pz = this.playerState.z;
       let intPrompt = null;
-      if (Math.hypot(px - 16.2, pz - 14.8) <= 3.2) {
+      if (Math.hypot(px - 20.2, pz - 2.0) <= 3.2) {
         intPrompt = {
           kind: 'nghin_mat_nghin_tay',
           label: '🙏 [E] Chiêm Bái Tượng Phật Nghìn Mắt Nghìn Tay'
         };
-      } else if (Math.hypot(px - 16.0, pz - 9.0) <= 3.2) {
+      } else if (Math.hypot(px - 20.1, pz - -6.5) <= 3.2) {
         intPrompt = {
           kind: 'cho_ngu_cua_phat',
           label: '🪷 [E] Chiêm Bái Chỗ Ngủ Của Phật · Phật Nhập Niết Bàn'
         };
-      } else if (Math.hypot(px - -3.35, pz - -11.95) <= 3.85) {
+      } else if (Math.hypot(px - -2.95, pz - -11.65) <= 3.6) {
         intPrompt = {
           kind: 'blessing_tower',
           label: '🏮 [E] Tháp Đèn Cầu An · Ghi Tên Cầu Phước'
         };
       } else if (
-        Math.hypot(px - 6.8, pz - -13.6) <= 2.85 ||
-        Math.hypot(px - 2.65, pz - -14.5) <= 2.45
+        Math.hypot(px - 6.8, pz - -14.4) <= 2.85 ||
+        Math.hypot(px - 2.65, pz - -15.2) <= 2.45
       ) {
         intPrompt = {
           kind: 'chanh_dien_bell',
           label: '🔔 [E] Thỉnh Đại Hồng Chung · Chuông Gia Trì'
         };
       } else if (
-        Math.hypot(px - -6.8, pz - -13.6) <= 2.85 ||
-        Math.hypot(px - -2.65, pz - -14.5) <= 2.45
+        Math.hypot(px - 2.95, pz - -11.55) <= 3.1 ||
+        Math.hypot(px - -2.65, pz - -15.2) <= 2.45
       ) {
         intPrompt = {
           kind: 'trong_bat_nha',
@@ -537,8 +537,8 @@ export const playerAndInteractionMethods = {
         const hits = raycaster.intersectObjects(this.interiorTraiDuongClickTargets, true);
         if (hits.length > 0) {
           this.onObjectClick('TOAST', {
-            title: '🍚 Nhà Sàn Gỗ Trai Đường · Khu Ăn Phật Tử',
-            desc: 'Không gian thọ trai dựng bằng gỗ căm xe trên hệ sàn cọc miền Tây nối trực tiếp từ dải hành lang phải, phục vụ cơm chay và trà đá thanh tịnh.'
+            title: '🪑 Phòng Tiếp Khách · Tủ Kinh Sách Chùa Vĩnh Tràng',
+            desc: 'Không gian tiếp khách & đọc kinh sách rộng thoáng bên vách Đông với cửa sổ vòm lá sách xanh, bộ bàn ghế trường kỷ gỗ trắc và ghế nghỉ chân cho Phật tử.'
           });
           return;
         }

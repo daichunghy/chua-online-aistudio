@@ -70,3 +70,39 @@ Dựa trên ảnh chụp thực tế tại Chùa Vĩnh Tràng và khảo cứu k
 | **Desktop E2E (`1440×900`)** | **PASS** | Pre-entry (6 quốc tịch, 7 nhân vật, 4 đoàn xe) -> Cutscene xe -> Lời Phật dạy -> Audio mixer 3 kênh -> Đường thẳng `Tịnh Độ Huyền Môn` -> Tiệm Tạp Hóa Cuối Đường -> Hiên Bỏ Dép -> Chánh Điện Hình Vuông (8 khu + Mặt cắt 3D + Tháp Cầu Phước) -> Ra/vào điện `0` lỗi màn hình vàng -> Hoa Đăng -> 30 Ngày -> Nhật Ký -> Đổi 7 nhân vật & mặc pháp phục -> Học Viện Phật Học (`VINHTRANG2026`, chặn nộp quiz trống, thi tốt nghiệp, chứng nhận PNG, 11/11 PDF HTTP `200`). |
 | **Mobile E2E (`390×844`)** | **PASS (`0px` tràn ngang)** | Kiểm tra `scrollWidth - innerWidth === 0` trên toàn bộ màn hình Sân Chùa 3D, Nội Thất Hình Vuông, Cửa Hàng Pháp Phục và Học Viện Phật Học; nút thao tác chính đảm bảo `>= 48px`. |
 | **Console / Page / HTTP Errors** | **0 lỗi** | `0` console error, `0` uncaught page error, `0` lỗi HTTP `404/500`. |
+
+---
+
+## 4. Cập Nhật Hiệu Ứng Nghi Lễ 3D & Đường Vào Bên Phải (Theo Ảnh Thực Tế)
+
+### A. Chuỗi Hoạt Ảnh Dâng Hương & Dâng Hoa Mượt Mà (Ngoài Sân & Trong Chánh Điện)
+- Tạo mới `src/app/world/offering-ritual-fx.mjs` (mixin gắn vào `VinhTrang3DWorld` qua `applyMixins`, zero-GC scratch vectors `THREE.Vector3`, tương thích `isSoftwareGl` pacing):
+  - **Dâng hương (`startIncenseOfferingSequence`)**: Kích hoạt cử chỉ `'Thắp nhang'`, tự động chọn lư hương gần nhất (ngoài sân hoặc 3 bàn thờ Tam Bảo / Tổ Đạt Ma / Quán Âm trong Chánh điện), nâng bó 3 nén hương phát sáng từ tay Phật tử, lướt theo đường cong Bézier êm ái tới lư hương, hạ dịu vào tro hương kèm ánh sáng vàng ấm (`PointLight`), tỏa 14 làn khói trầm uốn lượn và lưu vĩnh viễn cụm hương lên lư.
+  - **Dâng hoa sen (`startLotusOfferingSequence`)**: Kích hoạt `'Chắp tay'`, xuất phát từ búp sen khép nhẹ trên tay (`lotus.userData.lotusAnimRefs`), bay vòng cung nhẹ xuống Hồ Sen chính, Hồ Sen Bộ nội thất hoặc bàn thờ Tam Bảo và hé nở từng lớp cánh sen hồng vàng, gợn 2 vòng sóng hào quang và 10 hạt sáng bừng lên trước khi giữ nguyên đóa sen nở vĩnh viễn.
+  - Đóng modal ngay trước khi kích hoạt nghi lễ trong `src/app/ui/shop-and-rituals.mjs` để người dùng quan sát trọn vẹn hoạt ảnh 3D và chống trùng lặp khi bấm nhanh liên tiếp.
+
+### B. Tái Tạo Toàn Bộ Lối Vào Bên Phải (`Tịnh Độ Huyền Môn` -> Cuối Đường)
+- Tạo mới `src/app/world/right-entrance-road.mjs` và cập nhật `materials-and-lights.mjs`, `temple-grounds.mjs`, `pond-and-gardens.mjs` dựa trên ảnh chụp thực tế cổng phụ & flycam:
+  - **Mặt đường bê tông sáng (`concreteRoadTex`)**: Thay mặt đường tối sẫm bằng bê tông sáng có khe co giãn tự nhiên; gỡ bỏ 9 cây cầu tròn tối màu che hầm đường, 6 bệ đèn cầu vàng và nhà sàn đóng cọc dưới kênh.
+  - **Sườn trái (giáp Chánh Điện)**: Dựng hàng rào sắt sơn đỏ truyền thống trên gờ kem + trụ gạch (`x = 35.3`), bồn hoa thấp giữ thoáng 100% tầm nhìn kiến trúc vòm vàng & mái ngói Chánh Điện, kèm mái hiên xanh **“TỦ SÁCH VĨNH TRÀNG · PHÁT HÀNH KINH SÁCH”**.
+  - **Sân trước phải & dọc lề phải**: Lát sân gạch tàu (`sideBrickTex`), bồn cỏ viền kem trưng bày 4 tôn tượng Phật / Bồ Tát đá trắng, **Nhà Giữ Xe 2 Bánh Phật Tử** với 5 xe máy gọn gàng, **Quầy Dừa Xiêm · Nước Mát Ven Đường** dưới tán dù xanh dương (tương tác được), dãy **Trai Đường · Nhà Khách Bổn Tự** lùi sâu bên phải, hàng cột đèn tay cong cổ điển, cột điện bê tông kèm dây điện uốn võng thực tế, dây cờ Phật giáo căng cao (`y = 5.45m`), cây dừa tán rủ cong tự nhiên và các cây bóng mát tán cao thoáng (`y >= 5.2m`).
+
+---
+
+## 5. Nâng Cấp Đường Vào Bên Phải, Khúc Rẽ Trái, Không Gian Nội Thất Sau Cửa Vào & Vị Trí Trống Bát Nhã
+
+### A. Đường Vào Bên Phải Dài Rộng & Sân Rẽ Trái Cuối Đường Thoáng Đãng + NPC Hoạt Động
+- Mở rộng trục đường bê tông bên phải lên **`12.6m` (`x = 41.8`, dài `85m` từ `z = +43` tới `-42`)** và mở rộng sân gạch rẽ trái cuối đường **`endTurnPlaza` (`18.6m × 24.0m` tại `x = 42.5, z = -20.0`)** cùng dải nối sang Giảng Đường (`x = 66.5, z = -18.0`), lùi toàn bộ hàng cây, quầy dừa, nhà giữ xe, Tiệm Tạp Hóa (`x = 54.8, z = -21.5`) và Quầy Lưu Niệm (`x = 41.8, z = -37.5`) để lối đi bộ hoàn toàn thông thoáng.
+- Mở rộng hiên bỏ giày dép **`Cửa Vào Chánh Điện` (`rightCornerGate`)** lên `8.6m`, kéo dài mái che phủ kín vách nối, bổ sung **2 băng ghế sân** hai bên hiên cho Phật tử ngồi nghỉ thay dép.
+- Bổ sung 3 tuyến NPC hành hương mới (`B2` trong `src/app/world/characters-npcs.mjs`) đi dọc suốt con đường bên phải xuống tới cuối đường, rẽ trái vào cửa Chánh Điện và ghé Quầy Lưu Niệm; đồng thời cập nhật `stepSimulation()` để NPC ngoài sân lẫn trong Chánh Điện vận động đồng bộ.
+
+### B. Không Gian Nội Thất Sau Cửa Vào Thực Tế, Thoáng Rộng & Có Ghế Ngồi Đầy Đủ
+- Dựng vách kiến trúc Pháp – Việt khép kín dọc tường Đông (`x = +25.0`) với hệ cửa sổ vòm chớp xanh, lam gỗ trầm và ánh sáng thiên tỉnh dịu ấm (`src/app/vinh-trang-square-interior.mjs`), thay thế các sạp ăn / giường ngủ giả lộ thiên không sát thực tế trước đây bằng **Phòng Tiếp Khách · Tủ Kinh Sách Vĩnh Tràng** (2 tủ kinh sách + 2 bộ bàn ghế **Trường Kỷ** tiếp trà).
+- Giảm mật độ án thờ dải bên phải xuống chỉ còn **2 bàn thờ chính sát tường Đông** (**Phật Bà Nghìn Mắt Nghìn Tay** tại `z = +2.0` và **Chỗ Ngủ Của Phật** tại `z = -6.5`), triệt tiêu 404 từ đường dẫn GLB không tồn tại để dựng tượng Nghìn Mắt Nghìn Tay nhũ vàng sạch lỗi; mở rộng lối rẽ trái sau cửa vào và đặt thêm **5 băng ghế gỗ có tựa lưng (`buildCarvedBench`)** dọc hành lang Đông – Nam.
+- Kích hoạt **5 NPC đi bộ & chiêm bái lưu động bên trong Chánh Điện (`interiorWalkingRecords`)** cùng các Phật tử quỳ lễ và đứng trò chuyện tại Phòng Tiếp Khách.
+
+### C. Đặt Trống Bát Nhã Đúng Thực Tế Bên Cửa Vào Chánh Điện Đối Diện Hòn Non Bộ
+- Di chuyển **Trống Bát Nhã** ra ngay **bên phải cửa chính Chánh Điện (`+2.95, 0, -11.55`)**, đối xứng với **Tháp Đèn Cầu An (`-2.95, 0, -11.65`)** và hướng thẳng mặt trống qua khoảng sân thiên tỉnh **Hồ Sen Bộ / Hòn Non Bộ**, gắn bảng tên **“🥁 TRỐNG BÁT NHÃ · ĐỐI DIỆN NON BỘ”** và lồng mặt trống procedural vào `placeholder` để khi nạp `trong-bat-nha.glb` không còn chồng mặt.
+- Kiểm chứng ảnh chụp thực tế 3D (5 góc ngoại/nội thất + góc cận Trống Bát Nhã & sân rẽ trái): **0 lỗi console, 0 lỗi HTTP 404, 20/20 unit tests PASS**.
+
+

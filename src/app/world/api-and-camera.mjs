@@ -113,11 +113,19 @@ export const apiAndCameraMethods = {
   },
 
   setIncenseBoost() {
+    if (typeof this.startIncenseOfferingSequence === 'function') {
+      this.startIncenseOfferingSequence();
+      return;
+    }
     this.addIncenseStickVisual();
     this.triggerActionAnimation('Thắp nhang');
   },
 
   placeLotusOfferingIn3D() {
+    if (typeof this.startLotusOfferingSequence === 'function') {
+      this.startLotusOfferingSequence();
+      return;
+    }
     this.addLotusOfferingVisual();
     this.lotusBloomState.active = true;
     this.lotusBloomState.timer = 0;

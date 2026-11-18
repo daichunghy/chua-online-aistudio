@@ -571,7 +571,8 @@ export const charactersNpcsMethods = {
       { charKey: 'nam', x: -24.5, z: -10.5, yaw: 0, monkTone: 2 },
       { charKey: 'nu', x: 22.0, z: -49.5, yaw: Math.PI, tint: [0.68, 0.76, 0.84] }
     ];
-    for (const ks of kneelSpots) {
+    for (let ki = 0; ki < kneelSpots.length; ki++) {
+      const ks = kneelSpots[ki];
       const h = CHAR_HEIGHTS[ks.charKey] || 1.64;
       const rec = this.cloneAnimatedCharacter(ks.charKey, h);
       if (!rec) continue;
@@ -588,21 +589,28 @@ export const charactersNpcsMethods = {
         rec.mixer.update(0);
         rec.activeAction.paused = true;
       }
+      rec.npcMeta = {
+        id: `courtyard_kneel_${ki}`,
+        role: typeof ks.monkTone === 'number' ? 'monk' : 'pilgrim',
+        charKey: ks.charKey,
+        headHeight: 1.15
+      };
       this.exteriorGroup.add(rec.root);
       this.kneelingRecords.push(rec);
     }
 
     // 2. Rigged GLB Vietnamese Shopkeepers inside Nhà Tạp Hóa & across Bustling Market Street Stalls
     const vendorSpecs = [
-      { x: 46.8, z: -17.2, yaw: -Math.PI * 0.5, charKey: 'nu', tint: [0.86, 0.66, 0.54], hat: false, bag: null, hand: 'quat' },
-      { x: 40.5, z: -24.8, yaw: 0, charKey: 'nam', tint: [0.58, 0.48, 0.36], hat: false, scarf: true },
+      { x: 53.0, z: -21.2, yaw: -Math.PI * 0.5, charKey: 'nu', tint: [0.86, 0.66, 0.54], hat: false, bag: null, hand: 'quat' },
+      { x: 41.8, z: -35.9, yaw: 0, charKey: 'nam', tint: [0.58, 0.48, 0.36], hat: false, scarf: true },
       { x: -12.0, z: 48.0, yaw: 0, charKey: 'nu', tint: [0.88, 0.72, 0.78], hat: true, hand: 'hoa_sen' },
       { x: 7.4, z: 49.6, yaw: 0, charKey: 'nam', tint: [0.54, 0.64, 0.72], hat: false, scarf: true },
       { x: -7.5, z: 65.8, yaw: Math.PI, charKey: 'nu', tint: [0.82, 0.76, 0.56], hat: true, hand: 'quat' },
       { x: 16.5, z: 65.8, yaw: Math.PI, charKey: 'nu', tint: [0.64, 0.72, 0.80], hat: false, bag: 'tui_sen' },
       { x: 40.5, z: 65.8, yaw: Math.PI, charKey: 'nam', tint: [0.60, 0.52, 0.40], hat: true, hand: 'nhang' }
     ];
-    for (const vs of vendorSpecs) {
+    for (let vi = 0; vi < vendorSpecs.length; vi++) {
+      const vs = vendorSpecs[vi];
       const h = CHAR_HEIGHTS[vs.charKey] || 1.64;
       const rec = this.cloneAnimatedCharacter(vs.charKey, h);
       if (!rec) continue;
@@ -611,6 +619,12 @@ export const charactersNpcsMethods = {
       rec.root.position.set(vs.x, rec.baseY, vs.z);
       rec.root.rotation.y = vs.yaw;
       this.playClipCrossfade(rec, 'Dung', 0.1, false);
+      rec.npcMeta = {
+        id: `courtyard_vendor_${vi}`,
+        role: 'vendor',
+        charKey: vs.charKey,
+        headHeight: h
+      };
       this.exteriorGroup.add(rec.root);
       this.vendorNpcRecords.push(rec);
     }
@@ -752,6 +766,54 @@ export const charactersNpcsMethods = {
           wp(26.8, 33.0, 'dung', 2.2, 14.0, 33.0),
           wp(38.4, 34.5, 'pass'),
           wp(40.8, 42.5, 'pass')
+        ]
+      },
+      // --- B2. Widened Right Entrance Road -> End-of-Road Left Turn into Cửa Vào Chánh Điện ---
+      {
+        charKey: this.charDataCache.nu_ao_lam ? 'nu_ao_lam' : 'nu',
+        isMeshyChar: Boolean(this.charDataCache.nu_ao_lam),
+        hat: true,
+        bag: 'tui_sen',
+        hand: 'hoa_sen',
+        speed: 1.12,
+        pts: [
+          wp(41.2, 36.0, 'pass'),
+          wp(41.2, 12.0, 'pass'),
+          wp(41.2, -14.5, 'pass'),
+          wp(37.2, -14.5, 'chap_tay', 3.4, 35.2, -14.5),
+          wp(42.2, -14.5, 'pass'),
+          wp(42.0, -31.0, 'dung', 2.6, 41.8, -37.5),
+          wp(42.4, 4.0, 'pass')
+        ]
+      },
+      {
+        charKey: this.charDataCache.nam_ao_nau ? 'nam_ao_nau' : 'nam',
+        isMeshyChar: Boolean(this.charDataCache.nam_ao_nau),
+        hand: 'nhang',
+        speed: 1.08,
+        pts: [
+          wp(43.4, 24.0, 'pass'),
+          wp(43.2, -4.0, 'pass'),
+          wp(43.4, -21.5, 'dung', 2.8, 49.0, -21.5),
+          wp(40.8, -15.5, 'pass'),
+          wp(37.5, -14.5, 'chap_tay', 3.2, 35.2, -14.5),
+          wp(43.0, 8.0, 'pass')
+        ]
+      },
+      {
+        charKey: this.charDataCache.du_khach ? 'du_khach' : 'nu',
+        isMeshyChar: Boolean(this.charDataCache.du_khach),
+        bag: 'gio_may',
+        hand: 'quat',
+        speed: 1.1,
+        pts: [
+          wp(40.6, 18.0, 'pass'),
+          wp(40.6, -14.5, 'pass'),
+          wp(37.4, -14.5, 'chap_tay', 3.0, 35.2, -14.5),
+          wp(42.6, -24.0, 'pass'),
+          wp(41.8, -32.2, 'dung', 2.8, 41.8, -37.5),
+          wp(43.2, -12.0, 'pass'),
+          wp(43.0, 14.0, 'pass')
         ]
       },
 
@@ -900,10 +962,10 @@ export const charactersNpcsMethods = {
         hand: 'quat',
         speed: 1.04,
         pts: [
-          wp(50.5, 16.0, 'pass'),
-          wp(51.8, -8.0, 'dung', 3.0, 58.0, -12.0),
-          wp(51.5, -24.0, 'dung', 2.4, 58.0, -20.0),
-          wp(51.2, 2.0, 'pass')
+          wp(49.2, 16.0, 'pass'),
+          wp(49.0, -8.0, 'dung', 3.0, 54.8, -21.5),
+          wp(49.2, -29.0, 'dung', 2.4, 60.0, -20.0),
+          wp(49.4, 2.0, 'pass')
         ]
       },
       {
@@ -913,15 +975,16 @@ export const charactersNpcsMethods = {
         hand: 'beads',
         speed: 0.98,
         pts: [
-          wp(37.5, 4.0, 'pass'),
-          wp(37.5, -10.0, 'pass'),
-          wp(51.5, -14.0, 'dung', 3.0, 58.0, -12.0),
-          wp(49.5, 10.0, 'pass')
+          wp(39.0, 4.0, 'pass'),
+          wp(39.0, -14.5, 'chap_tay', 2.8, 35.2, -14.5),
+          wp(49.2, -14.0, 'dung', 3.0, 60.0, -14.0),
+          wp(49.0, 10.0, 'pass')
         ]
       }
     ];
 
-    for (const rt of routes) {
+    for (let ri = 0; ri < routes.length; ri++) {
+      const rt = routes[ri];
       const h = CHAR_HEIGHTS[rt.charKey] || 1.64;
       const rec = this.cloneAnimatedCharacter(rt.charKey, h);
       if (!rec) continue;
@@ -940,6 +1003,14 @@ export const charactersNpcsMethods = {
       rec.root.rotation.y = initYaw;
       this.playClipCrossfade(rec, 'Di bo', 0.1, false);
       this.exteriorGroup.add(rec.root);
+      const isMonk = rt.charKey === 'su_thay' || typeof rt.monkTone === 'number';
+      const role = isMonk
+        ? 'monk'
+        : rt.charKey === 'tre_em'
+        ? 'novice'
+        : rt.charKey === 'du_khach'
+        ? 'visitor'
+        : 'pilgrim';
       this.riggedNpcRecords.push({
         rec,
         pts: rt.pts,
@@ -950,18 +1021,26 @@ export const charactersNpcsMethods = {
         state: 'walk',
         pauseClip: 'Dung',
         lookX: null,
-        lookZ: null
+        lookZ: null,
+        npcMeta: {
+          id: `courtyard_walk_${ri}`,
+          role,
+          charKey: rt.charKey,
+          headHeight: h
+        }
       });
     }
   },
 
   spawnInteriorWorshippersV8() {
-    // Rigged GLB worshippers inside Top-Edge Chính Điện, Right Shrine Gallery, Tổ Đường, Hồ Sen Bộ & Trai Đường
+    // Rigged GLB worshippers inside Top-Edge Chính Điện, spacious East Wing & Hồ Sen Bộ + active walking pilgrims
+    this.interiorWalkingRecords = [];
+
     const kneelingSpots = [
-      { charKey: 'nu', x: -1.95, z: -13.85, yaw: Math.PI, tint: [0.84, 0.60, 0.70] },
-      { charKey: 'nam', x: 1.95, z: -13.85, yaw: Math.PI, monkTone: 0 },
-      { charKey: 'nu', x: 16.2, z: 15.65, yaw: Math.PI / 2, tint: [0.76, 0.78, 0.86] },
-      { charKey: 'tre_em', x: 16.1, z: 9.85, yaw: Math.PI / 2, tint: [0.62, 0.74, 0.84] },
+      { charKey: 'nu', x: -1.95, z: -14.6, yaw: Math.PI, tint: [0.84, 0.60, 0.70] },
+      { charKey: 'nam', x: 1.95, z: -14.6, yaw: Math.PI, monkTone: 0 },
+      { charKey: 'nu', x: 20.2, z: 2.0, yaw: Math.PI / 2, tint: [0.76, 0.78, 0.86] },
+      { charKey: 'tre_em', x: 20.1, z: -6.5, yaw: Math.PI / 2, tint: [0.62, 0.74, 0.84] },
       { charKey: 'nam', x: -13.6, z: -15.6, yaw: Math.PI, monkTone: 1 }
     ];
     for (const sp of kneelingSpots) {
@@ -997,8 +1076,8 @@ export const charactersNpcsMethods = {
     const standingInterior = [
       { charKey: 'nu', x: -6.8, z: 2.2, yaw: Math.PI / 2, pose: 'Chắp tay', tint: [0.9, 0.84, 0.72], elev: 0 },
       { charKey: 'nam', x: 6.8, z: -2.0, yaw: -Math.PI / 2, pose: 'Dung', monkTone: 0, elev: 0 },
-      { charKey: 'nu', x: 21.8, z: 2.8, yaw: Math.PI * 0.42, pose: 'Dung', tint: [0.88, 0.66, 0.74], elev: 0 },
-      { charKey: 'nam', x: 27.1, z: 4.4, yaw: -Math.PI / 2, pose: 'Dung', monkTone: 1, elev: 0 }
+      { charKey: 'nu', x: 18.5, z: 13.8, yaw: Math.PI * 0.45, pose: 'Dung', tint: [0.88, 0.66, 0.74], elev: 0 },
+      { charKey: 'nam', x: 20.8, z: 13.9, yaw: -Math.PI * 0.55, pose: 'Dung', monkTone: 1, elev: 0 }
     ];
     for (const sp of standingInterior) {
       const h = CHAR_HEIGHTS[sp.charKey] || 1.64;
@@ -1014,6 +1093,107 @@ export const charactersNpcsMethods = {
       this.playClipCrossfade(rec, sp.pose, 0.05);
       this.interiorGroup.add(rec.root);
       this.interiorKneelingRecords.push(rec);
+    }
+
+    const wp = (x, z, action = 'pass', wait = 0, lookX = null, lookZ = null) => ({ x, z, action, wait, lookX, lookZ });
+    const interiorRoutes = [
+      {
+        charKey: this.charDataCache.nu_ao_lam ? 'nu_ao_lam' : 'nu',
+        isMeshyChar: Boolean(this.charDataCache.nu_ao_lam),
+        hand: 'hoa_sen',
+        speed: 0.92,
+        pts: [
+          wp(15.4, 18.8, 'pass'),
+          wp(15.4, 9.0, 'pass'),
+          wp(19.6, 2.0, 'chap_tay', 3.2, 22.8, 2.0),
+          wp(19.6, -6.5, 'chap_tay', 3.0, 22.8, -6.5),
+          wp(15.4, -10.5, 'pass'),
+          wp(15.4, 9.0, 'pass')
+        ]
+      },
+      {
+        charKey: this.charDataCache.su_thay ? 'su_thay' : 'nam',
+        isMeshyChar: Boolean(this.charDataCache.su_thay),
+        monkTone: this.charDataCache.su_thay ? undefined : 0,
+        hand: 'beads',
+        speed: 0.88,
+        pts: [
+          wp(14.2, 15.0, 'pass'),
+          wp(14.2, -14.2, 'pass'),
+          wp(2.0, -13.8, 'chap_tay', 3.4, 0.0, -18.3),
+          wp(-14.2, -13.5, 'pass'),
+          wp(-14.2, 14.2, 'pass'),
+          wp(0.0, 14.5, 'pass')
+        ]
+      },
+      {
+        charKey: 'nu',
+        tint: [0.80, 0.72, 0.84],
+        bag: 'tui_sen',
+        speed: 0.9,
+        pts: [
+          wp(8.4, 7.6, 'pass'),
+          wp(8.4, -7.6, 'chap_tay', 2.8, 0.0, 0.0),
+          wp(-8.4, -7.6, 'pass'),
+          wp(-8.4, 7.6, 'dung', 2.6, 0.0, 0.0)
+        ]
+      },
+      {
+        charKey: this.charDataCache.nam_ao_nau ? 'nam_ao_nau' : 'nam',
+        isMeshyChar: Boolean(this.charDataCache.nam_ao_nau),
+        hand: 'nhang',
+        speed: 0.94,
+        pts: [
+          wp(16.8, 17.0, 'pass'),
+          wp(18.4, 14.5, 'dung', 3.0, 24.0, 15.8),
+          wp(16.4, 2.5, 'pass'),
+          wp(16.2, -11.0, 'pass')
+        ]
+      },
+      {
+        charKey: 'tre_em',
+        tint: [0.68, 0.82, 0.88],
+        speed: 0.96,
+        pts: [
+          wp(13.8, 17.5, 'pass'),
+          wp(13.8, 0.0, 'pass'),
+          wp(7.5, -7.5, 'dung', 2.4, 0.0, 0.0),
+          wp(7.5, 7.5, 'pass')
+        ]
+      }
+    ];
+
+    for (const rt of interiorRoutes) {
+      const h = CHAR_HEIGHTS[rt.charKey] || 1.64;
+      const rec = this.cloneAnimatedCharacter(rt.charKey, h);
+      if (!rec) continue;
+      if (!rt.isMeshyChar) {
+        if (typeof rt.monkTone === 'number') {
+          this.recolorMonkRobe(rec.root, rt.monkTone);
+        } else if (rt.tint) {
+          this.recolorPastelDress(rec.root, rt.tint);
+        }
+      }
+      this.equipNpcProps(rec, rt.charKey, h, rt);
+      const p0 = rt.pts[0];
+      const p1 = rt.pts[1] || p0;
+      const initYaw = Math.atan2(p1.x - p0.x, p1.z - p0.z);
+      rec.root.position.set(p0.x, rec.baseY, p0.z);
+      rec.root.rotation.y = initYaw;
+      this.playClipCrossfade(rec, 'Di bo', 0.1, false);
+      this.interiorGroup.add(rec.root);
+      this.interiorWalkingRecords.push({
+        rec,
+        pts: rt.pts,
+        idx: 1,
+        speed: rt.speed,
+        pauseTimer: Math.random() * 0.6,
+        yaw: initYaw,
+        state: 'walk',
+        pauseClip: 'Dung',
+        lookX: null,
+        lookZ: null
+      });
     }
   }
 };

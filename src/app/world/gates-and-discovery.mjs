@@ -33,7 +33,7 @@ export const gatesAndDiscoveryMethods = {
     addWalkStrip(-44.0, 8.0, 5.4, 72.0); // West promenade path linking Vườn Lâm Tỳ Ni -> Non Bộ -> Vườn La Hán -> Tháp Chuông
     addWalkStrip(-10.0, -45.5, 76.0, 5.2); // North promenade linking Tháp Chuông -> Hồ Phóng Sinh -> Bảo Tháp -> Nhà Tổ -> Lầu Trống
     addWalkStrip(51.5, -12.0, 4.8, 66.0); // East tea garden path linking Cổng Phụ garden -> Lầu Trà Thiền -> Lầu Trống
-    addWalkStrip(38.5, -18.0, 9.0, 4.4); // Connector from East courtyard corridor into Giảng Đường (44, -18)
+    addWalkStrip(54.5, -18.0, 14.0, 4.4); // Connector from widened left-turn plaza into shifted Giảng Đường (66.5, -18)
     addWalkStrip(-40.5, 29.0, 18.0, 4.4); // Connector from Di Lặc Plaza into Vườn Lâm Tỳ Ni
 
     // 1. VƯỜN LÂM TỲ NI & CÂY BỒ ĐỀ CỔ THỤ (-53.5, 22.0)

@@ -26,3 +26,4 @@ export * from './modules/pilgrim-profiles.mjs'; // Quốc tịch & chế độ h
 export * from './modules/thirty-day-journal.mjs'; // Lộ trình 30 ngày, lịch âm, hoa đăng, nhật ký an tâm
 export * from './modules/academy.mjs'; // Học viện Phật học: khóa, học phần, thi, VietQR, chứng nhận
 export * from './modules/blessing-tower.mjs'; // Tháp đèn cầu an: danh mục & lời nguyện
+export * from './modules/npc-dharma.mjs'; // Tương tác NPC sân chùa & thoại Pháp ngữ ngẫu nhiên

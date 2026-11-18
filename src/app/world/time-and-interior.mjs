@@ -278,9 +278,9 @@ export const timeAndInteriorMethods = {
       return true;
     }
     this.lastDoorSide = 'right';
-    // Walk straight down the cool tree-shaded lane (x = 40.5) to the end of the road (z = -14.5),
-    // then turn LEFT (-X) onto the Shoe-Removal Veranda (x = 37.8 -> 35.6) and step through the wooden door!
-    const verandaApproachX = 38.2;
+    // Walk straight down the widened tree-shaded lane (x = 41.8) to the end of the road (z = -14.5),
+    // then turn LEFT (-X) onto the widened Shoe-Removal Veranda (x = 38.6 -> 35.6) and step through the wooden door!
+    const verandaApproachX = 38.6;
     const verandaZ = -14.5;
     const dist = Math.hypot(this.playerState.x - verandaApproachX, this.playerState.z - verandaZ);
 
@@ -301,16 +301,16 @@ export const timeAndInteriorMethods = {
       this.playerState.yaw = -Math.PI * 0.5;
     };
 
-    if (dist > 3.6) {
+    if (dist > 3.8) {
       const pts = this.buildPerimeterSafeWaypoints(
         this.playerState.x,
         this.playerState.z,
         verandaApproachX,
         verandaZ,
         [
-          [40.5, 32.0],
-          [40.5, 8.0],
-          [40.5, -14.5]
+          [41.8, 32.0],
+          [41.8, 8.0],
+          [41.8, -14.5]
         ],
         { x: 35.2, y: 2.2, z: verandaZ }
       );
@@ -428,9 +428,9 @@ export const timeAndInteriorMethods = {
     if (!this.inInterior) return 'exterior';
     const px = this.playerState.x;
     const pz = this.playerState.z;
-    if (px > 20.4) return 'trai_duong';
+    if (px > 18.8) return 'trai_duong';
     if (Math.abs(px) < 10.6 && Math.abs(pz) < 10.6) return 'ho_sen_bo';
-    if (pz <= -10.8 && px > -11.5 && px < 12.2) return 'chanh_dien';
+    if (pz <= -12.0 && px > -11.5 && px < 12.2) return 'chanh_dien';
     if (px >= 10.6) return 'day_ban_tho_phai';
     if (px <= -10.6 && pz < 14.5) return 'hanh_lang_trai';
     return 'hanh_lang_duoi';
@@ -445,19 +445,19 @@ export const timeAndInteriorMethods = {
     this.cancelAutoWalk();
     this.playerElevationY = 0;
     if (zoneKey === 'day_ban_tho_phai') {
-      this.playerState.x = 14.5;
+      this.playerState.x = 15.2;
       this.playerState.z = 16.0;
       const yaw = Math.PI - 0.34;
       this.playerState.yaw = yaw;
       this.cameraBaseYaw = yaw;
     } else if (zoneKey === 'nghin_mat_nghin_tay') {
-      this.playerState.x = 14.6;
-      this.playerState.z = 14.8;
+      this.playerState.x = 17.6;
+      this.playerState.z = 2.0;
       this.playerState.yaw = Math.PI / 2;
       this.cameraBaseYaw = Math.PI / 2;
     } else if (zoneKey === 'cho_ngu_cua_phat') {
-      this.playerState.x = 14.4;
-      this.playerState.z = 9.0;
+      this.playerState.x = 17.5;
+      this.playerState.z = -6.5;
       this.playerState.yaw = Math.PI / 2;
       this.cameraBaseYaw = Math.PI / 2;
     } else if (zoneKey === 'ho_sen_bo') {
@@ -479,15 +479,15 @@ export const timeAndInteriorMethods = {
       this.playerState.yaw = yaw;
       this.cameraBaseYaw = yaw;
     } else if (zoneKey === 'trai_duong') {
-      this.playerState.x = 22.8;
-      this.playerState.z = 5.8;
+      this.playerState.x = 17.6;
+      this.playerState.z = 13.5;
       this.playerElevationY = 0;
-      this.playerState.yaw = Math.PI * 0.42;
-      this.cameraBaseYaw = Math.PI * 0.42;
+      this.playerState.yaw = Math.PI * 0.45;
+      this.cameraBaseYaw = Math.PI * 0.45;
     } else {
       // Top Edge of Square = Chính Điện Lễ Phật
       this.playerState.x = 0.0;
-      this.playerState.z = -13.85;
+      this.playerState.z = -14.6;
       this.playerState.yaw = Math.PI;
       this.cameraBaseYaw = Math.PI;
     }

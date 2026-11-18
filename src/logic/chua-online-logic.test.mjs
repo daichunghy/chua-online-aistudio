@@ -90,7 +90,11 @@ import {
   BLESSING_TOWER_CATEGORIES,
   DEFAULT_BLESSING_TOWER_PRAYERS,
   createBlessingTowerState,
-  registerBlessingTowerPrayer
+  registerBlessingTowerPrayer,
+  COURTYARD_NPC_DHARMA_QUOTES,
+  getCourtyardNpcSpeaker,
+  pickNpcDharmaQuote,
+  evaluateCourtyardNpcProximity
 } from './chua-online-logic.mjs';
 
 test('OKLab/OKLCH perceptual color engine (meodai/skill.color-expert) preserves perceptual lightness and prevents muddy mid-tones', () => {
@@ -725,6 +729,44 @@ test('Blessing Lamp Tower (Tháp Đèn Cầu An) validates devotee name, assigns
   assert.ok(reg.entry.slotNumber >= 1 && reg.entry.slotNumber <= 108);
   assert.equal(reg.state.entries.length, initial.entries.length + 1);
   assert.equal(reg.rewardLotus, 25);
+});
+
+test('Courtyard NPC interaction evaluates proximity with hysteresis and picks non-repeating Dharma quotes', () => {
+  assert.ok(COURTYARD_NPC_DHARMA_QUOTES.length >= 12);
+  assert.equal(getCourtyardNpcSpeaker('monk', 'su_thay').label, 'Sư Thầy');
+  assert.equal(getCourtyardNpcSpeaker('vendor', 'nu').label, 'Cô bán hàng cổng chùa');
+  assert.equal(getCourtyardNpcSpeaker('vendor', 'nam').label, 'Chú bán hàng cổng chùa');
+
+  const q1 = pickNpcDharmaQuote(COURTYARD_NPC_DHARMA_QUOTES, null, () => 0);
+  const q2 = pickNpcDharmaQuote(COURTYARD_NPC_DHARMA_QUOTES, q1.id, () => 0);
+  assert.ok(q1.quote && q1.source);
+  assert.notEqual(q2.id, q1.id);
+
+  const npcs = [
+    { id: 'npc_a', x: 10, z: 10 },
+    { id: 'npc_b', x: 13.4, z: 10 }
+  ];
+
+  // Out of range -> null
+  assert.equal(evaluateCourtyardNpcProximity({ x: 0, z: 0 }, npcs, null), null);
+
+  // Enter range of npc_a
+  const enterA = evaluateCourtyardNpcProximity({ x: 8, z: 10 }, npcs, null);
+  assert.equal(enterA?.npc.id, 'npc_a');
+  assert.equal(enterA?.changed, true);
+
+  // Hysteresis keeps npc_a active until beyond exitRadius (4.6m) unless npc_b is much closer
+  const keepA = evaluateCourtyardNpcProximity({ x: 11.7, z: 10 }, npcs, 'npc_a');
+  assert.equal(keepA?.npc.id, 'npc_a');
+  assert.equal(keepA?.changed, false);
+
+  // Moving directly next to npc_b switches smoothly
+  const switchB = evaluateCourtyardNpcProximity({ x: 13.1, z: 10 }, npcs, 'npc_a');
+  assert.equal(switchB?.npc.id, 'npc_b');
+  assert.equal(switchB?.changed, true);
+
+  // Walking beyond exitRadius clears active NPC
+  assert.equal(evaluateCourtyardNpcProximity({ x: 20, z: 20 }, npcs, 'npc_b'), null);
 });
 
 

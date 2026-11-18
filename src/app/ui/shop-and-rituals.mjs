@@ -381,9 +381,9 @@ export const shopAndRitualsMethods = {
       this.activityHub = recordDailyMissionMetric(this.activityHub, 'dailyIncense', 1);
       this.saveState();
       this.updateActionBadges();
+      this.closeModal();
       this.world3d?.setIncenseBoost(true);
       this.playBellTone(216, 2.8);
-      this.closeModal();
       this.showToast(r.title, r.message, 5200, true);
     });
 
@@ -468,8 +468,9 @@ export const shopAndRitualsMethods = {
       const text = (inp?.value || 'Nguyện cầu bình an và trí tuệ cho gia quyến').trim();
       this.spiritual.prayers.unshift({ text, time: new Date().toLocaleDateString('vi-VN') });
       this.saveState();
-      this.playBellTone(324, 2.5);
       this.closeModal();
+      this.world3d?.placeLotusOfferingIn3D();
+      this.playBellTone(324, 2.5);
       this.showToast('🪷 Đã dâng hoa & lời nguyện', `"${text}"`, 5000, true);
     });
 

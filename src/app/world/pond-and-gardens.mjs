@@ -84,6 +84,13 @@ export const pondAndGardensMethods = {
       innerPivots.push(hinge);
     }
 
+    g.userData.lotusAnimRefs = {
+      outerPivots,
+      innerPivots,
+      petalMat,
+      innerMat,
+      centerMat
+    };
     if (trackAnim) {
       this.pondLotusAnims.push({
         group: g,
@@ -516,16 +523,17 @@ export const pondAndGardensMethods = {
     midHedge.position.set(-10.5, 0.325, 16.5);
     this.exteriorGroup.add(midHedge);
 
-    // 3. Straight Cool Tree-Shaded Lane (x = 40.5, z = +36 -> -24): Bougainvillea planters lining outer curbs (35.2 & 45.4)
+    // 3. Wide Straight Cool Tree-Shaded Lane (x = 35.5..48.1, z = +42 -> -40): Bougainvillea planters lining outer curbs (35.2 & 48.6)
     const bougCoords = [
       [35.2, 29.8, 0.92],
       [35.2, 18.2, 0.92],
       [35.2, 4.5, 0.92],
       [35.2, -6.5, 0.92],
-      [45.4, 28.5, 0.92],
-      [45.4, 15.0, 0.92],
-      [45.4, 1.5, 0.92],
-      [45.4, -9.5, 0.92]
+      [48.6, 28.5, 0.92],
+      [48.6, 15.0, 0.92],
+      [48.6, 1.5, 0.92],
+      [48.6, -9.5, 0.92],
+      [48.6, -21.5, 0.92]
     ];
     const makeOrganicClusterGeo = (rad, seed) => {
       const geo = new THREE.IcosahedronGeometry(rad, 2);
@@ -600,114 +608,43 @@ export const pondAndGardensMethods = {
       this.addObstacle(bx, bz, 0.6);
     }
 
-    const redFenceMat = new THREE.MeshStandardMaterial({ color: 0xB82924, roughness: 0.48 });
-    const lampPostMat = new THREE.MeshStandardMaterial({ color: 0xE8B95E, roughness: 0.48 });
-    const globeMat = new THREE.MeshStandardMaterial({
-      color: 0xFFFBF0,
-      emissive: 0xFFF2C8,
-      emissiveIntensity: 0.65,
-      roughness: 0.22
-    });
-
-    // Low stone curbs, globe lamps & lush overarching shade trees lining the Straight Side Lane (x = 35.6 .. 45.4, z = +34 -> -24)
+    // Viền bó vỉa bê tông sạch hai bên đường bê tông chính x = 35.6..45.4
     for (const [sideX, minZ, maxZ] of [
-      [35.6, -9.8, 34.0],
-      [45.4, -10.5, 34.0]
+      [35.6, -9.8, 39.5],
+      [45.4, -10.5, 39.5]
     ]) {
       const len = maxZ - minZ;
       const midZ = (minZ + maxZ) * 0.5;
-      const curb = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.24, len), M.goldLight);
-      curb.position.set(sideX, 0.12, midZ);
+      const curb = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.22, len), M.creamTrim);
+      curb.position.set(sideX, 0.11, midZ);
       curb.receiveShadow = true;
       this.exteriorGroup.add(curb);
     }
 
-    // Overarching Tropical Shade Trees ("Hàng cây bóng mát rượi dọc lối xuống tiệm lưu niệm cuối đường")
-    for (const [tx, tz, sc] of [
-      [35.0, 24.0, 1.25],
-      [35.0, 10.5, 1.3],
-      [35.0, -2.5, 1.32],
-      [46.2, 31.0, 1.28],
-      [46.2, 18.5, 1.35],
-      [46.2, 5.5, 1.35],
-      [46.2, -6.5, 1.38],
-      [44.2, -23.5, 1.42],
-      [36.2, -22.5, 1.36]
-    ]) {
-      const shTree = new THREE.Group();
-      const trk = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.36, 4.1, 10), M.trunk);
-      trk.position.y = 2.05;
-      trk.castShadow = true;
-      shTree.add(trk);
-      for (const [cx, cy, cz, cr, cMat] of [
-        [0, 4.65, 0, 2.35, M.foliageMid],
-        [-1.15, 4.25, 0.5, 1.75, M.foliageDark],
-        [1.15, 4.35, -0.45, 1.8, M.foliageLight],
-        [0, 5.45, 0, 1.65, M.foliageLight]
-      ]) {
-        const crown = new THREE.Mesh(new THREE.SphereGeometry(cr, 10, 8), cMat);
-        crown.scale.set(1.25, 0.68, 1.22);
-        crown.position.set(cx, cy, cz);
-        crown.castShadow = true;
-        shTree.add(crown);
-      }
-      shTree.position.set(tx, 0, tz);
-      shTree.scale.setScalar(sc);
-      this.exteriorGroup.add(shTree);
-      this.addObstacle(tx, tz, 0.52);
-    }
-
-    // Yellow square-post white-globe lamps along Straight Shaded Lane
-    for (const [lx, lz] of [
-      [35.6, 26.0],
-      [35.6, 12.0],
-      [35.6, -1.0],
-      [45.4, 22.0],
-      [45.4, 8.0],
-      [45.4, -5.0]
-    ]) {
-      const ped = new THREE.Mesh(new THREE.BoxGeometry(0.42, 1.35, 0.42), M.goldWall);
-      ped.position.set(lx, 0.675, lz);
-      this.exteriorGroup.add(ped);
-      const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.065, 1.35, 8), lampPostMat);
-      pole.position.set(lx, 1.98, lz);
-      this.exteriorGroup.add(pole);
-      const globe = new THREE.Mesh(new THREE.SphereGeometry(0.24, 12, 10), globeMat);
-      globe.position.set(lx, 2.75, lz);
-      this.exteriorGroup.add(globe);
-    }
-
-    // Directional signposts guiding pilgrims straight down the cool lane to the Souvenir Plaza & Left-Turn Chánh Điện Door
-    for (const [sx, sz, rotY, labelTxt] of [
-      [44.6, 30.5, -0.22, '↑ ĐI THẲNG CUỐI ĐƯỜNG: TIỆM LƯU NIỆM & LỐI VÀO CHÁNH ĐIỆN'],
-      [43.8, -8.5, -0.35, '← RẼ TRÁI BỎ GIÀY DÉP VÀO CỬA CHÁNH ĐIỆN · TIỆM TẠP HÓA ↓']
-    ]) {
-      const dirSignGroup = new THREE.Group();
-      dirSignGroup.position.set(sx, 0, sz);
-      const dirPost = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.07, 1.65, 8), M.darkWood);
-      dirPost.position.y = 0.825;
-      dirSignGroup.add(dirPost);
-      const dirBoard = new THREE.Mesh(
-        new THREE.BoxGeometry(3.15, 0.54, 0.1),
-        new THREE.MeshStandardMaterial({
-          map: makeTextTex(labelTxt, {
-            w: 1120,
-            h: 170,
-            bg: '#1C5A34',
-            border: '#FFD875',
-            color: '#FFF6E5',
-            size: 36
-          }),
-          roughness: 0.4
-        })
-      );
-      dirBoard.position.set(0, 1.56, 0);
-      dirBoard.rotation.y = rotY;
-      dirSignGroup.add(dirBoard);
-      this.exteriorGroup.add(dirSignGroup);
-    }
-
-    // Outer-right garden remains open beside the side-gate grocery house; no duplicate statue row.
+    // Bảng chỉ dẫn gọn đặt cuối đoạn đường rẽ trái vào Chánh Điện
+    const dirSignGroup = new THREE.Group();
+    dirSignGroup.position.set(45.2, 0, -9.2);
+    const dirPost = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.065, 1.85, 8), M.darkWood);
+    dirPost.position.y = 0.925;
+    dirSignGroup.add(dirPost);
+    const dirBoard = new THREE.Mesh(
+      new THREE.BoxGeometry(2.85, 0.5, 0.1),
+      new THREE.MeshStandardMaterial({
+        map: makeTextTex('← RẼ TRÁI VÀO CHÁNH ĐIỆN · TIỆM TẠP HÓA ↓', {
+          w: 1120,
+          h: 170,
+          bg: '#1C5A34',
+          border: '#FFD875',
+          color: '#FFF6E5',
+          size: 36
+        }),
+        roughness: 0.4
+      })
+    );
+    dirBoard.position.set(0, 1.72, 0);
+    dirBoard.rotation.y = -0.35;
+    dirSignGroup.add(dirBoard);
+    this.exteriorGroup.add(dirSignGroup);
 
     // Low ornamental bonsai urns neatly framing the outer Chánh Điện porch corners without blocking the 13-arch facade
     for (const bx of [13.2, 32.8]) {
@@ -718,8 +655,8 @@ export const pondAndGardensMethods = {
     }
 
     for (const [sx, sz, rotY] of [
-      [35.0, 18.0, Math.PI / 2],
-      [35.0, 13.0, Math.PI / 2],
+      [36.3, 18.0, Math.PI / 2],
+      [36.3, 13.0, Math.PI / 2],
       [14.2, 15.5, Math.PI / 2]
     ]) {
       const bench = new THREE.Group();
@@ -740,7 +677,7 @@ export const pondAndGardensMethods = {
       this.exteriorGroup.add(bench);
     }
 
-    // Lush Street & Courtyard Shade Trees (shifted clear of Nhà Tạp Hóa Vĩnh Tràng roof, with forked branches & multi-tone foliage)
+    // Lush Street & Courtyard Shade Trees (tuyến bên phải được xử lý riêng theo ảnh thực tế ở right-entrance-road.mjs)
     const treePositions = [
       [-6, 36, 1.3],
       [-28, 38, 1.4],
@@ -748,9 +685,6 @@ export const pondAndGardensMethods = {
       [-33, -16, 1.4],
       [-18, -26, 1.3],
       [51.5, 43.5, 1.35],
-      [52.8, 30.5, 1.4],
-      [49.5, 22, 1.45],
-      [48.5, 10, 1.4],
       [48, -32, 1.45],
       [32.5, 35.5, 1.25]
     ];

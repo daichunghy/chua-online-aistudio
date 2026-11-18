@@ -4,7 +4,7 @@
  * Mixin của ChuaOnlineApp: 18 method (initLive3DWorld … updateUGCMilestoneHUD).
  * Được gắn vào class trong chua-online-app.mjs qua applyMixins().
  */
-import { PILGRIMAGE_STATIONS, findAnyTempleDestination, performSpiritualAction, recordSpiritualMilestone, checkUGCMilestoneUnlock, getLocalDateKey, ensureDailyMissionDate, grantPlayerXp, collectCourtyardTask, HERITAGE_RELICS, discoverHeritageRelic, BLESSING_TOWER_CATEGORIES, VinhTrang3DWorld } from './shared.mjs';
+import { PILGRIMAGE_STATIONS, findAnyTempleDestination, performSpiritualAction, recordSpiritualMilestone, checkUGCMilestoneUnlock, getLocalDateKey, ensureDailyMissionDate, grantPlayerXp, collectCourtyardTask, HERITAGE_RELICS, discoverHeritageRelic, BLESSING_TOWER_CATEGORIES, COURTYARD_NPC_DHARMA_QUOTES, pickNpcDharmaQuote, VinhTrang3DWorld } from './shared.mjs';
 
 export const world3dBridgeMethods = {
   /* ========================================================================
@@ -46,6 +46,9 @@ export const world3dBridgeMethods = {
       onInteractProximity: (prompt) => {
         this.nearbyInteractPrompt = prompt || null;
         this.refreshProximityPrompt();
+      },
+      onNpcSpeechUpdate: (speechPayload) => {
+        this.updateNpcSpeechBubbleUI(speechPayload);
       },
       onEntranceTourChange: (active) => {
         this.entranceTourActive = Boolean(active);
@@ -261,6 +264,94 @@ export const world3dBridgeMethods = {
       collectedLeafIds: this.activityHub?.courtyardTasks?.collectedIds || [],
       gardenSlots: this.activityHub?.templeGarden || []
     });
+  },
+
+  updateNpcSpeechBubbleUI(payload) {
+    const bubble = document.getElementById('npc-dharma-bubble');
+    if (!bubble) return;
+
+    if (!payload || !payload.active) {
+      this.activeNpcSpeech = null;
+      this.dismissedNpcId = null;
+      if (bubble.style.display !== 'none') {
+        bubble.style.display = 'none';
+      }
+      return;
+    }
+
+    if (this.dismissedNpcId === payload.npcId) {
+      if (bubble.style.display !== 'none') {
+        bubble.style.display = 'none';
+      }
+      return;
+    }
+
+    const needsNewQuote =
+      payload.changed ||
+      !this.activeNpcSpeech ||
+      this.activeNpcSpeech.npcId !== payload.npcId;
+
+    if (needsNewQuote) {
+      const pool = this.dailyDharmaQuotes?.length
+        ? this.dailyDharmaQuotes
+        : COURTYARD_NPC_DHARMA_QUOTES;
+      const quote = pickNpcDharmaQuote(pool, this.lastNpcQuoteId);
+      this.lastNpcQuoteId = quote?.id || null;
+      this.activeNpcSpeech = {
+        npcId: payload.npcId,
+        speaker: payload.speaker,
+        quote
+      };
+
+      const roleEl = document.getElementById('npc-bubble-role');
+      const quoteEl = document.getElementById('npc-bubble-quote');
+      const sourceEl = document.getElementById('npc-bubble-source');
+      if (roleEl) {
+        roleEl.textContent = `${payload.speaker?.icon || '🪷'} ${payload.speaker?.label || 'Phật tử hành hương'}`;
+      }
+      if (quoteEl && quote) {
+        quoteEl.textContent = `“${quote.quote}”`;
+      }
+      if (sourceEl && quote) {
+        sourceEl.textContent = quote.source ? `— ${quote.source}` : '';
+      }
+    }
+
+    if (!payload.visible) {
+      bubble.style.display = 'none';
+      return;
+    }
+
+    const marginX = Math.min(170, Math.max(120, window.innerWidth * 0.42));
+    const clampedX = Math.max(marginX, Math.min(window.innerWidth - marginX, payload.screenX));
+    const clampedY = Math.max(195, Math.min(window.innerHeight - 135, payload.screenY));
+    bubble.style.display = 'block';
+    bubble.style.left = `${Math.round(clampedX)}px`;
+    bubble.style.top = `${Math.round(clampedY)}px`;
+  },
+
+  cycleNpcSpeechQuote() {
+    if (!this.activeNpcSpeech) return;
+    const pool = this.dailyDharmaQuotes?.length
+      ? this.dailyDharmaQuotes
+      : COURTYARD_NPC_DHARMA_QUOTES;
+    const quote = pickNpcDharmaQuote(pool, this.lastNpcQuoteId);
+    this.lastNpcQuoteId = quote?.id || null;
+    this.activeNpcSpeech.quote = quote;
+    const quoteEl = document.getElementById('npc-bubble-quote');
+    const sourceEl = document.getElementById('npc-bubble-source');
+    if (quoteEl && quote) quoteEl.textContent = `“${quote.quote}”`;
+    if (sourceEl && quote) sourceEl.textContent = quote.source ? `— ${quote.source}` : '';
+    this.playMokugyoTap?.();
+  },
+
+  dismissNpcSpeechBubble() {
+    if (this.activeNpcSpeech?.npcId) {
+      this.dismissedNpcId = this.activeNpcSpeech.npcId;
+    }
+    this.activeNpcSpeech = null;
+    const bubble = document.getElementById('npc-dharma-bubble');
+    if (bubble) bubble.style.display = 'none';
   },
 
   refreshProximityPrompt() {

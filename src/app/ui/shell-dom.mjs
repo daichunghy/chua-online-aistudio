@@ -98,6 +98,19 @@ export const shellDomMethods = {
             </svg>
             <span id="pin-chanh-dien-label">Chánh điện</span>
           </button>
+
+          <aside id="npc-dharma-bubble" class="npc-dharma-bubble" role="status" aria-live="polite" style="display:none;">
+            <div class="npc-bubble-header">
+              <span class="npc-bubble-role" id="npc-bubble-role">🪷 Phật tử hành hương</span>
+              <div class="npc-bubble-actions">
+                <button type="button" class="npc-bubble-btn" id="btn-npc-next-quote" title="Đọc thêm một lời dạy khác" aria-label="Đọc thêm một lời dạy khác">↻</button>
+                <button type="button" class="npc-bubble-btn" id="btn-npc-close-quote" title="Đóng" aria-label="Đóng lời dạy">✕</button>
+              </div>
+            </div>
+            <blockquote class="npc-bubble-quote" id="npc-bubble-quote"></blockquote>
+            <div class="npc-bubble-source" id="npc-bubble-source"></div>
+            <div class="npc-bubble-tail" aria-hidden="true"></div>
+          </aside>
         </div>
 
         <div id="auto-walk-objective-banner" class="auto-walk-objective-banner" style="display:none;">
@@ -123,7 +136,7 @@ export const shellDomMethods = {
           <button type="button" class="walk-chip-btn" data-interior-zone="ho_sen_bo">3. Giữa Chùa · Hồ Sen Bộ</button>
           <button type="button" class="walk-chip-btn" data-interior-zone="hanh_lang_trai">4. Cạnh Trái · 18 La Hán &amp; Tổ</button>
           <button type="button" class="walk-chip-btn" data-interior-zone="hanh_lang_duoi">5. Cạnh Dưới · Hộ Pháp</button>
-          <button type="button" class="walk-chip-btn" data-interior-zone="trai_duong">🍚 Trai Đường</button>
+          <button type="button" class="walk-chip-btn" data-interior-zone="trai_duong">🪑 Phòng Khách · Kinh Sách</button>
           <button type="button" class="walk-chip-btn" id="btn-interior-cutaway" title="Mặt cắt 3D toàn cảnh mặt bằng Hình Vuông &amp; Hồ Sen Bộ">✂️ Mặt cắt 3D</button>
           <button type="button" class="walk-chip-btn" id="btn-interior-history" title="Đối chiếu tư liệu Tôn tượng Tam Bảo">📜 Tư liệu</button>
           <button type="button" class="walk-chip-btn interior-exit-chip" id="btn-interior-exit-courtyard">← Ra Hiên Bỏ Dép</button>

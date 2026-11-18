@@ -9,10 +9,10 @@ import { THREE, makeTextTex, makeHippedRoofMesh } from './shared.mjs';
 export const groceryHallsStatuesMethods = {
   buildVietnameseGroceryHouse() {
     // Cool Tree-Shaded End-of-Road Grocery & Buddhist Souvenir Shophouse ("TIỆM TẠP HÓA & LƯU NIỆM CUỐI ĐƯỜNG MÁT RƯỢI")
-    // Placed down at the shaded end of the straight lane from Cổng Phụ Tịnh Độ Huyền Môn (x = 48.6, z = -17.5), right across from the Chánh Điện entrance veranda!
+    // Placed down at the shaded end of the lengthened straight lane from Cổng Phụ (x = 54.8, z = -21.5), opening a spacious plaza across from Chánh Điện!
     const M = this.MAT;
     const house = new THREE.Group();
-    house.position.set(48.6, 0, -17.5);
+    house.position.set(54.8, 0, -21.5);
     house.rotation.y = -Math.PI * 0.5; // Front open shutter faces -X onto the shaded end-of-road plaza
     house.userData.stallType = 'am_thuc_chay';
     house.userData.stallTitle = 'Tiệm Tạp Hóa · Lưu Niệm Cuối Đường Mát';
@@ -202,12 +202,12 @@ export const groceryHallsStatuesMethods = {
     this.stallAnchors.push(house);
     this.stallClickTargets.push(counter, awning, signBoard, fridgeBody, trigRing, mainRoof);
 
-    // Physical house footprint collider at end of road (leaves x < 45.2 roadway & turn plaza completely open!)
-    this.addRectObstacle(45.6, 53.2, -22.8, -12.2);
+    // Physical house footprint collider East of the widened end-of-road left-turn plaza
+    this.addRectObstacle(51.8, 59.4, -26.8, -16.2);
 
-    // End-of-Lane Shaded Buddhist Souvenir & Cold Sugarcane Kiosk facing straight South (+Z) up the Tịnh Độ Huyền Môn road!
+    // End-of-Lane Shaded Buddhist Souvenir & Cold Sugarcane Kiosk pushed North to z = -37.5 so the left-turn plaza is wide open!
     const souvenirKiosk = new THREE.Group();
-    souvenirKiosk.position.set(40.5, 0, -26.4);
+    souvenirKiosk.position.set(41.8, 0, -37.5);
     souvenirKiosk.userData.stallType = 'phap_khi';
     souvenirKiosk.userData.stallTitle = 'Quầy Lưu Niệm Phật Giáo · Chuỗi Hạt & Quà Mỹ Tho';
     const skRoof = makeHippedRoofMesh(8.4, 4.2, 1.25, awningMat);
@@ -248,7 +248,7 @@ export const groceryHallsStatuesMethods = {
     souvenirKiosk.add(skSign);
     this.exteriorGroup.add(souvenirKiosk);
     this.stallClickTargets.push(skCounter, skSign, skRoof);
-    this.addRectObstacle(36.6, 44.4, -28.4, -24.8);
+    this.addRectObstacle(37.6, 46.0, -39.5, -35.8);
 
     // Secondary authentic ice-cream / cold-drinks cart just outside Cổng Phụ
     const cart = new THREE.Group();
@@ -283,16 +283,16 @@ export const groceryHallsStatuesMethods = {
 
     this.stallTriggers.push(
       {
-        x: 42.6,
-        z: -17.5,
+        x: 48.4,
+        z: -21.5,
         radius: 6.8,
         stallType: 'am_thuc_chay',
         title: 'Tiệm Tạp Hóa · Lưu Niệm Cuối Đường Mát',
         ring: trigRing
       },
       {
-        x: 40.5,
-        z: -23.0,
+        x: 41.8,
+        z: -33.5,
         radius: 5.5,
         stallType: 'phap_khi',
         title: 'Quầy Lưu Niệm Phật Giáo · Quà Chùa Vĩnh Tràng',

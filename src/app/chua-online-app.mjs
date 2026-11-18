@@ -3,7 +3,7 @@
  * File này giữ constructor/state/init; các nhóm method nằm trong src/app/ui/*.mjs (xem docs/ARCHITECTURE.md).
  */
 
-import { CHARACTER_PROFILES, INITIAL_UGC_GALLERY, createSpiritualState, checkUGCMilestoneUnlock, calculateJourneyImprint, calculateCartSummary, getLocalDateKey, shouldShowDailyDharmaToday, createStoreProfileState, TIME_OF_DAY_PRESETS, createActivityHubState, ensureDailyMissionDate, NATIONALITY_PROFILES, PILGRIMAGE_MODES, HOA_DANG_WISHES, createDharmaJournalState, ACADEMY_COURSES, createAcademyEntitlementState, createBlessingTowerState, createSutraStudyState, SutraStudyController, TempleAudioEngine, STORAGE_KEY, applyMixins } from './ui/shared.mjs';
+import { CHARACTER_PROFILES, INITIAL_UGC_GALLERY, createSpiritualState, checkUGCMilestoneUnlock, calculateJourneyImprint, calculateCartSummary, getLocalDateKey, shouldShowDailyDharmaToday, fetchDailyDharmaService, COURTYARD_NPC_DHARMA_QUOTES, createStoreProfileState, TIME_OF_DAY_PRESETS, createActivityHubState, ensureDailyMissionDate, NATIONALITY_PROFILES, PILGRIMAGE_MODES, HOA_DANG_WISHES, createDharmaJournalState, ACADEMY_COURSES, createAcademyEntitlementState, createBlessingTowerState, createSutraStudyState, SutraStudyController, TempleAudioEngine, STORAGE_KEY, applyMixins } from './ui/shared.mjs';
 import { shellDomMethods } from './ui/shell-dom.mjs';
 import { world3dBridgeMethods } from './ui/world3d-bridge.mjs';
 import { effectsAudioMethods } from './ui/effects-audio.mjs';
@@ -91,7 +91,10 @@ export class ChuaOnlineApp {
     this.uploadedUserPhotoDataUrl = this.saved.uploadedUserPhotoDataUrl || null;
     this.lastDailyDharmaDate = this.saved.lastDailyDharmaDate || null;
     this.lastDailyDharmaQuoteId = this.saved.lastDailyDharmaQuoteId || null;
-    this.dailyDharmaQuotes = [];
+    this.dailyDharmaQuotes = [...COURTYARD_NPC_DHARMA_QUOTES];
+    this.activeNpcSpeech = null;
+    this.lastNpcQuoteId = null;
+    this.dismissedNpcId = null;
     this.activeStationKey = 'cong_tam_quan';
 
     // Active screen & sub-views
@@ -212,6 +215,14 @@ export class ChuaOnlineApp {
       }
     }
 
+    fetchDailyDharmaService({ url: '/data/daily-dharma.json' })
+      .then((res) => {
+        if (Array.isArray(res?.quotes) && res.quotes.length > 0) {
+          this.dailyDharmaQuotes = res.quotes;
+        }
+      })
+      .catch(() => {});
+
     window.__CHUA_ONLINE_APP__ = this;
     window.advanceTime = (ms = 16) => {
       const dt = ms / 1000;
@@ -264,6 +275,13 @@ export class ChuaOnlineApp {
         arrivalCutsceneActive: Boolean(this.world3d?.arrivalCutscene?.active),
         journeyImprint: calculateJourneyImprint(this.spiritual),
         autoWalkObjective: this.autoWalkObjective ? this.autoWalkObjective.name : null,
+        activeNpcQuote: this.activeNpcSpeech
+          ? {
+              npcId: this.activeNpcSpeech.npcId,
+              speaker: this.activeNpcSpeech.speaker?.label || null,
+              quoteId: this.activeNpcSpeech.quote?.id || null
+            }
+          : null,
         cartSummary: calculateCartSummary(this.cart)
       });
   }

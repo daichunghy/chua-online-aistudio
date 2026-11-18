@@ -177,6 +177,39 @@ export const materialsAndLightsMethods = {
       1
     );
 
+    // 1d-2. Bright Sunlit Brushed Concrete Road with Expansion Joints (Lối vào Cổng Phụ Tịnh Độ Huyền Môn)
+    this.concreteRoadTex = makeCanvasTex(
+      (g, w, h) => {
+        g.fillStyle = '#D5D0C6';
+        g.fillRect(0, 0, w, h);
+        for (let i = 0; i < 950; i++) {
+          const v = 198 + ((i * 23) % 28);
+          g.fillStyle = `rgb(${v},${v - 2},${v - 7})`;
+          g.fillRect((i * 73) % w, (i * 127) % h, 2 + (i % 3), 2);
+        }
+        // Subtle warm wheel tracks + clean expansion joints
+        g.fillStyle = 'rgba(182, 174, 158, 0.22)';
+        g.fillRect(w * 0.22, 0, w * 0.16, h);
+        g.fillRect(w * 0.62, 0, w * 0.16, h);
+        g.strokeStyle = 'rgba(128, 122, 110, 0.36)';
+        g.lineWidth = 2.2;
+        for (let y = 0; y <= h; y += 128) {
+          g.beginPath();
+          g.moveTo(0, y);
+          g.lineTo(w, y);
+          g.stroke();
+        }
+        g.beginPath();
+        g.moveTo(w * 0.5, 0);
+        g.lineTo(w * 0.5, h);
+        g.stroke();
+      },
+      512,
+      512,
+      2,
+      12
+    );
+
     // 1e. Mekong Alluvial Soil & Tropical Wild Grass Texture (Surrounding Countryside)
     this.mekongEarthTex = makeCanvasTex(
       (g, w, h) => {

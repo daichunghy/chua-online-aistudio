@@ -66,34 +66,34 @@ export const chanhDienExteriorMethods = {
     rightCornerGate.position.set(12.2, 0, -15.5);
     rightCornerGate.rotation.y = Math.PI * 0.5; // Local +Z faces East (+X) toward the straight shaded lane x = 40.5!
 
-    const rcWingBody = new THREE.Mesh(new THREE.BoxGeometry(6.4, 5.2, 2.6), M.goldWall);
+    const rcWingBody = new THREE.Mesh(new THREE.BoxGeometry(8.6, 5.2, 2.6), M.goldWall);
     rcWingBody.position.set(0, 2.6, -1.1);
     rcWingBody.castShadow = true;
     rcWingBody.receiveShadow = true;
     rightCornerGate.add(rcWingBody);
-    const rcWingCornice = new THREE.Mesh(new THREE.BoxGeometry(6.7, 0.28, 2.8), M.creamTrim);
+    const rcWingCornice = new THREE.Mesh(new THREE.BoxGeometry(8.9, 0.28, 2.8), M.creamTrim);
     rcWingCornice.position.set(0, 5.25, -1.1);
     rightCornerGate.add(rcWingCornice);
 
     // Wide terracotta-tiled Shoe-Removal Veranda ("Hiên Để Giày Dép Bên Ngoài Trước Cửa Chánh Điện")
     const rcStep = new THREE.Mesh(
-      new THREE.BoxGeometry(6.6, 0.16, 3.4),
+      new THREE.BoxGeometry(9.2, 0.16, 4.2),
       new THREE.MeshStandardMaterial({ color: 0xC8734F, roughness: 0.65 })
     );
-    rcStep.position.set(0, 0.08, 1.45);
+    rcStep.position.set(0, 0.08, 1.85);
     rcStep.receiveShadow = true;
     rightCornerGate.add(rcStep);
 
-    for (const px of [-2.45, 2.45]) {
+    for (const px of [-3.55, 3.55]) {
       const pier = new THREE.Mesh(new THREE.BoxGeometry(0.54, 4.1, 0.58), M.goldWall);
       pier.position.set(px, 2.05, 0.25);
       pier.castShadow = true;
       rightCornerGate.add(pier);
       const col = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.18, 3.65, 12), M.redColumn);
-      col.position.set(px, 1.95, 2.75);
+      col.position.set(px, 1.95, 3.25);
       rightCornerGate.add(col);
       const cap = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.18, 0.48), M.goldAccent);
-      cap.position.set(px, 3.82, 2.75);
+      cap.position.set(px, 3.82, 3.25);
       rightCornerGate.add(cap);
     }
 
@@ -175,10 +175,10 @@ export const chanhDienExteriorMethods = {
     coirMat.position.set(0, 0.175, 1.18);
     rightCornerGate.add(coirMat);
 
-    for (const rx of [-2.05, 2.05]) {
+    for (const rx of [-3.05, 3.05]) {
       const rack = new THREE.Group();
-      rack.position.set(rx, 0.16, 1.35);
-      rack.rotation.y = rx < 0 ? 0.22 : -0.22;
+      rack.position.set(rx, 0.16, 1.55);
+      rack.rotation.y = rx < 0 ? 0.18 : -0.18;
       for (const lx of [-0.68, 0.68]) {
         for (const lz of [-0.18, 0.18]) {
           const rLeg = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.78, 0.05), doorWoodMat);
@@ -207,12 +207,32 @@ export const chanhDienExteriorMethods = {
       rightCornerGate.add(rack);
     }
 
-    const rcCanopyRoof = makeHippedRoofMesh(7.2, 4.2, 1.35, M.roofTile);
-    rcCanopyRoof.position.set(0, 4.55, 1.45);
+    // Two courtyard stone-and-timber benches flanking the widened veranda edge for resting & changing shoes
+    for (const bx of [-4.05, 4.05]) {
+      const bench = new THREE.Group();
+      bench.position.set(bx, 0, 4.35);
+      for (const lx of [-0.72, 0.72]) {
+        const leg = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.44, 0.48), M.creamTrim);
+        leg.position.set(lx, 0.22, 0);
+        bench.add(leg);
+      }
+      const seat = new THREE.Mesh(new THREE.BoxGeometry(1.75, 0.09, 0.52), doorWoodMat);
+      seat.position.set(0, 0.46, 0);
+      seat.castShadow = true;
+      bench.add(seat);
+      const backRest = new THREE.Mesh(new THREE.BoxGeometry(1.75, 0.38, 0.08), doorCarvedMat);
+      backRest.position.set(0, 0.72, -0.22);
+      backRest.rotation.x = -0.1;
+      bench.add(backRest);
+      rightCornerGate.add(bench);
+    }
+
+    const rcCanopyRoof = makeHippedRoofMesh(9.8, 6.2, 1.45, M.roofTile);
+    rcCanopyRoof.position.set(0, 4.72, 1.05);
     rightCornerGate.add(rcCanopyRoof);
 
     const rcSign = new THREE.Mesh(
-      new THREE.BoxGeometry(5.2, 0.68, 0.12),
+      new THREE.BoxGeometry(6.0, 0.72, 0.12),
       new THREE.MeshStandardMaterial({
         map: makeTextTex('CỬA VÀO CHÁNH ĐIỆN · VUI LÒNG BỎ GIÀY DÉP BÊN NGOÀI', {
           w: 1280,
@@ -225,18 +245,18 @@ export const chanhDienExteriorMethods = {
         roughness: 0.35
       })
     );
-    rcSign.position.set(0, 3.56, 2.98);
+    rcSign.position.set(0, 3.56, 3.48);
     rightCornerGate.add(rcSign);
 
     const rcGlow = new THREE.PointLight(0xFFC96B, 2.2, 9.5);
-    rcGlow.position.set(0, 3.3, 1.8);
+    rcGlow.position.set(0, 3.3, 2.1);
     rightCornerGate.add(rcGlow);
 
     const rcHit = new THREE.Mesh(
-      new THREE.BoxGeometry(5.6, 4.4, 3.4),
+      new THREE.BoxGeometry(8.4, 4.4, 4.0),
       new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false })
     );
-    rcHit.position.set(0, 2.2, 1.2);
+    rcHit.position.set(0, 2.2, 1.6);
     rcHit.userData.doorSide = 'right';
     rightCornerGate.add(rcHit);
     g.add(rightCornerGate);

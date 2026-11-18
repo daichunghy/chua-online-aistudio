@@ -41,6 +41,96 @@
   font-weight: 800;
 }
 
+/* Courtyard NPC Dharma Speech Bubble */
+.npc-dharma-bubble {
+  pointer-events: auto;
+  position: absolute;
+  transform: translate(-50%, calc(-100% - 14px));
+  width: min(312px, calc(100vw - 28px));
+  background: linear-gradient(180deg, #FFFDF8 0%, #FFF5E2 100%);
+  border: 2px solid #C9962E;
+  border-radius: 18px;
+  padding: 11px 14px 10px;
+  color: #241409;
+  box-shadow: 0 12px 28px rgba(36, 20, 9, 0.34), 0 0 0 1px rgba(92, 56, 31, 0.16);
+  text-align: left;
+  z-index: 22;
+}
+
+.npc-bubble-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.npc-bubble-role {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 800;
+  color: #5C381F;
+  letter-spacing: 0.01em;
+}
+
+.npc-bubble-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.npc-bubble-btn {
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  border: 1px solid rgba(92, 56, 31, 0.25);
+  background: rgba(92, 56, 31, 0.08);
+  color: #5C381F;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.14s ease, color 0.14s ease;
+}
+
+.npc-bubble-btn:hover {
+  background: #5C381F;
+  color: #FFF6E5;
+}
+
+.npc-bubble-quote {
+  font-size: 13.5px;
+  font-weight: 600;
+  line-height: 1.46;
+  color: #2C190C;
+  margin: 0;
+}
+
+.npc-bubble-source {
+  margin-top: 6px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #825329;
+}
+
+.npc-bubble-tail {
+  position: absolute;
+  left: 50%;
+  bottom: -9px;
+  width: 14px;
+  height: 14px;
+  transform: translateX(-50%) rotate(45deg);
+  background: #FFF5E2;
+  border-right: 2px solid #C9962E;
+  border-bottom: 2px solid #C9962E;
+}
+
 .entrance-tour-banner {
   position: fixed;
   top: 78px;

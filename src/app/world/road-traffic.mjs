@@ -18,13 +18,25 @@ export const roadTrafficMethods = {
     this.stepArrivalCutscene(safeDt);
     this.stepEntranceTour(safeDt);
     this.stepLotusBloom(safeDt);
+    this.stepOfferingAnimations?.(safeDt);
     this.stepRoadTraffic(safeDt);
     this.stepPilgrimageCompanions(safeDt);
+    if (!this.inInterior) {
+      this.stepNpcRecordList?.(this.riggedNpcRecords, this.exteriorGroup, safeDt);
+    } else {
+      for (const kr of this.interiorKneelingRecords || []) {
+        kr.mixer?.update?.(safeDt * 0.72);
+      }
+      if (this.interiorWalkingRecords?.length) {
+        this.stepNpcRecordList?.(this.interiorWalkingRecords, this.interiorGroup, safeDt);
+      }
+    }
     if (this.activePlayerRecord?.mixer) {
       this.activePlayerRecord.mixer.update(safeDt);
       this.updateProceduralPoseFallback(safeDt);
     }
     this.checkStationProximity();
+    this.updateCourtyardNpcInteraction?.();
   },
 
   spawnVisitorConvoyPassengers() {
@@ -78,7 +90,13 @@ export const roadTrafficMethods = {
         lookZ: null,
         temporary: true,
         removeAfterPause: false,
-        convoyId
+        convoyId,
+        npcMeta: {
+          id: `courtyard_convoy_${convoyId}_${i}`,
+          role: spec.charKey === 'tre_em' ? 'novice' : 'pilgrim',
+          charKey: spec.charKey,
+          headHeight: height
+        }
       });
     }
   },

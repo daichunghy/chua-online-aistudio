@@ -169,12 +169,12 @@ export const modalAndEventsMethods = {
         this.highlightInteriorZoneChip(zone);
         const zoneNotes = {
           day_ban_tho_phai: [
-            '1. Lối Góc Dưới Bên Phải · Dải Bàn Thờ',
-            'Đi một đường thẳng từ góc dưới bên phải qua Tượng Phật Nghìn Mắt Nghìn Tay, Chỗ Ngủ Của Phật, Ban Dược Sư, Địa Tạng và Văn Thù – Phổ Hiền.'
+            '1. Sảnh Tiếp Khách · Hành Lang Phải Rộng Thoáng',
+            'Lối vào góc phải rộng mở với Tủ Kinh Sách Vĩnh Tràng, bộ bàn ghế Trường Kỷ tiếp khách, băng ghế nghỉ chân và 2 ban thờ thanh tịnh dọc tường Đông.'
           ],
           nghin_mat_nghin_tay: [
             '🙏 Ban Tượng Phật Nghìn Mắt Nghìn Tay',
-            'Tôn tượng Đức Thiên Thủ Thiên Nhãn Quán Thế Âm thếp vàng uy nghiêm mở đầu dải bàn thờ bên phải.'
+            'Tôn tượng Đức Thiên Thủ Thiên Nhãn Quán Thế Âm thếp vàng uy nghiêm bên vách Đông.'
           ],
           cho_ngu_cua_phat: [
             '🪷 Chỗ Ngủ Của Phật · Đức Phật Nhập Niết Bàn',
@@ -182,7 +182,7 @@ export const modalAndEventsMethods = {
           ],
           chanh_dien: [
             '2. Cạnh Trên Hình Vuông · Chính Điện Lễ Phật',
-            'Đại Hùng Bửu Điện với Bàn Thờ Tam Bảo, 3 bồ đoàn quỳ lạy Phật, Tháp Đèn Cầu An, cặp Long Trụ, Đại Hồng Chung & Trống Bát Nhã.'
+            'Đại Hùng Bửu Điện với Bàn Thờ Tam Bảo, 3 bồ đoàn quỳ lạy Phật, Tháp Đèn Cầu An và Trống Bát Nhã đặt bên cửa vào đối diện Hòn Non Bộ.'
           ],
           ho_sen_bo: [
             '3. Giữa Hình Vuông · Hồ Sen Bộ & Hòn Non Bộ',
@@ -197,8 +197,8 @@ export const modalAndEventsMethods = {
             'Hành lang phía Nam khép kín vòng dạo hình vuông với Ban Hộ Pháp Vi Đà, Tiêu Diện Đại Sĩ và Bia Cổ Tự Vĩnh Tràng (1849).'
           ],
           trai_duong: [
-            '🍚 Nhà Sàn Gỗ Trai Đường',
-            'Khu ăn chay Phật tử dựng bằng gỗ căm xe trên sàn cọc miền Tây nối qua cổng vòm hành lang phải.'
+            '🪑 Phòng Tiếp Khách · Tủ Kinh Sách Vĩnh Tràng',
+            'Không gian sảnh rộng bên vách Đông với cửa sổ vòm lá sách xanh, tủ kinh sách, bộ trường kỷ và ghế gỗ nghỉ chân.'
           ]
         };
         const msg = zoneNotes[zone];
@@ -375,6 +375,14 @@ export const modalAndEventsMethods = {
     });
     document.getElementById('stall-proximity-btn')?.addEventListener('click', () => {
       this.handleProximityInteract();
+    });
+    document.getElementById('btn-npc-next-quote')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.cycleNpcSpeechQuote?.();
+    });
+    document.getElementById('btn-npc-close-quote')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.dismissNpcSpeechBubble?.();
     });
     document.getElementById('btn-toggle-goals-tracker')?.addEventListener('click', () => {
       this.goalsTrackerCollapsed = !this.goalsTrackerCollapsed;

@@ -14,7 +14,7 @@ export const movementMethods = {
     if (this.inInterior) {
       bounds = {
         minX: -20.1,
-        maxX: 32.3,
+        maxX: 24.3,
         minZ: -20.1,
         maxZ: 20.35
       };
@@ -272,8 +272,8 @@ export const movementMethods = {
         this.exitInteriorGradual('right');
       }
     } else {
-      // Stepping onto the End-of-Road Left-Turn Shoe-Removal Veranda & Wooden Door (x = 34.4..37.2, z = -17.2..-11.8)
-      if (pz >= -17.2 && pz <= -11.8 && px >= 34.2 && px <= 37.0) {
+      // Stepping onto the widened End-of-Road Left-Turn Shoe-Removal Veranda & Wooden Door (x = 34.0..38.0, z = -18.4..-10.6)
+      if (pz >= -18.4 && pz <= -10.6 && px >= 34.0 && px <= 38.0) {
         this.enterInteriorGradual('right');
       }
     }

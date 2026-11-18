@@ -7,6 +7,7 @@
 import { THREE, makeTextTex, makeHippedRoofMesh } from './shared.mjs';
 
 import { buildResidentialFoodHouses } from './residential-lane.mjs';
+import { buildRightEntranceRoadProps } from './right-entrance-road.mjs';
 
 export const templeGroundsMethods = {
   addObstacle(x, z, r) {
@@ -47,30 +48,30 @@ export const templeGroundsMethods = {
     mainRoad.receiveShadow = true;
     this.exteriorGroup.add(mainRoad);
 
-    // RIGHT (East) Tourist Arrival Road along +X flank (through open Cổng Phụ x=40.5 -> Yellow Banner -> Bougainvillea Side Path)
+    // RIGHT (East) Tourist Arrival Road along +X flank (bright concrete road matching real site photos)
     const rightArrivalRoad = new THREE.Mesh(
-      new THREE.BoxGeometry(9.2, 0.12, 54),
-      new THREE.MeshStandardMaterial({ map: this.pavingTex, color: 0xE5D8C3, roughness: 0.78 })
+      new THREE.BoxGeometry(12.4, 0.12, 54),
+      new THREE.MeshStandardMaterial({ map: this.concreteRoadTex, color: 0xECE8DE, roughness: 0.78 })
     );
-    rightArrivalRoad.position.set(40.5, 0.002, 34);
+    rightArrivalRoad.position.set(41.8, 0.002, 34);
     rightArrivalRoad.receiveShadow = true;
     this.exteriorGroup.add(rightArrivalRoad);
 
-    // Long Straight Cool Tree-Shaded Lane from Cổng Phụ Tịnh Độ Huyền Môn (x = 40.5, z = +42 -> -27)
-    // + Left-Turn Apron at End of Road (z = -14.5) leading onto the Shoe-Removal Veranda of Chánh Điện!
+    // Long, Wide Bright Concrete Entrance Road from Cổng Phụ Tịnh Độ Huyền Môn (x = 35.5..48.1, z = +43 -> -42)
+    // + Spacious Left-Turn Plaza at End of Road (z = -14.5) leading onto the Shoe-Removal Veranda of Chánh Điện!
     const sideWalkway = new THREE.Mesh(
-      new THREE.BoxGeometry(9.4, 0.12, 69.5),
-      new THREE.MeshStandardMaterial({ map: this.asphaltTex, color: 0xD8D4CA, roughness: 0.84 })
+      new THREE.BoxGeometry(12.6, 0.12, 85.0),
+      new THREE.MeshStandardMaterial({ map: this.concreteRoadTex, color: 0xEEEAE0, roughness: 0.78 })
     );
-    sideWalkway.position.set(40.5, 0.006, 7.25);
+    sideWalkway.position.set(41.8, 0.006, 0.5);
     sideWalkway.receiveShadow = true;
     this.exteriorGroup.add(sideWalkway);
 
     const endTurnPlaza = new THREE.Mesh(
-      new THREE.BoxGeometry(11.6, 0.13, 12.5),
+      new THREE.BoxGeometry(18.6, 0.13, 24.0),
       new THREE.MeshStandardMaterial({ map: this.sideBrickTex, color: 0xEAD6C0, roughness: 0.78 })
     );
-    endTurnPlaza.position.set(39.8, 0.008, -16.5);
+    endTurnPlaza.position.set(42.5, 0.008, -20.0);
     endTurnPlaza.receiveShadow = true;
     this.exteriorGroup.add(endTurnPlaza);
 
@@ -180,28 +181,40 @@ export const templeGroundsMethods = {
     palmTrunk.position.y = 4.8;
     palmTrunk.castShadow = true;
     palmGrp.add(palmTrunk);
-    for (let fi = 0; fi < 10; fi++) {
-      const ang = (fi / 10) * Math.PI * 2;
-      const frond = new THREE.Mesh(new THREE.ConeGeometry(0.46, 3.2, 5), M.foliageMid);
-      frond.scale.set(0.55, 1.0, 0.18);
-      frond.position.set(Math.cos(ang) * 1.25, 9.45, Math.sin(ang) * 1.25);
-      frond.rotation.z = -Math.cos(ang) * 1.18;
-      frond.rotation.x = Math.sin(ang) * 1.18;
-      palmGrp.add(frond);
+    const palmCrown = new THREE.Group();
+    palmCrown.position.y = 9.5;
+    for (let fi = 0; fi < 11; fi++) {
+      const ang = (fi / 11) * Math.PI * 2;
+      const anchor = new THREE.Group();
+      anchor.rotation.y = ang;
+      const mat = fi % 2 === 0 ? M.foliageMid : M.foliageLight;
+      const seg1 = new THREE.Mesh(new THREE.ConeGeometry(0.36, 1.9, 5), mat);
+      seg1.scale.set(0.7, 1.0, 0.2);
+      seg1.position.set(0.82, 0.24, 0);
+      seg1.rotation.z = -Math.PI * 0.36;
+      anchor.add(seg1);
+
+      const seg2 = new THREE.Mesh(new THREE.ConeGeometry(0.3, 2.0, 5), mat);
+      seg2.scale.set(0.62, 1.0, 0.18);
+      seg2.position.set(2.08, -0.22, 0);
+      seg2.rotation.z = -Math.PI * 0.8;
+      anchor.add(seg2);
+      palmCrown.add(anchor);
     }
+    palmGrp.add(palmCrown);
     this.exteriorGroup.add(palmGrp);
 
-    // Yellow Overhead Welcome Banner just inside Cổng Phụ
+    // Yellow Overhead Welcome Banner spanning between curbs inside Cổng Phụ (matching real photo height)
     const rightBannerGroup = new THREE.Group();
-    rightBannerGroup.position.set(40.5, 0, 34.5);
-    for (const px of [-3.6, 3.6]) {
-      const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.095, 5.2, 8), M.goldAccent);
-      pole.position.set(px, 2.6, 0);
+    rightBannerGroup.position.set(41.8, 0, 34.5);
+    for (const px of [-5.8, 5.8]) {
+      const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.085, 5.5, 8), M.goldAccent);
+      pole.position.set(px, 2.75, 0);
       pole.castShadow = true;
       rightBannerGroup.add(pole);
     }
     const rightBannerBoard = new THREE.Mesh(
-      new THREE.BoxGeometry(7.2, 0.95, 0.16),
+      new THREE.BoxGeometry(11.6, 0.96, 0.14),
       new THREE.MeshStandardMaterial({
         map: makeTextTex('CHÀO MỪNG QUÝ QUAN KHÁCH VÀ QUÝ PHẬT TỬ THÂN LÂM', {
           w: 1600,
@@ -214,7 +227,7 @@ export const templeGroundsMethods = {
         roughness: 0.42
       })
     );
-    rightBannerBoard.position.set(0, 4.55, 0);
+    rightBannerBoard.position.set(0, 4.82, 0);
     rightBannerGroup.add(rightBannerBoard);
     this.exteriorGroup.add(rightBannerGroup);
 
@@ -549,235 +562,18 @@ export const templeGroundsMethods = {
 
     buildMainTempleCompound();
 
-    // EXTERIOR MEKONG WOODEN STILT DINING HALL ("Nhà Sàn Gỗ Truyền Thống Miền Tây · Khu Ăn Phật Tử")
-    // Placed East of walkway (center 59.5, 0, 14.5; x = 54.0..65.0, z = 7.0..22.0) with open West stairs at z = 12.8..16.2!
-    const buildMekongStiltDiningPavilion = () => {
-      const stilt = new THREE.Group();
-      stilt.position.set(59.5, 0, 14.5);
+    // Toàn bộ lối vào bên phải theo ảnh thực tế (hàng rào sắt đỏ, hàng tượng trắng, nhà giữ xe, quầy dù xanh, Trai Đường)
+    buildRightEntranceRoadProps.call(this);
 
-      const stiltWoodMat = new THREE.MeshStandardMaterial({ color: 0x4E2C16, map: this.woodGrainTex, roughness: 0.68 });
-      const plankDeckMat = new THREE.MeshStandardMaterial({ color: 0x784722, map: this.woodGrainTex, roughness: 0.56 });
-      const railWoodMat = new THREE.MeshStandardMaterial({ color: 0x5E3419, roughness: 0.6 });
-      const tableMat = new THREE.MeshStandardMaterial({ color: 0x6A3A1A, roughness: 0.48 });
-      const bowlMat = new THREE.MeshStandardMaterial({ color: 0xFFFDF8, roughness: 0.25 });
-      const potMat = new THREE.MeshStandardMaterial({ color: 0xC9D1D8, metalness: 0.55, roughness: 0.28 });
-
-      // 1. Calm lotus canal pond basin underneath the stilts
-      const basinCurb = new THREE.Mesh(new THREE.BoxGeometry(11.6, 0.42, 15.6), M.stoneDark);
-      basinCurb.position.y = 0.21;
-      stilt.add(basinCurb);
-      const canalWater = new THREE.Mesh(new THREE.BoxGeometry(10.8, 0.34, 14.8), M.water);
-      canalWater.position.y = 0.27;
-      stilt.add(canalWater);
-
-      // Lotus blossoms & pads floating around the stilts beneath the deck
-      for (const [lx, lz] of [[-4.8, -5.8], [-4.9, 5.2], [4.7, -5.5], [4.8, 5.8], [-4.7, -2.5], [4.7, 2.2]]) {
-        const pad = new THREE.Mesh(
-          new THREE.CylinderGeometry(0.42, 0.42, 0.04, 12),
-          new THREE.MeshStandardMaterial({ color: 0x3A7B3B, roughness: 0.72 })
-        );
-        pad.position.set(lx, 0.46, lz);
-        stilt.add(pad);
-        const bloom = new THREE.Mesh(
-          new THREE.ConeGeometry(0.2, 0.26, 7),
-          new THREE.MeshStandardMaterial({ color: 0xF579A8, roughness: 0.45 })
-        );
-        bloom.rotation.x = Math.PI;
-        bloom.position.set(lx, 0.62, lz);
-        stilt.add(bloom);
-      }
-
-      // 2. Ironwood stilts seated on stone column footings in water + under-floor bearers
-      for (const sx of [-4.2, -1.4, 1.4, 4.2]) {
-        for (const sz of [-6.0, -2.0, 2.0, 6.0]) {
-          const footing = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.32, 0.48, 10), M.stoneLight);
-          footing.position.set(sx, 0.24, sz);
-          stilt.add(footing);
-          const pile = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.17, 1.08, 10), stiltWoodMat);
-          pile.position.set(sx, 0.6, sz);
-          pile.castShadow = true;
-          stilt.add(pile);
-        }
-        const bearer = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.22, 13.6), stiltWoodMat);
-        bearer.position.set(sx, 0.96, 0);
-        stilt.add(bearer);
-      }
-
-      // 3. Elevated hardwood plank floor deck at y = +1.05m (10.2m x 14.0m)
-      const deck = new THREE.Mesh(new THREE.BoxGeometry(10.2, 0.18, 14.0), plankDeckMat);
-      deck.position.set(0, 1.05, 0);
-      deck.receiveShadow = true;
-      deck.castShadow = true;
-      stilt.add(deck);
-
-      // Planking seam lines across the hardwood floor
-      for (let pz = -6.6; pz <= 6.6; pz += 0.65) {
-        const seam = new THREE.Mesh(
-          new THREE.BoxGeometry(10.0, 0.02, 0.04),
-          new THREE.MeshStandardMaterial({ color: 0x3B2010, roughness: 0.85 })
-        );
-        seam.position.set(0, 1.14, pz);
-        stilt.add(seam);
-      }
-
-      // 4. Open-Air Balustrades (Lan can gỗ truyền thống) with West Bridge Stair Opening (z = -1.7..+1.7)
-      const addBalustrade = (x1, z1, x2, z2) => {
-        const dx = x2 - x1;
-        const dz = z2 - z1;
-        const len = Math.hypot(dx, dz);
-        const railGroup = new THREE.Group();
-        const topBar = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.1, len), railWoodMat);
-        topBar.position.y = 0.85;
-        railGroup.add(topBar);
-        const midBar = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.06, len), railWoodMat);
-        midBar.position.y = 0.42;
-        railGroup.add(midBar);
-        const nSpindle = Math.max(2, Math.floor(len / 0.55));
-        for (let si = 0; si <= nSpindle; si++) {
-          const sp = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.84, 0.07), railWoodMat);
-          sp.position.set(0, 0.42, -len / 2 + (si / nSpindle) * len);
-          railGroup.add(sp);
-        }
-        railGroup.position.set((x1 + x2) / 2, 1.12, (z1 + z2) / 2);
-        railGroup.rotation.y = Math.atan2(dx, dz);
-        stilt.add(railGroup);
-      };
-      addBalustrade(-4.95, -6.85, 4.95, -6.85);
-      addBalustrade(-4.95, 6.85, 4.95, 6.85);
-      addBalustrade(4.95, -6.85, 4.95, 6.85);
-      addBalustrade(-4.95, -6.85, -4.95, -1.7);
-      addBalustrade(-4.95, 1.7, -4.95, 6.85);
-
-      // Wide West Wooden Entrance Stairway/Bridge climbing smoothly onto Nhà Sàn (x_world = 52.2..54.6, z_world = 14.5)
-      for (let stIdx = 0; stIdx < 5; stIdx++) {
-        const tread = new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.22, 3.4), plankDeckMat);
-        tread.position.set(-7.2 + stIdx * 0.52, 0.11 + stIdx * 0.22, 0);
-        tread.castShadow = true;
-        tread.receiveShadow = true;
-        stilt.add(tread);
-      }
-      for (const rz of [-1.75, 1.75]) {
-        const stairRail = new THREE.Mesh(new THREE.BoxGeometry(2.7, 0.09, 0.1), railWoodMat);
-        stairRail.position.set(-6.15, 1.38, rz);
-        stairRail.rotation.z = 0.38;
-        stilt.add(stairRail);
-      }
-
-      // 5. Traditional Mekong Timber Columns, Exposed Vì Kèo Rafters & Two-Tier Southern Roof
-      for (const cx of [-4.4, 4.4]) {
-        for (const cz of [-6.0, -2.0, 2.0, 6.0]) {
-          const uCol = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.16, 3.55, 10), stiltWoodMat);
-          uCol.position.set(cx, 2.9, cz);
-          uCol.castShadow = true;
-          stilt.add(uCol);
-        }
-      }
-      for (const rz of [-6.0, -2.0, 2.0, 6.0]) {
-        const tieBeam = new THREE.Mesh(new THREE.BoxGeometry(9.0, 0.18, 0.16), stiltWoodMat);
-        tieBeam.position.set(0, 4.62, rz);
-        stilt.add(tieBeam);
-        const kingPost = new THREE.Mesh(new THREE.BoxGeometry(0.16, 1.25, 0.16), stiltWoodMat);
-        kingPost.position.set(0, 5.25, rz);
-        stilt.add(kingPost);
-        for (const sSign of [-1, 1]) {
-          const strut = new THREE.Mesh(new THREE.BoxGeometry(4.6, 0.13, 0.13), stiltWoodMat);
-          strut.position.set(sSign * 2.15, 5.18, rz);
-          strut.rotation.z = sSign * -0.26;
-          stilt.add(strut);
-        }
-      }
-      const lowerRoof = makeHippedRoofMesh(12.2, 16.0, 1.9, M.roofTile);
-      lowerRoof.position.set(0, 5.65, 0);
-      lowerRoof.castShadow = true;
-      stilt.add(lowerRoof);
-      const upperMonitor = new THREE.Mesh(new THREE.BoxGeometry(7.2, 0.65, 10.6), stiltWoodMat);
-      upperMonitor.position.set(0, 6.55, 0);
-      stilt.add(upperMonitor);
-      const upperRoof = makeHippedRoofMesh(8.4, 11.8, 1.35, M.roofTile);
-      upperRoof.position.set(0, 7.35, 0);
-      upperRoof.castShadow = true;
-      stilt.add(upperRoof);
-
-      // 6. Long Wooden Dining Tables, Benches, Serving Counter & Mekong Earthenware Water Urns
-      for (const tx of [-1.2, 2.2]) {
-        for (const tz of [-3.9, 3.9]) {
-          const tbl = new THREE.Group();
-          tbl.position.set(tx, 1.14, tz);
-          const top = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.08, 3.6), tableMat);
-          top.position.y = 0.72;
-          tbl.add(top);
-          for (const lx of [-0.5, 0.5]) {
-            for (const lz of [-1.5, 1.5]) {
-              const leg = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.72, 0.08), tableMat);
-              leg.position.set(lx, 0.36, lz);
-              tbl.add(leg);
-            }
-          }
-          for (const bx of [-0.9, 0.9]) {
-            const bench = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.08, 3.4), tableMat);
-            bench.position.set(bx, 0.42, 0);
-            tbl.add(bench);
-          }
-          for (const bPos of [-1.1, -0.35, 0.35, 1.1]) {
-            const bowl = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.06, 0.08, 10), bowlMat);
-            bowl.position.set(0, 0.8, bPos);
-            tbl.add(bowl);
-          }
-          stilt.add(tbl);
-        }
-      }
-
-      // Serving counter & Mekong water urn ("Lu nước mát & nồi canh chay") on East side
-      const serveCounter = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.9, 4.6), M.redColumn);
-      serveCounter.position.set(3.9, 1.58, 0);
-      stilt.add(serveCounter);
-      for (const pz of [-1.4, 0, 1.4]) {
-        const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.26, 0.32, 12), potMat);
-        pot.position.set(3.9, 2.18, pz);
-        stilt.add(pot);
-      }
-      const luNuoc = new THREE.Mesh(new THREE.SphereGeometry(0.45, 14, 12), M.terracottaPot);
-      luNuoc.scale.set(1.0, 1.18, 1.0);
-      luNuoc.position.set(3.8, 1.65, -5.6);
-      stilt.add(luNuoc);
-
-      const stiltSign = new THREE.Mesh(
-        new THREE.BoxGeometry(0.16, 0.76, 5.2),
-        new THREE.MeshStandardMaterial({
-          map: makeTextTex('NHÀ SÀN TRAI ĐƯỜNG · KHU ĂN PHẬT TỬ', {
-            w: 1120,
-            h: 180,
-            bg: '#5C1610',
-            border: '#FFD875',
-            color: '#FFF2B2',
-            size: 50
-          })
-        })
-      );
-      stiltSign.position.set(-4.62, 3.95, 0);
-      stilt.add(stiltSign);
-
-      this.exteriorGroup.add(stilt);
-      this.stiltDiningClickTargets.push(stiltSign, deck, serveCounter);
-
-      // Perimeter pond rail colliders leaving ONLY West stair opening (z = 12.8..16.2) walkable onto deck!
-      this.addRectObstacle(53.7, 65.4, 6.6, 7.6);
-      this.addRectObstacle(53.7, 65.4, 21.4, 22.4);
-      this.addRectObstacle(64.4, 65.4, 7.2, 21.8);
-      this.addRectObstacle(53.6, 54.6, 7.2, 12.6);
-      this.addRectObstacle(53.6, 54.6, 16.4, 21.8);
-    };
-    buildMekongStiltDiningPavilion();
-
-    // Giảng đường Phật pháp (East Sanctuary Pavilion shifted cleanly to (58.5, 0, -18.0) so straight lane x = 40.5 stays 100% open!)
+    // Giảng đường Phật pháp (East Sanctuary Pavilion shifted East to (66.5, 0, -18.0) so widened entrance road & left-turn plaza stay 100% open!)
     const giangDuong = this.buildGiangDuong();
-    giangDuong.position.set(58.5, 0, -18.0);
+    giangDuong.position.set(66.5, 0, -18.0);
     const gdSteps = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.35, 3.6), M.stoneLight);
     gdSteps.position.set(-5.2, 0.175, 0);
     giangDuong.add(gdSteps);
     this.exteriorGroup.add(giangDuong);
     this.lectureClickTargets.push(giangDuong);
-    this.addRectObstacle(53.4, 63.8, -27.5, -8.5);
+    this.addRectObstacle(61.4, 71.8, -27.5, -8.5);
 
     // 7-Tier Terracotta Bảo Tháp in the rear garden near the reclining Buddha (upgraded with bao-thap-7-tang.glb on load).
     this.stupaGroup = this.buildSevenTierStupa();

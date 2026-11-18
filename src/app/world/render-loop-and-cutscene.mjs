@@ -220,118 +220,13 @@ export const renderLoopAndCutsceneMethods = {
     }
 
     if (!this.inInterior) {
-      for (let ni = 0; ni < this.riggedNpcRecords.length; ni++) {
-        const npc = this.riggedNpcRecords[ni];
-        const pos = npc.rec.root.position;
-        if (npc.pauseTimer > 0) {
-          npc.pauseTimer -= dt;
-          if (npc.pauseTimer <= 0 && npc.temporary && npc.removeAfterPause) {
-            this.exteriorGroup.remove(npc.rec.root);
-            this.riggedNpcRecords.splice(ni, 1);
-            ni -= 1;
-            continue;
-          }
-          const desiredClip = npc.pauseClip === 'Chắp tay' ? 'Chắp tay' : 'Dung';
-          if (npc.state !== desiredClip) {
-            npc.state = desiredClip;
-            this.playClipCrossfade(npc.rec, desiredClip, 0.24, false);
-          }
-          if (npc.lookX !== null && npc.lookZ !== null) {
-            const lookYaw = Math.atan2(npc.lookX - pos.x, npc.lookZ - pos.z);
-            npc.yaw = this.lerpAngle(npc.yaw, lookYaw, dt * 5.0);
-            npc.rec.root.rotation.y = npc.yaw;
-          }
-          npc.rec.mixer.update(dt * 0.75);
-          continue;
-        }
-
-        const target = npc.pts[npc.idx];
-        const dx = target.x - pos.x;
-        const dz = target.z - pos.z;
-        const d = Math.hypot(dx, dz);
-        if (d < 0.42) {
-          if (npc.temporary && npc.idx >= npc.pts.length - 1) {
-            if (target.wait > 0) {
-              npc.pauseTimer = target.wait;
-              npc.pauseClip = target.action === 'chap_tay' ? 'Chắp tay' : 'Dung';
-              npc.lookX = target.lookX;
-              npc.lookZ = target.lookZ;
-              npc.removeAfterPause = true;
-              npc.state = npc.pauseClip;
-              this.playClipCrossfade(npc.rec, npc.pauseClip, 0.24, false);
-              npc.rec.mixer.update(dt);
-            } else {
-              this.exteriorGroup.remove(npc.rec.root);
-              this.riggedNpcRecords.splice(ni, 1);
-              ni -= 1;
-            }
-            continue;
-          }
-          npc.idx = (npc.idx + 1) % npc.pts.length;
-          if (target.wait > 0 && target.action !== 'pass') {
-            npc.pauseTimer = target.wait;
-            npc.pauseClip = target.action === 'chap_tay' ? 'Chắp tay' : 'Dung';
-            npc.lookX = target.lookX;
-            npc.lookZ = target.lookZ;
-            npc.state = npc.pauseClip;
-            this.playClipCrossfade(npc.rec, npc.pauseClip, 0.24, false);
-            npc.rec.mixer.update(dt);
-            continue;
-          }
-          npc.lookX = null;
-          npc.lookZ = null;
-        }
-
-        const nextTarget = npc.pts[npc.idx];
-        const tx = nextTarget.x - pos.x;
-        const tz = nextTarget.z - pos.z;
-        const td = Math.hypot(tx, tz) || 1;
-        let dirX = tx / td;
-        let dirZ = tz / td;
-
-        // Gentle personal-space separation from other moving NPCs & the player
-        const pdx = pos.x - this.playerState.x;
-        const pdz = pos.z - this.playerState.z;
-        const pDist = Math.hypot(pdx, pdz);
-        if (pDist > 0.01 && pDist < 1.05) {
-          const push = (1.05 - pDist) * 0.65;
-          dirX += (pdx / pDist) * push;
-          dirZ += (pdz / pDist) * push;
-        }
-        for (let oi = 0; oi < this.riggedNpcRecords.length; oi++) {
-          if (oi === ni) continue;
-          const other = this.riggedNpcRecords[oi].rec.root.position;
-          const odx = pos.x - other.x;
-          const odz = pos.z - other.z;
-          const oDist = Math.hypot(odx, odz);
-          if (oDist > 0.01 && oDist < 0.88) {
-            const push = (0.88 - oDist) * 0.55;
-            dirX += (odx / oDist) * push;
-            dirZ += (odz / oDist) * push;
-          }
-        }
-        const dNorm = Math.hypot(dirX, dirZ) || 1;
-        dirX /= dNorm;
-        dirZ /= dNorm;
-
-        const step = Math.min(td, dt * npc.speed);
-        pos.x += dirX * step;
-        pos.z += dirZ * step;
-        const targetYaw = Math.atan2(dirX, dirZ);
-        npc.yaw = this.lerpAngle(npc.yaw, targetYaw, dt * 6.5);
-        npc.rec.root.rotation.y = npc.yaw;
-        if (npc.state !== 'walk') {
-          npc.state = 'walk';
-          this.playClipCrossfade(npc.rec, 'Di bo', 0.2, false);
-        }
-        if (npc.rec.activeAction) {
-          npc.rec.activeAction.timeScale = 0.74 * npc.speed;
-        }
-        npc.rec.mixer.update(dt);
-      }
+      this.stepNpcRecordList(this.riggedNpcRecords, this.exteriorGroup, dt);
     } else {
       for (const kr of this.interiorKneelingRecords) {
         kr.mixer.update(dt * 0.72);
+      }
+      if (this.interiorWalkingRecords?.length) {
+        this.stepNpcRecordList(this.interiorWalkingRecords, this.interiorGroup, dt);
       }
     }
 
@@ -357,8 +252,10 @@ export const renderLoopAndCutsceneMethods = {
       }
     }
 
-    // Animate Dâng hoa blooming & glowing lotus effect in the pond (zero GC)
-    this.stepLotusBloom(this.isSoftwareGl ? Math.max(dt, 0.12) : dt);
+    // Animate Dâng hoa blooming & glowing lotus effect in the pond + active Dâng hương / Dâng hoa sequences (zero GC)
+    const ritualDt = this.isSoftwareGl ? Math.max(dt, 0.12) : dt;
+    this.stepLotusBloom(ritualDt);
+    this.stepOfferingAnimations?.(ritualDt);
 
     for (const k of this.koiList) {
       if (k.curve) {
@@ -414,6 +311,7 @@ export const renderLoopAndCutsceneMethods = {
     }
 
     this.updateProjectedPins();
+    this.updateCourtyardNpcInteraction();
     try {
       this.renderer.render(this.scene, this.camera);
     } catch {}
@@ -431,6 +329,7 @@ export const renderLoopAndCutsceneMethods = {
         Boolean(this.arrivalCutscene?.active) ||
         Boolean(this.proceduralPoseState?.action) ||
         this.lotusBloomState.active ||
+        Boolean(this.activeOfferingAnimations?.length) ||
         Boolean(this.interiorTransition) ||
         hasNonIdleAction;
       this.afterDraw(() => this.animate(), isActivelyAnimating ? 120 : 520);
@@ -802,5 +701,118 @@ export const renderLoopAndCutsceneMethods = {
       }
     };
     window.setTimeout(poll, 8);
+  },
+
+  stepNpcRecordList(list, parentGroup, dt) {
+    if (!Array.isArray(list) || !list.length) return;
+    for (let ni = 0; ni < list.length; ni++) {
+      const npc = list[ni];
+      const pos = npc.rec.root.position;
+      if (npc.pauseTimer > 0) {
+        npc.pauseTimer -= dt;
+        if (npc.pauseTimer <= 0 && npc.temporary && npc.removeAfterPause) {
+          parentGroup?.remove(npc.rec.root);
+          list.splice(ni, 1);
+          ni -= 1;
+          continue;
+        }
+        const desiredClip = npc.pauseClip === 'Chắp tay' ? 'Chắp tay' : 'Dung';
+        if (npc.state !== desiredClip) {
+          npc.state = desiredClip;
+          this.playClipCrossfade(npc.rec, desiredClip, 0.24, false);
+        }
+        if (npc.lookX !== null && npc.lookZ !== null) {
+          const lookYaw = Math.atan2(npc.lookX - pos.x, npc.lookZ - pos.z);
+          npc.yaw = this.lerpAngle(npc.yaw, lookYaw, dt * 5.0);
+          npc.rec.root.rotation.y = npc.yaw;
+        }
+        npc.rec.mixer.update(dt * 0.75);
+        continue;
+      }
+
+      const target = npc.pts[npc.idx];
+      const dx = target.x - pos.x;
+      const dz = target.z - pos.z;
+      const d = Math.hypot(dx, dz);
+      if (d < 0.42) {
+        if (npc.temporary && npc.idx >= npc.pts.length - 1) {
+          if (target.wait > 0) {
+            npc.pauseTimer = target.wait;
+            npc.pauseClip = target.action === 'chap_tay' ? 'Chắp tay' : 'Dung';
+            npc.lookX = target.lookX;
+            npc.lookZ = target.lookZ;
+            npc.removeAfterPause = true;
+            npc.state = npc.pauseClip;
+            this.playClipCrossfade(npc.rec, npc.pauseClip, 0.24, false);
+            npc.rec.mixer.update(dt);
+          } else {
+            parentGroup?.remove(npc.rec.root);
+            list.splice(ni, 1);
+            ni -= 1;
+          }
+          continue;
+        }
+        npc.idx = (npc.idx + 1) % npc.pts.length;
+        if (target.wait > 0 && target.action !== 'pass') {
+          npc.pauseTimer = target.wait;
+          npc.pauseClip = target.action === 'chap_tay' ? 'Chắp tay' : 'Dung';
+          npc.lookX = target.lookX;
+          npc.lookZ = target.lookZ;
+          npc.state = npc.pauseClip;
+          this.playClipCrossfade(npc.rec, npc.pauseClip, 0.24, false);
+          npc.rec.mixer.update(dt);
+          continue;
+        }
+        npc.lookX = null;
+        npc.lookZ = null;
+      }
+
+      const nextTarget = npc.pts[npc.idx];
+      const tx = nextTarget.x - pos.x;
+      const tz = nextTarget.z - pos.z;
+      const td = Math.hypot(tx, tz) || 1;
+      let dirX = tx / td;
+      let dirZ = tz / td;
+
+      // Gentle personal-space separation from other moving NPCs & the player
+      const pdx = pos.x - this.playerState.x;
+      const pdz = pos.z - this.playerState.z;
+      const pDist = Math.hypot(pdx, pdz);
+      if (pDist > 0.01 && pDist < 1.05) {
+        const push = (1.05 - pDist) * 0.65;
+        dirX += (pdx / pDist) * push;
+        dirZ += (pdz / pDist) * push;
+      }
+      for (let oi = 0; oi < list.length; oi++) {
+        if (oi === ni) continue;
+        const other = list[oi].rec.root.position;
+        const odx = pos.x - other.x;
+        const odz = pos.z - other.z;
+        const oDist = Math.hypot(odx, odz);
+        if (oDist > 0.01 && oDist < 0.88) {
+          const push = (0.88 - oDist) * 0.55;
+          dirX += (odx / oDist) * push;
+          dirZ += (odz / oDist) * push;
+        }
+      }
+      const dNorm = Math.hypot(dirX, dirZ) || 1;
+      dirX /= dNorm;
+      dirZ /= dNorm;
+
+      const step = Math.min(td, dt * npc.speed);
+      pos.x += dirX * step;
+      pos.z += dirZ * step;
+      const targetYaw = Math.atan2(dirX, dirZ);
+      npc.yaw = this.lerpAngle(npc.yaw, targetYaw, dt * 6.5);
+      npc.rec.root.rotation.y = npc.yaw;
+      if (npc.state !== 'walk') {
+        npc.state = 'walk';
+        this.playClipCrossfade(npc.rec, 'Di bo', 0.2, false);
+      }
+      if (npc.rec.activeAction) {
+        npc.rec.activeAction.timeScale = 0.74 * npc.speed;
+      }
+      npc.rec.mixer.update(dt);
+    }
   }
 };
