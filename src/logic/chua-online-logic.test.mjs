@@ -86,7 +86,11 @@ import {
   createAcademyEntitlementState,
   unlockAcademyCourseWithCode,
   buildVietQRPayload,
-  generateAcademyCertificate
+  generateAcademyCertificate,
+  BLESSING_TOWER_CATEGORIES,
+  DEFAULT_BLESSING_TOWER_PRAYERS,
+  createBlessingTowerState,
+  registerBlessingTowerPrayer
 } from './chua-online-logic.mjs';
 
 test('OKLab/OKLCH perceptual color engine (meodai/skill.color-expert) preserves perceptual lightness and prevents muddy mid-tones', () => {
@@ -685,6 +689,41 @@ test('Structured Paid Buddhist Academy: 4 courses, 12 modules, multi-question ex
   assert.ok(cert.certificateId.startsWith('CERT-'));
   assert.ok(cert.verificationCode.startsWith('VT-CERT-'));
 });
+
+test('Blessing Lamp Tower (Tháp Đèn Cầu An) validates devotee name, assigns 13-tier lamp slot, and persists cleanly', () => {
+  assert.equal(BLESSING_TOWER_CATEGORIES.length, 4);
+  assert.ok(DEFAULT_BLESSING_TOWER_PRAYERS.length >= 6);
+
+  const initial = createBlessingTowerState();
+  assert.equal(initial.tiersCount, 13);
+  assert.equal(initial.totalCapacity, 108);
+  assert.equal(initial.entries.length, DEFAULT_BLESSING_TOWER_PRAYERS.length);
+
+  const missing = registerBlessingTowerPrayer(initial, { devoteeName: ' ' });
+  assert.equal(missing.ok, false);
+  assert.equal(missing.reason, 'missing_name');
+
+  const reg = registerBlessingTowerPrayer(
+    initial,
+    {
+      devoteeName: 'Phật tử Minh Châu · Lê Văn Hòa',
+      birthYear: '1968',
+      familyNote: 'TP. Mỹ Tho, Tiền Giang',
+      categoryId: 'suc_khoe_cha_me',
+      wishText: 'Cầu cha mẹ mạnh khỏe, gia đạo bình an.'
+    },
+    new Date(2026, 4, 22)
+  );
+  assert.equal(reg.ok, true);
+  assert.equal(reg.entry.isUserOwned, true);
+  assert.equal(reg.entry.birthYear, '1968');
+  assert.equal(reg.entry.dateKey, '2026-05-22');
+  assert.ok(reg.entry.tier >= 1 && reg.entry.tier <= 13);
+  assert.ok(reg.entry.slotNumber >= 1 && reg.entry.slotNumber <= 108);
+  assert.equal(reg.state.entries.length, initial.entries.length + 1);
+  assert.equal(reg.rewardLotus, 25);
+});
+
 
 
 

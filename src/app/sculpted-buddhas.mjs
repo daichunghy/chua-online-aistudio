@@ -122,17 +122,25 @@ function addSereneFaceAndHead(T, parent, {
     hg.add(topKnot);
   }
 
-  // Flowing Quán Thế Âm Head Veil (Khăn trùm Quan Âm)
+  // Flowing Quán Thế Âm Head Veil (Khăn trùm Quan Âm — wraps behind head -Z so +Z face is open)
   if (withVeil) {
     const vMat = veilMat || headMat;
     const hood = new T.Mesh(
-      new T.CylinderGeometry(radius * 1.12, radius * 1.75, radius * 2.4, 14, 1, false, -Math.PI * 0.62, Math.PI * 1.24),
+      new T.CylinderGeometry(radius * 1.12, radius * 1.72, radius * 2.35, 16, 1, true, Math.PI * 0.38, Math.PI * 1.24),
       vMat
     );
-    hood.position.set(0, -radius * 0.18, -radius * 0.14);
+    hood.material = vMat.clone ? vMat.clone() : vMat;
+    hood.material.side = T.DoubleSide;
+    hood.position.set(0, -radius * 0.16, -radius * 0.12);
     hg.add(hood);
-    const crest = new T.Mesh(new T.ConeGeometry(radius * 0.32, radius * 0.75, 8), crownMat || headMat);
-    crest.position.set(0, radius * 1.08, radius * 0.24);
+    const capTop = new T.Mesh(
+      new T.SphereGeometry(radius * 1.1, 14, 10, 0, Math.PI * 2, 0, Math.PI * 0.52),
+      vMat
+    );
+    capTop.position.set(0, radius * 0.12, -radius * 0.04);
+    hg.add(capTop);
+    const crest = new T.Mesh(new T.ConeGeometry(radius * 0.28, radius * 0.68, 8), crownMat || headMat);
+    crest.position.set(0, radius * 1.06, radius * 0.26);
     hg.add(crest);
   }
 
@@ -582,3 +590,424 @@ export function createSculptedGardenArhat(T = THREE, idx = 0, opts = {}) {
   if (opts.scale) g.scale.setScalar(opts.scale);
   return g;
 }
+
+/**
+ * 6. Sculpted Seated Gilded Bodhisattva (Bồ Tát tọa đài sen chầu Tam Bảo — như ảnh Chánh Điện thật)
+ */
+export function createSeatedBodhisattva(T = THREE, opts = {}) {
+  const g = new T.Group();
+  const variant = opts.variant || 'quan_am';
+  const bodyMat = opts.bodyMat || new T.MeshStandardMaterial({ color: 0xE5B23A, metalness: 0.68, roughness: 0.22 });
+  const trimMat = opts.trimMat || new T.MeshStandardMaterial({ color: 0xCE8D24, metalness: 0.58, roughness: 0.28 });
+  const crimsonMat = opts.crimsonMat || new T.MeshStandardMaterial({ color: 0x7A2319, roughness: 0.44 });
+  const hairMat = new T.MeshStandardMaterial({ color: 0x241B16, roughness: 0.55 });
+  const scale = opts.scale || 1.0;
+
+  addDrapedLotusPetals(T, g, 0.58, 0, trimMat, crimsonMat);
+
+  const lap = new T.Mesh(new T.CylinderGeometry(0.38, 0.54, 0.28, 16), bodyMat);
+  lap.scale.set(1.18, 1.0, 0.86);
+  lap.position.set(0, 0.48, 0.04);
+  lap.castShadow = true;
+  g.add(lap);
+
+  const torso = new T.Mesh(new T.CylinderGeometry(0.26, 0.35, 0.68, 16), bodyMat);
+  torso.scale.set(1.08, 1, 0.82);
+  torso.position.set(0, 0.9, 0);
+  torso.castShadow = true;
+  g.add(torso);
+
+  const sash = new T.Mesh(new T.TorusGeometry(0.28, 0.05, 8, 18), trimMat);
+  sash.position.set(0, 0.96, 0.04);
+  sash.rotation.set(Math.PI / 2.4, 0.38, 0);
+  g.add(sash);
+
+  for (const side of [-1, 1]) {
+    const arm = new T.Mesh(new T.CylinderGeometry(0.075, 0.09, 0.44, 10), bodyMat);
+    arm.position.set(side * 0.32, 0.92, 0.12);
+    arm.rotation.set(-0.55, 0, side * 0.22);
+    g.add(arm);
+    const hand = new T.Mesh(new T.SphereGeometry(0.065, 8, 8), bodyMat);
+    hand.scale.set(0.75, 1.25, 0.65);
+    hand.position.set(side * 0.14, 0.84, 0.3);
+    g.add(hand);
+  }
+
+  addSereneFaceAndHead(T, g, {
+    headMat: bodyMat,
+    hairMat,
+    y: 1.42,
+    z: 0.02,
+    radius: 0.185,
+    withCrown: true,
+    crownMat: trimMat,
+    withVeil: variant === 'quan_am',
+    veilMat: bodyMat
+  });
+
+  g.scale.setScalar(scale);
+  return g;
+}
+
+/**
+ * 7. Standing Crimson-Robed Venerating Patriarch / Master (Tượng Tổ Sư / Hòa Thượng áo đỏ mão tỳ lư chắp tay chầu Phật)
+ * Matches real Chùa Vĩnh Tràng Chánh Điện foreground statue (image_d908b99f.png).
+ */
+export function createStandingCrimsonMonkStatue(T = THREE, opts = {}) {
+  const g = new T.Group();
+  const crimsonRobeMat = opts.robeMat || new T.MeshStandardMaterial({
+    color: 0x9E1F1D,
+    roughness: 0.42,
+    metalness: 0.08
+  });
+  const deepFoldMat = new T.MeshStandardMaterial({
+    color: 0x6E1212,
+    roughness: 0.48,
+    metalness: 0.06
+  });
+  const goldTrimMat = opts.goldMat || new T.MeshStandardMaterial({
+    color: 0xE2AF3B,
+    metalness: 0.65,
+    roughness: 0.24
+  });
+  const skinMat = opts.skinMat || new T.MeshStandardMaterial({
+    color: 0xD89E6E,
+    roughness: 0.46,
+    metalness: 0.04
+  });
+  const baseMat = new T.MeshStandardMaterial({ color: 0x1E120C, roughness: 0.36 });
+  const scale = opts.scale || 1.0;
+
+  // Dark carved wood plinth
+  const plinth = new T.Mesh(new T.CylinderGeometry(0.36, 0.42, 0.14, 16), baseMat);
+  plinth.position.y = 0.07;
+  plinth.castShadow = true;
+  plinth.receiveShadow = true;
+  g.add(plinth);
+
+  // Tall flowing crimson kāṣāya robe with pleated folds
+  const robePts = [
+    new T.Vector2(0.01, 0),
+    new T.Vector2(0.34, 0),
+    new T.Vector2(0.31, 0.48),
+    new T.Vector2(0.28, 1.02),
+    new T.Vector2(0.3, 1.46),
+    new T.Vector2(0.24, 1.66),
+    new T.Vector2(0.11, 1.72)
+  ];
+  const robe = new T.Mesh(new T.LatheGeometry(robePts, 20), crimsonRobeMat);
+  robe.position.y = 0.14;
+  robe.castShadow = true;
+  g.add(robe);
+
+  // Vertical draped crimson sleeve & robe folds
+  for (let i = 0; i < 8; i++) {
+    const a = (i / 8) * Math.PI * 2;
+    const fold = new T.Mesh(new T.CylinderGeometry(0.026, 0.044, 1.48, 6), i % 2 === 0 ? crimsonRobeMat : deepFoldMat);
+    fold.position.set(Math.cos(a) * 0.27, 0.9, Math.sin(a) * 0.27);
+    g.add(fold);
+  }
+
+  // Wide ceremonial draped sleeves & clasped Añjali hands (+Z forward)
+  for (const side of [-1, 1]) {
+    const sleeve = new T.Mesh(new T.CylinderGeometry(0.09, 0.16, 0.56, 10), crimsonRobeMat);
+    sleeve.position.set(side * 0.22, 1.38, 0.16);
+    sleeve.rotation.set(-0.78, 0, side * 0.26);
+    sleeve.castShadow = true;
+    g.add(sleeve);
+
+    const sleeveTrim = new T.Mesh(new T.TorusGeometry(0.11, 0.016, 6, 14), goldTrimMat);
+    sleeveTrim.position.set(side * 0.12, 1.46, 0.34);
+    sleeveTrim.rotation.x = Math.PI / 3;
+    g.add(sleeveTrim);
+
+    const palm = new T.Mesh(new T.BoxGeometry(0.036, 0.18, 0.09), skinMat);
+    palm.position.set(side * 0.024, 1.55, 0.38);
+    palm.rotation.set(-0.24, 0, side * -0.08);
+    g.add(palm);
+  }
+
+  // Mala prayer beads hanging from clasped wrists
+  const mala = new T.Mesh(
+    new T.TorusGeometry(0.08, 0.012, 6, 18),
+    new T.MeshStandardMaterial({ color: 0x3A1D0E, roughness: 0.5 })
+  );
+  mala.scale.set(0.65, 1.65, 0.65);
+  mala.position.set(0, 1.36, 0.37);
+  g.add(mala);
+
+  // Golden kāṣāya clasp & collar border
+  const collar = new T.Mesh(new T.TorusGeometry(0.16, 0.022, 6, 16), goldTrimMat);
+  collar.position.set(0, 1.76, 0.03);
+  collar.rotation.x = Math.PI / 2.2;
+  g.add(collar);
+
+  // Venerable sculpted head
+  const hg = addSereneFaceAndHead(T, g, {
+    headMat: skinMat,
+    hairMat: skinMat,
+    y: 1.98,
+    z: 0.02,
+    radius: 0.165,
+    withCrown: false,
+    withVeil: false,
+    calmEyes: true
+  });
+  // Remove Buddha topknot jewel/usnisa look by adding ceremonial red-and-gold Mão Hiệp Chưởng / Tỳ Lư
+  const hatBase = new T.Mesh(new T.CylinderGeometry(0.185, 0.168, 0.12, 18), goldTrimMat);
+  hatBase.position.set(0, 0.1, 0);
+  hg.add(hatBase);
+  const hatDome = new T.Mesh(new T.CylinderGeometry(0.215, 0.185, 0.22, 18), crimsonRobeMat);
+  hatDome.position.set(0, 0.24, -0.01);
+  hg.add(hatDome);
+  const hatRim = new T.Mesh(new T.TorusGeometry(0.21, 0.018, 6, 20), goldTrimMat);
+  hatRim.position.set(0, 0.34, -0.01);
+  hatRim.rotation.x = Math.PI / 2;
+  hg.add(hatRim);
+  for (let p = -2; p <= 2; p++) {
+    const ang = p * 0.36;
+    const petal = new T.Mesh(new T.BoxGeometry(0.075, 0.16, 0.022), goldTrimMat);
+    petal.position.set(Math.sin(ang) * 0.195, 0.24, Math.cos(ang) * 0.195);
+    petal.rotation.y = ang;
+    hg.add(petal);
+  }
+
+  g.scale.setScalar(scale);
+  return g;
+}
+
+/**
+ * 8. Thousand-Armed Thousand-Eyed Avalokiteshvara (Phật Bà Nghìn Mắt Nghìn Tay — Thiên Thủ Thiên Nhãn)
+ * Multi-tier lotus pedestal + seated golden Bodhisattva + symmetrical radiating fan of 24 golden arms & halo.
+ */
+export function createThousandArmedQuanAm(T = THREE, opts = {}) {
+  const g = new T.Group();
+  const goldMat = opts.bodyMat || new T.MeshStandardMaterial({ color: 0xE6B43C, metalness: 0.72, roughness: 0.22 });
+  const deepGoldMat = new T.MeshStandardMaterial({ color: 0xC88A22, metalness: 0.62, roughness: 0.28 });
+  const crimsonMat = new T.MeshStandardMaterial({ color: 0x7A1E16, roughness: 0.42 });
+  const scale = opts.scale || 1.0;
+
+  // Sculpted lotus throne
+  addDrapedLotusPetals(T, g, 0.68, 0, goldMat, crimsonMat);
+
+  // radiating mandorla backplate & 24-arm golden fan (kept visible even when GLB statue mounts in front!)
+  const haloGroup = new T.Group();
+  haloGroup.position.set(0, 1.28, -0.22);
+
+  const outerRim = new T.Mesh(new T.RingGeometry(0.92, 1.04, 36), goldMat);
+  outerRim.material = goldMat.clone();
+  outerRim.material.side = T.DoubleSide;
+  haloGroup.add(outerRim);
+
+  const innerGlow = new T.Mesh(
+    new T.CircleGeometry(0.92, 32),
+    new T.MeshStandardMaterial({
+      color: 0x5E1910,
+      emissive: 0x8A3210,
+      emissiveIntensity: 0.35,
+      roughness: 0.45,
+      side: T.DoubleSide
+    })
+  );
+  innerGlow.position.z = -0.02;
+  haloGroup.add(innerGlow);
+
+  const armCount = 24;
+  for (let i = 0; i < armCount; i++) {
+    const frac = i / (armCount - 1);
+    const ang = -Math.PI * 0.12 + frac * Math.PI * 1.24;
+    const armGrp = new T.Group();
+    const rMid = 0.56 + (i % 2) * 0.14;
+    const armShaft = new T.Mesh(new T.CylinderGeometry(0.026, 0.038, 0.58, 8), i % 2 === 0 ? goldMat : deepGoldMat);
+    armShaft.position.set(Math.cos(ang) * rMid, Math.sin(ang) * rMid, 0.03 + (i % 2) * 0.02);
+    armShaft.rotation.z = ang - Math.PI / 2;
+    armGrp.add(armShaft);
+
+    const palm = new T.Mesh(new T.SphereGeometry(0.052, 8, 6), goldMat);
+    palm.scale.set(0.75, 1.35, 0.42);
+    palm.position.set(Math.cos(ang) * (rMid + 0.3), Math.sin(ang) * (rMid + 0.3), 0.045);
+    palm.rotation.z = ang - Math.PI / 2;
+    armGrp.add(palm);
+
+    const eyeDot = new T.Mesh(
+      new T.SphereGeometry(0.016, 6, 6),
+      new T.MeshBasicMaterial({ color: 0xFFF3B0 })
+    );
+    eyeDot.position.set(Math.cos(ang) * (rMid + 0.3), Math.sin(ang) * (rMid + 0.3), 0.072);
+    armGrp.add(eyeDot);
+
+    haloGroup.add(armGrp);
+  }
+  g.add(haloGroup);
+
+  // Core seated figure (can be replaced by Meshy tuong-phat-nghin-mat-nghin-tay.glb while preserving halo fan)
+  const coreBody = createSeatedBodhisattva(T, {
+    variant: 'the_chi',
+    bodyMat: goldMat,
+    trimMat: deepGoldMat,
+    crimsonMat,
+    scale: 1.02
+  });
+  coreBody.position.set(0, 0.04, 0.05);
+  // Extra multi-tiered eleven-head / Amitabha tall crown
+  const tallCrown = new T.Mesh(new T.ConeGeometry(0.14, 0.42, 10), goldMat);
+  tallCrown.position.set(0, 1.88, 0.04);
+  coreBody.add(tallCrown);
+  g.add(coreBody);
+  g.userData.placeholderBody = coreBody;
+
+  g.scale.setScalar(scale);
+  return g;
+}
+
+/**
+ * 9. Indoor Sacred Sleeping Buddha Canopy Bed Shrine (Khám Thờ & Giường Bệ Chỗ Ngủ Của Phật)
+ * Ornate carved rosewood & gold-leaf ceremonial couch bed, tied-back crimson silk curtains,
+ * embroidered lotus bolster pillow, and serene golden Reclining Buddha resting on his right side.
+ */
+export function createIndoorSleepingBuddhaBed(T = THREE, opts = {}) {
+  const g = new T.Group();
+  const darkRosewoodMat = new T.MeshStandardMaterial({ color: 0x2B130B, roughness: 0.32, metalness: 0.1 });
+  const crimsonSilkMat = new T.MeshStandardMaterial({ color: 0x8F1D18, roughness: 0.44, side: T.DoubleSide });
+  const goldMat = new T.MeshStandardMaterial({ color: 0xE6B43C, metalness: 0.68, roughness: 0.22 });
+  const robeGoldMat = new T.MeshStandardMaterial({ color: 0xD49B2A, metalness: 0.56, roughness: 0.28 });
+  const mattressMat = new T.MeshStandardMaterial({ color: 0xA6261B, roughness: 0.52 });
+  const hairMat = new T.MeshStandardMaterial({ color: 0x241A15, roughness: 0.58 });
+  const scale = opts.scale || 1.0;
+
+  // 1. Stepped Rosewood Ceremonial Couch Bed ("Giường Bệ Long Sàng Chỗ Ngủ Của Phật" — width 3.4m, depth 1.55m)
+  const plinth = new T.Mesh(new T.BoxGeometry(3.48, 0.22, 1.62), darkRosewoodMat);
+  plinth.position.y = 0.11;
+  plinth.castShadow = true;
+  plinth.receiveShadow = true;
+  g.add(plinth);
+
+  const bedFrame = new T.Mesh(new T.BoxGeometry(3.26, 0.68, 1.44), darkRosewoodMat);
+  bedFrame.position.y = 0.56;
+  bedFrame.castShadow = true;
+  g.add(bedFrame);
+
+  const bedGoldRim = new T.Mesh(new T.BoxGeometry(3.34, 0.08, 1.52), goldMat);
+  bedGoldRim.position.y = 0.92;
+  g.add(bedGoldRim);
+
+  // Carved gilded lotus relief panels along front of bed
+  for (const rx of [-1.1, 0, 1.1]) {
+    const panel = new T.Mesh(new T.BoxGeometry(0.82, 0.38, 0.05), goldMat);
+    panel.position.set(rx, 0.56, 0.74);
+    g.add(panel);
+  }
+
+  // Brocade silk sleeping mattress & carved headboard/footboard armrests
+  const mattress = new T.Mesh(new T.BoxGeometry(3.06, 0.14, 1.26), mattressMat);
+  mattress.position.y = 0.99;
+  g.add(mattress);
+
+  for (const sx of [-1.58, 1.58]) {
+    const sideRest = new T.Mesh(new T.BoxGeometry(0.14, 0.48, 1.38), darkRosewoodMat);
+    sideRest.position.set(sx, 1.16, 0);
+    g.add(sideRest);
+    const sideCap = new T.Mesh(new T.BoxGeometry(0.18, 0.07, 1.42), goldMat);
+    sideCap.position.set(sx, 1.42, 0);
+    g.add(sideCap);
+  }
+  const backScreen = new T.Mesh(new T.BoxGeometry(3.28, 1.65, 0.12), darkRosewoodMat);
+  backScreen.position.set(0, 1.72, -0.68);
+  g.add(backScreen);
+  const backHalo = new T.Mesh(new T.RingGeometry(0.38, 0.52, 28), goldMat);
+  backHalo.position.set(-0.92, 1.72, -0.59);
+  g.add(backHalo);
+
+  // 2. Four Canopy Bed Pillars, Carved Gilded Canopy Roof & Tied-Back Crimson Silk Curtains ("Khám Thờ Màn Thêu")
+  for (const px of [-1.58, 1.58]) {
+    for (const pz of [-0.66, 0.66]) {
+      const post = new T.Mesh(new T.CylinderGeometry(0.055, 0.065, 2.35, 10), darkRosewoodMat);
+      post.position.set(px, 2.08, pz);
+      g.add(post);
+    }
+  }
+  const canopyFrame = new T.Mesh(new T.BoxGeometry(3.48, 0.24, 1.58), darkRosewoodMat);
+  canopyFrame.position.y = 3.28;
+  g.add(canopyFrame);
+  const canopyValance = new T.Mesh(new T.BoxGeometry(3.54, 0.18, 1.64), goldMat);
+  canopyValance.position.set(0, 3.12, 0);
+  g.add(canopyValance);
+
+  // Tied-back crimson brocade curtains on left & right front posts (framing the sleeping Buddha clearly!)
+  for (const side of [-1, 1]) {
+    const drapeTop = new T.Mesh(new T.CylinderGeometry(0.12, 0.26, 1.05, 10), crimsonSilkMat);
+    drapeTop.position.set(side * 1.42, 2.55, 0.64);
+    drapeTop.rotation.z = side * 0.16;
+    g.add(drapeTop);
+    const sashTie = new T.Mesh(new T.TorusGeometry(0.16, 0.025, 6, 14), goldMat);
+    sashTie.position.set(side * 1.48, 2.04, 0.64);
+    sashTie.rotation.x = Math.PI / 2;
+    g.add(sashTie);
+  }
+
+  // 3. Procedural Reclining Buddha resting peacefully on right side (replaced cleanly when cho-ngu-cua-phat.glb loads)
+  const recBuddha = new T.Group();
+  recBuddha.position.set(0, 1.06, 0.04);
+
+  // Crimson & gold lotus bolster pillow on left (-X)
+  const bolster = new T.Mesh(new T.CylinderGeometry(0.18, 0.18, 0.62, 16), crimsonSilkMat);
+  bolster.rotation.x = Math.PI / 2;
+  bolster.position.set(-1.08, 0.18, 0);
+  recBuddha.add(bolster);
+  for (const bz of [-0.31, 0.31]) {
+    const cap = new T.Mesh(new T.CircleGeometry(0.18, 16), goldMat);
+    cap.position.set(-1.08, 0.18, bz);
+    if (bz < 0) cap.rotation.y = Math.PI;
+    recBuddha.add(cap);
+  }
+
+  // Reclining torso & draped robe legs extending toward +X
+  const torso = new T.Mesh(new T.CylinderGeometry(0.24, 0.28, 1.05, 16), goldMat);
+  torso.rotation.z = -Math.PI / 2 + 0.12;
+  torso.position.set(-0.36, 0.3, 0);
+  torso.castShadow = true;
+  recBuddha.add(torso);
+
+  const legs = new T.Mesh(new T.CylinderGeometry(0.16, 0.25, 1.18, 16), robeGoldMat);
+  legs.rotation.z = -Math.PI / 2 + 0.03;
+  legs.position.set(0.68, 0.23, 0);
+  legs.castShadow = true;
+  recBuddha.add(legs);
+
+  // Stacked auspicious feet on lotus rest (+X)
+  const feetRest = new T.Mesh(new T.CylinderGeometry(0.2, 0.22, 0.12, 12), crimsonSilkMat);
+  feetRest.rotation.z = Math.PI / 2;
+  feetRest.position.set(1.32, 0.2, 0);
+  recBuddha.add(feetRest);
+
+  // Right arm supporting serene head, left arm resting peacefully along hip
+  const rightUpperArm = new T.Mesh(new T.CylinderGeometry(0.065, 0.075, 0.38, 10), goldMat);
+  rightUpperArm.position.set(-0.88, 0.24, 0.14);
+  rightUpperArm.rotation.z = 0.52;
+  recBuddha.add(rightUpperArm);
+  const leftArm = new T.Mesh(new T.CylinderGeometry(0.06, 0.075, 0.92, 10), goldMat);
+  leftArm.rotation.z = -Math.PI / 2 + 0.06;
+  leftArm.position.set(0.12, 0.48, 0.04);
+  recBuddha.add(leftArm);
+
+  // Serene Buddha head tilted gently on right palm facing +Z viewer
+  const headGrp = new T.Group();
+  headGrp.position.set(-1.02, 0.46, 0.04);
+  headGrp.rotation.z = -0.32;
+  addSereneFaceAndHead(T, headGrp, {
+    headMat: goldMat,
+    hairMat,
+    y: 0,
+    z: 0,
+    radius: 0.19,
+    calmEyes: true
+  });
+  recBuddha.add(headGrp);
+
+  g.add(recBuddha);
+  g.userData.placeholderBody = recBuddha;
+
+  g.scale.setScalar(scale);
+  return g;
+}
+

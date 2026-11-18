@@ -268,8 +268,15 @@ export function attachStorePropsToCharacterRig(T = THREE, record, storeVisual = 
   clearRiggedBoneProps(record.root, groundGroup);
 
   const bones = findCharacterBones(record.root);
+  record.root.updateMatrixWorld?.(true);
+  const _wScale = new T.Vector3();
   const rootScale = record.root.scale.x || 1;
   const invS = 1 / rootScale;
+  const invBone = (bone) => {
+    if (!bone || typeof bone.getWorldScale !== 'function') return invS;
+    bone.getWorldScale(_wScale);
+    return 1 / Math.max(0.0001, Math.abs(_wScale.x) || rootScale);
+  };
   const fitProp = typeof fitPropFn === 'function' ? fitPropFn : null;
 
   // Apply garment recolor (supports both vertex-color and PBR textures)
@@ -294,8 +301,9 @@ export function attachStorePropsToCharacterRig(T = THREE, record, storeVisual = 
     }
     markRiggedProp(hat);
     if (bones.head) {
-      hat.scale.multiplyScalar(invS);
-      hat.position.set(0, (bones.isMixamoRig ? 0.11 : 0.13) * invS, 0.01 * invS);
+      const bInv = invBone(bones.head);
+      hat.scale.multiplyScalar(bInv);
+      hat.position.set(0, (bones.isMixamoRig ? 0.11 : 0.13) * bInv, 0.01 * bInv);
       hat.rotation.x = -0.06;
       bones.head.add(hat);
     } else {
@@ -320,8 +328,9 @@ export function attachStorePropsToCharacterRig(T = THREE, record, storeVisual = 
     markRiggedProp(scarf);
     const collarBone = bones.neck || bones.chest || bones.spine;
     if (collarBone) {
-      scarf.scale.multiplyScalar(invS);
-      scarf.position.set(0, (bones.isMixamoRig ? 0.02 : 0.07) * invS, 0.03 * invS);
+      const bInv = invBone(collarBone);
+      scarf.scale.multiplyScalar(bInv);
+      scarf.position.set(0, (bones.isMixamoRig ? 0.02 : 0.07) * bInv, 0.03 * bInv);
       collarBone.add(scarf);
     } else {
       scarf.scale.multiplyScalar(invS);
@@ -352,8 +361,9 @@ export function attachStorePropsToCharacterRig(T = THREE, record, storeVisual = 
     markRiggedProp(badge);
     const chestBone = bones.chest || bones.spine;
     if (chestBone) {
-      badge.scale.multiplyScalar(invS);
-      badge.position.set(0.08 * invS, (bones.isMixamoRig ? 0.09 : 0.14) * invS, 0.125 * invS);
+      const bInv = invBone(chestBone);
+      badge.scale.multiplyScalar(bInv);
+      badge.position.set(0.08 * bInv, (bones.isMixamoRig ? 0.09 : 0.14) * bInv, 0.125 * bInv);
       chestBone.add(badge);
     } else {
       badge.scale.multiplyScalar(invS);
@@ -378,8 +388,9 @@ export function attachStorePropsToCharacterRig(T = THREE, record, storeVisual = 
     markRiggedProp(bag);
     const torsoBone = bones.chest || bones.spine;
     if (torsoBone) {
-      bag.scale.multiplyScalar(invS);
-      bag.position.set(-0.19 * invS, -0.05 * invS, -0.04 * invS);
+      const bInv = invBone(torsoBone);
+      bag.scale.multiplyScalar(bInv);
+      bag.position.set(-0.19 * bInv, -0.05 * bInv, -0.04 * bInv);
       bag.rotation.z = 0.08;
       torsoBone.add(bag);
     } else {
@@ -403,8 +414,9 @@ export function attachStorePropsToCharacterRig(T = THREE, record, storeVisual = 
     markRiggedProp(mala);
     const lHand = bones.leftHand || bones.leftForearm;
     if (lHand) {
-      mala.scale.multiplyScalar(invS);
-      mala.position.set(0, -0.04 * invS, 0.03 * invS);
+      const bInv = invBone(lHand);
+      mala.scale.multiplyScalar(bInv);
+      mala.position.set(0, -0.04 * bInv, 0.03 * bInv);
       lHand.add(mala);
     } else {
       mala.scale.multiplyScalar(invS);
@@ -435,8 +447,9 @@ export function attachStorePropsToCharacterRig(T = THREE, record, storeVisual = 
       markRiggedProp(handMesh);
       const rHand = bones.rightHand || bones.rightForearm;
       if (rHand) {
-        handMesh.scale.multiplyScalar(invS);
-        handMesh.position.set(0, -0.02 * invS, 0.05 * invS);
+        const bInv = invBone(rHand);
+        handMesh.scale.multiplyScalar(bInv);
+        handMesh.position.set(0, -0.02 * bInv, 0.05 * bInv);
         handMesh.rotation.x = 0.22;
         rHand.add(handMesh);
       } else {
@@ -468,8 +481,9 @@ export function attachStorePropsToCharacterRig(T = THREE, record, storeVisual = 
     }
     markRiggedProp(bird);
     if (bones.head) {
-      bird.scale.multiplyScalar(invS);
-      bird.position.set(0.32 * invS, 0.24 * invS, -0.04 * invS);
+      const bInv = invBone(bones.head);
+      bird.scale.multiplyScalar(bInv);
+      bird.position.set(0.32 * bInv, 0.24 * bInv, -0.04 * bInv);
       bones.head.add(bird);
     } else {
       bird.scale.multiplyScalar(invS);
@@ -572,8 +586,8 @@ export function attachStorePropsToCharacterRig(T = THREE, record, storeVisual = 
 export function createStoreAccessoryGroup(T = THREE, storeVisual = {}, opts = {}) {
   const group = new T.Group();
   const h = opts.h || 1.64;
-  const fakeRecord = { root: group, baseY: 0 };
-  attachStorePropsToCharacterRig(T, fakeRecord, storeVisual, {
+  const targetRecord = { root: opts.modelRoot || group, baseY: 0 };
+  attachStorePropsToCharacterRig(T, targetRecord, storeVisual, {
     ...opts,
     h,
     groundGroup: group,

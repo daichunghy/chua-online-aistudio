@@ -173,6 +173,10 @@ export class TempleAudioEngine {
     // SpeechSynthesis state
     this._ttsSpeaking = false;
     this._speechToken = 0;
+    this._voicesCache = [];
+    this._voicesChangedHandler = null;
+    this._voiceRate = 1.0;
+    this._initSpeechVoices();
 
     if (opts.autoUnlock !== false) {
       this._installUnlockHooks();
@@ -542,12 +546,24 @@ export class TempleAudioEngine {
     } catch {}
   }
 
+  setVoicePlaybackRate(rate = 1.0) {
+    const nextRate = clampRange(rate, 0.5, 1.8, 1.0);
+    this._voiceRate = nextRate;
+    if (this.voiceEl) {
+      try {
+        this.voiceEl.playbackRate = nextRate;
+      } catch {}
+    }
+  }
+
   /**
    * Plays a voice narration MP3 resolved via TempleAudioEngine.resolveAudioUrl().
    * @param {string} fileName
+   * @param {object} [options]
+   * @param {number} [options.rate]
    * @returns {Promise<boolean>}
    */
-  async playVoiceAudio(fileName) {
+  async playVoiceAudio(fileName, options = {}) {
     if (!fileName || typeof fileName !== 'string') return false;
     const url = this.resolveAudioUrl(fileName);
     if (!url) return false;
@@ -569,6 +585,15 @@ export class TempleAudioEngine {
       this.voiceEl.src = url;
       this.voiceEl.muted = this._muted;
       this.voiceEl.volume = this._muted ? 0 : clamp01(this._masterVolume * this._voiceVolume);
+      const targetRate = clampRange(
+        options?.rate ?? this._voiceRate ?? 1.0,
+        0.5,
+        1.8,
+        1.0
+      );
+      try {
+        this.voiceEl.playbackRate = targetRate;
+      } catch {}
 
       const playResult = this.voiceEl.play();
       if (playResult && typeof playResult.then === 'function') {
@@ -1640,9 +1665,50 @@ export class TempleAudioEngine {
     return null;
   }
 
+  _initSpeechVoices() {
+    const synth = this._getSpeechSynthesis();
+    if (!synth || typeof synth.getVoices !== 'function') return;
+    const refresh = () => {
+      try {
+        const list = synth.getVoices();
+        if (Array.isArray(list)) {
+          this._voicesCache = list;
+        }
+      } catch {}
+    };
+    refresh();
+    if (typeof synth.addEventListener === 'function') {
+      this._voicesChangedHandler = refresh;
+      try {
+        synth.addEventListener('voiceschanged', refresh);
+      } catch {}
+    }
+  }
+
+  _getVoicesList() {
+    const synth = this._getSpeechSynthesis();
+    if (synth && typeof synth.getVoices === 'function') {
+      try {
+        const live = synth.getVoices();
+        if (Array.isArray(live) && live.length > 0) {
+          this._voicesCache = live;
+          return live;
+        }
+      } catch {}
+    }
+    return Array.isArray(this._voicesCache) ? this._voicesCache : [];
+  }
+
+  hasVietnameseVoice() {
+    const voices = this._getVoicesList();
+    return voices.some((v) => String(v?.lang || '').toLowerCase().startsWith('vi'));
+  }
+
   /**
    * Speaks text via Web Speech API at an elderly-friendly cadence while
    * strictly respecting `muted`, `masterVolume`, and `voiceVolume`.
+   * Returns `false` when no matching Vietnamese TTS voice exists (mobile/WebView fallback)
+   * so callers can seamlessly fall back to pre-recorded Vietnamese MP3 audio + toast.
    *
    * @param {string} text
    * @param {object} [options]
@@ -1667,6 +1733,22 @@ export class TempleAudioEngine {
       return false;
     }
 
+    const voices = this._getVoicesList();
+    const targetLang = String(lang || 'vi-VN');
+    const langPrefix = targetLang.split('-')[0].toLowerCase();
+    const exactVoice = voices.find(
+      (v) => String(v?.lang || '').toLowerCase() === targetLang.toLowerCase()
+    );
+    const matchingVoice =
+      exactVoice ||
+      voices.find((v) => String(v?.lang || '').toLowerCase().startsWith(langPrefix));
+
+    // When requesting Vietnamese speech on devices/WebViews without a Vietnamese voice,
+    // return false cleanly so the app plays recorded Vietnamese MP3 narration instead of silent or garbled English speech.
+    if (langPrefix === 'vi' && !matchingVoice) {
+      return false;
+    }
+
     const token = ++this._speechToken;
     try {
       synth.cancel?.();
@@ -1674,22 +1756,11 @@ export class TempleAudioEngine {
 
     try {
       const utter = new UtteranceCtor(cleanText);
-      utter.lang = lang || 'vi-VN';
+      utter.lang = targetLang;
       utter.rate = clampRange(rate, 0.5, 1.8, 0.88);
       utter.pitch = clampRange(pitch, 0.6, 1.5, 0.98);
       utter.volume = effectiveVol;
-
-      try {
-        const voices = synth.getVoices?.() || [];
-        const langPrefix = String(utter.lang).split('-')[0].toLowerCase();
-        const exact = voices.find(
-          (v) => String(v?.lang || '').toLowerCase() === String(utter.lang).toLowerCase()
-        );
-        const partial =
-          exact ||
-          voices.find((v) => String(v?.lang || '').toLowerCase().startsWith(langPrefix));
-        if (partial) utter.voice = partial;
-      } catch {}
+      if (matchingVoice) utter.voice = matchingVoice;
 
       const finish = () => {
         if (token !== this._speechToken) return;
@@ -1750,6 +1821,13 @@ export class TempleAudioEngine {
 
   dispose() {
     this._removeUnlockHooks();
+    const synth = this._getSpeechSynthesis();
+    if (synth && this._voicesChangedHandler && typeof synth.removeEventListener === 'function') {
+      try {
+        synth.removeEventListener('voiceschanged', this._voicesChangedHandler);
+      } catch {}
+    }
+    this._voicesChangedHandler = null;
     this.stopAmbient();
     this.stopVoice();
     this.stopSpeaking();

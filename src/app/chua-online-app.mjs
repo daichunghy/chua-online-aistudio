@@ -106,7 +106,10 @@ import {
   createAcademyEntitlementState,
   unlockAcademyCourseWithCode,
   buildVietQRPayload,
-  generateAcademyCertificate
+  generateAcademyCertificate,
+  BLESSING_TOWER_CATEGORIES,
+  createBlessingTowerState,
+  registerBlessingTowerPrayer
 } from '/src/logic/chua-online-logic.mjs';
 import { VinhTrang3DWorld } from '/src/app/vinh-trang-3d-world.mjs';
 import { TempleAudioEngine } from '/src/app/audio-engine.mjs';
@@ -212,6 +215,7 @@ export class ChuaOnlineApp {
       Array.isArray(this.saved.hoaDangWishes) && this.saved.hoaDangWishes.length > 0
         ? this.saved.hoaDangWishes
         : [...HOA_DANG_WISHES];
+    this.blessingTower = createBlessingTowerState(this.saved.blessingTower);
     this.dharmaJournal = createDharmaJournalState(this.saved.dharmaJournal);
     this.academyState = createAcademyEntitlementState(this.saved.academyState);
     this.activeCourseId = ACADEMY_COURSES.some((c) => c.id === this.saved.activeCourseId)
@@ -268,6 +272,10 @@ export class ChuaOnlineApp {
     this.toastTimer = null;
     this.cachedGLBCharacters = {};
     this.cachedGLBProps = {};
+    this._profileStageDispose = null;
+    this._arhatStageDispose = null;
+    this._interactiveStageDispose = null;
+    this.audio?.setVoicePlaybackRate?.(this.readAlongRate || 1.0);
   }
 
   loadState() {
@@ -300,6 +308,7 @@ export class ChuaOnlineApp {
           pilgrimageModeId: this.pilgrimageModeId,
           arrivalCompleted: this.arrivalCompleted,
           hoaDangWishes: this.hoaDangWishes.slice(0, 48),
+          blessingTower: this.blessingTower,
           dharmaJournal: this.dharmaJournal,
           academyState: this.academyState,
           activeCourseId: this.activeCourseId,
@@ -368,6 +377,7 @@ export class ChuaOnlineApp {
         audioMuted: this.audioMuted,
         audioMixer: this.audio?.getMixerState?.() || null,
         hoaDangCount: this.hoaDangWishes.length,
+        blessingTowerCount: this.blessingTower?.entries?.length || 0,
         journalCount: this.dharmaJournal?.entries?.length || 0,
         academyUnlockedCourses: this.academyState?.unlockedCourses || [],
         dailyDharmaSeenDate: this.lastDailyDharmaDate,
@@ -499,17 +509,19 @@ export class ChuaOnlineApp {
           <button type="button" id="btn-skip-arrival-cutscene" class="entrance-tour-skip-btn" style="min-height:48px;padding:0 16px;">Bỏ qua &amp; vào sân chùa</button>
         </div>
 
-        <nav id="interior-zone-bar" class="interior-zone-bar" style="display:none;" aria-label="Các khu trong Chùa Chính">
-          <button type="button" class="walk-chip-btn active" data-interior-zone="tien_duong">1. Tiền đường</button>
-          <button type="button" class="walk-chip-btn" data-interior-zone="chanh_dien">2. Chánh điện</button>
-          <button type="button" class="walk-chip-btn" data-interior-zone="non_bo_giua">3. Thiên Tỉnh 1</button>
-          <button type="button" class="walk-chip-btn" data-interior-zone="khu_tho">4. Nhà Tổ</button>
-          <button type="button" class="walk-chip-btn" data-interior-zone="san_thien_tinh_2">5. Thiên Tỉnh 2</button>
-          <button type="button" class="walk-chip-btn" data-interior-zone="nha_hau">6. Nhà Hậu</button>
+        <nav id="interior-zone-bar" class="interior-zone-bar" style="display:none;" aria-label="Khám phá Chùa Chính Hình Vuông">
+          <button type="button" class="walk-chip-btn active" data-interior-zone="day_ban_tho_phai">1. Lối Phải · Dải Bàn Thờ</button>
+          <button type="button" class="walk-chip-btn" data-interior-zone="nghin_mat_nghin_tay">🙏 Nghìn Mắt Nghìn Tay</button>
+          <button type="button" class="walk-chip-btn" data-interior-zone="cho_ngu_cua_phat">🪷 Chỗ Ngủ Của Phật</button>
+          <button type="button" class="walk-chip-btn" data-interior-zone="chanh_dien">2. Cạnh Trên · Chính Điện</button>
+          <button type="button" class="walk-chip-btn" id="btn-interior-blessing-tower" title="Tháp Đèn Dược Sư Vạn Phật · Ghi Tên Cầu Phước">🏮 Tháp Cầu Phước</button>
+          <button type="button" class="walk-chip-btn" data-interior-zone="ho_sen_bo">3. Giữa Chùa · Hồ Sen Bộ</button>
+          <button type="button" class="walk-chip-btn" data-interior-zone="hanh_lang_trai">4. Cạnh Trái · 18 La Hán &amp; Tổ</button>
+          <button type="button" class="walk-chip-btn" data-interior-zone="hanh_lang_duoi">5. Cạnh Dưới · Hộ Pháp</button>
           <button type="button" class="walk-chip-btn" data-interior-zone="trai_duong">🍚 Trai Đường</button>
-          <button type="button" class="walk-chip-btn" id="btn-interior-cutaway" title="Mặt cắt kiến trúc xuyên tường chữ Quốc">✂️ Mặt cắt 3D</button>
+          <button type="button" class="walk-chip-btn" id="btn-interior-cutaway" title="Mặt cắt 3D toàn cảnh mặt bằng Hình Vuông &amp; Hồ Sen Bộ">✂️ Mặt cắt 3D</button>
           <button type="button" class="walk-chip-btn" id="btn-interior-history" title="Đối chiếu tư liệu Tôn tượng Tam Bảo">📜 Tư liệu</button>
-          <button type="button" class="walk-chip-btn interior-exit-chip" id="btn-interior-exit-courtyard">← Ra Sân Chùa</button>
+          <button type="button" class="walk-chip-btn interior-exit-chip" id="btn-interior-exit-courtyard">← Ra Lối Góc Phải</button>
         </nav>
 
         <!-- Protagonist Hotspot in Courtyard -->
@@ -762,6 +774,7 @@ export class ChuaOnlineApp {
             <button type="button" class="walk-chip-btn" id="btn-open-garden-modal">🌱 Vườn Phật</button>
             <button type="button" class="walk-chip-btn" id="btn-open-bell-rhythm">🔔 Chuông Mõ</button>
             <button type="button" class="walk-chip-btn" id="btn-open-heritage-book">📜 Di Sản</button>
+            <button type="button" class="walk-chip-btn" id="btn-open-blessing-tower">🏮 Cầu Phước</button>
             <button type="button" class="walk-chip-btn" id="btn-open-hoa-dang">🏮 Hoa Đăng</button>
             <button type="button" class="walk-chip-btn" id="btn-open-30day">🗓️ 30 Ngày</button>
             <button type="button" class="walk-chip-btn" id="btn-open-journal">📓 Nhật Ký</button>
@@ -1015,6 +1028,7 @@ export class ChuaOnlineApp {
         this.syncTempleWorldGameplayState();
         this.syncPilgrimageCompanionsTo3D();
         this.syncHoaDangLanternsTo3D();
+        this.syncBlessingTowerTo3D();
       },
       onTransitionFade: (active) => {
         const veil = document.getElementById('temple-transition-veil');
@@ -1024,8 +1038,8 @@ export class ChuaOnlineApp {
         this.highlightInteriorZoneChip(zoneKey);
         if (zoneKey === 'chanh_dien') {
           this.tryAutoDiscoverHeritageById('relic_long_tru', { silent: false });
+        } else if (zoneKey === 'hanh_lang_trai' || zoneKey === 'khu_tho') {
           this.tryAutoDiscoverHeritageById('relic_bat_bo_la_han', { silent: false });
-        } else if (zoneKey === 'khu_tho') {
           this.tryAutoDiscoverHeritageById('relic_to_dat_ma', { silent: false });
         }
       },
@@ -1040,13 +1054,13 @@ export class ChuaOnlineApp {
         if (goalsTracker) goalsTracker.style.display = inside ? 'none' : 'block';
         if (inside) {
           this.nearbyStallTrigger = null;
-          this.nearbyInteractPrompt = null;
+          this.syncBlessingTowerTo3D();
           this.refreshProximityPrompt();
           if (btn) {
             btn.classList.add('active');
-            btn.innerHTML = '← Ra Sân Chánh Điện 3D';
+            btn.innerHTML = '← Ra Lối Góc Phải';
           }
-          this.highlightInteriorZoneChip(this.world3d?.getInteriorZoneKey() || 'tien_duong');
+          this.highlightInteriorZoneChip(this.world3d?.getInteriorZoneKey() || 'day_ban_tho_phai');
           const cutBtn = document.getElementById('btn-interior-cutaway');
           if (cutBtn) cutBtn.classList.toggle('active', Boolean(this.world3d?.interiorCutaway));
           this.spiritual = recordSpiritualMilestone(this.spiritual, 'Vào bên trong Chùa Chính');
@@ -1055,9 +1069,9 @@ export class ChuaOnlineApp {
           this.updateActionBadges();
           this.playBellTone(216, 2.6);
           this.showToast(
-            'Bên trong Chùa Chính Chữ Quốc (國)',
-            'Đi dọc từ 1. Tiền đường → 2. Chánh điện → 3. Thiên Tỉnh 1 → 4. Nhà Tổ → 5. Thiên Tỉnh 2 → 6. Nhà Hậu hoặc bật ✂️ Mặt cắt 3D để ngắm kết cấu.',
-            5200,
+            'Lối Góc Dưới Bên Phải · Hành Trình Hình Vuông',
+            'Đi thẳng qua Tượng Phật Nghìn Mắt Nghìn Tay & Chỗ Ngủ Của Phật, vòng theo hình vuông quanh Hồ Sen Bộ giữa chùa để lên cạnh trên lễ Phật tại Chính Điện.',
+            5600,
             false
           );
         } else {
@@ -1065,12 +1079,12 @@ export class ChuaOnlineApp {
           if (cutBtn) cutBtn.classList.remove('active');
           if (btn) {
             btn.classList.remove('active');
-            btn.innerHTML = 'Vào Chánh điện';
+            btn.innerHTML = '🚪 Vào Lối Góc Phải';
           }
           this.refreshProximityPrompt();
           this.showToast(
-            'Ra sân chùa',
-            'Bạn đã trở lại khoảng sân trước Chánh điện.',
+            'Ra lối góc dưới bên phải',
+            'Bạn đã bước ra khỏi hành lang bên phải, trở lại khuôn viên sân chùa.',
             3200
           );
         }
@@ -1078,6 +1092,16 @@ export class ChuaOnlineApp {
       onObjectClick: (action, payload) => {
         if (action === 'ENTER_INTERIOR') {
           this.toggleInteriorHallIn3D(true);
+        } else if (action === 'OPEN_BLESSING_TOWER') {
+          this.openBlessingTowerModal();
+        } else if (action === 'PRAY_NGHIN_MAT_NGHIN_TAY') {
+          this.prayAtRightGalleryShrine('nghin_mat_nghin_tay');
+        } else if (action === 'PRAY_CHO_NGU_CUA_PHAT') {
+          this.prayAtRightGalleryShrine('cho_ngu_cua_phat');
+        } else if (action === 'RING_CHUONG_CHANH_DIEN') {
+          this.ringChanhDienBellInApp();
+        } else if (action === 'STRIKE_TRONG_BAT_NHA') {
+          this.strikeTrongBatNhaInApp();
         } else if (action === 'OPEN_ARHAT') {
           this.tryAutoDiscoverHeritageById('relic_bat_bo_la_han', { silent: true });
           this.openExploreModal('arhats', Number.isFinite(payload?.arhatIndex) ? payload.arhatIndex : 0);
@@ -1156,25 +1180,30 @@ export class ChuaOnlineApp {
     const labelEl = document.getElementById('stall-proximity-label');
     if (!btn || !labelEl) return;
 
-    if (this.world3d?.insideInterior) {
-      btn.style.display = 'none';
-      return;
-    }
-
     if (this.nearbyInteractPrompt) {
       const p = this.nearbyInteractPrompt;
       const cleanLabel = String(p.label || '')
         .replace(/^[^\p{L}\p{N}[]+/u, '')
         .replace(/\[E\]\s*/i, '')
         .trim();
-      const iconMap = { leaf: '🍂', garden: '🌱', bell_rhythm: '🔔', koi_pond: '🐟' };
+      const iconMap = {
+        leaf: '🍂',
+        garden: '🌱',
+        bell_rhythm: '🔔',
+        koi_pond: '🐟',
+        blessing_tower: '🏮',
+        chanh_dien_bell: '🔔',
+        trong_bat_nha: '🥁',
+        nghin_mat_nghin_tay: '🙏',
+        cho_ngu_cua_phat: '🪷'
+      };
       if (iconEl) iconEl.textContent = iconMap[p.kind] || '✨';
       labelEl.textContent = cleanLabel || 'Tương tác';
       btn.style.display = 'inline-flex';
       return;
     }
 
-    if (this.nearbyStallTrigger) {
+    if (!this.world3d?.insideInterior && this.nearbyStallTrigger) {
       const shortTitle = String(this.nearbyStallTrigger.title || 'Nhà Tạp Hóa').split('·')[0].trim();
       if (iconEl) iconEl.textContent = '🛒';
       labelEl.textContent = `Ghé ${shortTitle}`;
@@ -1186,9 +1215,24 @@ export class ChuaOnlineApp {
   }
 
   handleProximityInteract() {
-    if (this.world3d?.insideInterior) return false;
     if (this.nearbyInteractPrompt) {
       const p = this.nearbyInteractPrompt;
+      if (p.kind === 'nghin_mat_nghin_tay' || p.kind === 'cho_ngu_cua_phat') {
+        this.prayAtRightGalleryShrine(p.kind);
+        return true;
+      }
+      if (p.kind === 'blessing_tower') {
+        this.openBlessingTowerModal();
+        return true;
+      }
+      if (p.kind === 'chanh_dien_bell') {
+        this.ringChanhDienBellInApp();
+        return true;
+      }
+      if (p.kind === 'trong_bat_nha') {
+        this.strikeTrongBatNhaInApp();
+        return true;
+      }
       if (p.kind === 'leaf' && p.leafId) {
         this.collectCourtyardLeafInApp(p.leafId);
         return true;
@@ -1206,7 +1250,7 @@ export class ChuaOnlineApp {
         return true;
       }
     }
-    if (this.nearbyStallTrigger) {
+    if (!this.world3d?.insideInterior && this.nearbyStallTrigger) {
       this.openMarketplaceStallModal(
         this.nearbyStallTrigger.stallType || 'huong_hoa',
         this.nearbyStallTrigger.title || 'Nhà Tạp Hóa Cổng Chùa Vĩnh Tràng'
@@ -1214,6 +1258,89 @@ export class ChuaOnlineApp {
       return true;
     }
     return false;
+  }
+
+  prayAtRightGalleryShrine(kind = 'nghin_mat_nghin_tay') {
+    if (this.world3d?.insideInterior) {
+      this.world3d.goToInteriorZone(kind);
+      this.world3d.playPlayerBowAnimation?.();
+    }
+    this.playBellTone(243, 3.0);
+    this.storeProfile.lotusPoints += 12;
+    if (kind === 'cho_ngu_cua_phat') {
+      this.spiritual = recordSpiritualMilestone(
+        this.spiritual,
+        'Chiêm bái Chỗ Ngủ Của Phật · Đức Phật Nhập Niết Bàn'
+      );
+      this.grantPilgrimXp(10, 'Chiêm bái Chỗ Ngủ Của Phật');
+      this.saveState();
+      this.updateActionBadges();
+      this.showToast(
+        '🪷 Chỗ Ngủ Của Phật · Đức Phật Nhập Niết Bàn (+12 🪷 · +10 XP)',
+        'Khám thờ gỗ chạm thếp vàng tôn trí kim thân Đức Phật an nhiên thị hiện Cát Tường Ngoạ tại dải bàn thờ lối vào bên phải.',
+        4800,
+        true
+      );
+    } else {
+      this.tryAutoDiscoverHeritageById('relic_quan_am', { silent: true });
+      this.spiritual = recordSpiritualMilestone(
+        this.spiritual,
+        'Chiêm bái Tượng Phật Nghìn Mắt Nghìn Tay (Thiên Thủ Thiên Nhãn)'
+      );
+      this.grantPilgrimXp(10, 'Chiêm bái Phật Nghìn Mắt Nghìn Tay');
+      this.saveState();
+      this.updateActionBadges();
+      this.showToast(
+        '🙏 Đức Phật Nghìn Mắt Nghìn Tay · Thiên Thủ Thiên Nhãn (+12 🪷 · +10 XP)',
+        'Ngàn mắt soi thấu nỗi khổ thế gian, ngàn tay từ bi cứu độ chúng sinh ngay lối bước vào góc dưới bên phải chùa.',
+        4800,
+        true
+      );
+    }
+  }
+
+  syncBlessingTowerTo3D() {
+    if (!this.world3d?.syncBlessingTowerLamps) return;
+    const enriched = (this.blessingTower?.entries || []).map((e) => ({
+      ...e,
+      colorHex: BLESSING_TOWER_CATEGORIES.find((c) => c.id === e.categoryId)?.accentHex || '#F3B43F'
+    }));
+    this.world3d.syncBlessingTowerLamps(enriched);
+  }
+
+  ringChanhDienBellInApp() {
+    this.tryAutoDiscoverHeritageById('relic_dai_hong_chung', { silent: true });
+    this.playBellTone(196, 3.6);
+    setTimeout(() => this.playBellTone(243, 2.8), 680);
+    this.storeProfile.lotusPoints += 12;
+    this.spiritual = recordSpiritualMilestone(this.spiritual, 'Thỉnh Đại Hồng Chung & Chuông Gia Trì tại Chánh Điện');
+    this.grantPilgrimXp(10, 'Thỉnh Chuông Chánh Điện');
+    this.saveState();
+    this.updateActionBadges();
+    this.showToast(
+      '🔔 Tiếng Chuông Chánh Điện Ngân Vang (+12 🪷 · +10 XP)',
+      '“Nghe chuông phiền não tan mây khói, trí tuệ sinh sôi Bồ-đề lớn.” — Pháp Bảo Chuông Chùa Vĩnh Tràng (1854).',
+      4200,
+      false
+    );
+  }
+
+  strikeTrongBatNhaInApp() {
+    this.playMokugyoTap(true);
+    setTimeout(() => this.playMokugyoTap(false), 240);
+    setTimeout(() => this.playMokugyoTap(true), 520);
+    setTimeout(() => this.playBellTone(174, 2.4), 860);
+    this.storeProfile.lotusPoints += 12;
+    this.spiritual = recordSpiritualMilestone(this.spiritual, 'Khởi hồi Trống Bát Nhã & Mõ Gỗ tại Chánh Điện');
+    this.grantPilgrimXp(10, 'Khởi Hồi Trống Bát Nhã');
+    this.saveState();
+    this.updateActionBadges();
+    this.showToast(
+      '🥁 Khởi Hồi Trống Bát Nhã · Mõ Đại Tự (+12 🪷 · +10 XP)',
+      'Hồi trống Bát Nhã đối xứng cùng Đại Hồng Chung khai mở trí tuệ và chánh niệm nơi Đại Hùng Bửu Điện.',
+      4200,
+      false
+    );
   }
 
   grantPilgrimXp(amount, reasonLabel = '') {
@@ -1373,9 +1500,9 @@ export class ChuaOnlineApp {
       this.world3d.enterInteriorHall(false, onEntered);
       this.playChanhDienBellCadence({ force: true });
       this.showToast(
-        'Đang đi dọc lối hoa giấy bên hông vào Cửa Hông Phải...',
-        'Xin giữ bước chân nhẹ nhàng khi tiến qua cửa hông vào Tam Bảo.',
-        3000,
+        'Đang tiến tới Lối Vào Góc Dưới Bên Phải Chùa...',
+        'Từ góc dưới bên phải, bạn đi thẳng qua dải bàn thờ Nghìn Mắt Nghìn Tay & Chỗ Ngủ Của Phật rồi dạo quanh Hình Vuông Hồ Sen Bộ.',
+        3600,
         false
       );
     } else {
@@ -1530,11 +1657,12 @@ export class ChuaOnlineApp {
     this.audio?.playWoodenMokugyo?.(Boolean(accent));
   }
 
-  playVoiceAudio(fileName) {
+  playVoiceAudio(fileName, options = {}) {
     if (!fileName) return;
     this.ensureAudioContext();
     this.currentAudioFile = fileName;
-    this.audio?.playVoiceAudio?.(fileName);
+    const rate = options?.rate ?? this.readAlongRate ?? 1.0;
+    this.audio?.playVoiceAudio?.(fileName, { ...options, rate });
   }
 
   pauseVoiceAudio() {
@@ -1796,6 +1924,208 @@ export class ChuaOnlineApp {
     };
 
     renderArrival();
+  }
+
+  openBlessingTowerModal() {
+    let selectedCategoryId = BLESSING_TOWER_CATEGORIES[0].id;
+    let draftName = this.studentName || '';
+    let draftBirthYear = '';
+    let draftFamily = '';
+    let draftWish = BLESSING_TOWER_CATEGORIES[0].blessingVerse;
+    let feedbackMsg = '';
+    let feedbackOk = false;
+
+    const focusTowerIn3D = () => {
+      this.closeModal();
+      this.switchScreen('courtyard');
+      if (!this.world3d) return;
+      if (!this.world3d.insideInterior) {
+        this.world3d.toggleInterior(true, 'right');
+      }
+      this.world3d.cancelAutoWalk?.();
+      this.world3d.playerElevationY = 0;
+      this.world3d.playerState.x = -1.1;
+      this.world3d.playerState.z = -12.95;
+      const yaw = Math.atan2(-3.35 - -1.1, -11.95 - -12.95);
+      this.world3d.playerState.yaw = yaw;
+      this.world3d.cameraBaseYaw = yaw;
+      this.world3d.cameraAzimuthOffset = 0;
+      this.world3d.syncPlayerTransform();
+      this.world3d.checkStationProximity();
+      this.world3d.renderFrame();
+      this.showToast(
+        '🏮 Tháp Đèn Cầu An · Cạnh Trên Chính Điện Đại Hùng Bửu Điện',
+        '108 ô đèn Dược Sư 13 tầng bên cửa gỗ chấn song thắp sáng lời nguyện cầu bình an của Phật tử thập phương.',
+        4200,
+        false
+      );
+    };
+
+    const renderTowerModal = () => {
+      const entries = this.blessingTower?.entries || [];
+      const activeCat =
+        BLESSING_TOWER_CATEGORIES.find((c) => c.id === selectedCategoryId) || BLESSING_TOWER_CATEGORIES[0];
+
+      this.openModal(
+        '🏮 Tháp Đèn Dược Sư · Ghi Tên Cầu Phước Chánh Điện',
+        `
+        <div class="blessing-tower-modal-wrap">
+          <div class="blessing-tower-hero">
+            <div>
+              <div class="blessing-tower-kicker">Đại Hùng Bửu Điện · Chùa Vĩnh Tràng</div>
+              <div class="blessing-tower-headline">Đang thắp sáng <strong class="tabular-nums">${entries.length}/108</strong> ngọn đèn cầu phước trên 13 tầng bảo tháp</div>
+              <div class="blessing-tower-sub">Mỗi danh vị đăng ký sẽ thắp sáng một ô đèn riêng biệt trên Tháp Đèn Cầu An bên cửa gỗ chấn song vào Chánh Điện.</div>
+            </div>
+            <button type="button" id="btn-bt-focus-3d" class="blessing-tower-view3d-btn">🚶 Đứng trước Tháp Đèn 3D</button>
+          </div>
+
+          <div class="blessing-tower-form-card">
+            <div class="blessing-tower-field">
+              <span class="hoadang-label">1. Chọn tâm nguyện cầu an:</span>
+              <div class="blessing-tower-cat-grid">
+                ${BLESSING_TOWER_CATEGORIES.map(
+                  (c) => `
+                  <button type="button" class="blessing-tower-cat-btn ${c.id === selectedCategoryId ? 'active' : ''}" data-bt-cat="${c.id}">
+                    <span>${c.icon}</span>
+                    <span>${c.label}</span>
+                  </button>`
+                ).join('')}
+              </div>
+            </div>
+
+            <div class="blessing-tower-row-2col">
+              <div class="blessing-tower-field">
+                <label for="bt-devotee-name" class="hoadang-label">2. Họ tên hoặc Pháp danh người cầu an:</label>
+                <input id="bt-devotee-name" type="text" class="hoadang-input" value="${draftName.replace(/"/g, '&quot;')}" placeholder="Ví dụ: Phật tử Diệu Hiền · Nguyễn Thị Mai" />
+              </div>
+              <div class="blessing-tower-field">
+                <label for="bt-birth-year" class="hoadang-label">Năm sinh (tùy chọn):</label>
+                <input id="bt-birth-year" type="text" inputmode="numeric" maxlength="4" class="hoadang-input" value="${draftBirthYear.replace(/"/g, '&quot;')}" placeholder="Ví dụ: 1965" />
+              </div>
+            </div>
+
+            <div class="blessing-tower-field">
+              <label for="bt-family-note" class="hoadang-label">3. Cùng gia quyến / Địa phương (tùy chọn):</label>
+              <input id="bt-family-note" type="text" class="hoadang-input" value="${draftFamily.replace(/"/g, '&quot;')}" placeholder="Ví dụ: Cùng hợp gia quyến tại Mỹ Tho, Tiền Giang" />
+            </div>
+
+            <div class="blessing-tower-field">
+              <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
+                <label for="bt-wish-text" class="hoadang-label">4. Lời chúc nguyện dâng lên Tam Bảo:</label>
+                <button type="button" id="btn-bt-fill-verse" class="mail-reply-btn">Điền câu nguyện mẫu</button>
+              </div>
+              <textarea id="bt-wish-text" class="feedback-textarea" rows="2" placeholder="Nhập lời cầu an cho cha mẹ, gia đình hoặc bản thân...">${draftWish}</textarea>
+            </div>
+
+            ${
+              feedbackMsg
+                ? `<div id="bt-form-feedback" class="blessing-tower-feedback ${feedbackOk ? 'ok' : 'err'}" role="status">${feedbackMsg}</div>`
+                : `<div id="bt-form-feedback" style="display:none;"></div>`
+            }
+
+            <button type="button" id="btn-submit-blessing-tower" class="arrival-primary-btn" style="width:100%;min-height:50px;">
+              🏮 Thắp Đèn &amp; Ghi Tên Cầu Phước (+25 🪷 · +20 XP)
+            </button>
+          </div>
+
+          <div class="hub-section-heading">📜 Danh sách Sớ Đèn Cầu An đang sáng trên Tháp (${entries.length}/108)</div>
+          <div class="blessing-tower-entries-list" id="blessing-tower-entries-list">
+            ${entries
+              .slice(0, 24)
+              .map((item) => {
+                const cat = BLESSING_TOWER_CATEGORIES.find((c) => c.id === item.categoryId) || activeCat;
+                return `
+                <div class="blessing-tower-entry-row ${item.id === this.blessingTower?.lastRegisteredId ? 'highlight' : ''}">
+                  <div class="blessing-tower-entry-head">
+                    <strong class="blessing-tower-entry-name">${cat.icon} ${item.devoteeName}${item.birthYear ? ` (${item.birthYear})` : ''}</strong>
+                    <span class="blessing-tower-entry-meta">Ô đèn #${item.slotNumber} · Tầng ${item.tier}/13 · ${cat.label} · ${item.dateKey}</span>
+                  </div>
+                  ${item.familyNote ? `<div class="blessing-tower-entry-family">${item.familyNote}</div>` : ''}
+                  <div class="blessing-tower-entry-wish">“${item.wishText}”</div>
+                </div>`;
+              })
+              .join('')}
+          </div>
+        </div>
+        `,
+        { variant: 'scroll' }
+      );
+
+      document.getElementById('btn-bt-focus-3d')?.addEventListener('click', focusTowerIn3D);
+
+      document.querySelectorAll('[data-bt-cat]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          draftName = document.getElementById('bt-devotee-name')?.value ?? draftName;
+          draftBirthYear = document.getElementById('bt-birth-year')?.value ?? draftBirthYear;
+          draftFamily = document.getElementById('bt-family-note')?.value ?? draftFamily;
+          const prevCat = BLESSING_TOWER_CATEGORIES.find((c) => c.id === selectedCategoryId);
+          const curWishVal = document.getElementById('bt-wish-text')?.value ?? draftWish;
+          selectedCategoryId = btn.getAttribute('data-bt-cat') || BLESSING_TOWER_CATEGORIES[0].id;
+          const nextCat = BLESSING_TOWER_CATEGORIES.find((c) => c.id === selectedCategoryId) || BLESSING_TOWER_CATEGORIES[0];
+          if (!curWishVal.trim() || (prevCat && curWishVal.trim() === prevCat.blessingVerse)) {
+            draftWish = nextCat.blessingVerse;
+          } else {
+            draftWish = curWishVal;
+          }
+          feedbackMsg = '';
+          this.playMokugyoTap();
+          renderTowerModal();
+        });
+      });
+
+      document.getElementById('btn-bt-fill-verse')?.addEventListener('click', () => {
+        const cat = BLESSING_TOWER_CATEGORIES.find((c) => c.id === selectedCategoryId) || BLESSING_TOWER_CATEGORIES[0];
+        draftWish = cat.blessingVerse;
+        const ta = document.getElementById('bt-wish-text');
+        if (ta) ta.value = draftWish;
+        this.playMokugyoTap();
+      });
+
+      document.getElementById('btn-submit-blessing-tower')?.addEventListener('click', () => {
+        draftName = document.getElementById('bt-devotee-name')?.value ?? '';
+        draftBirthYear = document.getElementById('bt-birth-year')?.value ?? '';
+        draftFamily = document.getElementById('bt-family-note')?.value ?? '';
+        draftWish = document.getElementById('bt-wish-text')?.value ?? '';
+
+        const res = registerBlessingTowerPrayer(
+          this.blessingTower,
+          {
+            devoteeName: draftName,
+            birthYear: draftBirthYear,
+            familyNote: draftFamily,
+            categoryId: selectedCategoryId,
+            wishText: draftWish
+          },
+          new Date()
+        );
+
+        if (!res.ok) {
+          feedbackOk = false;
+          feedbackMsg = res.message;
+          this.playMokugyoTap();
+          renderTowerModal();
+          return;
+        }
+
+        this.blessingTower = res.state;
+        this.studentName = res.entry.devoteeName;
+        this.storeProfile.lotusPoints += res.rewardLotus;
+        this.spiritual = recordSpiritualMilestone(
+          this.spiritual,
+          `Thắp đèn cầu an tại Tháp Đèn Chánh Điện (Ô #${res.entry.slotNumber})`
+        );
+        this.grantPilgrimXp(res.rewardXp, 'Ghi tên Tháp Đèn Cầu An');
+        this.syncBlessingTowerTo3D();
+        this.saveState();
+        this.updateActionBadges();
+        this.playBellTone(243, 3.0);
+        feedbackOk = true;
+        feedbackMsg = `✨ ${res.message} (+${res.rewardLotus} 🪷 · +${res.rewardXp} XP)`;
+        renderTowerModal();
+      });
+    };
+
+    renderTowerModal();
   }
 
   openHoaDangModal() {
@@ -2121,9 +2451,16 @@ export class ChuaOnlineApp {
       return;
     }
 
-    // Fallback when SpeechSynthesis is unavailable or muted
+    // Fallback when SpeechSynthesis or vi-VN voice is unavailable on mobile/WebView
+    this.ttsSpeaking = false;
     this.playBellTone(260, 2.0);
-    this.playVoiceAudio(lesson.audio);
+    this.playVoiceAudio(lesson.audio, { rate: this.readAlongRate || 1.0 });
+    this.showToast(
+      '🎙️ Đang phát Pháp âm ghi âm sẵn',
+      `Thiết bị chưa có giọng đọc tiếng Việt — phát bản thu trực tiếp (${this.readAlongRate === 0.85 ? '0.85x Chậm' : '1.0x Chuẩn'}).`,
+      3800,
+      false
+    );
     this.renderLectureStage();
   }
 
@@ -2989,7 +3326,11 @@ export class ChuaOnlineApp {
             if (!o.geometry.getAttribute('normal')) o.geometry.computeVertexNormals();
             o.geometry.computeBoundingBox();
             if (o.isSkinnedMesh && o.geometry.boundingBox) {
-              bbox = o.geometry.boundingBox;
+              if (!bbox) {
+                bbox = o.geometry.boundingBox.clone();
+              } else {
+                bbox.union(o.geometry.boundingBox);
+              }
             }
           }
           o.material = o.material
@@ -3025,6 +3366,7 @@ export class ChuaOnlineApp {
 
     if (!opts.skipWalk && this.world3d && !this.world3d.insideInterior && !nearOutdoorStatue) {
       this.toggleInteriorHallIn3D(true, () => {
+        this.world3d?.goToInteriorZone?.('chanh_dien');
         this.triggerLePhat({ skipWalk: true });
       });
       return;
@@ -3881,7 +4223,7 @@ export class ChuaOnlineApp {
         if (this.audioPlaying) {
           this.pauseVoiceAudio();
         } else {
-          this.playVoiceAudio(lesson.audio);
+          this.playVoiceAudio(lesson.audio, { rate: this.readAlongRate || 1.0 });
         }
         this.renderLectureStage();
       });
@@ -3978,7 +4320,7 @@ export class ChuaOnlineApp {
         if (this.audioPlaying) {
           this.pauseVoiceAudio();
         } else {
-          this.playVoiceAudio(lesson.audio);
+          this.playVoiceAudio(lesson.audio, { rate: this.readAlongRate || 1.0 });
         }
         this.renderLectureStage();
       });
@@ -5856,9 +6198,14 @@ export class ChuaOnlineApp {
           document.getElementById('btn-arhat-tts')?.addEventListener('click', () => {
             const text = `Vị thứ ${a.id}: ${a.title}, ${a.name}. Đặc trưng: ${a.emblem}. ${a.meaning}`;
             this.ensureAudioContext();
-            this.audio?.speakText?.(text, { rate: this.readAlongRate || 1.0, lang: 'vi-VN', pitch: 0.98 });
+            const spoke = this.audio?.speakText?.(text, { rate: this.readAlongRate || 1.0, lang: 'vi-VN', pitch: 0.98 });
             this.playBellTone(360, 1.4);
-            this.showToast(`🙏 ${a.title}`, a.meaning, 4200, false);
+            this.showToast(
+              spoke ? `🙏 ${a.title}` : `🙏 ${a.title} (Bản đọc chữ)`,
+              spoke ? a.meaning : `${a.meaning} (Thiết bị chưa cài giọng đọc tiếng Việt — mời cô bác đọc nội dung trên thẻ.)`,
+              4500,
+              false
+            );
           });
           document.getElementById('btn-arhat-goto-hall')?.addEventListener('click', () => {
             const targetIdx = selectedArhatIdx;
@@ -7074,7 +7421,8 @@ export class ChuaOnlineApp {
       const w = Math.max(260, rect.width || 282);
       const h = Math.max(260, rect.height || 292);
 
-      const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+      const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'default' });
+      renderer.debug.checkShaderErrors = false;
       renderer.setSize(w, h, false);
       renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
       renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -7132,7 +7480,11 @@ export class ChuaOnlineApp {
               if (!o.geometry.getAttribute('normal')) o.geometry.computeVertexNormals();
               o.geometry.computeBoundingBox();
               if (o.isSkinnedMesh && o.geometry.boundingBox) {
-                geomBox = o.geometry.boundingBox;
+                if (!geomBox) {
+                  geomBox = o.geometry.boundingBox.clone();
+                } else {
+                  geomBox.union(o.geometry.boundingBox);
+                }
               }
             }
             if (o.material) {
@@ -7219,8 +7571,27 @@ export class ChuaOnlineApp {
       }
 
       let disposed = false;
+      let contextLost = false;
       let dragging = false;
       let prevX = 0;
+      const onContextLost = (e) => {
+        e.preventDefault();
+        contextLost = true;
+      };
+      const onContextRestored = () => {
+        contextLost = false;
+      };
+      canvas.addEventListener('webglcontextlost', onContextLost, false);
+      canvas.addEventListener('webglcontextrestored', onContextRestored, false);
+
+      const safeRender = () => {
+        if (disposed || contextLost) return;
+        try {
+          if (renderer.getContext?.()?.isContextLost?.()) return;
+          renderer.render(scene, camera);
+        } catch {}
+      };
+
       const onDown = (e) => {
         dragging = true;
         prevX = e.clientX;
@@ -7241,14 +7612,19 @@ export class ChuaOnlineApp {
       this._profileStageDispose = () => {
         disposed = true;
         if (profileTimer) clearTimeout(profileTimer);
+        canvas.removeEventListener('webglcontextlost', onContextLost, false);
+        canvas.removeEventListener('webglcontextrestored', onContextRestored, false);
         canvas.removeEventListener('pointerdown', onDown);
         window.removeEventListener('pointerup', onUp);
         window.removeEventListener('pointermove', onMove);
         renderer.dispose();
+        try {
+          renderer.forceContextLoss?.();
+        } catch {}
       };
 
       stageGroup.rotation.y = 0.18;
-      renderer.render(scene, camera);
+      safeRender();
 
       const tickDelay = this.world3d?.isSoftwareGl ? 240 : 33;
       const tick = () => {
@@ -7258,7 +7634,7 @@ export class ChuaOnlineApp {
         }
         if (mixer) mixer.update(tickDelay / 1000);
         if (!dragging) stageGroup.rotation.y += 0.006;
-        renderer.render(scene, camera);
+        safeRender();
         profileTimer = setTimeout(() => {
           if (!disposed) requestAnimationFrame(tick);
         }, tickDelay);
@@ -7284,7 +7660,8 @@ export class ChuaOnlineApp {
       const w = Math.max(240, rect.width || 280);
       const h = Math.max(240, rect.height || 280);
 
-      const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+      const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'default' });
+      renderer.debug.checkShaderErrors = false;
       renderer.setSize(w, h, false);
       renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
       renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -7317,8 +7694,27 @@ export class ChuaOnlineApp {
       camera.lookAt(0, size.y * 0.48, 0);
 
       let disposed = false;
+      let contextLost = false;
       let dragging = false;
       let prevX = 0;
+      const onContextLost = (e) => {
+        e.preventDefault();
+        contextLost = true;
+      };
+      const onContextRestored = () => {
+        contextLost = false;
+      };
+      canvas.addEventListener('webglcontextlost', onContextLost, false);
+      canvas.addEventListener('webglcontextrestored', onContextRestored, false);
+
+      const safeRender = () => {
+        if (disposed || contextLost) return;
+        try {
+          if (renderer.getContext?.()?.isContextLost?.()) return;
+          renderer.render(scene, camera);
+        } catch {}
+      };
+
       const onDown = (e) => {
         dragging = true;
         prevX = e.clientX;
@@ -7339,14 +7735,19 @@ export class ChuaOnlineApp {
       this._arhatStageDispose = () => {
         disposed = true;
         if (arhatTimer) clearTimeout(arhatTimer);
+        canvas.removeEventListener('webglcontextlost', onContextLost, false);
+        canvas.removeEventListener('webglcontextrestored', onContextRestored, false);
         canvas.removeEventListener('pointerdown', onDown);
         window.removeEventListener('pointerup', onUp);
         window.removeEventListener('pointermove', onMove);
         renderer.dispose();
+        try {
+          renderer.forceContextLoss?.();
+        } catch {}
       };
 
       stageGroup.rotation.y = 0.25;
-      renderer.render(scene, camera);
+      safeRender();
 
       const tickDelay = this.world3d?.isSoftwareGl ? 240 : 33;
       const tick = () => {
@@ -7355,7 +7756,7 @@ export class ChuaOnlineApp {
           return;
         }
         if (!dragging) stageGroup.rotation.y += 0.0065;
-        renderer.render(scene, camera);
+        safeRender();
         arhatTimer = setTimeout(() => {
           if (!disposed) requestAnimationFrame(tick);
         }, tickDelay);
@@ -7370,6 +7771,12 @@ export class ChuaOnlineApp {
   async mountInteractive3DStage(canvasId, { item, charKey }) {
     const canvas = document.getElementById(canvasId);
     if (!canvas) return;
+    if (this._interactiveStageDispose) {
+      try {
+        this._interactiveStageDispose();
+      } catch {}
+      this._interactiveStageDispose = null;
+    }
 
     try {
       const THREE = await import('three');
@@ -7377,7 +7784,8 @@ export class ChuaOnlineApp {
       const w = Math.max(240, rect.width || 320);
       const h = Math.max(220, rect.height || 260);
 
-      const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+      const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'default' });
+      renderer.debug.checkShaderErrors = false;
       renderer.setSize(w, h, false);
       renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
       renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -7486,6 +7894,8 @@ export class ChuaOnlineApp {
       }
 
       let dragging = false;
+      let disposed = false;
+      let contextLost = false;
       const isSoftPreview = (() => {
         try {
           const gl = renderer.getContext();
@@ -7496,6 +7906,24 @@ export class ChuaOnlineApp {
           return false;
         }
       })();
+      const onContextLost = (e) => {
+        e.preventDefault();
+        contextLost = true;
+      };
+      const onContextRestored = () => {
+        contextLost = false;
+      };
+      canvas.addEventListener('webglcontextlost', onContextLost, false);
+      canvas.addEventListener('webglcontextrestored', onContextRestored, false);
+
+      const safeRender = () => {
+        if (disposed || contextLost) return;
+        try {
+          if (renderer.getContext?.()?.isContextLost?.()) return;
+          renderer.render(scene, camera);
+        } catch {}
+      };
+
       let prevX = 0;
       const onDown = (e) => {
         dragging = true;
@@ -7508,13 +7936,12 @@ export class ChuaOnlineApp {
         if (!dragging) return;
         stageGroup.rotation.y += (e.clientX - prevX) * 0.012;
         prevX = e.clientX;
-        if (isSoftPreview) renderer.render(scene, camera);
+        if (isSoftPreview) safeRender();
       };
       canvas.addEventListener('pointerdown', onDown);
       window.addEventListener('pointerup', onUp);
       window.addEventListener('pointermove', onMove);
 
-      let disposed = false;
       let rafId = null;
       let timerId = null;
       const cleanup = () => {
@@ -7522,6 +7949,8 @@ export class ChuaOnlineApp {
         disposed = true;
         if (timerId) clearTimeout(timerId);
         if (rafId) cancelAnimationFrame(rafId);
+        canvas.removeEventListener('webglcontextlost', onContextLost, false);
+        canvas.removeEventListener('webglcontextrestored', onContextRestored, false);
         canvas.removeEventListener('pointerdown', onDown);
         window.removeEventListener('pointerup', onUp);
         window.removeEventListener('pointermove', onMove);
@@ -7530,7 +7959,7 @@ export class ChuaOnlineApp {
           renderer.forceContextLoss?.();
         } catch {}
       };
-      this._profileStageDispose = cleanup;
+      this._interactiveStageDispose = cleanup;
 
       const animate = () => {
         if (disposed || !document.body.contains(canvas)) {
@@ -7538,7 +7967,7 @@ export class ChuaOnlineApp {
           return;
         }
         if (!dragging) stageGroup.rotation.y += 0.008;
-        renderer.render(scene, camera);
+        safeRender();
         if (!isSoftPreview) {
           timerId = setTimeout(() => {
             if (!disposed) rafId = requestAnimationFrame(animate);
@@ -8049,6 +8478,12 @@ export class ChuaOnlineApp {
       } catch {}
       this._profileStageDispose = null;
     }
+    if (this._interactiveStageDispose) {
+      try {
+        this._interactiveStageDispose();
+      } catch {}
+      this._interactiveStageDispose = null;
+    }
     const modal = document.getElementById('universal-modal');
     const card = modal?.querySelector('.modal-card');
     if (modal) {
@@ -8142,7 +8577,7 @@ export class ChuaOnlineApp {
       this.saveAudioMixerState();
     });
 
-    // Interior Chữ Quốc 6-hall + Trai Đường quick navigation bar + Cutaway & Historical Source modal
+    // Interior Square (Hình Vuông) + Hồ Sen Bộ + Trai Đường quick navigation bar + Cutaway & Historical Source modal
     document.querySelectorAll('[data-interior-zone]').forEach((btn) => {
       btn.addEventListener('click', () => {
         const zone = btn.getAttribute('data-interior-zone');
@@ -8150,16 +8585,41 @@ export class ChuaOnlineApp {
         this.world3d.goToInteriorZone(zone);
         this.highlightInteriorZoneChip(zone);
         const zoneNotes = {
-          tien_duong: ['1. Tiền đường · Khu Tiếp Đón', 'Hoành phi Tiền đường, Ban Hộ Pháp Vi Đà & Ban Tiêu Diện dưới hàng vòm Á–Âu.'],
-          chanh_dien: ['2. Chánh điện · Tam Bảo', 'Tôn tượng Tam Bảo, cặp Long Trụ rồng cuốn, Bao lam chạm lọng thếp vàng & 18 vị La Hán.'],
-          non_bo_giua: ['3. Sân Thiên Tỉnh 1 (Giếng trời)', 'Khoảng sân giếng trời thoáng sáng với Hòn Non Bộ, thác nước và đàn cá Koi.'],
-          khu_tho: ['4. Nhà Tổ · Hậu Tổ Đường', 'Nơi tôn thờ Chư Vị Tổ Sư khai sơn tạo tự, Ban Quán Thế Âm & Ban Địa Tạng.'],
-          san_thien_tinh_2: ['5. Sân Thiên Tỉnh 2 (Giếng trời)', 'Khoảng sân giếng trời nối Nhà Tổ với Nhà Hậu, tiểu cảnh sen đá & hành lang gỗ.'],
-          nha_hau: ['6. Nhà Hậu · Khu Thờ Tự Phía Sau', 'Không gian thờ tự & sinh hoạt phía sau khép kín mặt bằng chữ Quốc (國).'],
-          trai_duong: ['🍚 Nhà Sàn Gỗ Trai Đường', 'Khu ăn chay Phật tử dựng bằng gỗ căm xe trên sàn cọc miền Tây bên hồ sen.']
+          day_ban_tho_phai: [
+            '1. Lối Góc Dưới Bên Phải · Dải Bàn Thờ',
+            'Đi một đường thẳng từ góc dưới bên phải qua Tượng Phật Nghìn Mắt Nghìn Tay, Chỗ Ngủ Của Phật, Ban Dược Sư, Địa Tạng và Văn Thù – Phổ Hiền.'
+          ],
+          nghin_mat_nghin_tay: [
+            '🙏 Ban Tượng Phật Nghìn Mắt Nghìn Tay',
+            'Tôn tượng Đức Thiên Thủ Thiên Nhãn Quán Thế Âm thếp vàng uy nghiêm mở đầu dải bàn thờ bên phải.'
+          ],
+          cho_ngu_cua_phat: [
+            '🪷 Chỗ Ngủ Của Phật · Đức Phật Nhập Niết Bàn',
+            'Khám thờ gỗ căm xe chạm trổ cùng rèm gấm đỏ tôn trí Đức Phật an nhiên Cát Tường Ngoạ.'
+          ],
+          chanh_dien: [
+            '2. Cạnh Trên Hình Vuông · Chính Điện Lễ Phật',
+            'Đại Hùng Bửu Điện với Bàn Thờ Tam Bảo, 3 bồ đoàn quỳ lạy Phật, Tháp Đèn Cầu An, cặp Long Trụ, Đại Hồng Chung & Trống Bát Nhã.'
+          ],
+          ho_sen_bo: [
+            '3. Giữa Hình Vuông · Hồ Sen Bộ & Hòn Non Bộ',
+            'Khoảng sân mở chính giữa bốn dãy vòm vàng Pháp–Việt với Hồ Sen nở rộ, cá Koi bơi lội, cầu đá và Hòn Non Bộ cổ kính.'
+          ],
+          hanh_lang_trai: [
+            '4. Cạnh Trái Hình Vuông · Tổ Đường & 18 Vị La Hán',
+            'Tổ Đường Sơ Tổ Bồ Đề Đạt Ma và dãy 18 vị La Hán sơn son thếp vàng dọc hành lang phía Tây.'
+          ],
+          hanh_lang_duoi: [
+            '5. Cạnh Dưới Hình Vuông · Vi Đà Hộ Pháp & Bia Cổ Tự',
+            'Hành lang phía Nam khép kín vòng dạo hình vuông với Ban Hộ Pháp Vi Đà, Tiêu Diện Đại Sĩ và Bia Cổ Tự Vĩnh Tràng (1849).'
+          ],
+          trai_duong: [
+            '🍚 Nhà Sàn Gỗ Trai Đường',
+            'Khu ăn chay Phật tử dựng bằng gỗ căm xe trên sàn cọc miền Tây nối qua cổng vòm hành lang phải.'
+          ]
         };
         const msg = zoneNotes[zone];
-        if (msg) this.showToast(msg[0], msg[1], 3800, false);
+        if (msg) this.showToast(msg[0], msg[1], 4000, false);
       });
     });
     document.getElementById('btn-interior-cutaway')?.addEventListener('click', () => {
@@ -8168,10 +8628,10 @@ export class ChuaOnlineApp {
       const btn = document.getElementById('btn-interior-cutaway');
       if (btn) btn.classList.toggle('active', on);
       this.showToast(
-        on ? '✂️ Đang bật Mặt cắt Kiến trúc 3D' : '🏛️ Trở lại góc nhìn tham quan trực tiếp',
+        on ? '✂️ Đang bật Mặt cắt Kiến trúc Hình Vuông 3D' : '🏛️ Trở lại góc nhìn tham quan trực tiếp',
         on
-          ? 'Ẩn trần mái & vách Tây để quan sát trọn vẹn mặt bằng Chữ Quốc (國), hệ vì kèo gỗ, Long Trụ và 2 Sân Thiên Tỉnh.'
-          : 'Đã khôi phục mái ngói và tường bao nguyên bản bên trong Chùa Chính.',
+          ? 'Ẩn trần mái để quan sát trọn vẹn mặt bằng Hình Vuông: Lối Góc Dưới Bên Phải, Dải Bàn Thờ, Chính Điện cạnh trên và Hồ Sen Bộ ở giữa.'
+          : 'Đã khôi phục hệ mái ngói và trần gỗ nguyên bản bên trong Chùa Chính.',
         4200,
         false
       );
@@ -8213,6 +8673,9 @@ export class ChuaOnlineApp {
         </div>
         `
       );
+    });
+    document.getElementById('btn-interior-blessing-tower')?.addEventListener('click', () => {
+      this.openBlessingTowerModal();
     });
     document.getElementById('btn-interior-exit-courtyard')?.addEventListener('click', () => {
       this.toggleInteriorHallIn3D(false);
@@ -8344,6 +8807,9 @@ export class ChuaOnlineApp {
     document.getElementById('btn-open-heritage-book')?.addEventListener('click', () => {
       this.openHeritageBookModal();
     });
+    document.getElementById('btn-open-blessing-tower')?.addEventListener('click', () => {
+      this.openBlessingTowerModal();
+    });
     document.getElementById('btn-open-hoa-dang')?.addEventListener('click', () => {
       this.openHoaDangModal();
     });
@@ -8465,6 +8931,7 @@ export class ChuaOnlineApp {
     document.getElementById('btn-lecture-font-inc')?.addEventListener('click', () => this.stepElderFontScale(1));
     document.getElementById('btn-lecture-speed-toggle')?.addEventListener('click', () => {
       this.readAlongRate = this.readAlongRate === 0.85 ? 1.0 : 0.85;
+      this.audio?.setVoicePlaybackRate?.(this.readAlongRate);
       const btn = document.getElementById('btn-lecture-speed-toggle');
       if (btn) {
         btn.textContent = `🐢 ${this.readAlongRate === 0.85 ? '0.85x Chậm' : '1.0x Chuẩn'}`;

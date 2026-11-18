@@ -42,14 +42,21 @@ import {
   VINH_TRANG_OKLCH_PALETTE
 } from '../logic/chua-online-logic.mjs';
 import {
+  createSculptedSeatedBuddha,
   createSculptedBodhisattva,
+  createSeatedBodhisattva,
+  createSculptedGuardian,
   createSculptedPatriarch,
-  createSculptedGardenArhat
+  createSculptedGardenArhat,
+  createStandingCrimsonMonkStatue,
+  createThousandArmedQuanAm,
+  createIndoorSleepingBuddhaBed
 } from './sculpted-buddhas.mjs';
 import {
   findCharacterBones,
   attachStorePropsToCharacterRig
 } from './garment-and-showcase-3d.mjs';
+import { buildSquareChanhDienInterior } from './vinh-trang-square-interior.mjs';
 
 // Pre-allocated scratch vectors for zero-GC animation & camera loop
 const _tourPos = new THREE.Vector3();
@@ -99,7 +106,9 @@ const STATUE_GLB_PATHS = {
   quanAm: '/Mô hình 3D Vĩnh Tràng/Tượng/quan-am-nam-hai.glb',
   hoPhap: '/Mô hình 3D Vĩnh Tràng/Tượng/ho-phap-vi-da.glb',
   tieuDien: '/Mô hình 3D Vĩnh Tràng/Tượng/tieu-dien-dai-si.glb',
-  toDatMa: '/Mô hình 3D Vĩnh Tràng/Tượng/to-dat-ma.glb'
+  toDatMa: '/Mô hình 3D Vĩnh Tràng/Tượng/to-dat-ma.glb',
+  nghinMatNghinTay: '/Thiết kế giao diện/Vật phẩm 3D/meshy_assets/tuong-phat-nghin-mat-nghin-tay.glb',
+  choNguCuaPhat: '/Thiết kế giao diện/Vật phẩm 3D/meshy_assets/cho-ngu-cua-phat.glb'
 };
 
 const ARHAT_GLB_PATHS = {
@@ -117,13 +126,16 @@ const ARHAT_GLB_PATHS = {
 };
 
 const ARCH_GLB_PATHS = {
-  mat_tien: '/Mô hình 3D Vĩnh Tràng/Bản dựng mới/mat-tien-vinh-trang.glb',
+  mat_tien: '/Mô hình 3D Vĩnh Tràng/Bản dựng mới/mat-tien-vinh-trang-meshy.glb',
+  mat_tien_legacy: '/Mô hình 3D Vĩnh Tràng/Bản dựng mới/mat-tien-vinh-trang.glb',
   tam_quan: '/Mô hình 3D Vĩnh Tràng/Bản dựng mới/tam-quan-vinh-trang.glb',
   bao_thap: '/Thiết kế giao diện/Vật phẩm 3D/meshy_assets/bao-thap-7-tang.glb',
   dai_hong_chung: '/Thiết kế giao diện/Vật phẩm 3D/meshy_assets/dai-hong-chung.glb',
   trong_bat_nha: '/Thiết kế giao diện/Vật phẩm 3D/meshy_assets/trong-bat-nha.glb',
   long_tru: '/Thiết kế giao diện/Vật phẩm 3D/meshy_assets/long-tru-rong-cuon.glb',
   bao_lam: '/Thiết kế giao diện/Vật phẩm 3D/meshy_assets/bao-lam-thep-vang.glb',
+  thap_den_cau_an: '/Thiết kế giao diện/Vật phẩm 3D/meshy_assets/thap-den-cau-an.glb',
+  hon_non_bo: '/Thiết kế giao diện/Vật phẩm 3D/meshy_assets/hon-non-bo-thien-tinh.glb',
   xe_khach: '/Thiết kế giao diện/Vật phẩm 3D/meshy_assets/xe-khach-du-lich.glb',
   xe_oto: '/Thiết kế giao diện/Vật phẩm 3D/meshy_assets/xe-o-to-gia-dinh.glb'
 };
@@ -322,28 +334,60 @@ export class VinhTrang3DWorld {
 
     this.camera = new THREE.PerspectiveCamera(48, 16 / 9, 0.2, 420);
 
-    this.isSoftwareGl = (() => {
-      const gl = document.createElement('canvas').getContext('webgl2');
-      if (!gl) return true;
-      const ext = gl.getExtension('WEBGL_debug_renderer_info');
-      const param = ext ? ext.UNMASKED_RENDERER_WEBGL : gl.RENDERER;
-      const gpu = String(gl.getParameter(param));
-      gl.getExtension('WEBGL_lose_context')?.loseContext();
-      return /SwiftShader|llvmpipe|softpipe|Software|Basic Render/i.test(gpu);
-    })();
+    this.contextLost = false;
+    this.lectureHallMode = false;
+    this.timeOfDay = 'morning';
+    this.glbPromiseCache = new Map();
+    this._interiorLoadPromise = null;
+    this._interiorGLBsMounted = false;
+    this._interiorWorshippersSpawned = false;
+    this._phase2Started = false;
+    this.guidedBeaconGroup = null;
+    this.guidedBeaconKey = null;
 
     this.renderer = new THREE.WebGLRenderer({
       canvas: this.canvas,
-      antialias: !this.isSoftwareGl,
+      antialias: true,
       preserveDrawingBuffer: true,
-      powerPreference: 'high-performance'
+      powerPreference: 'default'
     });
+    this.renderer.debug.checkShaderErrors = false;
+    this.isSoftwareGl = (() => {
+      try {
+        const gl = this.renderer.getContext();
+        if (!gl) return true;
+        const ext = gl.getExtension('WEBGL_debug_renderer_info');
+        const param = ext ? ext.UNMASKED_RENDERER_WEBGL : gl.RENDERER;
+        const gpu = String(gl.getParameter(param) || '');
+        return /SwiftShader|llvmpipe|softpipe|Software|Basic Render/i.test(gpu);
+      } catch {
+        return true;
+      }
+    })();
+
     this.renderer.setPixelRatio(this.isSoftwareGl ? 1 : Math.min(window.devicePixelRatio || 1, 2));
     this.renderer.shadowMap.enabled = !this.isSoftwareGl;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.08;
+
+    this.canvas.addEventListener(
+      'webglcontextlost',
+      (ev) => {
+        ev.preventDefault();
+        this.contextLost = true;
+      },
+      false
+    );
+    this.canvas.addEventListener(
+      'webglcontextrestored',
+      () => {
+        this.contextLost = false;
+        this.renderFrame();
+      },
+      false
+    );
 
     try {
       const pmrem = new THREE.PMREMGenerator(this.renderer);
@@ -517,6 +561,7 @@ export class VinhTrang3DWorld {
 
     this.syncPlayerTransform();
     this._animateStarted = false;
+    this.loaded = false;
     this.loadAllGLBAssets();
   }
 
@@ -639,6 +684,8 @@ export class VinhTrang3DWorld {
 
   captureSnapshotDataURL() {
     try {
+      const gl = this.renderer?.getContext?.();
+      if (this.contextLost || gl?.isContextLost?.()) return null;
       this.renderer.render(this.scene, this.camera);
       return this.canvas.toDataURL('image/png');
     } catch {
@@ -783,11 +830,22 @@ export class VinhTrang3DWorld {
   }
 
   stepSimulation(dt = 0.016) {
-    this.updateHeldMovement(dt);
-    this.updateAutoWalk(dt);
-    this.stepEntranceTour(dt);
-    this.stepLotusBloom(dt);
-    this.stepRoadTraffic(dt);
+    const safeDt = Math.max(0.001, Math.min(Number(dt) || 0.016, 0.4));
+    if (this.interiorTransition) {
+      this.stepInteriorTransition(safeDt);
+    } else {
+      this.updateHeldMovement(safeDt);
+      this.updateAutoWalk(safeDt);
+    }
+    this.stepArrivalCutscene(safeDt);
+    this.stepEntranceTour(safeDt);
+    this.stepLotusBloom(safeDt);
+    this.stepRoadTraffic(safeDt);
+    this.stepPilgrimageCompanions(safeDt);
+    if (this.activePlayerRecord?.mixer) {
+      this.activePlayerRecord.mixer.update(safeDt);
+      this.updateProceduralPoseFallback(safeDt);
+    }
     this.checkStationProximity();
   }
 
@@ -986,7 +1044,11 @@ export class VinhTrang3DWorld {
 
   renderFrame() {
     this.updateProjectedPins();
-    this.renderer.render(this.scene, this.camera);
+    const gl = this.renderer?.getContext?.();
+    if (this.contextLost || !gl || gl.isContextLost?.()) return;
+    try {
+      this.renderer.render(this.scene, this.camera);
+    } catch {}
   }
 
   initTexturesAndMaterials() {
@@ -1597,6 +1659,7 @@ export class VinhTrang3DWorld {
     // Cool sky bounce vs. warm alluvial earth bounce (threejs/SKILL.md warm/cool contrast)
     const hemi = new THREE.HemisphereLight(0xBFE2FF, 0x7A5E3E, 1.18);
     this.scene.add(hemi);
+    this.hemiLight = hemi;
 
     // Warm 7:30 AM Mekong morning pilgrimage key sun
     const sun = new THREE.DirectionalLight(0xFFD99E, 1.82);
@@ -1612,49 +1675,103 @@ export class VinhTrang3DWorld {
     sun.shadow.bias = -0.0004;
     sun.shadow.normalBias = 0.02;
     this.scene.add(sun);
+    this.sunLight = sun;
 
     const frontFill = new THREE.DirectionalLight(0xFFF3D8, 0.48);
     frontFill.position.set(28, 22, 54);
     this.scene.add(frontFill);
+    this.frontFillLight = frontFill;
   }
 
-  buildSkyDomeAndMountains() {
-    // Morning Pilgrimage Sky (7:30 AM Mỹ Tho / Mekong Delta — golden-mist horizon fading to clear cerulean)
+  _buildSkyTextureForPreset(presetKey = 'morning') {
+    if (!this.skyTextures) this.skyTextures = {};
+    if (this.skyTextures[presetKey]) return this.skyTextures[presetKey];
+
     const skyCanvas = document.createElement('canvas');
     skyCanvas.width = 1024;
     skyCanvas.height = 512;
     const sctx = skyCanvas.getContext('2d');
     const grad = sctx.createLinearGradient(0, 0, 0, 512);
-    grad.addColorStop(0.0, '#4D93D9');
-    grad.addColorStop(0.32, '#98CBEF');
-    grad.addColorStop(0.62, '#D7E8F3');
-    grad.addColorStop(0.84, '#F3DFC2');
-    grad.addColorStop(1.0, '#E5D6BC');
-    sctx.fillStyle = grad;
-    sctx.fillRect(0, 0, 1024, 512);
 
-    // Warm morning sunlit cumulus wisps & gentle horizon mist bands
-    for (let i = 0; i < 38; i++) {
-      const cx = ((i * 107) % 980) + 22;
-      const cy = 120 + (i % 6) * 26;
-      const scale = 0.85 + (i % 4) * 0.35;
-      sctx.fillStyle = i % 2 === 0 ? 'rgba(255,248,232,0.68)' : 'rgba(252,238,215,0.48)';
-      for (let j = 0; j < 5; j++) {
+    if (presetKey === 'evening') {
+      grad.addColorStop(0.0, '#09132B');
+      grad.addColorStop(0.38, '#172C59');
+      grad.addColorStop(0.68, '#38466E');
+      grad.addColorStop(0.88, '#6B5561');
+      grad.addColorStop(1.0, '#2A2738');
+      sctx.fillStyle = grad;
+      sctx.fillRect(0, 0, 1024, 512);
+      // Soft twilight stars in upper sky dome
+      for (let i = 0; i < 160; i++) {
+        const sx = (i * 197 + 41) % 1024;
+        const sy = (i * 89 + 17) % 240;
+        const r = i % 5 === 0 ? 1.8 : 1.0;
+        sctx.fillStyle = i % 7 === 0 ? 'rgba(255,232,175,0.88)' : 'rgba(235,244,255,0.72)';
         sctx.beginPath();
-        sctx.ellipse(
-          cx + (j - 2) * 22 * scale,
-          cy + (j % 2 === 0 ? -4 : 6) * scale,
-          (28 - Math.abs(j - 2) * 4) * scale,
-          (14 - Math.abs(j - 2) * 2) * scale,
-          0,
-          0,
-          Math.PI * 2
-        );
+        sctx.arc(sx, sy, r, 0, Math.PI * 2);
         sctx.fill();
       }
+      // Subtle warm evening cloud wisps
+      for (let i = 0; i < 24; i++) {
+        const cx = ((i * 137) % 960) + 32;
+        const cy = 240 + (i % 5) * 24;
+        sctx.fillStyle = 'rgba(130, 108, 128, 0.28)';
+        sctx.beginPath();
+        sctx.ellipse(cx, cy, 48, 13, 0, 0, Math.PI * 2);
+        sctx.fill();
+      }
+      sctx.fillStyle = 'rgba(22, 34, 42, 0.6)';
+    } else if (presetKey === 'midday') {
+      grad.addColorStop(0.0, '#1D74DC');
+      grad.addColorStop(0.36, '#6CB8F4');
+      grad.addColorStop(0.68, '#CBE6FA');
+      grad.addColorStop(0.88, '#EFE9DB');
+      grad.addColorStop(1.0, '#E1DACB');
+      sctx.fillStyle = grad;
+      sctx.fillRect(0, 0, 1024, 512);
+      for (let i = 0; i < 32; i++) {
+        const cx = ((i * 119) % 980) + 22;
+        const cy = 110 + (i % 6) * 26;
+        const scale = 0.8 + (i % 4) * 0.35;
+        sctx.fillStyle = 'rgba(255,255,255,0.72)';
+        for (let j = 0; j < 4; j++) {
+          sctx.beginPath();
+          sctx.ellipse(cx + (j - 1.5) * 22 * scale, cy + (j % 2 ? 4 : -4), 26 * scale, 12 * scale, 0, 0, Math.PI * 2);
+          sctx.fill();
+        }
+      }
+      sctx.fillStyle = 'rgba(116, 148, 112, 0.34)';
+    } else {
+      grad.addColorStop(0.0, '#4D93D9');
+      grad.addColorStop(0.32, '#98CBEF');
+      grad.addColorStop(0.62, '#D7E8F3');
+      grad.addColorStop(0.84, '#F3DFC2');
+      grad.addColorStop(1.0, '#E5D6BC');
+      sctx.fillStyle = grad;
+      sctx.fillRect(0, 0, 1024, 512);
+      // Warm morning sunlit cumulus wisps & gentle horizon mist bands
+      for (let i = 0; i < 38; i++) {
+        const cx = ((i * 107) % 980) + 22;
+        const cy = 120 + (i % 6) * 26;
+        const scale = 0.85 + (i % 4) * 0.35;
+        sctx.fillStyle = i % 2 === 0 ? 'rgba(255,248,232,0.68)' : 'rgba(252,238,215,0.48)';
+        for (let j = 0; j < 5; j++) {
+          sctx.beginPath();
+          sctx.ellipse(
+            cx + (j - 2) * 22 * scale,
+            cy + (j % 2 === 0 ? -4 : 6) * scale,
+            (28 - Math.abs(j - 2) * 4) * scale,
+            (14 - Math.abs(j - 2) * 2) * scale,
+            0,
+            0,
+            Math.PI * 2
+          );
+          sctx.fill();
+        }
+      }
+      sctx.fillStyle = 'rgba(138, 162, 126, 0.34)';
     }
-    // Soft distant Mekong tree-line silhouette band right at the horizon
-    sctx.fillStyle = 'rgba(138, 162, 126, 0.34)';
+
     for (let x = 0; x < 1024; x += 18) {
       const h = 10 + ((x * 37) % 16);
       sctx.beginPath();
@@ -1664,10 +1781,18 @@ export class VinhTrang3DWorld {
 
     const skyTex = new THREE.CanvasTexture(skyCanvas);
     skyTex.colorSpace = THREE.SRGBColorSpace;
+    this.skyTextures[presetKey] = skyTex;
+    return skyTex;
+  }
+
+  buildSkyDomeAndMountains() {
+    // Morning Pilgrimage Sky (7:30 AM Mỹ Tho / Mekong Delta — golden-mist horizon fading to clear cerulean)
+    const skyTex = this._buildSkyTextureForPreset('morning');
     const skyDome = new THREE.Mesh(
       new THREE.SphereGeometry(260, 36, 20),
       new THREE.MeshBasicMaterial({ map: skyTex, side: THREE.BackSide, fog: false })
     );
+    this.skyDome = skyDome;
     this.scene.add(skyDome);
 
     const M = this.MAT;
@@ -4413,24 +4538,88 @@ export class VinhTrang3DWorld {
       }
     }
 
-    // East Wing Side Porch and unobtrusive side-door access facing the right courtyard path.
-    const eastPorchRoof = makeHippedRoofMesh(4.4, 5.2, 1.35, M.roofTile);
-    eastPorchRoof.position.set(W / 2 + 1.85, 4.65, 2.4);
-    shell.add(eastPorchRoof);
-    for (const pz of [0.5, 4.3]) {
-      const pCol = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.2, 3.9, 10), M.redColumn);
-      pCol.position.set(W / 2 + 3.4, 2.0, pz);
-      shell.add(pCol);
+    // GROUND-LEVEL BOTTOM-RIGHT CORNER ENTRANCE ("Lối Vào Góc Dưới Bên Phải Chùa" — NOT the front porch doors!)
+    // Mounted directly on `g` (`this.chanhDienFacadeGroup`) at local (x = +13.0, z = +7.2) => world (36.0, 0, 8.2),
+    // aligned dead-center with the paved Right Side Path (33.8..38.2) at the bottom-right corner of Chánh Điện!
+    const rightCornerGate = new THREE.Group();
+    rightCornerGate.position.set(13.0, 0, 7.2);
+
+    // Connecting yellow-ochre masonry wing joining flush with the bottom-right corner of Chánh Điện
+    const rcWingBody = new THREE.Mesh(new THREE.BoxGeometry(3.8, 5.2, 4.4), M.goldWall);
+    rcWingBody.position.set(-0.35, 2.6, -1.9);
+    rcWingBody.castShadow = true;
+    rcWingBody.receiveShadow = true;
+    rightCornerGate.add(rcWingBody);
+    const rcWingCornice = new THREE.Mesh(new THREE.BoxGeometry(4.05, 0.28, 4.6), M.creamTrim);
+    rcWingCornice.position.set(-0.35, 5.25, -1.9);
+    rightCornerGate.add(rcWingCornice);
+
+    const rcStep = new THREE.Mesh(new THREE.BoxGeometry(3.8, 0.14, 3.2), M.stoneLight);
+    rcStep.position.set(0, 0.07, 0.4);
+    rcStep.receiveShadow = true;
+    rightCornerGate.add(rcStep);
+
+    for (const px of [-1.45, 1.45]) {
+      const pier = new THREE.Mesh(new THREE.BoxGeometry(0.62, 4.1, 0.68), M.goldWall);
+      pier.position.set(px, 2.05, 0.65);
+      pier.castShadow = true;
+      rightCornerGate.add(pier);
+      const col = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.19, 3.65, 12), M.redColumn);
+      col.position.set(px * 0.82, 1.9, 0.98);
+      rightCornerGate.add(col);
+      const cap = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.18, 0.52), M.goldAccent);
+      cap.position.set(px * 0.82, 3.8, 0.98);
+      rightCornerGate.add(cap);
     }
-    const eastSideDoorHit = new THREE.Mesh(
-      new THREE.BoxGeometry(2.4, 3.3, 1.0),
+
+    const rcArch = new THREE.Mesh(new THREE.TorusGeometry(1.18, 0.16, 8, 18, Math.PI), M.creamTrim);
+    rcArch.position.set(0, 3.35, 0.72);
+    rightCornerGate.add(rcArch);
+
+    // Dark recessed interior vestibule corridor behind the bottom-right archway
+    const rcDarkPortal = new THREE.Mesh(
+      new THREE.BoxGeometry(2.35, 3.45, 1.6),
+      new THREE.MeshStandardMaterial({ color: 0x1A0D07, roughness: 0.85 })
+    );
+    rcDarkPortal.position.set(0, 1.75, -0.2);
+    rightCornerGate.add(rcDarkPortal);
+
+    const rcCanopyRoof = makeHippedRoofMesh(4.4, 3.2, 1.25, M.roofTile);
+    rcCanopyRoof.position.set(0, 4.72, 0.45);
+    rightCornerGate.add(rcCanopyRoof);
+
+    const rcSign = new THREE.Mesh(
+      new THREE.BoxGeometry(3.35, 0.62, 0.12),
+      new THREE.MeshStandardMaterial({
+        map: makeTextTex('LỐI VÀO CHÍNH ĐIỆN · HÀNH LANG PHẢI →', {
+          w: 960,
+          h: 180,
+          bg: '#4A150D',
+          border: '#E5B23D',
+          color: '#FFE594',
+          size: 42
+        }),
+        roughness: 0.35
+      })
+    );
+    rcSign.position.set(0, 4.02, 1.08);
+    rightCornerGate.add(rcSign);
+
+    const rcGlow = new THREE.PointLight(0xFFC96B, 2.2, 8.5);
+    rcGlow.position.set(0, 3.2, 1.2);
+    rightCornerGate.add(rcGlow);
+
+    const rcHit = new THREE.Mesh(
+      new THREE.BoxGeometry(3.4, 4.2, 2.4),
       new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false })
     );
-    eastSideDoorHit.position.set(W / 2 + 2.0, 2.0, 2.4);
-    g.add(eastSideDoorHit);
-    this.sideDoorClickTargets.push(eastSideDoorHit);
+    rcHit.position.set(0, 2.1, 0.6);
+    rcHit.userData.doorSide = 'right';
+    rightCornerGate.add(rcHit);
+    g.add(rightCornerGate);
+    this.sideDoorClickTargets.push(rcHit);
 
-    // Two side staircases (cửa hông trái x=-7.2 & phải x=+7.2) leading up onto the porch terrace
+    // Decorative front terrace staircases (closed wooden doors — entry is strictly via Bottom-Right Corner Gate!)
     for (const sx of [-7.2, 7.2]) {
       for (let s = 0; s < 5; s++) {
         const step = new THREE.Mesh(
@@ -4452,21 +4641,6 @@ export class VinhTrang3DWorld {
       const sideDoor = new THREE.Mesh(new THREE.BoxGeometry(1.55, 2.75, 0.09), M.darkWood);
       sideDoor.position.set(sx, 2.72, D / 2 + 0.22);
       shell.add(sideDoor);
-      const doorSeam = new THREE.Mesh(new THREE.BoxGeometry(0.035, 2.5, 0.045), M.goldAccent);
-      doorSeam.position.set(sx, 2.72, D / 2 + 0.29);
-      shell.add(doorSeam);
-      for (const hx of [sx - 0.18, sx + 0.18]) {
-        const handle = new THREE.Mesh(new THREE.SphereGeometry(0.055, 8, 6), M.goldAccent);
-        handle.position.set(hx, 2.62, D / 2 + 0.34);
-        shell.add(handle);
-      }
-      const doorHit = new THREE.Mesh(
-        new THREE.BoxGeometry(2.0, 3.2, 0.8),
-        new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false })
-      );
-      doorHit.position.set(sx, 2.8, D / 2 + 0.18);
-      g.add(doorHit);
-      this.sideDoorClickTargets.push(doorHit);
     }
 
     const bodyH = 6.2;
@@ -4611,6 +4785,7 @@ export class VinhTrang3DWorld {
     this.chanhDienPorchAltar.add(porchTrim);
     const porchGlow = new THREE.PointLight(0xFFE082, 4.8, 12);
     porchGlow.position.set(0, 2.55, 0.75);
+    this.porchGlowLight = porchGlow;
     this.chanhDienPorchAltar.add(porchGlow);
     g.add(this.chanhDienPorchAltar);
 
@@ -5352,10 +5527,10 @@ export class VinhTrang3DWorld {
     this.exteriorGroup.add(this.nietBanGroup);
     this.addRectObstacle(-42.0, -7.0, -33.0, -15.0);
 
-    // 4. Đài Quán Thế Âm Bồ Tát (Beside RIGHT bougainvillea side pathway at (32.8, 0, 22.5) facing +X!)
+    // 4. Đài Quán Thế Âm Bồ Tát near entrance — oriented INWARD (-X / -Z toward inner temple courtyard & Chánh Điện)
     this.quanAmGroup = new THREE.Group();
-    this.quanAmGroup.position.set(32.8, 0, 22.5);
-    this.quanAmGroup.rotation.y = Math.PI / 2;
+    this.quanAmGroup.position.set(32.8, 0, 23.5);
+    this.quanAmGroup.rotation.y = -Math.PI * 0.62;
     const qaPool = new THREE.Mesh(new THREE.CylinderGeometry(2.65, 2.95, 0.52, 8), M.creamTrim);
     qaPool.position.y = 0.26;
     qaPool.receiveShadow = true;
@@ -5396,7 +5571,7 @@ export class VinhTrang3DWorld {
     const qaCrown = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.28, 0.36, 10), M.statueWhite);
     qaCrown.position.y = 5.88;
     this.quanAmGroup.add(qaCrown);
-    const qaVeil = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.56, 1.25, 10, 1, false, -Math.PI * 0.55, Math.PI * 1.1), M.statueWhite);
+    const qaVeil = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.56, 1.25, 10, 1, true, Math.PI * 0.45, Math.PI * 1.1), M.statueWhite);
     qaVeil.position.set(0, 5.25, -0.06);
     this.quanAmGroup.add(qaVeil);
     const qaLeftArm = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.1, 0.75, 8), M.statueWhite);
@@ -5637,42 +5812,18 @@ export class VinhTrang3DWorld {
       }
     }
 
-    // Palm trees & overhead 5-color flag strings flanking the Main Lotus Pond (image_97204806.png!)
+    // Keep Main Lotus Pond open & serene with stone corner lanterns instead of crude cone palms or mid-air flags
     if (showPalmFlagDecor) {
-      for (const [px, pz] of [
-        [-w / 2 - 0.8, d / 2 - 1.5],
-        [-w / 2 - 0.8, 0.5],
-        [-w / 2 - 0.8, -d / 2 + 1.5],
-        [w / 2 + 0.8, d / 2 - 1.8],
-        [w / 2 + 0.8, -d / 2 + 1.8]
+      for (const [lx, lz] of [
+        [-w / 2 - 0.5, d / 2 + 0.4],
+        [w / 2 + 0.5, d / 2 + 0.4],
+        [-w / 2 - 0.5, -d / 2 - 0.4],
+        [w / 2 + 0.5, -d / 2 - 0.4]
       ]) {
-        const palm = new THREE.Group();
-        const pTrunk = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.28, 7.6, 8), M.trunk);
-        pTrunk.position.y = 3.8;
-        pTrunk.castShadow = true;
-        palm.add(pTrunk);
-        for (let fi = 0; fi < 7; fi++) {
-          const ang = (fi / 7) * Math.PI * 2;
-          const frond = new THREE.Mesh(new THREE.ConeGeometry(0.45, 2.8, 5), M.foliageLight);
-          frond.scale.set(1.2, 1, 0.22);
-          frond.position.set(Math.cos(ang) * 1.15, 7.35, Math.sin(ang) * 1.15);
-          frond.rotation.z = -Math.cos(ang) * 1.15;
-          frond.rotation.x = Math.sin(ang) * 1.15;
-          palm.add(frond);
-        }
-        palm.position.set(px, 0, pz);
-        g.add(palm);
-      }
-      const pondFlagMat = new THREE.MeshBasicMaterial({ map: this.flagTex72, side: THREE.DoubleSide });
-      for (const zLine of [-d * 0.25, 0, d * 0.25]) {
-        for (let i = 1; i < 11; i++) {
-          const t = i / 11;
-          const fx = -w * 0.45 + w * 0.9 * t;
-          const fy = 4.6 - Math.sin(t * Math.PI) * 0.55;
-          const fl = new THREE.Mesh(new THREE.PlaneGeometry(0.56, 0.38), pondFlagMat);
-          fl.position.set(fx, fy, zLine);
-          g.add(fl);
-        }
+        const cLantern = this.makeStoneLantern();
+        cLantern.scale.setScalar(0.76);
+        cLantern.position.set(lx, 0, lz);
+        g.add(cLantern);
       }
     }
 
@@ -5967,18 +6118,13 @@ export class VinhTrang3DWorld {
     midHedge.position.set(-10.5, 0.325, 16.5);
     this.exteriorGroup.add(midHedge);
 
-    // 3. RIGHT (East) Side Garden Pathway: Dense overflowing magenta Bougainvillea & Red Garden Railings (x = 33.8 & 38.2)
+    // 3. RIGHT (East) Side Garden Pathway: Ordered Bougainvillea Planters strictly along pathway curb (no scattered yard clutter)
     const bougCoords = [
-      [33.8, 30.2, 1.15],
-      [33.8, 25.5, 1.25],
-      [33.8, 17.8, 1.22],
-      [38.2, 29.0, 1.15],
-      [38.2, 21.8, 1.22],
-      [38.2, 14.5, 1.18],
-      [31.0, 13.5, 1.0],
-      [12.4, 10.8, 0.95],
-      [-5.5, 16.0, 1.0],
-      [-16.5, 19.5, 1.0]
+      [33.8, 29.8, 0.92],
+      [33.8, 18.2, 0.92],
+      [38.2, 28.5, 0.92],
+      [38.2, 21.0, 0.92],
+      [38.2, 14.0, 0.92]
     ];
     const makeOrganicClusterGeo = (rad, seed) => {
       const geo = new THREE.IcosahedronGeometry(rad, 2);
@@ -6103,7 +6249,7 @@ export class VinhTrang3DWorld {
       this.exteriorGroup.add(globe);
     }
 
-    // Directional signpost at entrance to Right Side Pathway ("↑ LỐI VÀO CỬA HÔNG PHẢI")
+    // Directional signpost at entrance to Right Side Pathway ("↑ LỐI VÀO GÓC DƯỚI BÊN PHẢI")
     const dirSignGroup = new THREE.Group();
     dirSignGroup.position.set(38.4, 0, 32.8);
     const dirPost = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.07, 1.55, 8), M.darkWood);
@@ -6112,7 +6258,7 @@ export class VinhTrang3DWorld {
     const dirBoard = new THREE.Mesh(
       new THREE.BoxGeometry(2.35, 0.52, 0.1),
       new THREE.MeshStandardMaterial({
-        map: makeTextTex('↑ LỐI VÀO CỬA HÔNG PHẢI', {
+        map: makeTextTex('↑ LỐI VÀO GÓC DƯỚI BÊN PHẢI', {
           w: 820,
           h: 170,
           bg: '#1C5A34',
@@ -6130,28 +6276,12 @@ export class VinhTrang3DWorld {
 
     // Outer-right garden remains open beside the side-gate grocery house; no duplicate statue row.
 
-    // Two sculpted multi-tier bonsai pots flanking center balustrade
-    for (const bx of [19.4, 26.6]) {
-      const bPot = new THREE.Group();
-      const potMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.92, 0.64, 0.82, 16), M.terracottaPot);
-      potMesh.position.y = 0.41;
-      bPot.add(potMesh);
-      const bTrunk = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.22, 2.3, 10), M.trunk);
-      bTrunk.position.y = 1.65;
-      bPot.add(bTrunk);
-      for (const [cx, cy, cz, rx, ry] of [
-        [-0.65, 2.05, 0.15, 0.85, 0.36],
-        [0.65, 2.35, -0.1, 0.82, 0.35],
-        [0, 2.95, 0, 1.05, 0.42]
-      ]) {
-        const pad = new THREE.Mesh(new THREE.SphereGeometry(rx, 12, 9), M.foliageLight);
-        pad.scale.set(1, ry / rx, 1);
-        pad.position.set(cx, cy, cz);
-        bPot.add(pad);
-      }
-      bPot.position.set(bx, 0, 10.1);
+    // Low ornamental bonsai urns neatly framing the outer Chánh Điện porch corners without blocking the 13-arch facade
+    for (const bx of [13.2, 32.8]) {
+      const bPot = this.makeBonsai72(0.72);
+      bPot.position.set(bx, 0, 11.4);
       this.exteriorGroup.add(bPot);
-      this.addObstacle(bx, 10.1, 0.95);
+      this.addObstacle(bx, 11.4, 0.65);
     }
 
     for (const [sx, sz, rotY] of [
@@ -6226,25 +6356,8 @@ export class VinhTrang3DWorld {
       this.addObstacle(tx, tz, 0.8);
     }
 
-    const flagSpans = [
-      [14, 5.8, 38.5, 32, 5.8, 38.5, 12],
-      [35, 5.6, 37.5, 46, 5.6, 37.5, 8],
-      [35, 5.4, 31.0, 46, 5.4, 31.0, 8],
-      [33.8, 5.2, 26.5, 38.2, 5.2, 26.5, 5]
-    ];
     const flagMat = new THREE.MeshBasicMaterial({ map: this.flagTex72, side: THREE.DoubleSide });
-    for (const [x1, y1, z1, x2, y2, z2, n] of flagSpans) {
-      for (let i = 1; i < n; i++) {
-        const t = i / n;
-        const fx = x1 + (x2 - x1) * t;
-        const fz = z1 + (z2 - z1) * t;
-        const fy = y1 + (y2 - y1) * t - Math.sin(t * Math.PI) * 0.55;
-        const f = new THREE.Mesh(new THREE.PlaneGeometry(0.55, 0.38), flagMat);
-        f.position.set(fx, fy, fz);
-        this.exteriorGroup.add(f);
-      }
-    }
-    // Vertical festive "cờ phướn" pilgrimage banners lining Cổng Phụ arrival lane
+    // Vertical festive "cờ phướn" pilgrimage banners neatly on poles at Cổng Phụ entrance lane (no floating mid-air flag strings)
     for (const [fx, fz] of [
       [36.2, 43.2],
       [44.8, 43.2],
@@ -6607,1357 +6720,7 @@ export class VinhTrang3DWorld {
   }
 
   buildInteriorChanhDienV8() {
-    const M = this.MAT;
-    const g = this.interiorGroup;
-
-    // Reset click targets, cutaway list & interior obstacles cleanly
-    this.interiorDoorClickTargets = [];
-    this.interiorNonBoClickTargets = [];
-    this.interiorKhuThoClickTargets = [];
-    this.interiorTraiDuongClickTargets = [];
-    this.longTruClickTargets = [];
-    this.cutawayTargets = [];
-
-    const registerCutaway = (obj) => {
-      this.cutawayTargets.push(obj);
-      return obj;
-    };
-
-    const gachTauMat = new THREE.MeshStandardMaterial({
-      map: this.gachTauTex,
-      roughness: 0.38,
-      metalness: 0.04
-    });
-    const corridorFloorMat = new THREE.MeshStandardMaterial({
-      map: this.pavingTex,
-      color: 0xC99E76,
-      roughness: 0.5
-    });
-    const wallMat = new THREE.MeshStandardMaterial({
-      color: 0x3D2114,
-      map: this.woodGrainTex,
-      roughness: 0.56
-    });
-    const creamWallMat = new THREE.MeshStandardMaterial({
-      color: 0xECE1C6,
-      roughness: 0.65
-    });
-    const darkLacquerColMat = new THREE.MeshStandardMaterial({
-      color: 0x24120B,
-      roughness: 0.28,
-      metalness: 0.1
-    });
-    const goldLeafMat = new THREE.MeshStandardMaterial({
-      color: 0xE2AF3B,
-      metalness: 0.62,
-      roughness: 0.24
-    });
-    const bronzePatinaMat = new THREE.MeshStandardMaterial({
-      color: 0x7E5929,
-      metalness: 0.45,
-      roughness: 0.38
-    });
-    const ivoryMat = new THREE.MeshStandardMaterial({
-      color: 0xEFE8D8,
-      roughness: 0.42
-    });
-    const baoLamMat = new THREE.MeshStandardMaterial({
-      color: 0xA87026,
-      roughness: 0.34,
-      metalness: 0.46
-    });
-    const rafterMat = new THREE.MeshStandardMaterial({
-      color: 0x4E2816,
-      map: this.woodGrainTex,
-      roughness: 0.62
-    });
-    const ceilingWoodMat = new THREE.MeshStandardMaterial({
-      color: 0x351B10,
-      map: this.woodGrainTex,
-      roughness: 0.72
-    });
-
-    // Helper: Authentic Vietnamese Timber Roof Truss Frame ("Hệ vì kèo chồng rường / kẻ truyền")
-    const addTimberViKeoTruss = (centerX, baseY, spanW, apexH, zPos, addPurlins = true) => {
-      const truss = new THREE.Group();
-      truss.position.set(centerX, baseY, zPos);
-      // Horizontal tie-beam ("Quá giang / Câu đầu")
-      const tieBeam = new THREE.Mesh(new THREE.BoxGeometry(spanW, 0.22, 0.22), rafterMat);
-      truss.add(tieBeam);
-      // Central king-post ("Trụ trốn") + intermediate queen-posts ("Trụ bồng")
-      const kingPost = new THREE.Mesh(new THREE.BoxGeometry(0.2, apexH, 0.2), rafterMat);
-      kingPost.position.y = apexH * 0.5;
-      truss.add(kingPost);
-      for (const qx of [-spanW * 0.24, spanW * 0.24]) {
-        const qH = apexH * 0.54;
-        const qp = new THREE.Mesh(new THREE.BoxGeometry(0.16, qH, 0.16), rafterMat);
-        qp.position.set(qx, qH * 0.5, 0);
-        truss.add(qp);
-      }
-      // Mid-collar beam ("Xà gồ / Rường")
-      const collar = new THREE.Mesh(new THREE.BoxGeometry(spanW * 0.52, 0.16, 0.16), rafterMat);
-      collar.position.y = apexH * 0.54;
-      truss.add(collar);
-      // Pitched principal rafters ("Kèo cái")
-      const halfSpan = spanW * 0.52;
-      const rafterLen = Math.hypot(halfSpan, apexH);
-      const slopeAng = Math.atan2(apexH, halfSpan);
-      for (const sSign of [-1, 1]) {
-        const raf = new THREE.Mesh(new THREE.BoxGeometry(rafterLen, 0.18, 0.18), rafterMat);
-        raf.position.set(sSign * (halfSpan * 0.5), apexH * 0.5, 0);
-        raf.rotation.z = sSign * -slopeAng;
-        truss.add(raf);
-      }
-      if (addPurlins) {
-        for (const pFrac of [0, 0.35, 0.72]) {
-          const px = pFrac * (spanW * 0.45);
-          const py = (1 - pFrac) * apexH;
-          for (const side of pFrac === 0 ? [0] : [-1, 1]) {
-            const purlin = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.14, 5.2), rafterMat);
-            purlin.position.set(side * px, py, 0);
-            truss.add(purlin);
-          }
-        }
-      }
-      g.add(truss);
-      return truss;
-    };
-
-    // Helper: Pierced Gilded Wood Carving ("Bao Lam chạm rồng phượng thếp vàng")
-    const addCarvedBaoLam = (cx, cy, cz, width = 9.2) => {
-      const bl = new THREE.Group();
-      bl.position.set(cx, cy, cz);
-      const topFrieze = new THREE.Mesh(new THREE.BoxGeometry(width, 0.42, 0.24), baoLamMat);
-      topFrieze.position.y = 0.32;
-      bl.add(topFrieze);
-      const goldTrim = new THREE.Mesh(new THREE.BoxGeometry(width + 0.12, 0.1, 0.28), goldLeafMat);
-      goldTrim.position.y = 0.55;
-      bl.add(goldTrim);
-      // Pierced openwork lattice & stylized dragon-phoenix scrollwork
-      const nScroll = Math.max(6, Math.floor(width / 0.75));
-      for (let i = 0; i < nScroll; i++) {
-        const sx = -width * 0.44 + (i / (nScroll - 1)) * (width * 0.88);
-        const dropRing = new THREE.Mesh(
-          new THREE.TorusGeometry(0.18, 0.045, 6, 12),
-          goldLeafMat
-        );
-        dropRing.position.set(sx, 0.02, 0);
-        bl.add(dropRing);
-      }
-      for (const side of [-1, 1]) {
-        const pendant = new THREE.Mesh(new THREE.BoxGeometry(1.5, 1.05, 0.2), baoLamMat);
-        pendant.position.set(side * (width * 0.5 - 0.85), -0.35, 0);
-        bl.add(pendant);
-        const wingCarve = new THREE.Mesh(new THREE.TorusGeometry(0.32, 0.055, 6, 12, Math.PI), goldLeafMat);
-        wingCarve.position.set(side * (width * 0.5 - 1.55), -0.15, 0.04);
-        bl.add(wingCarve);
-      }
-      g.add(bl);
-      this.baoLamPlaceholders.push({ group: bl, cx, cy, cz, width });
-      return bl;
-    };
-
-    // Helper: Monumental Coiled-Dragon Lacquer Pillar ("Long Trụ Chánh Điện")
-    const addLongTruDragon = (px, pz, sideSign) => {
-      const lt = new THREE.Group();
-      lt.position.set(px, 0, pz);
-
-      const plinth = new THREE.Mesh(new THREE.CylinderGeometry(0.56, 0.64, 0.44, 16), M.stoneLight);
-      plinth.position.y = 0.22;
-      lt.add(plinth);
-      const lotusBase = new THREE.Mesh(new THREE.CylinderGeometry(0.48, 0.54, 0.26, 16), goldLeafMat);
-      lotusBase.position.y = 0.55;
-      lt.add(lotusBase);
-
-      const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.43, 8.1, 18), darkLacquerColMat);
-      shaft.position.y = 4.45;
-      lt.add(shaft);
-
-      // 3D Sculpted Coiled Golden Dragon ("Rồng uốn quanh thân cột") via CatmullRom + TubeGeometry
-      const helixPts = [];
-      const turns = 2.6;
-      const steps = 44;
-      for (let i = 0; i <= steps; i++) {
-        const u = i / steps;
-        const ang = u * Math.PI * 2 * turns * sideSign + (sideSign < 0 ? 0.5 : -0.5);
-        const radius = 0.47 + Math.sin(u * Math.PI) * 0.05;
-        const y = 1.15 + u * 5.35;
-        helixPts.push(new THREE.Vector3(Math.cos(ang) * radius, y, Math.sin(ang) * radius));
-      }
-      const dragonCurve = new THREE.CatmullRomCurve3(helixPts);
-      const dragonBodyGeom = new THREE.TubeGeometry(dragonCurve, 56, 0.135, 10, false);
-      const dragonBody = new THREE.Mesh(dragonBodyGeom, goldLeafMat);
-      lt.add(dragonBody);
-
-      const replaceParts = [shaft, dragonBody];
-      // Dorsal flame fins & gripping dragon claws along spiral
-      for (let fi = 2; fi < helixPts.length - 3; fi += 2) {
-        const pt = helixPts[fi];
-        const radial = new THREE.Vector3(pt.x, 0, pt.z).normalize();
-        const fin = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.18, 5), M.redColumn);
-        fin.position.set(pt.x + radial.x * 0.12, pt.y + 0.04, pt.z + radial.z * 0.12);
-        fin.lookAt(pt.x + radial.x * 0.6, pt.y + 0.2, pt.z + radial.z * 0.6);
-        lt.add(fin);
-        replaceParts.push(fin);
-      }
-
-      // Sculpted Dragon Head curving out near nave center facing Chánh Điện aisle
-      const headGroup = new THREE.Group();
-      const headAng = helixPts[helixPts.length - 1];
-      headGroup.position.set(headAng.x * 1.15 - sideSign * 0.25, 6.25, headAng.z + 0.35);
-      headGroup.rotation.y = sideSign < 0 ? 0.45 : -0.45;
-      const skull = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.32, 0.58), goldLeafMat);
-      headGroup.add(skull);
-      const snout = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.18, 0.36), goldLeafMat);
-      snout.position.set(0, -0.02, 0.38);
-      headGroup.add(snout);
-      const jaw = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.1, 0.32), M.redColumn);
-      jaw.position.set(0, -0.14, 0.34);
-      jaw.rotation.x = 0.25;
-      headGroup.add(jaw);
-      for (const hx of [-0.14, 0.14]) {
-        const horn = new THREE.Mesh(new THREE.ConeGeometry(0.055, 0.42, 6), goldLeafMat);
-        horn.position.set(hx, 0.24, -0.14);
-        horn.rotation.x = -0.45;
-        headGroup.add(horn);
-        const eye = new THREE.Mesh(
-          new THREE.SphereGeometry(0.045, 6, 6),
-          new THREE.MeshBasicMaterial({ color: 0xFF4B2B })
-        );
-        eye.position.set(hx, 0.08, 0.24);
-        headGroup.add(eye);
-      }
-      // Radiant Flaming Pearl ("Ngọc Minh Châu") held near dragon mouth
-      const pearl = new THREE.Mesh(
-        new THREE.SphereGeometry(0.14, 12, 10),
-        new THREE.MeshBasicMaterial({ color: 0xFFF2A8 })
-      );
-      pearl.position.set(0, -0.04, 0.72);
-      headGroup.add(pearl);
-      lt.add(headGroup);
-      replaceParts.push(headGroup);
-
-      // Crimson-Gold Couplet mounted alongside Long Trụ
-      const ltCouplet = new THREE.Mesh(
-        new THREE.BoxGeometry(0.38, 4.5, 0.12),
-        new THREE.MeshStandardMaterial({
-          map: this.makeCoupletTex(sideSign < 0 ? '龍柱繞寶殿萬世垂芳' : '法輪常轉正法久住'),
-          roughness: 0.32
-        })
-      );
-      ltCouplet.position.set(-sideSign * 0.48, 3.25, 0.36);
-      lt.add(ltCouplet);
-
-      lt.userData.isLongTru = true;
-      g.add(lt);
-      this.longTruClickTargets.push(lt);
-      this.longTruPlaceholders.push({ group: lt, px, pz, sideSign, replaceParts });
-      this.interiorObstacles.push({ x: px, z: pz, r: 0.66 });
-      return lt;
-    };
-
-    // =========================================================================
-    // CONTINUOUS FLOOR & COVERED PERIMETER CORRIDORS ("Bố cục Chữ Quốc (國)")
-    // x = -14.0..+14.0 (Corridors x = -14..-11.4 & +11.4..+14; Halls x = -11.4..+11.4)
-    // z = +11.6..-82.0 (1. Tiền Đường -> 2. Chánh Điện -> 3. Thiên Tỉnh 1 -> 4. Nhà Tổ -> 5. Thiên Tỉnh 2 -> 6. Nhà Hậu)
-    // =========================================================================
-    const mainHallFloor = new THREE.Mesh(new THREE.BoxGeometry(23.2, 0.2, 94.0), gachTauMat);
-    mainHallFloor.position.set(0, -0.1, -35.2);
-    mainHallFloor.receiveShadow = true;
-    g.add(mainHallFloor);
-
-    // West & East Covered Perimeter Corridor Floors & Colonade Columns
-    for (const cSign of [-1, 1]) {
-      const cX = cSign * 12.7;
-      const cFloor = new THREE.Mesh(new THREE.BoxGeometry(2.8, 0.2, 94.0), corridorFloorMat);
-      cFloor.position.set(cX, -0.1, -35.2);
-      cFloor.receiveShadow = true;
-      g.add(cFloor);
-
-      // Corridor ceiling slab (tagged cutaway on West & East outer corridor tops for architectural view)
-      const cRoof = registerCutaway(new THREE.Mesh(new THREE.BoxGeometry(3.0, 0.34, 94.0), ceilingWoodMat));
-      cRoof.position.set(cX, 6.9, -35.2);
-      g.add(cRoof);
-
-      // Periodic corridor red pillars (skip Cửa Hông opening z=-1.5..+3.3)
-      for (let pz = 9.5; pz >= -80.5; pz -= 6.0) {
-        if (Math.abs(pz - 0.9) < 2.2) continue;
-        const pCol = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.21, 6.9, 10), M.redColumn);
-        pCol.position.set(cSign * 11.45, 3.45, pz);
-        g.add(pCol);
-        this.interiorObstacles.push({ x: cSign * 11.45, z: pz, r: 0.34 });
-      }
-    }
-
-    // West Outer Perimeter Wall (tagged in cutawayTargets so Cutaway reveals whole temple from South-West!)
-    const westFrontSeg = registerCutaway(new THREE.Mesh(new THREE.BoxGeometry(0.45, 7.2, 8.6), creamWallMat));
-    westFrontSeg.position.set(-14.1, 3.6, 7.5);
-    g.add(westFrontSeg);
-    const westMainSeg = registerCutaway(new THREE.Mesh(new THREE.BoxGeometry(0.45, 7.2, 80.8), creamWallMat));
-    westMainSeg.position.set(-14.1, 3.6, -41.7);
-    g.add(westMainSeg);
-    const westDoorHeader = registerCutaway(new THREE.Mesh(new THREE.BoxGeometry(0.45, 3.2, 5.2), creamWallMat));
-    westDoorHeader.position.set(-14.1, 5.6, 0.9);
-    g.add(westDoorHeader);
-
-    // East Outer Perimeter Wall (open at Cửa Hông z=-1.5..+3.3 AND 3 stairways into Nhà Sàn Trai Đường z=-47..-24!)
-    const addEastOuterWallSeg = (zStart, zEnd, height = 7.2) => {
-      const len = Math.abs(zEnd - zStart);
-      const zMid = (zStart + zEnd) / 2;
-      const seg = new THREE.Mesh(new THREE.BoxGeometry(0.45, height, len), creamWallMat);
-      seg.position.set(14.1, height / 2, zMid);
-      g.add(seg);
-      this.interiorRectObstacles.push({
-        minX: 13.75,
-        maxX: 14.35,
-        minZ: Math.min(zStart, zEnd),
-        maxZ: Math.max(zStart, zEnd)
-      });
-    };
-    addEastOuterWallSeg(11.6, 3.3);
-    addEastOuterWallSeg(-1.5, -24.5);
-    // East archway dividers between -24.5..-44.5 opening to Trai Đường stairs (-26.5, -35.5, -42.5)
-    addEastOuterWallSeg(-28.5, -33.5);
-    addEastOuterWallSeg(-37.5, -40.7);
-    addEastOuterWallSeg(-44.3, -82.0);
-    for (const archZ of [-26.5, -35.5, -42.5]) {
-      const lint = new THREE.Mesh(new THREE.BoxGeometry(0.45, 3.0, 4.0), creamWallMat);
-      lint.position.set(14.1, 5.6, archZ);
-      g.add(lint);
-    }
-
-    // Open Sunlit Cửa Hông Exit Portals (Left x=-14.1 & Right x=+14.1 at z = -1.5..+3.3)
-    for (const sideSign of [-1, 1]) {
-      const outsideVista = new THREE.Mesh(
-        new THREE.PlaneGeometry(7.2, 5.2),
-        new THREE.MeshBasicMaterial({ color: 0xFFF7DF })
-      );
-      outsideVista.rotation.y = sideSign < 0 ? Math.PI / 2 : -Math.PI / 2;
-      outsideVista.position.set(sideSign * 15.2, 2.5, 0.9);
-      g.add(outsideVista);
-
-      const exitStep = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.08, 4.8), M.graniteGrey);
-      exitStep.position.set(sideSign * 13.8, 0.04, 0.9);
-      g.add(exitStep);
-
-      const exitPlaque = new THREE.Mesh(
-        new THREE.BoxGeometry(0.14, 0.56, 2.6),
-        new THREE.MeshStandardMaterial({
-          map: makeTextTex(sideSign > 0 ? 'RA CỬA HÔNG PHẢI →' : '← RA CỬA HÔNG TRÁI', {
-            w: 760,
-            h: 170,
-            bg: '#1C5A34',
-            border: '#FFD875',
-            color: '#FFF6E5',
-            size: 46
-          }),
-          roughness: 0.4
-        })
-      );
-      exitPlaque.position.set(sideSign * 13.5, 4.2, 0.9);
-      exitPlaque.userData.exitSide = sideSign > 0 ? 'right' : 'left';
-      g.add(exitPlaque);
-      this.interiorDoorClickTargets.push(exitPlaque);
-
-      const doorHitbox = new THREE.Mesh(
-        new THREE.BoxGeometry(2.2, 4.2, 4.8),
-        new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.0, depthWrite: false })
-      );
-      doorHitbox.position.set(sideSign * 13.9, 2.1, 0.9);
-      doorHitbox.userData.exitSide = sideSign > 0 ? 'right' : 'left';
-      g.add(doorHitbox);
-      this.interiorDoorClickTargets.push(doorHitbox);
-    }
-
-    // Slanted Sunlight Patches & Beams streaming through Open Cửa Hông into Chánh Điện
-    const sunPatchMat = new THREE.MeshBasicMaterial({
-      color: 0xFFE6A6,
-      transparent: true,
-      opacity: 0.22,
-      depthWrite: false
-    });
-    for (const sxSign of [-1, 1]) {
-      const floorSunPatch = new THREE.Mesh(new THREE.PlaneGeometry(10.6, 4.0), sunPatchMat);
-      floorSunPatch.rotation.x = -Math.PI / 2;
-      floorSunPatch.rotation.z = sxSign < 0 ? -0.2 : 0.2;
-      floorSunPatch.position.set(sxSign * 6.4, 0.015, 0.7);
-      g.add(floorSunPatch);
-    }
-    const sunShaftMat = new THREE.MeshBasicMaterial({
-      color: 0xFFEAB8,
-      transparent: true,
-      opacity: 0.075,
-      side: THREE.DoubleSide,
-      depthWrite: false
-    });
-    for (const sxSign of [-1, 1]) {
-      for (const sz of [-0.3, 1.9]) {
-        const shaft = new THREE.Mesh(new THREE.PlaneGeometry(10.5, 3.8), sunShaftMat);
-        shaft.position.set(sxSign * 6.5, 2.2, sz);
-        shaft.rotation.z = sxSign < 0 ? -0.45 : 0.45;
-        g.add(shaft);
-      }
-    }
-
-    // =========================================================================
-    // 1. TIỀN ĐƯỜNG (z: +11.6 .. +1.5) & 2. CHÁNH ĐIỆN (z: +1.5 .. -22.2)
-    // =========================================================================
-    // Closed South front ceremonial wall (tagged cutaway so isometric cutaway shows front vestibule!)
-    const southWall = registerCutaway(new THREE.Mesh(new THREE.BoxGeometry(28.4, 8.8, 0.48), wallMat));
-    southWall.position.set(0, 4.4, 11.6);
-    g.add(southWall);
-    const southClosedDoors = registerCutaway(new THREE.Mesh(
-      new THREE.BoxGeometry(5.6, 4.8, 0.35),
-      new THREE.MeshStandardMaterial({ color: 0x5A2E16, map: this.woodGrainTex, roughness: 0.45 })
-    ));
-    southClosedDoors.position.set(0, 2.4, 11.35);
-    g.add(southClosedDoors);
-
-    // Chánh Điện & Tiền Đường Opaque Ceiling (cutaway target) + Exposed Vì Kèo Timber Roof Trusses (always visible!)
-    const chanhCeiling = registerCutaway(new THREE.Mesh(new THREE.BoxGeometry(23.4, 0.36, 34.0), ceilingWoodMat));
-    chanhCeiling.position.set(0, 10.1, -5.2);
-    g.add(chanhCeiling);
-    for (let bz = 9.5; bz >= -20.5; bz -= 5.0) {
-      addTimberViKeoTruss(0, 7.65, 22.0, 2.25, bz, true);
-    }
-
-    // QianTang ("TIỀN ĐƯỜNG") Auxiliary Guardian Altars (Hộ Pháp & Tiêu Diện) + Hoành Phi
-    const tienDuongSign = new THREE.Mesh(
-      new THREE.BoxGeometry(6.2, 0.86, 0.16),
-      new THREE.MeshStandardMaterial({
-        map: makeTextTex('TIỀN ĐƯỜNG · HỘ PHÁP VI ĐÀ', {
-          w: 1120,
-          h: 180,
-          bg: '#32140A',
-          border: '#FFD875',
-          color: '#FFD970',
-          size: 56
-        })
-      })
-    );
-    tienDuongSign.position.set(0, 6.75, 4.2);
-    g.add(tienDuongSign);
-
-    for (const [gx, gTitle] of [[-7.9, 'BAN HỘ PHÁP'], [7.9, 'BAN TIÊU DIỆN']]) {
-      const ga = new THREE.Group();
-      ga.position.set(gx, 0, 6.2);
-      const tbl = new THREE.Mesh(new THREE.BoxGeometry(2.2, 1.18, 1.45), darkLacquerColMat);
-      tbl.position.y = 0.59;
-      ga.add(tbl);
-      const fig = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.36, 1.45, 10), goldLeafMat);
-      fig.position.set(0, 1.9, -0.2);
-      ga.add(fig);
-      const hd = new THREE.Mesh(new THREE.SphereGeometry(0.2, 10, 8), goldLeafMat);
-      hd.position.set(0, 2.76, -0.2);
-      ga.add(hd);
-      const gb = this.buildIncenseBurner(0.32);
-      gb.position.set(0, 1.18, 0.36);
-      ga.add(gb);
-      const plaque = new THREE.Mesh(
-        new THREE.BoxGeometry(2.1, 0.42, 0.1),
-        new THREE.MeshStandardMaterial({
-          map: makeTextTex(gTitle, { w: 640, h: 130, bg: '#5C1610', border: '#FFD875', color: '#FFD970', size: 40 })
-        })
-      );
-      plaque.position.set(0, 3.4, -0.35);
-      ga.add(plaque);
-      g.add(ga);
-      if (gx < 0) this.hoPhapPlaceholder = { altar: ga, parts: [fig, hd] };
-      else this.tieuDienPlaceholder = { altar: ga, parts: [fig, hd] };
-      this.interiorKhuThoClickTargets.push(ga);
-      this.interiorRectObstacles.push({ minX: gx - 1.25, maxX: gx + 1.25, minZ: 5.3, maxZ: 7.1 });
-    }
-
-    // Warm Golden Lighting for Tiền Đường & Chánh Điện
-    const intPoint1 = new THREE.PointLight(0xFFD584, 3.8, 46);
-    intPoint1.position.set(0, 7.0, -14);
-    g.add(intPoint1);
-    const intPoint2 = new THREE.PointLight(0xFFF0C6, 3.0, 34);
-    intPoint2.position.set(-7.5, 4.8, 0.9);
-    g.add(intPoint2);
-    const intPoint3 = new THREE.PointLight(0xFFF0C6, 3.0, 34);
-    intPoint3.position.set(7.5, 4.8, 0.9);
-    g.add(intPoint3);
-
-    // Monumental Colonnade Columns + Couplets + Pierced Bao Lam Arches (with Long Trụ at z = -9.8!)
-    const coupletTexts = [
-      '天恩禪寺寶殿莊嚴',
-      '慈光普照法界清淨',
-      '楊眉同欣海晏河清',
-      '三界獨尊十方光明'
-    ];
-    let colPairIdx = 0;
-    for (const z of [7.5, 2.0, -4.0, -9.8, -15.4, -20.2]) {
-      const isLongTruRow = Math.abs(z - -9.8) < 0.2;
-      for (const x of [-4.8, 4.8]) {
-        if (isLongTruRow) {
-          addLongTruDragon(x, z, x < 0 ? -1 : 1);
-        } else {
-          const plinth = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.48, 0.36, 12), M.stoneLight);
-          plinth.position.set(x, 0.18, z);
-          g.add(plinth);
-          const col = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.36, 7.6, 16), darkLacquerColMat);
-          col.position.set(x, 3.98, z);
-          g.add(col);
-          const ring = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.38, 0.36, 16), M.goldAccent);
-          ring.position.set(x, 6.7, z);
-          g.add(ring);
-          this.interiorObstacles.push({ x, z, r: 0.55 });
-
-          if (z <= 2.2 && z >= -15.6) {
-            const tex = this.makeCoupletTex(coupletTexts[colPairIdx % coupletTexts.length]);
-            const couplet = new THREE.Mesh(
-              new THREE.BoxGeometry(0.34, 4.3, 0.12),
-              new THREE.MeshStandardMaterial({ map: tex, roughness: 0.35 })
-            );
-            couplet.position.set(x + (x < 0 ? 0.34 : -0.34), 3.3, z + 0.18);
-            g.add(couplet);
-            colPairIdx += 1;
-          }
-        }
-      }
-      addCarvedBaoLam(0, 6.45, z, 9.2);
-    }
-
-    // Spiral Incense Coils ("Nhang Khoanh") anchors (replaced on GLB load by nhang-khoanh-dong.glb)
-    for (const [ix, iz] of [
-      [-2.5, -4],
-      [2.5, -4],
-      [-2.5, -12.5],
-      [2.5, -12.5]
-    ]) {
-      const anc = new THREE.Group();
-      anc.position.set(ix, 6.75, iz);
-      const cord = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.015, 0.015, 0.45, 6),
-        M.goldAccent
-      );
-      cord.position.y = -0.22;
-      anc.add(cord);
-      const coilCone = new THREE.Mesh(
-        new THREE.TorusGeometry(0.32, 0.035, 8, 18),
-        M.bronzeBurner
-      );
-      coilCone.rotation.x = Math.PI / 2;
-      coilCone.position.y = -0.52;
-      anc.add(coilCone);
-      g.add(anc);
-      this.spiralIncenseAnchors.push(anc);
-    }
-
-    // Side Inlay Table + Incense Burner + Chuông Pháp Bảo
-    const sideTable = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.92, 0.8), darkLacquerColMat);
-    sideTable.position.set(3.2, 0.46, -2.5);
-    g.add(sideTable);
-    const sideBurner = this.buildIncenseBurner(0.32);
-    sideBurner.position.set(3.2, 0.92, -2.5);
-    g.add(sideBurner);
-    this.interiorRectObstacles.push({ minX: 2.35, maxX: 4.05, minZ: -3.05, maxZ: -1.95 });
-
-    const bellStand = new THREE.Group();
-    bellStand.position.set(6.8, 0, -10.5);
-    const bFrame = new THREE.Mesh(new THREE.BoxGeometry(1.8, 3.2, 0.8), M.darkWood);
-    bFrame.position.y = 1.6;
-    bellStand.add(bFrame);
-    const bell = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.62, 1.35, 18), M.bronzeBurner);
-    bell.position.y = 1.85;
-    bellStand.add(bell);
-    g.add(bellStand);
-    this.interiorBellAnchor = { group: bellStand, placeholder: bell };
-    this.interiorObstacles.push({ x: 6.8, z: -10.5, r: 1.1 });
-
-    // Symmetrical Trống Bát Nhã Stand on West Side of Chánh Điện
-    const drumStand = new THREE.Group();
-    drumStand.position.set(-6.8, 0, -10.5);
-    const dFrame = new THREE.Mesh(new THREE.BoxGeometry(1.8, 1.4, 1.1), M.darkWood);
-    dFrame.position.y = 0.7;
-    drumStand.add(dFrame);
-    const drum = new THREE.Mesh(new THREE.CylinderGeometry(0.62, 0.62, 1.15, 18), M.mosaicRed);
-    drum.rotation.z = Math.PI / 2;
-    drum.position.y = 1.68;
-    drumStand.add(drum);
-    g.add(drumStand);
-    this.interiorDrumAnchor = { group: drumStand, placeholder: drum };
-    this.interiorObstacles.push({ x: -6.8, z: -10.5, r: 1.1 });
-
-    // Tam Bảo Central Altar (z = -18.7) — Main Buddha Centerpiece + 2 Sculpted Flanking Bodhisattvas + Cranes
-    this.tamBaoAltarGroup = new THREE.Group();
-    this.tamBaoAltarGroup.position.set(0, 0, -18.7);
-    const tier1 = new THREE.Mesh(new THREE.BoxGeometry(9.0, 1.35, 3.8), M.redColumn);
-    tier1.position.y = 0.675;
-    this.tamBaoAltarGroup.add(tier1);
-    const tier2 = new THREE.Mesh(new THREE.BoxGeometry(7.2, 1.4, 2.8), goldLeafMat);
-    tier2.position.y = 2.05;
-    this.tamBaoAltarGroup.add(tier2);
-
-    this.craneTortoiseAnchor = new THREE.Group();
-    this.craneTortoiseAnchor.position.set(0, 0, 2.0);
-    this.tamBaoAltarGroup.add(this.craneTortoiseAnchor);
-
-    // 2 Sculpted Flanking Bodhisattva Statues ("Bồ Tát Quán Thế Âm & Đại Thế Chí" hai bên tượng chính)
-    for (const [bx, variant] of [[-2.45, 'quan_am'], [2.45, 'the_chi']]) {
-      const bodhi = createSculptedBodhisattva(THREE, { variant, ivory: false, scale: 1.05 });
-      bodhi.position.set(bx, 2.75, 0.1);
-      this.tamBaoAltarGroup.add(bodhi);
-    }
-
-    // Flower vases & brass candlesticks flanking Tam Bảo
-    for (const fx of [-3.6, 3.6]) {
-      const vase = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.24, 0.72, 10), M.goldAccent);
-      vase.position.set(fx, 1.72, 1.18);
-      this.tamBaoAltarGroup.add(vase);
-      const lotusTop = new THREE.Mesh(
-        new THREE.SphereGeometry(0.3, 10, 8),
-        new THREE.MeshStandardMaterial({ color: 0xF579A8, roughness: 0.45 })
-      );
-      lotusTop.position.set(fx, 2.22, 1.18);
-      this.tamBaoAltarGroup.add(lotusTop);
-    }
-    for (const cx of [-0.95, 0.95]) {
-      const stick = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.11, 0.78, 8), goldLeafMat);
-      stick.position.set(cx, 1.74, 1.28);
-      this.tamBaoAltarGroup.add(stick);
-      const flame = new THREE.Mesh(new THREE.SphereGeometry(0.06, 6, 6), new THREE.MeshBasicMaterial({ color: 0xFFAE38 }));
-      flame.position.set(cx, 2.2, 1.28);
-      this.tamBaoAltarGroup.add(flame);
-    }
-
-    const plaque = new THREE.Mesh(
-      new THREE.BoxGeometry(6.6, 0.96, 0.18),
-      new THREE.MeshStandardMaterial({
-        map: makeTextTex('ĐẠI HÙNG BẢO ĐIỆN · TAM BẢO CHÁNH ĐIỆN', {
-          w: 1240,
-          h: 220,
-          bg: '#32140A',
-          border: '#FFD875',
-          color: '#FFD970',
-          size: 62
-        })
-      })
-    );
-    plaque.position.set(0, 6.95, 3.6);
-    this.tamBaoAltarGroup.add(plaque);
-
-    for (const [ri, ro, col] of [
-      [1.25, 1.42, 0xFFE484],
-      [1.54, 1.68, 0xFFA740],
-      [1.78, 1.9, 0xFF6A3D]
-    ]) {
-      const hRing = new THREE.Mesh(
-        new THREE.RingGeometry(ri, ro, 32),
-        new THREE.MeshBasicMaterial({ color: col, side: THREE.DoubleSide })
-      );
-      hRing.position.set(0, 5.15, -0.82);
-      this.tamBaoAltarGroup.add(hRing);
-    }
-    g.add(this.tamBaoAltarGroup);
-    this.interiorRectObstacles.push({ minX: -4.75, maxX: 4.75, minZ: -21.2, maxZ: -16.2 });
-
-    // Partition Wall behind Tam Bảo (z = -22.2) with TWO WIDE OPEN ARCHED PASSAGES
-    const tamBaoBackPanel = new THREE.Mesh(new THREE.BoxGeometry(9.8, 7.8, 0.55), wallMat);
-    tamBaoBackPanel.position.set(0, 3.9, -22.2);
-    g.add(tamBaoBackPanel);
-    this.interiorRectObstacles.push({ minX: -4.9, maxX: 4.9, minZ: -22.55, maxZ: -21.85 });
-
-    for (const archX of [-7.3, 7.3]) {
-      const archLint = new THREE.Mesh(new THREE.BoxGeometry(4.6, 3.1, 0.55), wallMat);
-      archLint.position.set(archX, 6.25, -22.2);
-      g.add(archLint);
-      const outerPier = new THREE.Mesh(new THREE.BoxGeometry(2.0, 7.8, 0.55), wallMat);
-      outerPier.position.set(archX < 0 ? -10.5 : 10.5, 3.9, -22.2);
-      g.add(outerPier);
-      this.interiorRectObstacles.push({
-        minX: archX < 0 ? -11.55 : 9.45,
-        maxX: archX < 0 ? -9.45 : 11.55,
-        minZ: -22.55,
-        maxZ: -21.85
-      });
-      const archSign = new THREE.Mesh(
-        new THREE.BoxGeometry(3.0, 0.52, 0.14),
-        new THREE.MeshStandardMaterial({
-          map: makeTextTex('SÂN THIÊN TỈNH 1 · NHÀ TỔ →', {
-            w: 840,
-            h: 150,
-            bg: '#5C1610',
-            border: '#FFD875',
-            color: '#FFF2B2',
-            size: 40
-          })
-        })
-      );
-      archSign.position.set(archX, 4.95, -21.82);
-      g.add(archSign);
-    }
-
-    // All 18 Thập Bát La Hán statues lining both aisles are mounted cleanly in loadAllGLBAssets().
-    this.arhatGroups = [];
-
-    // =========================================================================
-    // 3. SÂN THIÊN TỈNH 1 (Giếng Trời 1, z: -22.2 .. -38.8) + HÒN NON BỘ 1
-    // =========================================================================
-    const atriumS = registerCutaway(new THREE.Mesh(new THREE.BoxGeometry(23.2, 0.32, 3.0), ceilingWoodMat));
-    atriumS.position.set(0, 7.1, -23.7);
-    g.add(atriumS);
-    const atriumN = registerCutaway(new THREE.Mesh(new THREE.BoxGeometry(23.2, 0.32, 3.0), ceilingWoodMat));
-    atriumN.position.set(0, 7.1, -37.3);
-    g.add(atriumN);
-
-    const atriumSky1 = new THREE.Mesh(
-      new THREE.PlaneGeometry(17.8, 11.4),
-      new THREE.MeshBasicMaterial({ color: 0x9AD2F6, side: THREE.DoubleSide })
-    );
-    atriumSky1.rotation.x = Math.PI / 2;
-    atriumSky1.position.set(0, 9.8, -30.5);
-    registerCutaway(atriumSky1);
-    g.add(atriumSky1);
-
-    const atriumDaylight1 = new THREE.PointLight(0xFFF3D4, 4.6, 38);
-    atriumDaylight1.position.set(0, 8.2, -30.5);
-    g.add(atriumDaylight1);
-
-    for (const vx of [-8.2, 8.2]) {
-      for (const vz of [-25.5, -30.5, -35.5]) {
-        const vCol = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.28, 7.0, 12), M.redColumn);
-        vCol.position.set(vx, 3.5, vz);
-        g.add(vCol);
-        this.interiorObstacles.push({ x: vx, z: vz, r: 0.4 });
-      }
-    }
-
-    // HÒN NON BỘ CHÍNH — Sân Thiên Tỉnh 1, dựng theo ảnh thực tế Chùa Vĩnh Tràng.
-    const innerNonBo = new THREE.Group();
-    innerNonBo.position.set(0, 0, -30.5);
-    const nbOchre = new THREE.MeshStandardMaterial({color:0xD5A24D,roughness:0.84});
-    const nbGold = new THREE.MeshStandardMaterial({color:0xE4BD72,roughness:0.82});
-    const nbStone = new THREE.MeshStandardMaterial({color:0x4A4B48,roughness:0.98,flatShading:true});
-    const nbStone2 = new THREE.MeshStandardMaterial({color:0x5A5953,roughness:0.98,flatShading:true});
-    const nbMoss = new THREE.MeshStandardMaterial({color:0x405B3D,roughness:0.96});
-    const nbWood = new THREE.MeshStandardMaterial({color:0x762D20,roughness:0.76});
-    const nbRoof = new THREE.MeshStandardMaterial({color:0xB98239,roughness:0.82});
-    const nbIvory = new THREE.MeshStandardMaterial({color:0xE9E2D2,roughness:0.84});
-    // Octagonal ochre plinth and raised rim.
-    const foot = new THREE.Mesh(new THREE.CylinderGeometry(4.25,4.38,0.2,8),nbOchre);
-    foot.rotation.y=-Math.PI/8; foot.position.y=0.1; foot.castShadow=true; innerNonBo.add(foot);
-    const basin = new THREE.Mesh(new THREE.CylinderGeometry(4.18,4.3,0.65,8),nbOchre);
-    basin.rotation.y=-Math.PI/8; basin.position.y=0.51; basin.castShadow=true; innerNonBo.add(basin);
-    const rim = new THREE.Mesh(new THREE.CylinderGeometry(4.25,4.15,0.16,8),nbGold);
-    rim.rotation.y=-Math.PI/8; rim.position.y=0.91; innerNonBo.add(rim);
-    for(let i=0;i<8;i++){
-      const angle=Math.PI/4+i*Math.PI/4, panel=new THREE.Group();
-      panel.position.set(Math.cos(angle)*4.12,0.5,Math.sin(angle)*4.12);
-      panel.rotation.y=Math.PI/2-angle;
-      const plaque=new THREE.Mesh(new THREE.BoxGeometry(1.75,0.4,0.05),nbGold); panel.add(plaque);
-      for(const yy of [-0.13,0.13]){
-        const line=new THREE.Mesh(new THREE.BoxGeometry(1.42,0.035,0.035),nbOchre);
-        line.position.set(0,yy,0.05); panel.add(line);
-      }
-      const diamond=new THREE.Mesh(new THREE.BoxGeometry(0.28,0.28,0.045),nbOchre);
-      diamond.rotation.z=Math.PI/4; diamond.position.z=0.06; panel.add(diamond); innerNonBo.add(panel);
-    }
-    const gravel=new THREE.Mesh(new THREE.CylinderGeometry(4.02,4.02,0.1,8),new THREE.MeshStandardMaterial({color:0xA99B83,roughness:1}));
-    gravel.rotation.y=-Math.PI/8; gravel.position.y=0.99; gravel.receiveShadow=true; innerNonBo.add(gravel);
-    // Jagged, irregular rock peaks. Slightly distorted icosahedra create a natural silhouette.
-    const makePeak=(seed,x,y,z,sx,sy,sz,mat)=>{
-      const geo=new THREE.IcosahedronGeometry(1,2),p=geo.getAttribute('position'); let state=seed>>>0;
-      const rnd=()=>{state=(state*1664525+1013904223)>>>0;return state/4294967296;};
-      for(let j=0;j<p.count;j++){const f=0.78+rnd()*0.48;p.setXYZ(j,p.getX(j)*f,p.getY(j)*(0.82+rnd()*0.42),p.getZ(j)*f);}
-      p.needsUpdate=true;geo.computeVertexNormals();
-      const rock=new THREE.Mesh(geo,mat);rock.position.set(x,y,z);rock.scale.set(sx,sy,sz);rock.castShadow=true;rock.receiveShadow=true;innerNonBo.add(rock);
-    };
-    [
-      [101,-0.1,2.0,-0.65,1.55,1.95,1.22,nbStone],
-      [102,-0.15,3.75,-0.72,1.0,1.75,0.95,nbStone2],
-      [103,-0.2,5.15,-0.72,0.7,1.15,0.66,nbStone],
-      [104,-1.55,2.0,-0.35,1.05,1.7,0.95,nbStone2],
-      [105,-1.7,3.35,-0.5,0.68,1.12,0.65,nbStone],
-      [106,1.55,2.0,-0.3,1.05,1.62,0.95,nbStone],
-      [107,1.72,3.35,-0.5,0.68,1.12,0.65,nbStone2],
-      [108,-2.35,1.35,-0.5,1.2,0.9,0.86,nbStone],
-      [109,2.3,1.3,-0.55,1.2,0.9,0.86,nbStone2],
-      [110,-0.9,1.25,0.9,0.92,0.82,0.72,nbStone2],
-      [111,0.9,1.25,0.9,0.92,0.82,0.72,nbStone],
-      [112,0,1.35,1.35,0.72,0.85,0.6,nbStone2],
-      [113,-0.9,2.45,-1.3,0.8,0.9,0.7,nbStone],
-      [114,0.9,2.4,-1.25,0.8,0.9,0.7,nbStone2]
-    ].forEach(v=>makePeak(...v));
-    for(const [x,y,z,sx,sz] of [[-1.45,3.0,-0.1,.7,.35],[1.45,2.85,-.05,.65,.32],[-.5,4.45,-.5,.5,.25],[.95,3.7,-.55,.45,.22],[-2.3,1.9,-.1,.5,.28],[2.25,1.85,-.1,.55,.3]]){
-      const moss=new THREE.Mesh(new THREE.DodecahedronGeometry(1,1),nbMoss);
-      moss.scale.set(sx,.075,sz);moss.position.set(x,y,z);innerNonBo.add(moss);
-    }
-    // Miniature open-sided Vietnamese shrine with red posts, layered tiled roofs and Buddha.
-    const shrine=new THREE.Group();shrine.position.set(0,2.2,.55);
-    const platform=new THREE.Mesh(new THREE.BoxGeometry(2.3,.18,1.6),nbIvory);platform.position.y=.1;shrine.add(platform);
-    for(const x of [-.82,.82])for(const z of [-.5,.5]){
-      const post=new THREE.Mesh(new THREE.CylinderGeometry(.055,.075,1.15,8),nbWood);post.position.set(x,.8,z);shrine.add(post);
-    }
-    const roofLayer=(w,d,y,h)=>{
-      const eave=new THREE.Mesh(new THREE.BoxGeometry(w,.1,d),nbRoof);eave.position.y=y;shrine.add(eave);
-      const roof=new THREE.Mesh(new THREE.ConeGeometry(Math.max(w,d)*.49,h,4),nbRoof);
-      roof.rotation.y=Math.PI/4;roof.scale.z=d/w;roof.position.y=y+h*.5;shrine.add(roof);
-    };
-    roofLayer(2.6,1.9,1.42,.5);roofLayer(1.9,1.35,2.08,.38);
-    const finial=new THREE.Mesh(new THREE.ConeGeometry(.1,.32,8),nbGold);finial.position.y=2.48;shrine.add(finial);
-    const buddha=new THREE.Group();
-    const seat=new THREE.Mesh(new THREE.CylinderGeometry(.22,.26,.12,10),nbGold);seat.position.y=.28;buddha.add(seat);
-    const body=new THREE.Mesh(new THREE.CylinderGeometry(.12,.19,.34,10),nbIvory);body.position.y=.51;buddha.add(body);
-    const head=new THREE.Mesh(new THREE.SphereGeometry(.11,10,8),nbIvory);head.position.y=.75;buddha.add(head);
-    const halo=new THREE.Mesh(new THREE.TorusGeometry(.16,.018,6,18),nbGold);halo.position.set(0,.75,-.03);buddha.add(halo);
-    buddha.position.set(0,.2,-.15);shrine.add(buddha);innerNonBo.add(shrine);
-    // Seven stone steps lead down from the shrine terrace toward the visitor side.
-    for(let i=0;i<7;i++){
-      const step=new THREE.Mesh(new THREE.BoxGeometry(.9,.13,.24),nbIvory);
-      step.position.set(0,1.02+i*.16,2.9-i*.24);step.castShadow=true;innerNonBo.add(step);
-    }
-    // Small arched bridge and two dark cave openings in the lower rock face.
-    const bridge=new THREE.Group();
-    for(let i=0;i<=8;i++){
-      const t=-1+i/4,block=new THREE.Mesh(new THREE.BoxGeometry(.19,.09,.4),nbIvory);
-      block.position.set(t*.72,.15+.26*(1-t*t),0);bridge.add(block);
-    }
-    bridge.position.set(-2.25,1.08,.8);innerNonBo.add(bridge);
-    const caveMat=new THREE.MeshBasicMaterial({color:0x171715,side:THREE.DoubleSide});
-    for(const [x,y,z,w,h] of [[-2.08,1.35,1.12,.45,.34],[2.02,1.32,1.08,.38,.3]]){
-      const cave=new THREE.Mesh(new THREE.CircleGeometry(1,20),caveMat);cave.position.set(x,y,z);cave.scale.set(w,h,1);innerNonBo.add(cave);
-    }
-    // White ceramic planters with feathered cycad fronds, matching the photographed flanking plants.
-    const makeCycad=()=>{
-      const plant=new THREE.Group(),potMat=new THREE.MeshStandardMaterial({color:0xE9E7DE,roughness:.35});
-      const pot=new THREE.Mesh(new THREE.CylinderGeometry(.52,.42,.75,20),potMat);pot.position.y=.38;plant.add(pot);
-      const trunk=new THREE.Mesh(new THREE.CylinderGeometry(.1,.14,.5,10),nbRoof);trunk.position.y=.98;plant.add(trunk);
-      const leafMat=new THREE.MeshStandardMaterial({color:0x35623A,roughness:.86,side:THREE.DoubleSide});
-      for(let i=0;i<15;i++){
-        const angle=i/15*Math.PI*2,frond=new THREE.Group();
-        const stem=new THREE.Mesh(new THREE.CylinderGeometry(.018,.025,1.55,5),leafMat);
-        stem.rotation.x=Math.PI/2-.25;stem.position.z=.75;frond.add(stem);
-        for(let k=2;k<11;k++){
-          const t=k/12;
-          for(const side of [-1,1]){
-            const leaflet=new THREE.Mesh(new THREE.ConeGeometry(.035,.28,4),leafMat);
-            leaflet.position.set(side*.11*t,-.15*t,.16+1.35*t);
-            leaflet.rotation.z=side*-.8;frond.add(leaflet);
-          }
-        }
-        frond.position.y=1.25;frond.rotation.y=angle;plant.add(frond);
-      }
-      return plant;
-    };
-    const leftCycad=makeCycad();leftCycad.position.set(-5.25,0,1.0);innerNonBo.add(leftCycad);
-    const rightCycad=makeCycad();rightCycad.position.set(5.25,0,1.0);innerNonBo.add(rightCycad);
-    g.add(innerNonBo);
-    this.interiorNonBoClickTargets.push(innerNonBo);
-    this.interiorRectObstacles.push({minX:-4.3,maxX:4.3,minZ:-34.1,maxZ:-26.9});
-    this.interiorObstacles.push({x:-5.25,z:-29.5,r:.62},{x:5.25,z:-29.5,r:.62});
-
-    // Courtyard corner bonsai pots matching Sân Thiên Tỉnh reference photos
-    for (const [bx, bz] of [[-6.8, -26.0], [6.8, -26.0], [-6.8, -35.0], [6.8, -35.0]]) {
-      const pot = this.makeBonsai72(0.75);
-      pot.position.set(bx, 0, bz);
-      g.add(pot);
-      this.interiorObstacles.push({ x: bx, z: bz, r: 0.6 });
-    }
-
-    // Helper: Triple-Arched Open Partition Wall with clear center & side walkways (allows seamless walk-through!)
-    const addTripleArchPartition = (zPos, signTitle) => {
-      for (const pierX of [-10.5, -3.7, 3.7, 10.5]) {
-        const pier = new THREE.Mesh(new THREE.BoxGeometry(2.0, 7.6, 0.5), wallMat);
-        pier.position.set(pierX, 3.8, zPos);
-        g.add(pier);
-        this.interiorRectObstacles.push({
-          minX: pierX - 1.05,
-          maxX: pierX + 1.05,
-          minZ: zPos - 0.35,
-          maxZ: zPos + 0.35
-        });
-      }
-      const headerBeam = new THREE.Mesh(new THREE.BoxGeometry(22.8, 2.8, 0.5), wallMat);
-      headerBeam.position.set(0, 6.2, zPos);
-      g.add(headerBeam);
-      const board = new THREE.Mesh(
-        new THREE.BoxGeometry(5.8, 0.78, 0.16),
-        new THREE.MeshStandardMaterial({
-          map: makeTextTex(signTitle, {
-            w: 1120,
-            h: 170,
-            bg: '#32140A',
-            border: '#FFD875',
-            color: '#FFD970',
-            size: 52
-          })
-        })
-      );
-      board.position.set(0, 5.45, zPos + 0.34);
-      g.add(board);
-    };
-
-    // =========================================================================
-    // 4. NHÀ TỔ · HẬU TỔ ĐƯỜNG (z: -38.8 .. -53.0)
-    // =========================================================================
-    addTripleArchPartition(-38.8, 'NHÀ TỔ · THỜ CHƯ VỊ TỔ SƯ');
-
-    const toCeiling = registerCutaway(new THREE.Mesh(new THREE.BoxGeometry(23.2, 0.36, 14.4), ceilingWoodMat));
-    toCeiling.position.set(0, 9.6, -45.9);
-    g.add(toCeiling);
-    addTimberViKeoTruss(0, 7.45, 22.0, 2.0, -42.5, true);
-    addTimberViKeoTruss(0, 7.45, 22.0, 2.0, -48.5, true);
-
-    const thoLight = new THREE.PointLight(0xFFD584, 3.8, 36);
-    thoLight.position.set(0, 6.2, -45.8);
-    g.add(thoLight);
-
-    for (const cx of [-4.6, 4.6]) {
-      for (const cz of [-42.2, -49.5]) {
-        const col = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.3, 7.4, 14), M.redColumn);
-        col.position.set(cx, 3.7, cz);
-        g.add(col);
-        this.interiorObstacles.push({ x: cx, z: cz, r: 0.42 });
-      }
-      const couplet = new THREE.Mesh(
-        new THREE.BoxGeometry(0.32, 3.9, 0.12),
-        new THREE.MeshStandardMaterial({
-          map: this.makeCoupletTex(cx < 0 ? '祖德流芳萬古存' : '佛光普照千秋盛'),
-          roughness: 0.35
-        })
-      );
-      couplet.position.set(cx + (cx < 0 ? 0.32 : -0.32), 3.1, -49.2);
-      g.add(couplet);
-    }
-    addCarvedBaoLam(0, 5.9, -42.2, 9.0);
-
-    // Central Ancestral Altar in Nhà Tổ (z = -46.8, open aisles flanking left/right into Sân Thiên Tỉnh 2!)
-    const khuThoMainAltar = new THREE.Group();
-    khuThoMainAltar.position.set(0, 0, -46.8);
-    const ktTier1 = new THREE.Mesh(new THREE.BoxGeometry(6.8, 1.32, 2.6), darkLacquerColMat);
-    ktTier1.position.y = 0.66;
-    khuThoMainAltar.add(ktTier1);
-    const ktTier2 = new THREE.Mesh(new THREE.BoxGeometry(5.2, 1.05, 1.5), M.redColumn);
-    ktTier2.position.set(0, 1.82, -0.35);
-    khuThoMainAltar.add(ktTier2);
-    const ktScreen = new THREE.Mesh(new THREE.BoxGeometry(6.8, 4.6, 0.2), M.redColumn);
-    ktScreen.position.set(0, 2.3, -1.28);
-    khuThoMainAltar.add(ktScreen);
-    const ktScreenPlaque = new THREE.Mesh(
-      new THREE.BoxGeometry(5.2, 0.78, 0.14),
-      new THREE.MeshStandardMaterial({
-        map: makeTextTex('TỔ ẤN LƯU TRUYỀN', {
-          w: 960,
-          h: 160,
-          bg: '#32140A',
-          border: '#FFD875',
-          color: '#FFD970',
-          size: 56
-        })
-      })
-    );
-    ktScreenPlaque.position.set(0, 4.15, -1.12);
-    khuThoMainAltar.add(ktScreenPlaque);
-
-    // 3 Sculpted Gilded Patriarch Statues + 5 Ancestral Tablets ("Bài Vị Chư Vị Tổ Sư")
-    this.khuThoAltarGroup = khuThoMainAltar;
-    for (const px of [-1.75, 0, 1.75]) {
-      const pat = createSculptedPatriarch(THREE, { scale: 0.96 });
-      pat.position.set(px, 2.35, -0.2);
-      khuThoMainAltar.add(pat);
-      if (px === 0) this.khuThoPlaceholderParts.push(pat);
-    }
-    const tabletTitles = ['CHƯ TỔ', 'TIỀN BỐI', 'TỔ SƯ KHAI SƠN', 'HÒA THƯỢNG', 'CHƯ VỊ'];
-    for (let ti = -2; ti <= 2; ti++) {
-      const tablet = new THREE.Mesh(
-        new THREE.BoxGeometry(0.62, 1.15, 0.12),
-        new THREE.MeshStandardMaterial({
-          map: makeTextTex(tabletTitles[ti + 2], {
-            w: 220,
-            h: 400,
-            bg: ti === 0 ? '#6E1E12' : '#441C0E',
-            border: '#FFD875',
-            color: '#FFE694',
-            size: 32
-          }),
-          roughness: 0.34
-        })
-      );
-      tablet.position.set(ti * 0.95, 2.95, -0.82);
-      khuThoMainAltar.add(tablet);
-    }
-    const ktBurner = this.buildIncenseBurner(0.5);
-    ktBurner.position.set(0, 1.32, 0.72);
-    khuThoMainAltar.add(ktBurner);
-    for (const vx of [-2.2, 2.2]) {
-      const vase = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.2, 0.6, 10), M.goldAccent);
-      vase.position.set(vx, 1.62, 0.65);
-      khuThoMainAltar.add(vase);
-      const lotusTop = new THREE.Mesh(
-        new THREE.SphereGeometry(0.24, 10, 8),
-        new THREE.MeshStandardMaterial({ color: 0xF579A8, roughness: 0.45 })
-      );
-      lotusTop.position.set(vx, 2.02, 0.65);
-      khuThoMainAltar.add(lotusTop);
-    }
-    g.add(khuThoMainAltar);
-    this.interiorKhuThoClickTargets.push(khuThoMainAltar);
-    this.interiorRectObstacles.push({ minX: -3.7, maxX: 3.7, minZ: -48.3, maxZ: -45.3 });
-
-    // Side Wall Altars in Nhà Tổ (Ban Quan Âm West x=-9.8 & Ban Địa Tạng East x=+9.8, clear of walkthrough aisles!)
-    for (const [sx, sLabel] of [[-9.8, 'BAN QUÁN THẾ ÂM'], [9.8, 'BAN ĐỊA TẠNG']]) {
-      const sAltar = new THREE.Group();
-      sAltar.position.set(sx, 0, -45.8);
-      sAltar.rotation.y = sx < 0 ? Math.PI / 2 : -Math.PI / 2;
-      const tbl = new THREE.Mesh(new THREE.BoxGeometry(2.2, 1.15, 1.25), darkLacquerColMat);
-      tbl.position.y = 0.575;
-      sAltar.add(tbl);
-      const sideStatue = createSculptedBodhisattva(THREE, {
-        variant: sx < 0 ? 'quan_am' : 'the_chi',
-        ivory: false,
-        scale: 0.92
-      });
-      sideStatue.position.set(0, 1.15, -0.2);
-      sAltar.add(sideStatue);
-      const sb = this.buildIncenseBurner(0.32);
-      sb.position.set(0, 1.15, 0.34);
-      sAltar.add(sb);
-      const sPlaque = new THREE.Mesh(
-        new THREE.BoxGeometry(2.1, 0.42, 0.1),
-        new THREE.MeshStandardMaterial({
-          map: makeTextTex(sLabel, { w: 680, h: 130, bg: '#5C1610', border: '#FFD875', color: '#FFD970', size: 38 })
-        })
-      );
-      sPlaque.position.set(0, 3.3, -0.36);
-      sAltar.add(sPlaque);
-      g.add(sAltar);
-      this.interiorKhuThoClickTargets.push(sAltar);
-      this.interiorRectObstacles.push({ minX: sx - 0.85, maxX: sx + 0.85, minZ: -47.0, maxZ: -44.6 });
-    }
-
-    // =========================================================================
-    // 5. SÂN THIÊN TỈNH 2 (Giếng Trời 2, z: -53.0 .. -68.5) — SÂN MỞ
-    // =========================================================================
-    addTripleArchPartition(-53.0, 'SÂN THIÊN TỈNH 2 · ĐẾN NHÀ HẬU');
-
-    const atrium2S = registerCutaway(new THREE.Mesh(new THREE.BoxGeometry(23.2, 0.32, 2.8), ceilingWoodMat));
-    atrium2S.position.set(0, 7.1, -54.4);
-    g.add(atrium2S);
-    const atrium2N = registerCutaway(new THREE.Mesh(new THREE.BoxGeometry(23.2, 0.32, 2.8), ceilingWoodMat));
-    atrium2N.position.set(0, 7.1, -67.1);
-    g.add(atrium2N);
-
-    const atriumSky2 = new THREE.Mesh(
-      new THREE.PlaneGeometry(17.8, 10.6),
-      new THREE.MeshBasicMaterial({ color: 0x9AD2F6, side: THREE.DoubleSide })
-    );
-    atriumSky2.rotation.x = Math.PI / 2;
-    atriumSky2.position.set(0, 9.8, -60.8);
-    registerCutaway(atriumSky2);
-    g.add(atriumSky2);
-
-    const atriumDaylight2 = new THREE.PointLight(0xFFF3D4, 4.4, 38);
-    atriumDaylight2.position.set(0, 8.2, -60.8);
-    g.add(atriumDaylight2);
-
-    for (const vx of [-8.2, 8.2]) {
-      for (const vz of [-56.2, -60.8, -65.4]) {
-        const vCol = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.28, 7.0, 12), M.redColumn);
-        vCol.position.set(vx, 3.5, vz);
-        g.add(vCol);
-        this.interiorObstacles.push({ x: vx, z: vz, r: 0.4 });
-      }
-    }
-
-    // Sân Thiên Tỉnh 2 được giữ thoáng, không dựng thêm một hòn non bộ trùng lặp.
-    for (const [bx, bz] of [[-6.8, -56.5], [6.8, -56.5], [-6.8, -65.0], [6.8, -65.0]]) {
-      const pot = this.makeBonsai72(0.74);
-      pot.position.set(bx, 0, bz);
-      g.add(pot);
-      this.interiorObstacles.push({ x: bx, z: bz, r: 0.6 });
-    }
-
-    // =========================================================================
-    // 6. NHÀ HẬU · KHU THỜ TỰ & SINH HOẠT PHÍA SAU (z: -68.5 .. -82.0)
-    // =========================================================================
-    addTripleArchPartition(-68.5, 'NHÀ HẬU · KHU THỜ TỰ PHÍA SAU');
-
-    const hauCeiling = registerCutaway(new THREE.Mesh(new THREE.BoxGeometry(23.2, 0.36, 13.8), ceilingWoodMat));
-    hauCeiling.position.set(0, 9.4, -75.2);
-    g.add(hauCeiling);
-    addTimberViKeoTruss(0, 7.25, 22.0, 1.95, -72.0, true);
-    addTimberViKeoTruss(0, 7.25, 22.0, 1.95, -78.0, true);
-
-    const hauNorthWall = new THREE.Mesh(new THREE.BoxGeometry(28.4, 8.2, 0.55), wallMat);
-    hauNorthWall.position.set(0, 4.1, -82.0);
-    g.add(hauNorthWall);
-
-    const hauLight = new THREE.PointLight(0xFFD990, 3.6, 36);
-    hauLight.position.set(0, 6.0, -75.5);
-    g.add(hauLight);
-
-    for (const cx of [-4.6, 4.6]) {
-      const col = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.3, 7.2, 14), M.redColumn);
-      col.position.set(cx, 3.6, -74.0);
-      g.add(col);
-      this.interiorObstacles.push({ x: cx, z: -74.0, r: 0.42 });
-    }
-    addCarvedBaoLam(0, 5.75, -74.0, 9.0);
-
-    // Rear Ceremonial Altar ("Ban Thờ Hậu Tổ · Linh Vị Chư Hương Linh")
-    const nhaHauAltar = new THREE.Group();
-    nhaHauAltar.position.set(0, 0, -79.2);
-    const nhTier1 = new THREE.Mesh(new THREE.BoxGeometry(7.2, 1.28, 2.4), darkLacquerColMat);
-    nhTier1.position.y = 0.64;
-    nhaHauAltar.add(nhTier1);
-    const nhTier2 = new THREE.Mesh(new THREE.BoxGeometry(5.2, 0.95, 1.3), M.redColumn);
-    nhTier2.position.set(0, 1.75, -0.35);
-    nhaHauAltar.add(nhTier2);
-    const nhBuddha = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.45, 1.35, 12), goldLeafMat);
-    nhBuddha.position.set(0, 2.9, -0.35);
-    nhaHauAltar.add(nhBuddha);
-    const nhHead = new THREE.Mesh(new THREE.SphereGeometry(0.22, 10, 8), goldLeafMat);
-    nhHead.position.set(0, 3.74, -0.35);
-    nhaHauAltar.add(nhHead);
-    const nhBurner = this.buildIncenseBurner(0.46);
-    nhBurner.position.set(0, 1.28, 0.65);
-    nhaHauAltar.add(nhBurner);
-    const nhPlaque = new THREE.Mesh(
-      new THREE.BoxGeometry(5.8, 0.84, 0.16),
-      new THREE.MeshStandardMaterial({
-        map: makeTextTex('NHÀ HẬU · LINH VỊ CHƯ HƯƠNG LINH', {
-          w: 1120,
-          h: 170,
-          bg: '#32140A',
-          border: '#FFD875',
-          color: '#FFD970',
-          size: 50
-        })
-      })
-    );
-    nhPlaque.position.set(0, 5.4, -0.9);
-    nhaHauAltar.add(nhPlaque);
-    g.add(nhaHauAltar);
-    this.interiorKhuThoClickTargets.push(nhaHauAltar);
-    this.interiorRectObstacles.push({ minX: -3.9, maxX: 3.9, minZ: -80.6, maxZ: -77.7 });
-
-    // Monastic low tea/scripture benches along West/East bays of Nhà Hậu
-    for (const bx of [-8.2, 8.2]) {
-      const bench = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.48, 3.8), M.darkWood);
-      bench.position.set(bx, 0.24, -75.5);
-      g.add(bench);
-      this.interiorRectObstacles.push({ minX: bx - 1.2, maxX: bx + 1.2, minZ: -77.6, maxZ: -73.4 });
-    }
-
-    // =========================================================================
-    // 7. NHÀ SÀN GỖ TRUYỀN THỐNG MIỀN TÂY · KHU ĂN PHẬT TỬ (x: +14.2..+32.8, z: -49.0..-22.5)
-    // Built on dark ironwood stilts over a clear lotus pond with wooden stairs down to East corridor!
-    // =========================================================================
-    const stiltWoodMat = new THREE.MeshStandardMaterial({ color: 0x4E2C16, map: this.woodGrainTex, roughness: 0.66 });
-    const plankDeckMat = new THREE.MeshStandardMaterial({ color: 0x7A4924, map: this.woodGrainTex, roughness: 0.54 });
-    const railWoodMat = new THREE.MeshStandardMaterial({ color: 0x5C3418, roughness: 0.58 });
-    const tableWoodMat = new THREE.MeshStandardMaterial({ color: 0x6F3E1E, roughness: 0.48 });
-    const bowlMat = new THREE.MeshStandardMaterial({ color: 0xFFFDF8, roughness: 0.25 });
-    const trayMat = new THREE.MeshStandardMaterial({ color: 0xC8CDD2, metalness: 0.45, roughness: 0.3 });
-    const teaPotMat = new THREE.MeshStandardMaterial({ color: 0x8F4028, roughness: 0.35 });
-
-    // Mekong Lotus Pond Basin underneath the Wooden Stilt Floor
-    const stiltPondWater = new THREE.Mesh(new THREE.BoxGeometry(19.0, 0.3, 27.0), M.water);
-    stiltPondWater.position.set(23.7, -0.22, -35.8);
-    g.add(stiltPondWater);
-
-    // Ironwood Stilts & Cross Bearers supporting the +0.85m Timber Plank Deck
-    for (const sx of [15.4, 21.0, 26.6, 31.8]) {
-      for (const sz of [-47.5, -40.0, -32.0, -24.0]) {
-        const footing = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.3, 0.42, 10), M.stoneLight);
-        footing.position.set(sx, -0.1, sz);
-        g.add(footing);
-        const stiltCol = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.18, 1.05, 10), stiltWoodMat);
-        stiltCol.position.set(sx, 0.36, sz);
-        g.add(stiltCol);
-      }
-    }
-
-    // Elevated Hardwood Stilt Floor at y = +0.85m (x = 15.2..32.6, z = -48.5..-22.5)
-    const traiDeck = new THREE.Mesh(new THREE.BoxGeometry(17.6, 0.16, 26.2), plankDeckMat);
-    traiDeck.position.set(23.9, 0.77, -35.5);
-    traiDeck.receiveShadow = true;
-    g.add(traiDeck);
-
-    for (let pz = -48.0; pz <= -23.0; pz += 0.7) {
-      const seam = new THREE.Mesh(
-        new THREE.BoxGeometry(17.4, 0.02, 0.04),
-        new THREE.MeshStandardMaterial({ color: 0x3B2010, roughness: 0.85 })
-      );
-      seam.position.set(23.9, 0.855, pz);
-      g.add(seam);
-    }
-
-    // Wide Wooden Entry Stairs climbing smoothly from East Corridor (x=14.1, y=0) onto Stilt Deck (x=15.3, y=0.85) at 3 archways!
-    for (const archZ of [-26.5, -35.5, -42.5]) {
-      for (let s = 0; s < 4; s++) {
-        const tread = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.21, 3.8), plankDeckMat);
-        tread.position.set(13.95 + s * 0.38, 0.1 + s * 0.21, archZ);
-        g.add(tread);
-      }
-    }
-
-    // Upper Mekong Hardwood Pillars + Exposed Vì Kèo Trusses (Roof slab is in cutawayTargets!)
-    const traiCeiling = registerCutaway(new THREE.Mesh(new THREE.BoxGeometry(18.6, 0.34, 26.8), ceilingWoodMat));
-    traiCeiling.position.set(23.9, 8.2, -35.5);
-    g.add(traiCeiling);
-
-    for (const pz of [-47.5, -40.5, -33.5, -26.5]) {
-      addTimberViKeoTruss(23.9, 5.75, 17.2, 1.95, pz, true);
-      for (const px of [15.5, 32.3]) {
-        const col = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.21, 5.1, 10), stiltWoodMat);
-        col.position.set(px, 3.35, pz);
-        g.add(col);
-      }
-    }
-
-    const traiBackN = new THREE.Mesh(new THREE.BoxGeometry(18.4, 7.6, 0.45), creamWallMat);
-    traiBackN.position.set(23.9, 3.8, -48.6);
-    g.add(traiBackN);
-    const traiBackS = new THREE.Mesh(new THREE.BoxGeometry(18.4, 7.6, 0.45), creamWallMat);
-    traiBackS.position.set(23.9, 3.8, -22.4);
-    g.add(traiBackS);
-    const traiEastWall = new THREE.Mesh(new THREE.BoxGeometry(0.45, 7.6, 26.4), creamWallMat);
-    traiEastWall.position.set(32.7, 3.8, -35.5);
-    g.add(traiEastWall);
-
-    // Sunlit East Windows with wooden louver mullions overlooking Mekong garden lotus
-    for (const wz of [-28.0, -35.5, -43.0]) {
-      const winFrame = new THREE.Mesh(new THREE.BoxGeometry(0.18, 2.8, 3.6), M.darkWood);
-      winFrame.position.set(32.42, 3.6, wz);
-      g.add(winFrame);
-      const winGlow = new THREE.Mesh(
-        new THREE.PlaneGeometry(3.2, 2.4),
-        new THREE.MeshBasicMaterial({ color: 0xD7ECCB, side: THREE.DoubleSide })
-      );
-      winGlow.rotation.y = -Math.PI / 2;
-      winGlow.position.set(32.3, 3.6, wz);
-      g.add(winGlow);
-      for (let mz = -1.2; mz <= 1.2; mz += 0.6) {
-        const mullion = new THREE.Mesh(new THREE.BoxGeometry(0.14, 2.5, 0.08), M.darkWood);
-        mullion.position.set(32.26, 3.6, wz + mz);
-        g.add(mullion);
-      }
-    }
-
-    const traiLight1 = new THREE.PointLight(0xFFF0C6, 3.8, 34);
-    traiLight1.position.set(23.5, 6.2, -31.0);
-    g.add(traiLight1);
-    const traiLight2 = new THREE.PointLight(0xFFD990, 3.4, 34);
-    traiLight2.position.set(23.5, 6.2, -41.0);
-    g.add(traiLight2);
-
-    const traiSign = new THREE.Mesh(
-      new THREE.BoxGeometry(0.14, 0.62, 3.6),
-      new THREE.MeshStandardMaterial({
-        map: makeTextTex('NHÀ SÀN TRAI ĐƯỜNG · CƠM CHAY →', {
-          w: 960,
-          h: 170,
-          bg: '#1C5A34',
-          border: '#FFD875',
-          color: '#FFF6E5',
-          size: 46
-        })
-      })
-    );
-    traiSign.position.set(13.68, 4.45, -26.5);
-    g.add(traiSign);
-
-    const traiHallBanner = new THREE.Mesh(
-      new THREE.BoxGeometry(7.2, 0.92, 0.16),
-      new THREE.MeshStandardMaterial({
-        map: makeTextTex('NHÀ SÀN TRAI ĐƯỜNG · CƠM CHAY MIỀN TÂY', {
-          w: 1200,
-          h: 180,
-          bg: '#5C1610',
-          border: '#FFD875',
-          color: '#FFF2B2',
-          size: 52
-        })
-      })
-    );
-    traiHallBanner.position.set(23.9, 5.45, -48.2);
-    g.add(traiHallBanner);
-
-    // 6 Long Wooden Vegetarian Dining Tables & Benches on Stilt Deck (y = +0.85m)
-    for (const tx of [19.4, 27.0]) {
-      for (const tz of [-28.5, -35.5, -42.5]) {
-        const tGroup = new THREE.Group();
-        tGroup.position.set(tx, 0.85, tz);
-
-        const top = new THREE.Mesh(new THREE.BoxGeometry(3.8, 0.1, 1.35), tableWoodMat);
-        top.position.y = 0.78;
-        tGroup.add(top);
-        for (const lx of [-1.6, 1.6]) {
-          for (const lz of [-0.52, 0.52]) {
-            const leg = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.76, 0.1), railWoodMat);
-            leg.position.set(lx, 0.38, lz);
-            tGroup.add(leg);
-          }
-        }
-        for (const bz of [-0.95, 0.95]) {
-          const bench = new THREE.Mesh(new THREE.BoxGeometry(3.5, 0.08, 0.38), tableWoodMat);
-          bench.position.set(0, 0.45, bz);
-          tGroup.add(bench);
-        }
-        for (const bx of [-1.25, -0.45, 0.45, 1.25]) {
-          for (const bz of [-0.36, 0.36]) {
-            const bowl = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.06, 0.09, 10), bowlMat);
-            bowl.position.set(bx, 0.87, bz);
-            tGroup.add(bowl);
-          }
-        }
-        const tray = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.28, 0.04, 14), trayMat);
-        tray.position.set(-0.25, 0.85, 0);
-        tGroup.add(tray);
-        const teapot = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.13, 0.22, 10), teaPotMat);
-        teapot.position.set(0.65, 0.94, 0);
-        tGroup.add(teapot);
-
-        g.add(tGroup);
-        this.interiorTraiDuongClickTargets.push(tGroup);
-        this.interiorRectObstacles.push({
-          minX: tx - 2.05,
-          maxX: tx + 2.05,
-          minZ: tz - 1.15,
-          maxZ: tz + 1.15
-        });
-      }
-    }
-
-    // Vegetarian Serving Counter + Terracotta Mekong Water Urn along North Wall of Trai Đường (y = +0.85m)
-    const counterGroup = new THREE.Group();
-    counterGroup.position.set(23.4, 0.85, -47.1);
-    const counterBody = new THREE.Mesh(new THREE.BoxGeometry(8.0, 0.98, 1.55), M.redColumn);
-    counterBody.position.y = 0.49;
-    counterGroup.add(counterBody);
-    const counterTop = new THREE.Mesh(new THREE.BoxGeometry(8.2, 0.1, 1.65), M.creamTrim);
-    counterTop.position.y = 1.02;
-    counterGroup.add(counterTop);
-    for (const px of [-2.8, -1.0, 0.8, 2.6]) {
-      const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.32, 0.34, 14), trayMat);
-      pot.position.set(px, 1.24, 0);
-      counterGroup.add(pot);
-    }
-    const luNuocTrong = new THREE.Mesh(new THREE.SphereGeometry(0.42, 12, 10), M.terracottaPot);
-    luNuocTrong.scale.set(1.0, 1.2, 1.0);
-    luNuocTrong.position.set(5.2, 0.52, 0.2);
-    counterGroup.add(luNuocTrong);
-    const counterBoard = new THREE.Mesh(
-      new THREE.BoxGeometry(5.8, 0.72, 0.12),
-      new THREE.MeshStandardMaterial({
-        map: makeTextTex('QUẦY CƠM CHAY MIỄN PHÍ · NƯỚC TRÀ ĐÁ', {
-          w: 1024,
-          h: 150,
-          bg: '#1C5A34',
-          border: '#FFD875',
-          color: '#FFF6E5',
-          size: 46
-        })
-      })
-    );
-    counterBoard.position.set(0, 3.0, 0.6);
-    counterGroup.add(counterBoard);
-    g.add(counterGroup);
-    this.interiorTraiDuongClickTargets.push(counterGroup);
-    this.interiorRectObstacles.push({ minX: 19.1, maxX: 29.2, minZ: -48.1, maxZ: -46.1 });
+    buildSquareChanhDienInterior(this, THREE);
   }
 
   buildStationBeacons() {
@@ -7995,14 +6758,21 @@ export class VinhTrang3DWorld {
   }
 
   loadGLB(url) {
-    return new Promise((resolve) => {
+    if (!url) return Promise.resolve(null);
+    const encoded = encodeURI(url);
+    if (this.glbPromiseCache.has(encoded)) {
+      return this.glbPromiseCache.get(encoded);
+    }
+    const p = new Promise((resolve) => {
       this.gltfLoader.load(
-        encodeURI(url),
+        encoded,
         (gltf) => resolve(gltf),
         undefined,
         () => resolve(null)
       );
     });
+    this.glbPromiseCache.set(encoded, p);
+    return p;
   }
 
   cleanStatueScene(gltfScene, matOverride = null, preserveGround = false) {
@@ -8051,77 +6821,94 @@ export class VinhTrang3DWorld {
     return root;
   }
 
+  async loadCharacterGLB(charKey) {
+    const path = CHAR_GLB_PATHS[charKey];
+    if (!path) return null;
+    if (this.charDataCache[charKey]?.scene) return this.charDataCache[charKey];
+    const gltf = await this.loadGLB(path);
+    if (gltf?.scene) this.charDataCache[charKey] = gltf;
+    return gltf;
+  }
+
   async loadAllGLBAssets() {
+    const initialKey = this.playerState.charKey || 'nu';
+    const coreCharKeys = Array.from(new Set(['nu', 'nam', 'tre_em', initialKey]));
+
+    // Phase 1: Critical Courtyard Statues, Architecture, Core Characters & Exterior Props
     const [
       adidaGltf,
       dilacGltf,
       phatNamGltf,
       banThoGltf,
-      thichCaChanhDienGltf,
       quanAmGltf,
-      hoPhapGltf,
-      tieuDienGltf,
-      toDatMaGltf,
-      kyTuongGltf,
-      toaLocGltf,
-      phucHoGltf,
-      hangLongGltf,
-      hoanHiGltf,
-      phucHo2Gltf,
-      thienDinhGltf,
-      cuBatGltf,
-      thacThapGltf,
-      khaiTamGltf,
-      tieuSuGltf,
       matTienGltf,
       tamQuanGltf,
       baoThapGltf,
-      daiHongChungGltf,
-      trongBatNhaGltf,
-      longTruGltf,
-      baoLamGltf,
-      xeKhachGltf,
-      xeOtoGltf
+      denLongGltf,
+      chumSenGltf,
+      mamNguQuaGltf,
+      moGoGltf,
+      banThoPropGltf,
+      boDoanGltf,
+      boDoanTronGltf,
+      chieuCoiGltf,
+      duaXiemGltf,
+      banhBoGltf,
+      banhDaLonGltf,
+      quatNanGltf,
+      gioMayGltf,
+      denHoaDangGltf,
+      nenSenGltf,
+      nonLaGltf,
+      tuiSenGltf,
+      chimBoCauGltf,
+      khanRanGltf,
+      trangHatGltf,
+      vongMayGltf,
+      cayBoDeGltf,
+      caySalaGltf,
+      ...coreChars
     ] = await Promise.all([
       this.loadGLB(STATUE_GLB_PATHS.adida),
       this.loadGLB(STATUE_GLB_PATHS.dilac),
       this.loadGLB(STATUE_GLB_PATHS.phatnam),
       this.loadGLB(STATUE_GLB_PATHS.bantho),
-      this.loadGLB(STATUE_GLB_PATHS.thichCaChanhDien),
       this.loadGLB(STATUE_GLB_PATHS.quanAm),
-      this.loadGLB(STATUE_GLB_PATHS.hoPhap),
-      this.loadGLB(STATUE_GLB_PATHS.tieuDien),
-      this.loadGLB(STATUE_GLB_PATHS.toDatMa),
-      this.loadGLB(ARHAT_GLB_PATHS.kyTuong),
-      this.loadGLB(ARHAT_GLB_PATHS.toaLoc),
-      this.loadGLB(ARHAT_GLB_PATHS.phucHo),
-      this.loadGLB(ARHAT_GLB_PATHS.hangLong),
-      this.loadGLB(ARHAT_GLB_PATHS.hoanHi),
-      this.loadGLB(ARHAT_GLB_PATHS.phucHo2),
-      this.loadGLB(ARHAT_GLB_PATHS.thienDinh),
-      this.loadGLB(ARHAT_GLB_PATHS.cuBat),
-      this.loadGLB(ARHAT_GLB_PATHS.thacThap),
-      this.loadGLB(ARHAT_GLB_PATHS.khaiTam),
-      this.loadGLB(ARHAT_GLB_PATHS.tieuSu),
       this.loadGLB(ARCH_GLB_PATHS.mat_tien),
       this.loadGLB(ARCH_GLB_PATHS.tam_quan),
       this.loadGLB(ARCH_GLB_PATHS.bao_thap),
-      this.loadGLB(ARCH_GLB_PATHS.dai_hong_chung),
-      this.loadGLB(ARCH_GLB_PATHS.trong_bat_nha),
-      this.loadGLB(ARCH_GLB_PATHS.long_tru),
-      this.loadGLB(ARCH_GLB_PATHS.bao_lam),
-      this.loadGLB(ARCH_GLB_PATHS.xe_khach),
-      this.loadGLB(ARCH_GLB_PATHS.xe_oto)
+      this.loadGLB(PROP_GLB_PATHS.den_long),
+      this.loadGLB(PROP_GLB_PATHS.chum_sen),
+      this.loadGLB(PROP_GLB_PATHS.mam_ngu_qua),
+      this.loadGLB(PROP_GLB_PATHS.mo_go),
+      this.loadGLB(PROP_GLB_PATHS.ban_tho),
+      this.loadGLB(PROP_GLB_PATHS.bo_doan),
+      this.loadGLB(PROP_GLB_PATHS.bo_doan_tron),
+      this.loadGLB(PROP_GLB_PATHS.chieu_coi_thien),
+      this.loadGLB(PROP_GLB_PATHS.trai_dua_xiem),
+      this.loadGLB(PROP_GLB_PATHS.dia_banh_bo),
+      this.loadGLB(PROP_GLB_PATHS.dia_banh_da_lon),
+      this.loadGLB(PROP_GLB_PATHS.quat_nan_la_dua),
+      this.loadGLB(PROP_GLB_PATHS.gio_may_tre),
+      this.loadGLB(PROP_GLB_PATHS.den_hoa_dang),
+      this.loadGLB(PROP_GLB_PATHS.nen_hoa_sen),
+      this.loadGLB(PROP_GLB_PATHS.non_la),
+      this.loadGLB(PROP_GLB_PATHS.tui_sen),
+      this.loadGLB(PROP_GLB_PATHS.chim_bo_cau),
+      this.loadGLB(PROP_GLB_PATHS.khan_ran),
+      this.loadGLB(PROP_GLB_PATHS.trang_hat),
+      this.loadGLB(PROP_GLB_PATHS.vong_may),
+      this.loadGLB(PROP_GLB_PATHS.cay_bo_de),
+      this.loadGLB(PROP_GLB_PATHS.cay_sala),
+      ...coreCharKeys.map((ck) => this.loadCharacterGLB(ck))
     ]);
 
+    coreCharKeys.forEach((ck, idx) => {
+      if (coreChars[idx]?.scene) this.charDataCache[ck] = coreChars[idx];
+    });
     if (tamQuanGltf?.scene) this.archMeshCache.tam_quan = tamQuanGltf.scene;
     if (baoThapGltf?.scene) this.archMeshCache.bao_thap = baoThapGltf.scene;
-    if (daiHongChungGltf?.scene) this.archMeshCache.dai_hong_chung = daiHongChungGltf.scene;
-    if (trongBatNhaGltf?.scene) this.archMeshCache.trong_bat_nha = trongBatNhaGltf.scene;
-    if (longTruGltf?.scene) this.archMeshCache.long_tru = longTruGltf.scene;
-    if (baoLamGltf?.scene) this.archMeshCache.bao_lam = baoLamGltf.scene;
-    if (xeKhachGltf?.scene) this.archMeshCache.xe_khach = xeKhachGltf.scene;
-    if (xeOtoGltf?.scene) this.archMeshCache.xe_oto = xeOtoGltf.scene;
+    if (banThoGltf?.scene) this.archMeshCache._bantho_fallback = banThoGltf.scene;
 
     // 0A. Mount custom sculpted Tam Quan Vĩnh Tràng GLB onto main entrance gate while retaining plaque + iron gates
     if (this.archMeshCache.tam_quan && this.tamQuanMainGroup) {
@@ -8170,13 +6957,16 @@ export class VinhTrang3DWorld {
       const box = new THREE.Box3().setFromObject(facade);
       const sz = new THREE.Vector3();
       box.getSize(sz);
-      const scale = 28.4 / Math.max(1, sz.x);
-      facade.scale.setScalar(scale);
+      facade.scale.set(
+        28.4 / Math.max(0.5, sz.x),
+        11.2 / Math.max(0.5, sz.y),
+        13.2 / Math.max(0.5, sz.z)
+      );
       const box2 = new THREE.Box3().setFromObject(facade);
       facade.position.set(
         -(box2.min.x + box2.max.x) / 2,
         0.02 - box2.min.y,
-        5.05 - (box2.min.z + box2.max.z) / 2
+        3.25 - box2.max.z
       );
       this.chanhDienFacadeGroup.add(facade);
       if (this.chanhDienProceduralShell) this.chanhDienProceduralShell.visible = false;
@@ -8232,22 +7022,7 @@ export class VinhTrang3DWorld {
       this.nietBanGroup.add(s);
     }
 
-    // 4. Tượng Phật Bàn Thờ Tam Bảo (Thích Ca Chánh Điện or fallback) + Porch Altar
-    const mainSanctuaryScene = thichCaChanhDienGltf?.scene || banThoGltf?.scene;
-    if (mainSanctuaryScene) {
-      const s = this.cleanStatueScene(mainSanctuaryScene, null);
-      const box = new THREE.Box3().setFromObject(s);
-      const h = Math.max(0.1, box.max.y - box.min.y);
-      s.scale.setScalar(2.85 / h);
-      const box2 = new THREE.Box3().setFromObject(s);
-      s.position.set(
-        -(box2.min.x + box2.max.x) / 2,
-        2.82 - box2.min.y,
-        -(box2.min.z + box2.max.z) / 2
-      );
-      s.rotation.y = 0;
-      this.tamBaoAltarGroup.add(s);
-    }
+    // 4. Porch Buddha Altar + Bảo Tháp
     if (banThoGltf?.scene && this.chanhDienPorchAltar) {
       const porchBuddha = this.cleanStatueScene(banThoGltf.scene, null);
       const box = new THREE.Box3().setFromObject(porchBuddha);
@@ -8281,98 +7056,6 @@ export class VinhTrang3DWorld {
       this.quanAmGroup.add(qa);
     }
 
-    // 6. Interior Guardians (Hộ Pháp Vi Đà, Tiêu Diện Đại Sĩ) & Tổ Sư Đạt Ma
-    if (hoPhapGltf?.scene && this.hoPhapPlaceholder?.altar) {
-      for (const p of this.hoPhapPlaceholder.parts) if (p.parent) p.parent.remove(p);
-      const hp = this.cleanStatueScene(hoPhapGltf.scene, null);
-      const box = new THREE.Box3().setFromObject(hp);
-      hp.scale.setScalar(1.95 / Math.max(0.1, box.max.y - box.min.y));
-      const box2 = new THREE.Box3().setFromObject(hp);
-      hp.position.set(-(box2.min.x + box2.max.x) / 2, 1.18 - box2.min.y, -0.18 - (box2.min.z + box2.max.z) / 2);
-      this.hoPhapPlaceholder.altar.add(hp);
-    }
-    if (tieuDienGltf?.scene && this.tieuDienPlaceholder?.altar) {
-      for (const p of this.tieuDienPlaceholder.parts) if (p.parent) p.parent.remove(p);
-      const td = this.cleanStatueScene(tieuDienGltf.scene, null);
-      const box = new THREE.Box3().setFromObject(td);
-      td.scale.setScalar(1.95 / Math.max(0.1, box.max.y - box.min.y));
-      const box2 = new THREE.Box3().setFromObject(td);
-      td.position.set(-(box2.min.x + box2.max.x) / 2, 1.18 - box2.min.y, -0.18 - (box2.min.z + box2.max.z) / 2);
-      this.tieuDienPlaceholder.altar.add(td);
-    }
-    if (toDatMaGltf?.scene && this.khuThoAltarGroup) {
-      for (const p of this.khuThoPlaceholderParts) if (p.parent) p.parent.remove(p);
-      const dm = this.cleanStatueScene(toDatMaGltf.scene, null);
-      const box = new THREE.Box3().setFromObject(dm);
-      dm.scale.setScalar(1.65 / Math.max(0.1, box.max.y - box.min.y));
-      const box2 = new THREE.Box3().setFromObject(dm);
-      dm.position.set(-(box2.min.x + box2.max.x) / 2, 2.34 - box2.min.y, -0.18 - (box2.min.z + box2.max.z) / 2);
-      this.khuThoAltarGroup.add(dm);
-    }
-
-    // 7. All 18 Thập Bát La Hán Statues symmetrically lining West (x=-9.8) & East (x=+9.8) Chánh Điện aisles
-    const arhatRoster = [
-      { index: 0, title: 'Tọa Lộc La Hán', gltf: toaLocGltf },
-      { index: 1, title: 'Khánh Hỷ La Hán', gltf: tieuSuGltf },
-      { index: 2, title: 'Cử Bát La Hán', gltf: cuBatGltf },
-      { index: 3, title: 'Hoan Hỉ La Hán', gltf: hoanHiGltf },
-      { index: 4, title: 'Bố Đại La Hán', gltf: null },
-      { index: 5, title: 'Ba Tiêu La Hán', gltf: null },
-      { index: 6, title: 'Kỵ Tượng La Hán', gltf: kyTuongGltf },
-      { index: 7, title: 'Tiếu Sư La Hán', gltf: null },
-      { index: 8, title: 'Thiền Định La Hán', gltf: thienDinhGltf },
-      { index: 9, title: 'Trầm Tư La Hán', gltf: null },
-      { index: 10, title: 'Thám Thủ La Hán', gltf: null },
-      { index: 11, title: 'Khai Tâm La Hán', gltf: khaiTamGltf },
-      { index: 12, title: 'Phục Hổ Tôn Giả', gltf: phucHo2Gltf },
-      { index: 13, title: 'Thác Tháp La Hán', gltf: thacThapGltf },
-      { index: 14, title: 'Khoái Nhĩ La Hán', gltf: null },
-      { index: 15, title: 'Trường Mi La Hán', gltf: null },
-      { index: 16, title: 'Hàng Long La Hán', gltf: hangLongGltf },
-      { index: 17, title: 'Phục Hổ La Hán', gltf: phucHoGltf }
-    ];
-    for (let i = 0; i < 18; i++) {
-      const item = arhatRoster[i];
-      const isWest = i < 9;
-      const row = isWest ? i : i - 9;
-      const ax = isWest ? -9.8 : 9.8;
-      const az = -2.0 - row * 2.25;
-      const facing = isWest ? Math.PI / 2 : -Math.PI / 2;
-
-      const pedestal = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.42, 0.48, 0.28, 12),
-        this.MAT.stoneDark
-      );
-      pedestal.position.set(ax, 0.14, az);
-      pedestal.receiveShadow = true;
-      pedestal.userData.arhatIndex = item.index;
-      pedestal.userData.arhatTitle = item.title;
-      this.interiorGroup.add(pedestal);
-
-      let statue;
-      if (item.gltf?.scene) {
-        statue = this.cleanStatueScene(item.gltf.scene, null, true);
-        const initialBounds = new THREE.Box3().setFromObject(statue);
-        const height = Math.max(0.1, initialBounds.max.y - initialBounds.min.y);
-        statue.scale.setScalar(1.26 / height);
-      } else {
-        statue = createSculptedGardenArhat(THREE, i, { scale: 1.02 });
-      }
-      statue.rotation.y = facing;
-      const bounds = new THREE.Box3().setFromObject(statue);
-      statue.position.set(
-        ax - (bounds.min.x + bounds.max.x) / 2,
-        0.28 - bounds.min.y,
-        az - (bounds.min.z + bounds.max.z) / 2
-      );
-      statue.userData.arhatIndex = item.index;
-      statue.userData.arhatTitle = item.title;
-      this.interiorGroup.add(statue);
-      this.arhatGroups.push(statue, pedestal);
-      this.interiorObstacles.push({ x: ax, z: az, r: 0.72 });
-    }
-
-    // 8. Architectural Upgrades (Bảo Tháp 35m, Đại Hồng Chung, Trống Bát Nhã, Long Trụ, Bao Lam, Parked Vehicles)
     if (this.archMeshCache.bao_thap && this.stupaGroup) {
       while (this.stupaGroup.children.length > 0) this.stupaGroup.remove(this.stupaGroup.children[0]);
       const stupa = this.fitProp(this.archMeshCache.bao_thap, 35.0);
@@ -8380,153 +7063,6 @@ export class VinhTrang3DWorld {
       stupa.position.set(-(sb.min.x + sb.max.x) / 2, -sb.min.y, -(sb.min.z + sb.max.z) / 2);
       this.stupaGroup.add(stupa);
     }
-    if (this.archMeshCache.dai_hong_chung) {
-      for (const anchor of this.bellTowerArchAnchors) {
-        if (anchor.placeholder?.parent) anchor.placeholder.parent.remove(anchor.placeholder);
-        const bell = this.fitProp(this.archMeshCache.dai_hong_chung, anchor.targetH || 1.85);
-        const bb = new THREE.Box3().setFromObject(bell);
-        bell.position.set(-(bb.min.x + bb.max.x) / 2, anchor.y - bb.min.y, -(bb.min.z + bb.max.z) / 2);
-        anchor.group.add(bell);
-      }
-      if (this.interiorBellAnchor?.group) {
-        if (this.interiorBellAnchor.placeholder?.parent) this.interiorBellAnchor.placeholder.parent.remove(this.interiorBellAnchor.placeholder);
-        const ibell = this.fitProp(this.archMeshCache.dai_hong_chung, 1.65);
-        const bb = new THREE.Box3().setFromObject(ibell);
-        ibell.position.set(-(bb.min.x + bb.max.x) / 2, 1.38 - bb.min.y, -(bb.min.z + bb.max.z) / 2);
-        this.interiorBellAnchor.group.add(ibell);
-      }
-    }
-    if (this.archMeshCache.trong_bat_nha) {
-      for (const anchor of this.drumTowerArchAnchors) {
-        if (anchor.placeholder?.parent) anchor.placeholder.parent.remove(anchor.placeholder);
-        const drum = this.fitProp(this.archMeshCache.trong_bat_nha, anchor.targetH || 1.72);
-        const db = new THREE.Box3().setFromObject(drum);
-        drum.position.set(-(db.min.x + db.max.x) / 2, anchor.y - db.min.y, -(db.min.z + db.max.z) / 2);
-        anchor.group.add(drum);
-      }
-      if (this.interiorDrumAnchor?.group) {
-        if (this.interiorDrumAnchor.placeholder?.parent) this.interiorDrumAnchor.placeholder.parent.remove(this.interiorDrumAnchor.placeholder);
-        const idrum = this.fitProp(this.archMeshCache.trong_bat_nha, 1.48);
-        const db = new THREE.Box3().setFromObject(idrum);
-        idrum.position.set(-(db.min.x + db.max.x) / 2, 1.15 - db.min.y, -(db.min.z + db.max.z) / 2);
-        this.interiorDrumAnchor.group.add(idrum);
-      }
-    }
-    if (this.archMeshCache.long_tru) {
-      for (const ph of this.longTruPlaceholders) {
-        for (const p of ph.replaceParts) if (p.parent) p.parent.remove(p);
-        const ltModel = this.fitProp(this.archMeshCache.long_tru, 7.45);
-        ltModel.rotation.y = ph.sideSign < 0 ? 0.35 : -0.35;
-        const lb = new THREE.Box3().setFromObject(ltModel);
-        ltModel.position.set(-(lb.min.x + lb.max.x) / 2, 0.65 - lb.min.y, -(lb.min.z + lb.max.z) / 2);
-        ph.group.add(ltModel);
-      }
-    }
-    if (this.archMeshCache.bao_lam) {
-      for (const ph of this.baoLamPlaceholders) {
-        while (ph.group.children.length > 0) ph.group.remove(ph.group.children[0]);
-        const blModel = this.archMeshCache.bao_lam.clone(true);
-        blModel.traverse((o) => {
-          if (o.isMesh && o.geometry && !o.geometry.getAttribute('normal')) o.geometry.computeVertexNormals();
-        });
-        const box = new THREE.Box3().setFromObject(blModel);
-        const sz = new THREE.Vector3();
-        box.getSize(sz);
-        blModel.scale.set(
-          (ph.width || 9.0) / Math.max(0.1, sz.x),
-          1.85 / Math.max(0.1, sz.y),
-          0.42 / Math.max(0.1, sz.z)
-        );
-        const b2 = new THREE.Box3().setFromObject(blModel);
-        blModel.position.set(-(b2.min.x + b2.max.x) / 2, -(b2.min.y + b2.max.y) / 2, -(b2.min.z + b2.max.z) / 2);
-        ph.group.add(blModel);
-      }
-    }
-    for (const pa of this.parkedVehicleAnchors) {
-      const model = pa.kind === 'van' ? this.archMeshCache.xe_khach : this.archMeshCache.xe_oto;
-      if (model && this.buildGLBRoadVehicle) {
-        if (pa.fallback?.parent) pa.fallback.parent.remove(pa.fallback);
-        this.buildGLBRoadVehicle(model, pa.x, pa.z, pa.yaw, pa.targetLength);
-      }
-    }
-
-    const initialKey = this.playerState.charKey || 'nu';
-    // Load ALL rigged human GLBs (including Meshy pilgrims & monks) + props upfront
-    const [
-      nuGltf,
-      namGltf,
-      treEmGltf,
-      suThayGltf,
-      nuAoLamGltf,
-      namAoNauGltf,
-      duKhachGltf,
-      denLongGltf,
-      chumSenGltf,
-      mamNguQuaGltf,
-      moGoGltf,
-      banThoPropGltf,
-      boDoanGltf,
-      boDoanTronGltf,
-      chieuCoiGltf,
-      duaXiemGltf,
-      banhBoGltf,
-      banhDaLonGltf,
-      quatNanGltf,
-      gioMayGltf,
-      denHoaDangGltf,
-      nenSenGltf,
-      nonLaGltf,
-      tuiSenGltf,
-      chimBoCauGltf,
-      khanRanGltf,
-      trangHatGltf,
-      vongMayGltf,
-      cayBoDeGltf,
-      caySalaGltf,
-      capHacRuaGltf,
-      nhangKhoanhDongGltf
-    ] = await Promise.all([
-      this.loadGLB(CHAR_GLB_PATHS.nu),
-      this.loadGLB(CHAR_GLB_PATHS.nam),
-      this.loadGLB(CHAR_GLB_PATHS.tre_em),
-      this.loadGLB(CHAR_GLB_PATHS.su_thay),
-      this.loadGLB(CHAR_GLB_PATHS.nu_ao_lam),
-      this.loadGLB(CHAR_GLB_PATHS.nam_ao_nau),
-      this.loadGLB(CHAR_GLB_PATHS.du_khach),
-      this.loadGLB(PROP_GLB_PATHS.den_long),
-      this.loadGLB(PROP_GLB_PATHS.chum_sen),
-      this.loadGLB(PROP_GLB_PATHS.mam_ngu_qua),
-      this.loadGLB(PROP_GLB_PATHS.mo_go),
-      this.loadGLB(PROP_GLB_PATHS.ban_tho),
-      this.loadGLB(PROP_GLB_PATHS.bo_doan),
-      this.loadGLB(PROP_GLB_PATHS.bo_doan_tron),
-      this.loadGLB(PROP_GLB_PATHS.chieu_coi_thien),
-      this.loadGLB(PROP_GLB_PATHS.trai_dua_xiem),
-      this.loadGLB(PROP_GLB_PATHS.dia_banh_bo),
-      this.loadGLB(PROP_GLB_PATHS.dia_banh_da_lon),
-      this.loadGLB(PROP_GLB_PATHS.quat_nan_la_dua),
-      this.loadGLB(PROP_GLB_PATHS.gio_may_tre),
-      this.loadGLB(PROP_GLB_PATHS.den_hoa_dang),
-      this.loadGLB(PROP_GLB_PATHS.nen_hoa_sen),
-      this.loadGLB(PROP_GLB_PATHS.non_la),
-      this.loadGLB(PROP_GLB_PATHS.tui_sen),
-      this.loadGLB(PROP_GLB_PATHS.chim_bo_cau),
-      this.loadGLB(PROP_GLB_PATHS.khan_ran),
-      this.loadGLB(PROP_GLB_PATHS.trang_hat),
-      this.loadGLB(PROP_GLB_PATHS.vong_may),
-      this.loadGLB(PROP_GLB_PATHS.cay_bo_de),
-      this.loadGLB(PROP_GLB_PATHS.cay_sala),
-      this.loadGLB(PROP_GLB_PATHS.cap_hac_rua),
-      this.loadGLB(PROP_GLB_PATHS.nhang_khoanh_dong)
-    ]);
-
-    if (nuGltf?.scene) this.charDataCache.nu = nuGltf;
-    if (namGltf?.scene) this.charDataCache.nam = namGltf;
-    if (treEmGltf?.scene) this.charDataCache.tre_em = treEmGltf;
-    if (suThayGltf?.scene) this.charDataCache.su_thay = suThayGltf;
-    if (nuAoLamGltf?.scene) this.charDataCache.nu_ao_lam = nuAoLamGltf;
-    if (namAoNauGltf?.scene) this.charDataCache.nam_ao_nau = namAoNauGltf;
-    if (duKhachGltf?.scene) this.charDataCache.du_khach = duKhachGltf;
 
     if (denLongGltf?.scene) this.propMeshCache.den_long = denLongGltf.scene;
     if (chumSenGltf?.scene) this.propMeshCache.chum_sen = chumSenGltf.scene;
@@ -8560,16 +7096,388 @@ export class VinhTrang3DWorld {
     if (vongMayGltf?.scene) this.propMeshCache.vong_may = vongMayGltf.scene;
     if (cayBoDeGltf?.scene) this.propMeshCache.cay_bo_de = cayBoDeGltf.scene;
     if (caySalaGltf?.scene) this.propMeshCache.cay_sala = caySalaGltf.scene;
-    if (capHacRuaGltf?.scene) this.propMeshCache.cap_hac_rua = capHacRuaGltf.scene;
-    if (nhangKhoanhDongGltf?.scene) this.propMeshCache.nhang_khoanh_dong = nhangKhoanhDongGltf.scene;
 
     this.placeLoaded3DPropsInWorld();
-    this.setCharacter(initialKey);
+    this.setCharacter(this.playerState.charKey || initialKey);
     this.spawnMonksAndPilgrimsV8();
-    this.spawnInteriorWorshippersV8();
     this.initSmokeColumns();
     this.renderFrame();
+    this.loaded = true;
     this.onLoaded();
+
+    // Phase 2: Stagger bell/drum/vehicle exterior props; alternate characters & interior GLBs load on demand
+    window.setTimeout(() => {
+      this._loadPhase2ExteriorExtras().catch(() => {});
+    }, this.isSoftwareGl ? 800 : 300);
+  }
+
+  async _loadPhase2ExteriorExtras() {
+    if (this._phase2Started) return;
+    this._phase2Started = true;
+    const yieldFrame = () => new Promise((r) => window.setTimeout(r, this.isSoftwareGl ? 120 : 25));
+    let daiHongChungGltf = null;
+    let trongBatNhaGltf = null;
+    let xeKhachGltf = null;
+    let xeOtoGltf = null;
+    if (this.isSoftwareGl) {
+      daiHongChungGltf = await this.loadGLB(ARCH_GLB_PATHS.dai_hong_chung);
+      await yieldFrame();
+      trongBatNhaGltf = await this.loadGLB(ARCH_GLB_PATHS.trong_bat_nha);
+      await yieldFrame();
+      xeKhachGltf = await this.loadGLB(ARCH_GLB_PATHS.xe_khach);
+      await yieldFrame();
+      xeOtoGltf = await this.loadGLB(ARCH_GLB_PATHS.xe_oto);
+    } else {
+      [daiHongChungGltf, trongBatNhaGltf, xeKhachGltf, xeOtoGltf] = await Promise.all([
+        this.loadGLB(ARCH_GLB_PATHS.dai_hong_chung),
+        this.loadGLB(ARCH_GLB_PATHS.trong_bat_nha),
+        this.loadGLB(ARCH_GLB_PATHS.xe_khach),
+        this.loadGLB(ARCH_GLB_PATHS.xe_oto)
+      ]);
+    }
+
+    if (daiHongChungGltf?.scene) {
+      this.archMeshCache.dai_hong_chung = daiHongChungGltf.scene;
+      for (const anchor of this.bellTowerArchAnchors) {
+        if (anchor.placeholder?.parent) anchor.placeholder.parent.remove(anchor.placeholder);
+        const bell = this.fitProp(daiHongChungGltf.scene, anchor.targetH || 1.85);
+        const bb = new THREE.Box3().setFromObject(bell);
+        bell.position.set(-(bb.min.x + bb.max.x) / 2, anchor.y - bb.min.y, -(bb.min.z + bb.max.z) / 2);
+        anchor.group.add(bell);
+      }
+    }
+    if (trongBatNhaGltf?.scene) {
+      this.archMeshCache.trong_bat_nha = trongBatNhaGltf.scene;
+      for (const anchor of this.drumTowerArchAnchors) {
+        if (anchor.placeholder?.parent) anchor.placeholder.parent.remove(anchor.placeholder);
+        const drum = this.fitProp(trongBatNhaGltf.scene, anchor.targetH || 1.72);
+        const db = new THREE.Box3().setFromObject(drum);
+        drum.position.set(-(db.min.x + db.max.x) / 2, anchor.y - db.min.y, -(db.min.z + db.max.z) / 2);
+        anchor.group.add(drum);
+      }
+    }
+    if (xeKhachGltf?.scene) this.archMeshCache.xe_khach = xeKhachGltf.scene;
+    if (xeOtoGltf?.scene) this.archMeshCache.xe_oto = xeOtoGltf.scene;
+    for (const pa of this.parkedVehicleAnchors) {
+      const model = pa.kind === 'van' ? this.archMeshCache.xe_khach : this.archMeshCache.xe_oto;
+      if (model && this.buildGLBRoadVehicle && !pa._upgraded) {
+        pa._upgraded = true;
+        if (pa.fallback?.parent) pa.fallback.parent.remove(pa.fallback);
+        this.buildGLBRoadVehicle(model, pa.x, pa.z, pa.yaw, pa.targetLength);
+      }
+    }
+    this.renderFrame();
+  }
+
+  ensureInteriorAssetsLoaded() {
+    if (this._interiorLoadPromise) return this._interiorLoadPromise;
+    this._interiorLoadPromise = (async () => {
+      // Load interior assets in modest batches to avoid mobile/Safari WebGL memory spikes
+      const [
+        thichCaChanhDienGltf,
+        hoPhapGltf,
+        tieuDienGltf,
+        toDatMaGltf,
+        nghinMatNghinTayGltf,
+        choNguCuaPhatGltf,
+        longTruGltf,
+        thapDenCauAnGltf,
+        honNonBoGltf,
+        daiHongChungGltf,
+        trongBatNhaGltf,
+        capHacRuaGltf,
+        nhangKhoanhDongGltf
+      ] = await Promise.all([
+        this.loadGLB(STATUE_GLB_PATHS.thichCaChanhDien),
+        this.loadGLB(STATUE_GLB_PATHS.hoPhap),
+        this.loadGLB(STATUE_GLB_PATHS.tieuDien),
+        this.loadGLB(STATUE_GLB_PATHS.toDatMa),
+        this.loadGLB(STATUE_GLB_PATHS.nghinMatNghinTay),
+        this.loadGLB(STATUE_GLB_PATHS.choNguCuaPhat),
+        this.loadGLB(ARCH_GLB_PATHS.long_tru),
+        this.loadGLB(ARCH_GLB_PATHS.thap_den_cau_an),
+        this.loadGLB(ARCH_GLB_PATHS.hon_non_bo),
+        this.loadGLB(ARCH_GLB_PATHS.dai_hong_chung),
+        this.loadGLB(ARCH_GLB_PATHS.trong_bat_nha),
+        this.loadGLB(PROP_GLB_PATHS.cap_hac_rua),
+        this.loadGLB(PROP_GLB_PATHS.nhang_khoanh_dong)
+      ]);
+
+      const [kyTuongGltf, toaLocGltf, phucHoGltf, hangLongGltf, hoanHiGltf] = await Promise.all([
+        this.loadGLB(ARHAT_GLB_PATHS.kyTuong),
+        this.loadGLB(ARHAT_GLB_PATHS.toaLoc),
+        this.loadGLB(ARHAT_GLB_PATHS.phucHo),
+        this.loadGLB(ARHAT_GLB_PATHS.hangLong),
+        this.loadGLB(ARHAT_GLB_PATHS.hoanHi)
+      ]);
+
+      const [phucHo2Gltf, thienDinhGltf, cuBatGltf, thacThapGltf, khaiTamGltf, tieuSuGltf] =
+        await Promise.all([
+          this.loadGLB(ARHAT_GLB_PATHS.phucHo2),
+          this.loadGLB(ARHAT_GLB_PATHS.thienDinh),
+          this.loadGLB(ARHAT_GLB_PATHS.cuBat),
+          this.loadGLB(ARHAT_GLB_PATHS.thacThap),
+          this.loadGLB(ARHAT_GLB_PATHS.khaiTam),
+          this.loadGLB(ARHAT_GLB_PATHS.tieuSu)
+        ]);
+
+      if (this._interiorGLBsMounted) return;
+      this._interiorGLBsMounted = true;
+
+      if (longTruGltf?.scene) this.archMeshCache.long_tru = longTruGltf.scene;
+      if (thapDenCauAnGltf?.scene) this.archMeshCache.thap_den_cau_an = thapDenCauAnGltf.scene;
+      if (honNonBoGltf?.scene) this.archMeshCache.hon_non_bo = honNonBoGltf.scene;
+      if (daiHongChungGltf?.scene) this.archMeshCache.dai_hong_chung = daiHongChungGltf.scene;
+      if (trongBatNhaGltf?.scene) this.archMeshCache.trong_bat_nha = trongBatNhaGltf.scene;
+      if (capHacRuaGltf?.scene) this.propMeshCache.cap_hac_rua = capHacRuaGltf.scene;
+      if (nhangKhoanhDongGltf?.scene) this.propMeshCache.nhang_khoanh_dong = nhangKhoanhDongGltf.scene;
+
+      // Tháp Đèn Cầu An / Đăng Dược Sư Vạn Phật PBR GLB ("Ghi Tên Cầu Phước" — image_d3dcebc6.png)
+      if (this.archMeshCache.thap_den_cau_an && this.blessingTowerBodyAnchor) {
+        const btModel = this.archMeshCache.thap_den_cau_an.clone(true);
+        btModel.traverse((o) => {
+          if (o.isMesh) {
+            o.castShadow = true;
+            o.receiveShadow = true;
+            if (o.geometry && !o.geometry.getAttribute('normal')) o.geometry.computeVertexNormals();
+            if (o.material) {
+              o.material = o.material.clone();
+              o.material.emissive = new THREE.Color(0x6E240A);
+              o.material.emissiveIntensity = 0.28;
+            }
+          }
+        });
+        const box = new THREE.Box3().setFromObject(btModel);
+        const sz = new THREE.Vector3();
+        box.getSize(sz);
+        const radScale = 1.08 / Math.max(0.1, sz.x, sz.z);
+        btModel.scale.set(radScale, 2.36 / Math.max(0.1, sz.y), radScale);
+        const b2 = new THREE.Box3().setFromObject(btModel);
+        btModel.position.set(-(b2.min.x + b2.max.x) / 2, -b2.min.y, -(b2.min.z + b2.max.z) / 2);
+        if (this.blessingTowerProceduralCore) this.blessingTowerProceduralCore.visible = false;
+        this.blessingTowerBodyAnchor.add(btModel);
+      }
+
+      // Hòn Non Bộ Sân Thiên Tỉnh 1 PBR GLB (image_0806c07c.png)
+      if (this.archMeshCache.hon_non_bo && this.innerNonBoRockAnchor) {
+        const nbModel = this.archMeshCache.hon_non_bo.clone(true);
+        nbModel.traverse((o) => {
+          if (o.isMesh) {
+            o.castShadow = true;
+            o.receiveShadow = true;
+            if (o.geometry && !o.geometry.getAttribute('normal')) o.geometry.computeVertexNormals();
+          }
+        });
+        const box = new THREE.Box3().setFromObject(nbModel);
+        const sz = new THREE.Vector3();
+        box.getSize(sz);
+        const xzScale = 4.65 / Math.max(0.2, sz.x, sz.z);
+        nbModel.scale.set(xzScale, 4.45 / Math.max(0.2, sz.y), xzScale);
+        const b2 = new THREE.Box3().setFromObject(nbModel);
+        nbModel.position.set(-(b2.min.x + b2.max.x) / 2, -b2.min.y, -0.15 - (b2.min.z + b2.max.z) / 2);
+        if (this.innerNonBoProceduralRocks) this.innerNonBoProceduralRocks.visible = false;
+        this.innerNonBoRockAnchor.add(nbModel);
+      }
+
+      // Tam Bảo Chánh Điện main golden Shakyamuni statue atop upper pedestal in front of rainbow Dharma halo
+      const mainSanctuaryScene = thichCaChanhDienGltf?.scene || this.archMeshCache._bantho_fallback;
+      if (mainSanctuaryScene && this.tamBaoAltarGroup) {
+        const s = this.cleanStatueScene(mainSanctuaryScene, null);
+        const box = new THREE.Box3().setFromObject(s);
+        const h = Math.max(0.1, box.max.y - box.min.y);
+        s.scale.setScalar(3.05 / h);
+        const box2 = new THREE.Box3().setFromObject(s);
+        s.position.set(
+          -(box2.min.x + box2.max.x) / 2,
+          2.98 - box2.min.y,
+          -0.78 - (box2.min.z + box2.max.z) / 2
+        );
+        s.rotation.y = 0;
+        this.tamBaoAltarGroup.add(s);
+      }
+
+      // Guardians & Tổ Đạt Ma
+      if (hoPhapGltf?.scene && this.hoPhapPlaceholder?.altar) {
+        for (const p of this.hoPhapPlaceholder.parts) if (p.parent) p.parent.remove(p);
+        const hp = this.cleanStatueScene(hoPhapGltf.scene, null);
+        const box = new THREE.Box3().setFromObject(hp);
+        hp.scale.setScalar(1.95 / Math.max(0.1, box.max.y - box.min.y));
+        const box2 = new THREE.Box3().setFromObject(hp);
+        hp.position.set(-(box2.min.x + box2.max.x) / 2, 1.18 - box2.min.y, -0.18 - (box2.min.z + box2.max.z) / 2);
+        this.hoPhapPlaceholder.altar.add(hp);
+      }
+      if (tieuDienGltf?.scene && this.tieuDienPlaceholder?.altar) {
+        for (const p of this.tieuDienPlaceholder.parts) if (p.parent) p.parent.remove(p);
+        const td = this.cleanStatueScene(tieuDienGltf.scene, null);
+        const box = new THREE.Box3().setFromObject(td);
+        td.scale.setScalar(1.95 / Math.max(0.1, box.max.y - box.min.y));
+        const box2 = new THREE.Box3().setFromObject(td);
+        td.position.set(-(box2.min.x + box2.max.x) / 2, 1.18 - box2.min.y, -0.18 - (box2.min.z + box2.max.z) / 2);
+        this.tieuDienPlaceholder.altar.add(td);
+      }
+      if (toDatMaGltf?.scene && this.khuThoAltarGroup) {
+        for (const p of this.khuThoPlaceholderParts) if (p.parent) p.parent.remove(p);
+        const dm = this.cleanStatueScene(toDatMaGltf.scene, null);
+        const box = new THREE.Box3().setFromObject(dm);
+        dm.scale.setScalar(1.65 / Math.max(0.1, box.max.y - box.min.y));
+        const box2 = new THREE.Box3().setFromObject(dm);
+        dm.position.set(-(box2.min.x + box2.max.x) / 2, 2.34 - box2.min.y, -0.18 - (box2.min.z + box2.max.z) / 2);
+        this.khuThoAltarGroup.add(dm);
+      }
+
+      // Right-Side Gallery Shrine 1: Tượng Phật Nghìn Mắt Nghìn Tay PBR GLB
+      if (nghinMatNghinTayGltf?.scene && this.nghinMatNghinTayAnchor) {
+        const nm = this.cleanStatueScene(nghinMatNghinTayGltf.scene, null, true);
+        nm.traverse((o) => {
+          if (o.isMesh && o.material) {
+            o.material.roughness = Math.min(0.42, o.material.roughness ?? 0.34);
+            o.material.metalness = Math.max(0.45, o.material.metalness ?? 0.52);
+          }
+        });
+        const box = new THREE.Box3().setFromObject(nm);
+        const h = Math.max(0.1, box.max.y - box.min.y);
+        nm.scale.setScalar(2.42 / h);
+        const b2 = new THREE.Box3().setFromObject(nm);
+        nm.position.set(-(b2.min.x + b2.max.x) / 2, -b2.min.y, 0.06 - (b2.min.z + b2.max.z) / 2);
+        if (this.nghinMatProceduralGroup) this.nghinMatProceduralGroup.visible = false;
+        this.nghinMatNghinTayAnchor.add(nm);
+      }
+
+      // Right-Side Gallery Shrine 2: Chỗ Ngủ Của Phật (Reclining Buddha inside Carved Canopy Bed) PBR GLB
+      if (choNguCuaPhatGltf?.scene && this.choNguCuaPhatAnchor) {
+        const cn = this.cleanStatueScene(choNguCuaPhatGltf.scene, null, true);
+        cn.traverse((o) => {
+          if (o.isMesh && o.material) {
+            o.material.roughness = Math.min(0.45, o.material.roughness ?? 0.36);
+            o.material.metalness = Math.max(0.38, o.material.metalness ?? 0.45);
+          }
+        });
+        const rawBox = new THREE.Box3().setFromObject(cn);
+        const rawSz = rawBox.getSize(new THREE.Vector3());
+        if (rawSz.z > rawSz.x * 1.18) {
+          cn.rotation.y = Math.PI / 2;
+        }
+        const rotBox = new THREE.Box3().setFromObject(cn);
+        const rotSz = rotBox.getSize(new THREE.Vector3());
+        cn.scale.setScalar(2.58 / Math.max(0.2, rotSz.x));
+        const b2 = new THREE.Box3().setFromObject(cn);
+        cn.position.set(-(b2.min.x + b2.max.x) / 2, 0.04 - b2.min.y, 0.04 - (b2.min.z + b2.max.z) / 2);
+        if (this.choNguPlaceholderBody) this.choNguPlaceholderBody.visible = false;
+        this.choNguCuaPhatAnchor.add(cn);
+      }
+
+      // 18 Thập Bát La Hán statues lining the Left Gallery of the Square (x = -18.5, z = -11.9 .. +13.6)
+      const arhatRoster = [
+        { index: 0, title: 'Tọa Lộc La Hán', gltf: toaLocGltf },
+        { index: 1, title: 'Khánh Hỷ La Hán', gltf: tieuSuGltf },
+        { index: 2, title: 'Cử Bát La Hán', gltf: cuBatGltf },
+        { index: 3, title: 'Hoan Hỉ La Hán', gltf: hoanHiGltf },
+        { index: 4, title: 'Bố Đại La Hán', gltf: null },
+        { index: 5, title: 'Ba Tiêu La Hán', gltf: null },
+        { index: 6, title: 'Kỵ Tượng La Hán', gltf: kyTuongGltf },
+        { index: 7, title: 'Tiếu Sư La Hán', gltf: null },
+        { index: 8, title: 'Thiền Định La Hán', gltf: thienDinhGltf },
+        { index: 9, title: 'Trầm Tư La Hán', gltf: null },
+        { index: 10, title: 'Thám Thủ La Hán', gltf: null },
+        { index: 11, title: 'Khai Tâm La Hán', gltf: khaiTamGltf },
+        { index: 12, title: 'Phục Hổ Tôn Giả', gltf: phucHo2Gltf },
+        { index: 13, title: 'Thác Tháp La Hán', gltf: thacThapGltf },
+        { index: 14, title: 'Khoái Nhĩ La Hán', gltf: null },
+        { index: 15, title: 'Trường Mi La Hán', gltf: null },
+        { index: 16, title: 'Hàng Long La Hán', gltf: hangLongGltf },
+        { index: 17, title: 'Phục Hổ La Hán', gltf: phucHoGltf }
+      ];
+      for (let i = 0; i < 18; i++) {
+        const item = arhatRoster[i];
+        const ax = -18.5;
+        const az = -11.9 + i * 1.5;
+        const facing = Math.PI / 2;
+
+        const pedestal = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.42, 0.48, 0.28, 12),
+          this.MAT.stoneDark
+        );
+        pedestal.position.set(ax, 0.14, az);
+        pedestal.receiveShadow = true;
+        pedestal.userData.arhatIndex = item.index;
+        pedestal.userData.arhatTitle = item.title;
+        this.interiorGroup.add(pedestal);
+
+        let statue;
+        if (item.gltf?.scene) {
+          statue = this.cleanStatueScene(item.gltf.scene, null, true);
+          const initialBounds = new THREE.Box3().setFromObject(statue);
+          const height = Math.max(0.1, initialBounds.max.y - initialBounds.min.y);
+          statue.scale.setScalar(1.26 / height);
+        } else {
+          statue = createSculptedGardenArhat(THREE, i, { scale: 1.02 });
+        }
+        statue.rotation.y = facing;
+        const bounds = new THREE.Box3().setFromObject(statue);
+        statue.position.set(
+          ax - (bounds.min.x + bounds.max.x) / 2,
+          0.28 - bounds.min.y,
+          az - (bounds.min.z + bounds.max.z) / 2
+        );
+        statue.userData.arhatIndex = item.index;
+        statue.userData.arhatTitle = item.title;
+        this.interiorGroup.add(statue);
+        this.arhatGroups.push(statue, pedestal);
+        this.interiorObstacles.push({ x: ax, z: az, r: 0.66 });
+      }
+
+      if (this.archMeshCache.dai_hong_chung && this.interiorBellAnchor?.group) {
+        if (this.interiorBellAnchor.placeholder?.parent) this.interiorBellAnchor.placeholder.parent.remove(this.interiorBellAnchor.placeholder);
+        const ibell = this.fitProp(this.archMeshCache.dai_hong_chung, 1.52);
+        const bb = new THREE.Box3().setFromObject(ibell);
+        ibell.position.set(-(bb.min.x + bb.max.x) / 2, 1.24 - bb.min.y, -(bb.min.z + bb.max.z) / 2);
+        this.interiorBellAnchor.group.add(ibell);
+      }
+      if (this.archMeshCache.trong_bat_nha && this.interiorDrumAnchor?.group) {
+        if (this.interiorDrumAnchor.placeholder?.parent) this.interiorDrumAnchor.placeholder.parent.remove(this.interiorDrumAnchor.placeholder);
+        const idrum = this.fitProp(this.archMeshCache.trong_bat_nha, 1.42);
+        const db = new THREE.Box3().setFromObject(idrum);
+        idrum.position.set(-(db.min.x + db.max.x) / 2, 1.12 - db.min.y, -(db.min.z + db.max.z) / 2);
+        this.interiorDrumAnchor.group.add(idrum);
+      }
+      if (this.archMeshCache.long_tru) {
+        for (const ph of this.longTruPlaceholders) {
+          for (const p of ph.replaceParts) if (p.parent) p.parent.remove(p);
+          const ltModel = this.fitProp(this.archMeshCache.long_tru, 7.45);
+          ltModel.rotation.y = ph.sideSign < 0 ? 0.35 : -0.35;
+          const lb = new THREE.Box3().setFromObject(ltModel);
+          ltModel.position.set(-(lb.min.x + lb.max.x) / 2, 0.65 - lb.min.y, -(lb.min.z + lb.max.z) / 2);
+          ph.group.add(ltModel);
+        }
+      }
+      if (this.propMeshCache.nhang_khoanh_dong && this.spiralIncenseAnchors?.length) {
+        for (const anc of this.spiralIncenseAnchors) {
+          while (anc.children.length > 0) anc.remove(anc.children[0]);
+          const coil = this.fitProp(this.propMeshCache.nhang_khoanh_dong, 1.05);
+          const cb = new THREE.Box3().setFromObject(coil);
+          coil.position.set(-(cb.min.x + cb.max.x) / 2, -cb.max.y, -(cb.min.z + cb.max.z) / 2);
+          anc.add(coil);
+        }
+      }
+      if (this.propMeshCache.cap_hac_rua && this.craneTortoiseAnchor) {
+        while (this.craneTortoiseAnchor.children.length > 0) {
+          this.craneTortoiseAnchor.remove(this.craneTortoiseAnchor.children[0]);
+        }
+        for (const cx of [-2.8, 2.8]) {
+          const crane = this.fitProp(this.propMeshCache.cap_hac_rua, 1.75);
+          const cb = new THREE.Box3().setFromObject(crane);
+          crane.position.set(cx - (cb.min.x + cb.max.x) / 2, -cb.min.y, -(cb.min.z + cb.max.z) / 2);
+          crane.rotation.y = cx < 0 ? 0.16 : -0.16;
+          this.craneTortoiseAnchor.add(crane);
+        }
+      }
+      if (!this._interiorWorshippersSpawned) {
+        this._interiorWorshippersSpawned = true;
+        this.spawnInteriorWorshippersV8();
+      }
+      this.renderFrame();
+    })();
+    return this._interiorLoadPromise;
   }
 
   fitProp(sceneObj, targetSize) {
@@ -8962,7 +7870,11 @@ export class VinhTrang3DWorld {
           }
           o.geometry.computeBoundingBox();
           if (o.isSkinnedMesh && o.geometry.boundingBox) {
-            geomBox = o.geometry.boundingBox;
+            if (!geomBox) {
+              geomBox = o.geometry.boundingBox.clone();
+            } else {
+              geomBox.union(o.geometry.boundingBox);
+            }
           }
         }
         if (o.material) {
@@ -9018,11 +7930,16 @@ export class VinhTrang3DWorld {
   playClipCrossfade(record, clipName, fadeDuration = 0.22, loopOnce = false) {
     if (!record || !record.actions) return;
     const norm = normalizeAnimKey(clipName);
+    const isPrayerPose =
+      norm === 'vai' || norm === 'quy' || norm === 'thap nhang' || norm === 'chap tay';
     const target =
       record.actions[clipName] ||
       record.actions[norm] ||
-      (norm === 'di bo' || norm === 'walk' ? record.actions['Di bo'] || record.actions['walk'] || record.actions['walking'] : null) ||
+      (norm === 'di bo' || norm === 'walk'
+        ? record.actions['Di bo'] || record.actions['walk'] || record.actions['walking']
+        : null) ||
       (norm === 'dung' || norm === 'idle' ? record.actions['Dung'] || record.actions['idle'] : null) ||
+      (isPrayerPose ? record.actions['Chắp tay'] || record.actions['chap tay'] : null) ||
       record.actions['Dung'] ||
       Object.values(record.actions)[0];
     if (!target) return;
@@ -9047,6 +7964,15 @@ export class VinhTrang3DWorld {
     const validKeys = ['nu', 'nam', 'tre_em', 'su_thay', 'nu_ao_lam', 'nam_ao_nau', 'du_khach'];
     if (!validKeys.includes(charKey)) charKey = 'nu';
     this.playerState.charKey = charKey;
+
+    if (!this.charDataCache[charKey]?.scene) {
+      this.loadCharacterGLB(charKey).then((loaded) => {
+        if (loaded?.scene && this.playerState.charKey === charKey) {
+          this.setCharacter(charKey);
+        }
+      });
+    }
+
     while (this.playerContainer.children.length > 0) {
       this.playerContainer.remove(this.playerContainer.children[0]);
     }
@@ -9729,21 +8655,17 @@ export class VinhTrang3DWorld {
   }
 
   spawnInteriorWorshippersV8() {
-    // Rigged GLB worshippers inside Chánh điện, Khu Thờ Tổ, and pilgrims in Trai Đường
+    // Rigged GLB worshippers inside Top-Edge Chính Điện, Right Shrine Gallery, Tổ Đường, Hồ Sen Bộ & Trai Đường
     const kneelingSpots = [
-      { charKey: 'nu', x: -2.4, z: -4.2, yaw: Math.PI, tint: [0.84, 0.60, 0.70] },
-      { charKey: 'nam', x: 2.4, z: -4.2, yaw: Math.PI, monkTone: 0 },
-      { charKey: 'nu', x: -2.4, z: -8.6, yaw: Math.PI, tint: [0.76, 0.78, 0.86] },
-      { charKey: 'tre_em', x: -0.9, z: -8.6, yaw: Math.PI, tint: [0.62, 0.74, 0.84] },
-      { charKey: 'nam', x: 2.4, z: -8.6, yaw: Math.PI, tint: [0.52, 0.39, 0.28] },
-      { charKey: 'nu', x: 0.0, z: -12.4, yaw: Math.PI, tint: [0.90, 0.88, 0.84] },
-      // Khu Thờ Tổ worshippers
-      { charKey: 'nu', x: -1.6, z: -48.5, yaw: Math.PI, tint: [0.78, 0.82, 0.86] },
-      { charKey: 'nam', x: 1.6, z: -48.5, yaw: Math.PI, monkTone: 1 }
+      { charKey: 'nu', x: -1.95, z: -13.85, yaw: Math.PI, tint: [0.84, 0.60, 0.70] },
+      { charKey: 'nam', x: 1.95, z: -13.85, yaw: Math.PI, monkTone: 0 },
+      { charKey: 'nu', x: 16.2, z: 15.65, yaw: Math.PI / 2, tint: [0.76, 0.78, 0.86] },
+      { charKey: 'tre_em', x: 16.1, z: 9.85, yaw: Math.PI / 2, tint: [0.62, 0.74, 0.84] },
+      { charKey: 'nam', x: -13.6, z: -15.6, yaw: Math.PI, monkTone: 1 }
     ];
     for (const sp of kneelingSpots) {
       if (this.propMeshCache.bo_doan) {
-        const mat = this.fitProp(this.propMeshCache.bo_doan, 0.92);
+        const mat = this.fitProp(this.propMeshCache.bo_doan, 0.88);
         mat.position.set(sp.x, 0.01, sp.z);
         this.interiorGroup.add(mat);
       } else {
@@ -9771,13 +8693,11 @@ export class VinhTrang3DWorld {
       this.interiorKneelingRecords.push(rec);
     }
 
-    // Standing pilgrims & servers inside Hòn Non Bộ atrium and Trai Đường (Khu ăn Phật tử)
     const standingInterior = [
-      { charKey: 'nu', x: 19.2, z: -25.6, yaw: Math.PI, pose: 'Dung', tint: [0.9, 0.84, 0.72] },
-      { charKey: 'nam', x: 17.4, z: -29.8, yaw: 0, pose: 'Chắp tay', tint: [0.64, 0.68, 0.78] },
-      { charKey: 'nu', x: 24.4, z: -31.8, yaw: Math.PI, pose: 'Dung', tint: [0.88, 0.66, 0.74] },
-      { charKey: 'tre_em', x: 23.2, z: -37.2, yaw: 0, pose: 'Dung', tint: [0.68, 0.82, 0.68] },
-      { charKey: 'nam', x: -5.4, z: -30.5, yaw: Math.PI / 2, pose: 'Chắp tay', monkTone: 0 }
+      { charKey: 'nu', x: -6.8, z: 2.2, yaw: Math.PI / 2, pose: 'Chắp tay', tint: [0.9, 0.84, 0.72], elev: 0 },
+      { charKey: 'nam', x: 6.8, z: -2.0, yaw: -Math.PI / 2, pose: 'Dung', monkTone: 0, elev: 0 },
+      { charKey: 'nu', x: 24.4, z: 2.0, yaw: Math.PI, pose: 'Dung', tint: [0.88, 0.66, 0.74], elev: 0.85 },
+      { charKey: 'nam', x: 28.4, z: 5.8, yaw: 0, pose: 'Dung', tint: [0.64, 0.68, 0.78], elev: 0.85 }
     ];
     for (const sp of standingInterior) {
       const h = CHAR_HEIGHTS[sp.charKey] || 1.64;
@@ -9788,7 +8708,7 @@ export class VinhTrang3DWorld {
       } else if (sp.tint) {
         this.recolorPastelDress(rec.root, sp.tint);
       }
-      rec.root.position.set(sp.x, rec.baseY, sp.z);
+      rec.root.position.set(sp.x, rec.baseY + (sp.elev || 0), sp.z);
       rec.root.rotation.y = sp.yaw;
       this.playClipCrossfade(rec, sp.pose, 0.05);
       this.interiorGroup.add(rec.root);
@@ -9801,24 +8721,20 @@ export class VinhTrang3DWorld {
     const curZ = this.playerState.z;
     let bounds;
     if (this.inInterior) {
-      const inSideDoorCorridor = nz >= -1.25 && nz <= 3.05;
-      const inEastArch =
-        (nz >= -28.3 && nz <= -24.7) ||
-        (nz >= -37.3 && nz <= -33.7) ||
-        (nz >= -44.1 && nz <= -40.9);
-      if (curX > 12.1 || (nx > 11.4 && inEastArch)) {
+      const inTraiDuongArch = nz >= 2.2 && nz <= 5.8;
+      if (curX > 20.15 || (nx > 19.9 && inTraiDuongArch)) {
         bounds = {
-          minX: inEastArch ? -11.05 : 12.6,
-          maxX: 29.6,
-          minZ: -44.6,
-          maxZ: -22.2
+          minX: inTraiDuongArch ? -20.1 : 21.4,
+          maxX: 31.6,
+          minZ: -2.8,
+          maxZ: 10.8
         };
       } else {
         bounds = {
-          minX: inSideDoorCorridor ? -11.9 : -11.05,
-          maxX: inSideDoorCorridor || inEastArch ? 12.6 : 11.05,
-          minZ: -80.5,
-          maxZ: 10.6
+          minX: -20.1,
+          maxX: inTraiDuongArch ? 31.6 : 20.1,
+          minZ: -20.1,
+          maxZ: 20.35
         };
       }
     } else {
@@ -9881,10 +8797,10 @@ export class VinhTrang3DWorld {
     }
 
     if (this.inInterior) {
-      if (x >= 15.0 && x <= 32.0 && z >= -48.2 && z <= -22.6) {
+      if (x >= 22.0 && x <= 32.0 && z >= -3.2 && z <= 11.2) {
         this.playerElevationY = 0.85;
-      } else if (x > 13.7 && x < 15.0 && z >= -44.5 && z <= -24.5) {
-        this.playerElevationY = ((x - 13.7) / 1.3) * 0.85;
+      } else if (x > 20.5 && x < 22.0 && z >= 2.1 && z <= 5.9) {
+        this.playerElevationY = ((x - 20.5) / 1.5) * 0.85;
       } else {
         this.playerElevationY = 0;
       }
@@ -10077,20 +8993,14 @@ export class VinhTrang3DWorld {
     const px = this.playerState.x;
     const pz = this.playerState.z;
     if (this.inInterior) {
-      if (pz >= -1.45 && pz <= 3.25) {
-        if (px > 10.35) {
-          this.exitInteriorGradual('right');
-        } else if (px < -10.35) {
-          this.exitInteriorGradual('left');
-        }
+      if (px >= 13.5 && px <= 17.5 && pz >= 19.65) {
+        this.exitInteriorGradual('right');
       }
     } else {
-      if (pz >= 7.8 && pz <= 9.65) {
-        if (Math.abs(px - 30.2) <= 1.55) {
-          this.enterInteriorGradual('right');
-        } else if (Math.abs(px - 15.8) <= 1.55) {
-          this.enterInteriorGradual('left');
-        }
+      if (pz >= 7.6 && pz <= 10.0 && Math.abs(px - 36.0) <= 1.95) {
+        this.enterInteriorGradual('right');
+      } else if (pz >= 7.8 && pz <= 9.65 && Math.abs(px - 30.2) <= 1.45) {
+        this.enterInteriorGradual('right');
       }
     }
   }
@@ -10123,38 +9033,341 @@ export class VinhTrang3DWorld {
     this.onStationProximity(st, 0);
   }
 
+  walkToPoint(x, z, label = '') {
+    const tx = Number(x);
+    const tz = Number(z);
+    if (!Number.isFinite(tx) || !Number.isFinite(tz)) return;
+    this.cancelEntranceTour();
+    if (this.inInterior) {
+      this.toggleInterior(false, this.lastDoorSide);
+    }
+    const pts = this.buildPerimeterSafeWaypoints(
+      this.playerState.x,
+      this.playerState.z,
+      tx,
+      tz,
+      null,
+      { x: tx, y: 1.2, z: tz }
+    );
+    this.autoWalkWaypoints = pts;
+    this.autoWalkCallback = null;
+    this.autoWalkStation = label ? { name: label, key: 'walk_point' } : null;
+    if (this.walkTargetRing) {
+      this.walkTargetRing.position.set(tx, 0.06, tz);
+      this.walkTargetRing.visible = true;
+    }
+    this.updateWalkPathLine();
+    this.onAutoWalkTargetChange(this.autoWalkStation);
+  }
+
+  setLectureHallMode(enabled = false) {
+    const next = Boolean(enabled);
+    if (this.lectureHallMode === next) return;
+    this.lectureHallMode = next;
+    if (!next) {
+      this.renderFrame();
+    }
+  }
+
+  setTimeOfDay(presetKey = 'morning', immediate = false) {
+    const key = ['morning', 'midday', 'evening'].includes(presetKey) ? presetKey : 'morning';
+    this.timeOfDay = key;
+
+    const cfg =
+      key === 'evening'
+        ? {
+            bg: 0x111E3B,
+            fogColor: 0x15223D,
+            fogDensity: 0.0046,
+            hemiSky: 0x4A639E,
+            hemiGround: 0x261E18,
+            hemiIntensity: 0.72,
+            sunColor: 0x9BB5EA,
+            sunIntensity: 0.78,
+            sunPos: [26, 34, -22],
+            fillColor: 0xFFB86C,
+            fillIntensity: 0.42,
+            exposure: 0.98,
+            lanternEmissive: 1.55,
+            porchIntensity: 7.4,
+            interiorBoost: 1.32
+          }
+        : key === 'midday'
+        ? {
+            bg: 0x8FC7F6,
+            fogColor: 0xDCEBFA,
+            fogDensity: 0.0022,
+            hemiSky: 0xDFF2FF,
+            hemiGround: 0x8C7052,
+            hemiIntensity: 1.32,
+            sunColor: 0xFFF6E0,
+            sunIntensity: 2.15,
+            sunPos: [10, 56, 18],
+            fillColor: 0xFFFFFF,
+            fillIntensity: 0.62,
+            exposure: 1.12,
+            lanternEmissive: 0.18,
+            porchIntensity: 2.0,
+            interiorBoost: 1.0
+          }
+        : {
+            bg: 0xA6D0F0,
+            fogColor: 0xEADBC4,
+            fogDensity: 0.0033,
+            hemiSky: 0xBFE2FF,
+            hemiGround: 0x7A5E3E,
+            hemiIntensity: 1.18,
+            sunColor: 0xFFD99E,
+            sunIntensity: 1.82,
+            sunPos: [-34, 24, 24],
+            fillColor: 0xFFF3D8,
+            fillIntensity: 0.48,
+            exposure: 1.08,
+            lanternEmissive: 0.55,
+            porchIntensity: 4.8,
+            interiorBoost: 1.0
+          };
+
+    if (this.scene.background?.setHex) this.scene.background.setHex(cfg.bg);
+    if (this.scene.fog) {
+      this.scene.fog.color?.setHex(cfg.fogColor);
+      this.scene.fog.density = cfg.fogDensity;
+    }
+    if (this.hemiLight) {
+      this.hemiLight.color.setHex(cfg.hemiSky);
+      this.hemiLight.groundColor.setHex(cfg.hemiGround);
+      this.hemiLight.intensity = cfg.hemiIntensity;
+    }
+    if (this.sunLight) {
+      this.sunLight.color.setHex(cfg.sunColor);
+      this.sunLight.intensity = cfg.sunIntensity;
+      this.sunLight.position.set(cfg.sunPos[0], cfg.sunPos[1], cfg.sunPos[2]);
+    }
+    if (this.frontFillLight) {
+      this.frontFillLight.color.setHex(cfg.fillColor);
+      this.frontFillLight.intensity = cfg.fillIntensity;
+    }
+    if (this.renderer) {
+      this.renderer.toneMappingExposure = cfg.exposure;
+    }
+    if (this.skyDome?.material) {
+      const nextSky = this._buildSkyTextureForPreset(key);
+      if (this.skyDome.material.map !== nextSky) {
+        this.skyDome.material.map = nextSky;
+        this.skyDome.material.needsUpdate = true;
+      }
+    }
+    if (this.MAT?.lanternGlow) {
+      this.MAT.lanternGlow.emissiveIntensity = cfg.lanternEmissive;
+    }
+    if (this.porchGlowLight) {
+      this.porchGlowLight.intensity = cfg.porchIntensity;
+    }
+    this.interiorGroup?.traverse?.((o) => {
+      if (o.isPointLight) {
+        if (typeof o.userData.baseIntensity !== 'number') {
+          o.userData.baseIntensity = o.intensity;
+        }
+        o.intensity = o.userData.baseIntensity * cfg.interiorBoost;
+      }
+    });
+    if (this.inInterior && !this.interiorCutaway) {
+      this.applyInteriorAtmosphere();
+    }
+    if (immediate || !this.lectureHallMode) {
+      this.renderFrame();
+    }
+  }
+
+  applyInteriorAtmosphere() {
+    if (!this.inInterior || this.interiorCutaway) return;
+    if (this.scene.background?.setHex) this.scene.background.setHex(0x160D08);
+    if (this.scene.fog) {
+      this.scene.fog.color?.setHex(0x1F130B);
+      this.scene.fog.density = 0.0046;
+    }
+    if (this.hemiLight) {
+      this.hemiLight.color.setHex(0xFFE0B2);
+      this.hemiLight.groundColor.setHex(0x24130A);
+      this.hemiLight.intensity = 0.34;
+    }
+    if (this.sunLight) {
+      this.sunLight.color.setHex(0xFFF2D6);
+      this.sunLight.intensity = 0.56;
+      this.sunLight.position.set(2, 46, 2);
+    }
+    if (this.frontFillLight) {
+      this.frontFillLight.color.setHex(0xFFB86B);
+      this.frontFillLight.intensity = 0.14;
+    }
+    if (this.renderer) {
+      this.renderer.toneMappingExposure = 0.92;
+    }
+  }
+
+  syncBlessingTowerLamps(entries = []) {
+    if (!Array.isArray(this.blessingTowerLampMeshes) || !this.blessingTowerLampMeshes.length) return;
+    const bySlot = new Map();
+    for (const item of Array.isArray(entries) ? entries : []) {
+      const slot = Number(item?.slotNumber);
+      if (Number.isFinite(slot) && slot >= 1 && slot <= 108 && !bySlot.has(slot)) {
+        bySlot.set(slot, item);
+      }
+    }
+    for (let i = 0; i < this.blessingTowerLampMeshes.length; i++) {
+      const mesh = this.blessingTowerLampMeshes[i];
+      const slot = mesh.userData?.slotNumber || i + 1;
+      const entry = bySlot.get(slot);
+      if (!mesh.material) continue;
+      if (entry) {
+        mesh.material.color.setHex(0xFFF3BA);
+        mesh.material.emissive.set(entry.colorHex || '#FFA733');
+        mesh.material.emissiveIntensity = 1.68;
+        mesh.scale.set(1.06, 1.44, 0.66);
+      } else {
+        mesh.material.color.setHex(0xD89E5C);
+        mesh.material.emissive.setHex(0x7A3212);
+        mesh.material.emissiveIntensity = 0.32;
+        mesh.scale.set(0.92, 1.28, 0.52);
+      }
+    }
+    this.renderFrame();
+  }
+
+  setGuidedBeacon(stationKey = null) {
+    this.guidedBeaconKey = stationKey || null;
+    if (!stationKey) {
+      if (this.guidedBeaconGroup) this.guidedBeaconGroup.visible = false;
+      this.renderFrame();
+      return;
+    }
+    const dest = findAnyTempleDestination(stationKey);
+    if (!dest?.pos) {
+      if (this.guidedBeaconGroup) this.guidedBeaconGroup.visible = false;
+      return;
+    }
+    if (!this.guidedBeaconGroup) {
+      const grp = new THREE.Group();
+      const beam = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.28, 0.72, 26, 16, 1, true),
+        new THREE.MeshBasicMaterial({
+          color: 0xFFD966,
+          transparent: true,
+          opacity: 0.34,
+          side: THREE.DoubleSide,
+          depthWrite: false
+        })
+      );
+      beam.position.y = 13.0;
+      grp.add(beam);
+
+      const ring = new THREE.Mesh(
+        new THREE.RingGeometry(0.95, 1.38, 32),
+        new THREE.MeshBasicMaterial({
+          color: 0xFFE382,
+          side: THREE.DoubleSide,
+          transparent: true,
+          opacity: 0.85
+        })
+      );
+      ring.rotation.x = -Math.PI / 2;
+      ring.position.y = 0.08;
+      grp.add(ring);
+
+      const diamond = new THREE.Mesh(
+        new THREE.OctahedronGeometry(0.55, 0),
+        new THREE.MeshBasicMaterial({ color: 0xFFE27A })
+      );
+      diamond.position.y = 5.2;
+      grp.add(diamond);
+      grp.userData.diamond = diamond;
+      this.guidedBeaconGroup = grp;
+      this.exteriorGroup.add(grp);
+    }
+    const sx = dest.standPos ? dest.standPos.x : dest.pos.x;
+    const sz = dest.standPos ? dest.standPos.z : dest.pos.z;
+    this.guidedBeaconGroup.position.set(sx, 0, sz);
+    this.guidedBeaconGroup.visible = true;
+    this.renderFrame();
+  }
+
+  focusInteriorArhat(arhatIdx = 0) {
+    const idx = Math.max(0, Math.min(17, Number(arhatIdx) || 0));
+    const ax = -18.5;
+    const az = -11.9 + idx * 1.5;
+    if (!this.inInterior) {
+      this.toggleInterior(true, 'right');
+    }
+    this.ensureInteriorAssetsLoaded().catch(() => {});
+    this.cancelAutoWalk();
+    this.playerElevationY = 0;
+    const px = -15.0;
+    const pz = az;
+    const yaw = Math.atan2(ax - px, az - pz);
+    this.playerState.x = px;
+    this.playerState.z = pz;
+    this.playerState.yaw = yaw;
+    this.playerState.moving = false;
+    this.cameraBaseYaw = yaw;
+    this.cameraAzimuthOffset = 0;
+    this.syncPlayerTransform();
+    this.renderFrame();
+    const zKey = this.getInteriorZoneKey();
+    this._lastInteriorZone = zKey;
+    this.onInteriorZoneChange(zKey);
+  }
+
   enterInteriorGradual(side = 'right', onEntered = null) {
     this.cancelEntranceTour();
+    this.ensureInteriorAssetsLoaded().catch(() => {});
     if (this.inInterior) {
       if (typeof onEntered === 'function') onEntered();
       return true;
     }
-    this.lastDoorSide = side === 'left' ? 'left' : 'right';
-    const stairX = this.lastDoorSide === 'left' ? 15.8 : 30.2;
-    const stairZ = 11.2;
-    const dist = Math.hypot(this.playerState.x - stairX, this.playerState.z - stairZ);
+    this.lastDoorSide = 'right';
+    // Ground-level Bottom-Right Corner Entrance ("lối ở góc dưới bên phải luôn") at world (36.0, 8.2)
+    const cornerX = 36.0;
+    const cornerApproachZ = 12.0;
+    const dist = Math.hypot(this.playerState.x - cornerX, this.playerState.z - cornerApproachZ);
 
     const startApproach = () => {
       this.cancelAutoWalk();
       this.interiorTransition = {
         phase: 'climb_side_door',
-        side: this.lastDoorSide,
+        side: 'right',
         timer: 0,
-        duration: 0.85,
+        duration: 0.72,
         startX: this.playerState.x,
         startZ: this.playerState.z,
-        targetX: stairX,
-        targetZ: 8.1,
+        targetX: cornerX,
+        targetZ: 8.6,
         onEntered
       };
       this.playerState.moving = true;
       this.playerState.yaw = Math.PI;
     };
 
-    if (dist > 3.2) {
-      this.walkToStation('chanh_dien', () => {
-        startApproach();
-      });
+    if (dist > 3.6) {
+      const pts = this.buildPerimeterSafeWaypoints(
+        this.playerState.x,
+        this.playerState.z,
+        cornerX,
+        cornerApproachZ,
+        [
+          [36.0, 24.0],
+          [36.0, 15.6]
+        ],
+        { x: cornerX, y: 2.2, z: 8.2 }
+      );
+      this.autoWalkWaypoints = pts;
+      this.autoWalkCallback = () => startApproach();
+      this.autoWalkStation = { name: 'Lối vào Góc Dưới Bên Phải Chùa', key: 'chanh_dien' };
+      if (this.walkTargetRing) {
+        this.walkTargetRing.position.set(cornerX, 0.06, cornerApproachZ);
+        this.walkTargetRing.visible = true;
+      }
+      this.updateWalkPathLine();
+      this.onAutoWalkTargetChange(this.autoWalkStation);
     } else {
       startApproach();
     }
@@ -10185,6 +9398,13 @@ export class VinhTrang3DWorld {
       const obj = this.cutawayTargets[i];
       if (obj) obj.visible = !next;
     }
+    if (this.inInterior) {
+      if (next) {
+        this.setTimeOfDay(this.timeOfDay, false);
+      } else {
+        this.applyInteriorAtmosphere();
+      }
+    }
     this.syncPlayerTransform();
     this.renderFrame();
     return this.interiorCutaway;
@@ -10200,6 +9420,9 @@ export class VinhTrang3DWorld {
     const useSide = this.lastDoorSide || 'right';
     this._doorCooldownUntil = performance.now() + 2200;
     this.inInterior = Boolean(enter ?? !this.inInterior);
+    if (this.inInterior) {
+      this.ensureInteriorAssetsLoaded().catch(() => {});
+    }
     this.exteriorGroup.visible = !this.inInterior;
     this.interiorGroup.visible = this.inInterior;
     this.playerElevationY = 0;
@@ -10207,13 +9430,16 @@ export class VinhTrang3DWorld {
       this.setInteriorCutaway(false);
     }
     if (this.inInterior) {
-      this.playerState.x = 0.0;
-      this.playerState.z = 4.6;
-      this.playerState.yaw = Math.PI;
-      this.cameraBaseYaw = Math.PI;
+      this.applyInteriorAtmosphere();
+      this.playerState.x = 14.5;
+      this.playerState.z = 16.0;
+      const startYaw = Math.PI - 0.34;
+      this.playerState.yaw = startYaw;
+      this.cameraBaseYaw = startYaw;
     } else {
-      this.playerState.x = useSide === 'left' ? 15.8 : 36.0;
-      this.playerState.z = useSide === 'left' ? 18.5 : 15.2;
+      this.setTimeOfDay(this.timeOfDay, false);
+      this.playerState.x = 36.0;
+      this.playerState.z = 12.6;
       this.playerState.yaw = 0;
       this.cameraBaseYaw = 0;
     }
@@ -10222,6 +9448,7 @@ export class VinhTrang3DWorld {
     if (this.inInterior) {
       this.nearestStallTrigger = null;
       this.onStallProximity(null);
+      this.checkStationProximity();
     } else {
       this.checkStationProximity();
     }
@@ -10230,10 +9457,14 @@ export class VinhTrang3DWorld {
     return this.inInterior;
   }
 
-  normalizeInteriorZoneKey(zoneKey = 'chanh_dien') {
+  normalizeInteriorZoneKey(zoneKey = 'day_ban_tho_phai') {
+    if (zoneKey === 'tien_duong') return 'day_ban_tho_phai';
     if (zoneKey === 'chanh_dien_noi_that') return 'chanh_dien';
-    if (zoneKey === 'san_thien_tinh_1') return 'non_bo_giua';
-    if (zoneKey === 'nha_to') return 'khu_tho';
+    if (zoneKey === 'san_thien_tinh_1' || zoneKey === 'san_thien_tinh_2' || zoneKey === 'non_bo_giua') {
+      return 'ho_sen_bo';
+    }
+    if (zoneKey === 'nha_to' || zoneKey === 'khu_tho') return 'hanh_lang_trai';
+    if (zoneKey === 'nha_hau') return 'hanh_lang_duoi';
     return zoneKey;
   }
 
@@ -10241,58 +9472,66 @@ export class VinhTrang3DWorld {
     if (!this.inInterior) return 'exterior';
     const px = this.playerState.x;
     const pz = this.playerState.z;
-    if (px > 12.2) return 'trai_duong';
-    if (pz > 1.5) return 'tien_duong';
-    if (pz >= -22.2) return 'chanh_dien';
-    if (pz >= -38.8) return 'non_bo_giua';
-    if (pz >= -53.0) return 'khu_tho';
-    if (pz >= -68.5) return 'san_thien_tinh_2';
-    return 'nha_hau';
+    if (px > 20.4) return 'trai_duong';
+    if (Math.abs(px) < 10.6 && Math.abs(pz) < 10.6) return 'ho_sen_bo';
+    if (pz <= -10.8 && px > -11.5 && px < 12.2) return 'chanh_dien';
+    if (px >= 10.6) return 'day_ban_tho_phai';
+    if (px <= -10.6 && pz < 14.5) return 'hanh_lang_trai';
+    return 'hanh_lang_duoi';
   }
 
-  goToInteriorZone(rawZoneKey = 'chanh_dien') {
+  goToInteriorZone(rawZoneKey = 'day_ban_tho_phai') {
     const zoneKey = this.normalizeInteriorZoneKey(rawZoneKey);
     if (!this.inInterior) {
       this.toggleInterior(true, 'right');
     }
+    this.ensureInteriorAssetsLoaded().catch(() => {});
     this.cancelAutoWalk();
     this.playerElevationY = 0;
-    if (zoneKey === 'tien_duong') {
-      this.playerState.x = 0.0;
-      this.playerState.z = 5.4;
-      this.playerState.yaw = Math.PI;
-      this.cameraBaseYaw = Math.PI;
-    } else if (zoneKey === 'non_bo_giua') {
-      this.playerState.x = -5.6;
-      this.playerState.z = -25.4;
-      const lookYaw = Math.atan2(0 - -5.6, -30.8 - -25.4);
+    if (zoneKey === 'day_ban_tho_phai') {
+      this.playerState.x = 14.5;
+      this.playerState.z = 16.0;
+      const yaw = Math.PI - 0.34;
+      this.playerState.yaw = yaw;
+      this.cameraBaseYaw = yaw;
+    } else if (zoneKey === 'nghin_mat_nghin_tay') {
+      this.playerState.x = 14.6;
+      this.playerState.z = 14.8;
+      this.playerState.yaw = Math.PI / 2;
+      this.cameraBaseYaw = Math.PI / 2;
+    } else if (zoneKey === 'cho_ngu_cua_phat') {
+      this.playerState.x = 14.4;
+      this.playerState.z = 9.0;
+      this.playerState.yaw = Math.PI / 2;
+      this.cameraBaseYaw = Math.PI / 2;
+    } else if (zoneKey === 'ho_sen_bo') {
+      this.playerState.x = -5.4;
+      this.playerState.z = 6.8;
+      const lookYaw = Math.atan2(0 - -5.4, 0 - 6.8);
       this.playerState.yaw = lookYaw;
       this.cameraBaseYaw = lookYaw;
-    } else if (zoneKey === 'khu_tho') {
-      this.playerState.x = 0.0;
-      this.playerState.z = -42.5;
-      this.playerState.yaw = Math.PI;
-      this.cameraBaseYaw = Math.PI;
-    } else if (zoneKey === 'san_thien_tinh_2') {
-      this.playerState.x = -5.6;
-      this.playerState.z = -56.0;
-      const lookYaw = Math.atan2(0 - -5.6, -60.8 - -56.0);
-      this.playerState.yaw = lookYaw;
-      this.cameraBaseYaw = lookYaw;
-    } else if (zoneKey === 'nha_hau') {
-      this.playerState.x = 0.0;
-      this.playerState.z = -72.5;
-      this.playerState.yaw = Math.PI;
-      this.cameraBaseYaw = Math.PI;
+    } else if (zoneKey === 'hanh_lang_trai') {
+      this.playerState.x = -14.8;
+      this.playerState.z = -14.2;
+      const yaw = Math.PI;
+      this.playerState.yaw = yaw;
+      this.cameraBaseYaw = yaw;
+    } else if (zoneKey === 'hanh_lang_duoi') {
+      this.playerState.x = -4.2;
+      this.playerState.z = 14.8;
+      const yaw = -0.22;
+      this.playerState.yaw = yaw;
+      this.cameraBaseYaw = yaw;
     } else if (zoneKey === 'trai_duong') {
-      this.playerState.x = 16.5;
-      this.playerState.z = -35.5;
+      this.playerState.x = 24.0;
+      this.playerState.z = 4.0;
       this.playerElevationY = 0.85;
-      this.playerState.yaw = Math.PI / 2 - 0.08;
-      this.cameraBaseYaw = Math.PI / 2 - 0.08;
+      this.playerState.yaw = Math.PI / 2;
+      this.cameraBaseYaw = Math.PI / 2;
     } else {
+      // Top Edge of Square = Chính Điện Lễ Phật
       this.playerState.x = 0.0;
-      this.playerState.z = -6.2;
+      this.playerState.z = -13.85;
       this.playerState.yaw = Math.PI;
       this.cameraBaseYaw = Math.PI;
     }
@@ -10422,17 +9661,17 @@ export class VinhTrang3DWorld {
     if (this.entranceTour?.active || this.arrivalCutscene?.active) return;
 
     if (this.inInterior && this.interiorCutaway) {
-      const cutAngle = Math.PI * 0.78 + this.cameraAzimuthOffset;
-      const cutDist = Math.max(18.0, 30.0 + (this.cameraZoomOffset || 0));
-      const cutHeight = Math.max(14.0, 20.5 + (this.cameraPitchOffset || 0));
-      const focusX = this.playerState.x * 0.4;
-      const focusZ = Math.max(-72.0, Math.min(2.0, this.playerState.z - 8.0));
+      const cutAngle = Math.PI * 0.82 + this.cameraAzimuthOffset;
+      const cutDist = Math.max(20.0, 35.5 + (this.cameraZoomOffset || 0));
+      const cutHeight = Math.max(16.0, 26.5 + (this.cameraPitchOffset || 0));
+      const focusX = this.playerState.x * 0.22;
+      const focusZ = Math.max(-12.0, Math.min(12.0, this.playerState.z * 0.22));
       this.camera.position.set(
         focusX - Math.sin(cutAngle) * cutDist,
         cutHeight,
         focusZ - Math.cos(cutAngle) * cutDist
       );
-      this.camera.lookAt(focusX, 2.2, focusZ - 4.0);
+      this.camera.lookAt(focusX, 1.8, focusZ - 1.5);
       const zKey = this.getInteriorZoneKey();
       if (zKey !== this._lastInteriorZone) {
         this._lastInteriorZone = zKey;
@@ -10454,7 +9693,7 @@ export class VinhTrang3DWorld {
 
     const transitionPull = this.interiorTransition?.phase === 'climb_side_door' ? 2.1 : 0;
     const baseDist = this.inInterior
-      ? 4.6
+      ? 4.4
       : (isAdidaPlaza ? 11.2 : isMonumental ? 11.2 : 7.0) - transitionPull;
     const camDist = Math.max(2.6, Math.min(18.5, baseDist + (this.cameraZoomOffset || 0)));
     const camHeight = Math.max(
@@ -10467,7 +9706,7 @@ export class VinhTrang3DWorld {
     const lookY = Math.max(
       0.8,
       (this.inInterior
-        ? 2.45 + (this.playerElevationY || 0) * 0.85
+        ? 2.35 + (this.playerElevationY || 0) * 0.85
         : isAdidaPlaza
         ? 12.0
         : isMonumental
@@ -10477,10 +9716,30 @@ export class VinhTrang3DWorld {
     );
     const lookAngle = this.cameraBaseYaw + this.cameraAzimuthOffset;
     const sideOffset = this.inInterior ? 0 : isMonumental ? 0.48 : 0.62;
-    const cx =
+    let cx =
       this.playerState.x - Math.sin(lookAngle) * camDist - Math.cos(lookAngle) * sideOffset;
-    const cz =
+    let cz =
       this.playerState.z - Math.cos(lookAngle) * camDist + Math.sin(lookAngle) * sideOffset;
+    if (this.inInterior) {
+      const px = this.playerState.x;
+      const pz = this.playerState.z;
+      const maxCamX = px > 20.2 ? 31.4 : 20.05;
+      cx = Math.max(-20.05, Math.min(maxCamX, cx));
+      cz = Math.max(-20.05, Math.min(20.05, cz));
+      // Keep camera inside the active gallery corridor so courtyard balustrades (±10.6) & lattice doors (-11.55) never occlude altars
+      if (px > 10.9 && px <= 20.4 && Math.abs(pz) < 10.4 && cx < 11.15) {
+        cx = 11.15;
+      } else if (px > 10.9 && px <= 20.4 && pz >= 10.4 && cx < 11.15 && Math.sin(lookAngle) > 0.35) {
+        cx = 11.15;
+      } else if (px < -10.9 && cx > -11.15 && Math.sin(lookAngle) < -0.35) {
+        cx = -11.15;
+      }
+      if (pz < -11.75 && Math.abs(px) < 10.2 && cz > -11.88) {
+        cz = -11.88;
+      } else if (pz > 10.9 && Math.abs(px) < 10.2 && cz < 11.15 && Math.cos(lookAngle) > 0.35) {
+        cz = 11.15;
+      }
+    }
     this.camera.position.set(cx, camHeight, cz);
     this.camera.lookAt(
       this.playerState.x + Math.sin(lookAngle) * 12,
@@ -10501,6 +9760,47 @@ export class VinhTrang3DWorld {
       if (this.nearestStallTrigger) {
         this.nearestStallTrigger = null;
         this.onStallProximity(null);
+      }
+      const px = this.playerState.x;
+      const pz = this.playerState.z;
+      let intPrompt = null;
+      if (Math.hypot(px - 16.2, pz - 14.8) <= 3.2) {
+        intPrompt = {
+          kind: 'nghin_mat_nghin_tay',
+          label: '🙏 [E] Chiêm Bái Tượng Phật Nghìn Mắt Nghìn Tay'
+        };
+      } else if (Math.hypot(px - 16.0, pz - 9.0) <= 3.2) {
+        intPrompt = {
+          kind: 'cho_ngu_cua_phat',
+          label: '🪷 [E] Chiêm Bái Chỗ Ngủ Của Phật · Phật Nhập Niết Bàn'
+        };
+      } else if (Math.hypot(px - -3.35, pz - -11.95) <= 3.85) {
+        intPrompt = {
+          kind: 'blessing_tower',
+          label: '🏮 [E] Tháp Đèn Cầu An · Ghi Tên Cầu Phước'
+        };
+      } else if (
+        Math.hypot(px - 6.8, pz - -13.6) <= 2.85 ||
+        Math.hypot(px - 2.65, pz - -14.5) <= 2.45
+      ) {
+        intPrompt = {
+          kind: 'chanh_dien_bell',
+          label: '🔔 [E] Thỉnh Đại Hồng Chung · Chuông Gia Trì'
+        };
+      } else if (
+        Math.hypot(px - -6.8, pz - -13.6) <= 2.85 ||
+        Math.hypot(px - -2.65, pz - -14.5) <= 2.45
+      ) {
+        intPrompt = {
+          kind: 'trong_bat_nha',
+          label: '🥁 [E] Khởi Hồi Trống Bát Nhã · Gõ Mõ'
+        };
+      }
+      const prevKey = this.nearestInteractPrompt ? this.nearestInteractPrompt.kind : '';
+      const nextKey = intPrompt ? intPrompt.kind : '';
+      if (prevKey !== nextKey) {
+        this.nearestInteractPrompt = intPrompt;
+        this.onInteractProximity(intPrompt);
       }
       return;
     }
@@ -10660,6 +9960,59 @@ export class VinhTrang3DWorld {
     raycaster.setFromCamera(ndc, this.camera);
 
     if (this.inInterior) {
+      if (this.nghinMatClickTargets?.length) {
+        const hits = raycaster.intersectObjects(this.nghinMatClickTargets, true);
+        if (hits.length > 0) {
+          this.onObjectClick('PRAY_NGHIN_MAT_NGHIN_TAY');
+          return;
+        }
+      }
+      if (this.choNguClickTargets?.length) {
+        const hits = raycaster.intersectObjects(this.choNguClickTargets, true);
+        if (hits.length > 0) {
+          this.onObjectClick('PRAY_CHO_NGU_CUA_PHAT');
+          return;
+        }
+      }
+      if (this.rightGalleryClickTargets?.length) {
+        const hits = raycaster.intersectObjects(this.rightGalleryClickTargets, true);
+        if (hits.length > 0) {
+          let cur = hits[0].object;
+          let shrineTitle = '🙏 Ban Thờ Hành Lang Phải';
+          let shrineDesc = 'Dải bàn thờ dọc lối vào góc dưới bên phải dẫn thẳng lên Chính Điện lễ Phật.';
+          while (cur) {
+            if (cur.userData?.shrineTitle) {
+              shrineTitle = cur.userData.shrineTitle;
+              shrineDesc = cur.userData.shrineDesc || shrineDesc;
+              break;
+            }
+            cur = cur.parent;
+          }
+          this.onObjectClick('TOAST', { title: shrineTitle, desc: shrineDesc });
+          return;
+        }
+      }
+      if (this.blessingTowerClickTargets?.length) {
+        const hits = raycaster.intersectObjects(this.blessingTowerClickTargets, true);
+        if (hits.length > 0) {
+          this.onObjectClick('OPEN_BLESSING_TOWER');
+          return;
+        }
+      }
+      if (this.interiorBellClickTargets?.length) {
+        const hits = raycaster.intersectObjects(this.interiorBellClickTargets, true);
+        if (hits.length > 0) {
+          this.onObjectClick('RING_CHUONG_CHANH_DIEN');
+          return;
+        }
+      }
+      if (this.interiorDrumClickTargets?.length) {
+        const hits = raycaster.intersectObjects(this.interiorDrumClickTargets, true);
+        if (hits.length > 0) {
+          this.onObjectClick('STRIKE_TRONG_BAT_NHA');
+          return;
+        }
+      }
       if (this.interiorDoorClickTargets?.length) {
         const hits = raycaster.intersectObjects(this.interiorDoorClickTargets, true);
         if (hits.length > 0) {
@@ -10688,8 +10041,8 @@ export class VinhTrang3DWorld {
         const hits = raycaster.intersectObjects(this.longTruClickTargets, true);
         if (hits.length > 0) {
           this.onObjectClick('TOAST', {
-            title: '🐉 Cặp Long Trụ Rồng Cuốn Gian Giữa Chánh Điện',
-            desc: 'Hai cột gỗ lim lớn đặc trưng tại Chánh điện Chùa Vĩnh Tràng, chạm khắc rồng uốn lượn quanh thân cột thếp vàng nâng đỡ hệ vì kèo và bao lam.'
+            title: '🐉 Cặp Long Trụ Rồng Cuốn Gian Chính Điện',
+            desc: 'Hai cột gỗ lim lớn chạm rồng uốn lượn thếp vàng tại cạnh trên Hình Vuông (Chính Điện Chùa Vĩnh Tràng).'
           });
           return;
         }
@@ -10705,8 +10058,8 @@ export class VinhTrang3DWorld {
         const hits = raycaster.intersectObjects(this.interiorNonBoClickTargets, true);
         if (hits.length > 0) {
           this.onObjectClick('TOAST', {
-            title: '🪨 Sân Thiên Tỉnh · Hòn Non Bộ Giữa Chùa',
-            desc: 'Hòn non bộ chính nằm giữa sân Thiên Tỉnh nối Chánh điện với Nhà Tổ: bệ đá bát giác màu vàng đất, cụm núi đá sẫm màu nhiều đỉnh, tiểu đình mái ngói, bậc thang đá, cầu nhỏ và hai chậu vạn tuế hai bên.'
+            title: '🪷 Hồ Sen Bộ & Hòn Non Bộ Giữa Lòng Hình Vuông',
+            desc: 'Không gian thiên tỉnh mở bầu trời ngay trung tâm khuôn viên Hình Vuông của chùa: hồ sen cá Koi nở rộ, cầu đá nhỏ, hàng cột vòm Á – Âu 4 phía và Hòn Non Bộ cổ kính.'
           });
           return;
         }
@@ -10723,7 +10076,7 @@ export class VinhTrang3DWorld {
         if (hits.length > 0) {
           this.onObjectClick('TOAST', {
             title: '🍚 Nhà Sàn Gỗ Trai Đường · Khu Ăn Phật Tử',
-            desc: 'Không gian thọ trai dựng bằng gỗ căm xe trên hệ sàn cọc miền Tây bên hồ sen, phục vụ cơm chay và trà đá thanh tịnh.'
+            desc: 'Không gian thọ trai dựng bằng gỗ căm xe trên hệ sàn cọc miền Tây nối trực tiếp từ dải hành lang phải, phục vụ cơm chay và trà đá thanh tịnh.'
           });
           return;
         }
@@ -10911,118 +10264,115 @@ export class VinhTrang3DWorld {
     this.checkInteriorDoorTransition();
   }
 
+  stepInteriorTransition(trDt) {
+    if (!this.interiorTransition) return;
+    const tr = this.interiorTransition;
+    tr.timer += trDt;
+    const t = Math.min(1, tr.timer / Math.max(0.01, tr.duration));
+    if (tr.phase === 'climb_side_door') {
+      this.playerState.x = tr.startX + (tr.targetX - tr.startX) * t;
+      this.playerState.z = tr.startZ + (tr.targetZ - tr.startZ) * t;
+      this.playerElevationY = 0;
+      this.playerState.moving = true;
+      this.syncPlayerTransform();
+      if (t >= 1) {
+        this.onTransitionFade(true);
+        this.interiorTransition = {
+          phase: 'enter_veil',
+          timer: 0,
+          duration: 0.24,
+          side: 'right',
+          onEntered: tr.onEntered
+        };
+      }
+    } else if (tr.phase === 'enter_veil') {
+      if (t >= 1) {
+        this.inInterior = true;
+        this.ensureInteriorAssetsLoaded().catch(() => {});
+        this.exteriorGroup.visible = false;
+        this.interiorGroup.visible = true;
+        this.applyInteriorAtmosphere();
+        this.playerElevationY = 0;
+        this._doorCooldownUntil = performance.now() + 2600;
+        const entryYaw = Math.PI - 0.34;
+        this.playerState.x = 15.1;
+        this.playerState.z = 18.8;
+        this.playerState.yaw = entryYaw;
+        this.cameraBaseYaw = entryYaw;
+        this.cameraAzimuthOffset = 0;
+        this.nearestStallTrigger = null;
+        this.onStallProximity(null);
+        this.checkStationProximity();
+        this.onInteriorStateChange(true);
+        this.onTransitionFade(false);
+        this.interiorTransition = {
+          phase: 'walk_aisle',
+          timer: 0,
+          duration: 0.85,
+          startX: 15.1,
+          startZ: 18.8,
+          targetX: 14.5,
+          targetZ: 16.0,
+          onEntered: tr.onEntered
+        };
+      }
+    } else if (tr.phase === 'walk_aisle') {
+      this.playerState.x = tr.startX + (tr.targetX - tr.startX) * t;
+      this.playerState.z = tr.startZ + (tr.targetZ - tr.startZ) * t;
+      const entryYaw = Math.PI - 0.34;
+      this.playerState.yaw = entryYaw;
+      this.cameraBaseYaw = entryYaw;
+      this.playerState.moving = true;
+      this.syncPlayerTransform();
+      this.checkStationProximity();
+      if (t >= 1) {
+        const doneCb = tr.onEntered;
+        this.playerState.moving = false;
+        this.interiorTransition = null;
+        this._doorCooldownUntil = performance.now() + 1800;
+        this.syncPlayerTransform();
+        this.checkStationProximity();
+        if (typeof doneCb === 'function') doneCb();
+      }
+    } else if (tr.phase === 'exit_veil') {
+      if (t >= 1) {
+        if (this.interiorCutaway) {
+          this.setInteriorCutaway(false);
+        }
+        this.inInterior = false;
+        this.exteriorGroup.visible = true;
+        this.interiorGroup.visible = false;
+        this.setTimeOfDay(this.timeOfDay, false);
+        this.playerElevationY = 0;
+        this._doorCooldownUntil = performance.now() + 2400;
+        this.playerState.x = 36.0;
+        this.playerState.z = 12.6;
+        this.playerState.yaw = 0;
+        this.playerState.moving = false;
+        this.cameraBaseYaw = 0;
+        this.cameraAzimuthOffset = 0;
+        this.onInteriorStateChange(false);
+        this.onTransitionFade(false);
+        this.interiorTransition = null;
+        this.syncPlayerTransform();
+        this.checkStationProximity();
+      }
+    }
+  }
+
   animate() {
+    if (this._renderPaused || this.lectureHallMode || this.contextLost || this.renderer?.getContext?.()?.isContextLost?.()) {
+      window.setTimeout(() => this.animate(), 400);
+      return;
+    }
+
     const rawDelta = this.clock.getDelta();
     const dt = Math.min(rawDelta, 0.05);
     const trDt = this.isSoftwareGl ? Math.max(dt, Math.min(rawDelta, 0.35)) : dt;
     const elapsed = this.clock.elapsedTime;
 
     if (this.interiorTransition) {
-      const tr = this.interiorTransition;
-      tr.timer += trDt;
-      const t = Math.min(1, tr.timer / Math.max(0.01, tr.duration));
-      if (tr.phase === 'climb_side_door') {
-        this.playerState.x = tr.startX + (tr.targetX - tr.startX) * t;
-        this.playerState.z = tr.startZ + (tr.targetZ - tr.startZ) * t;
-        this.playerElevationY = t * 1.18;
-        this.playerState.moving = true;
-        this.syncPlayerTransform();
-        if (t >= 1) {
-          this.onTransitionFade(true);
-          this.interiorTransition = {
-            phase: 'enter_veil',
-            timer: 0,
-            duration: 0.25,
-            side: tr.side,
-            onEntered: tr.onEntered
-          };
-        }
-      } else if (tr.phase === 'enter_veil') {
-        if (t >= 1) {
-          this.inInterior = true;
-          this.exteriorGroup.visible = false;
-          this.interiorGroup.visible = true;
-          this.playerElevationY = 0;
-          this._doorCooldownUntil = performance.now() + 2600;
-          const sx = tr.side === 'left' ? -9.6 : 9.6;
-          this.playerState.x = sx;
-          this.playerState.z = 0.9;
-          this.playerState.yaw = tr.side === 'left' ? Math.PI / 2 : -Math.PI / 2;
-          this.cameraBaseYaw = Math.PI;
-          this.cameraAzimuthOffset = 0;
-          this.nearestStallTrigger = null;
-          this.onStallProximity(null);
-          this.onInteriorStateChange(true);
-          this.onTransitionFade(false);
-          this.interiorTransition = {
-            phase: 'walk_aisle_side',
-            side: tr.side,
-            timer: 0,
-            duration: 0.78,
-            startX: sx,
-            startZ: 0.9,
-            targetX: tr.side === 'left' ? -2.0 : 2.0,
-            targetZ: 2.8,
-            onEntered: tr.onEntered
-          };
-        }
-      } else if (tr.phase === 'walk_aisle_side') {
-        this.playerState.x = tr.startX + (tr.targetX - tr.startX) * t;
-        this.playerState.z = tr.startZ + (tr.targetZ - tr.startZ) * t;
-        this.playerState.yaw = Math.atan2(tr.targetX - tr.startX, tr.targetZ - tr.startZ);
-        this.playerState.moving = true;
-        this.syncPlayerTransform();
-        if (t >= 1) {
-          this.interiorTransition = {
-            phase: 'walk_aisle',
-            timer: 0,
-            duration: 0.65,
-            startX: tr.targetX,
-            startZ: tr.targetZ,
-            targetX: 0.0,
-            targetZ: 4.6,
-            onEntered: tr.onEntered
-          };
-        }
-      } else if (tr.phase === 'walk_aisle') {
-        this.playerState.x = tr.startX + (tr.targetX - tr.startX) * t;
-        this.playerState.z = tr.startZ + (tr.targetZ - tr.startZ) * t;
-        this.playerState.yaw = Math.atan2(tr.targetX - tr.startX, tr.targetZ - tr.startZ);
-        this.playerState.moving = true;
-        this.syncPlayerTransform();
-        if (t >= 1) {
-          const doneCb = tr.onEntered;
-          this.playerState.yaw = Math.PI;
-          this.playerState.moving = false;
-          this.interiorTransition = null;
-          this._doorCooldownUntil = performance.now() + 1800;
-          this.syncPlayerTransform();
-          if (typeof doneCb === 'function') doneCb();
-        }
-      } else if (tr.phase === 'exit_veil') {
-        if (t >= 1) {
-          const exitSide = tr.side || this.lastDoorSide || 'right';
-          if (this.interiorCutaway) {
-            this.setInteriorCutaway(false);
-          }
-          this.inInterior = false;
-          this.exteriorGroup.visible = true;
-          this.interiorGroup.visible = false;
-          this.playerElevationY = 0;
-          this._doorCooldownUntil = performance.now() + 2400;
-          this.playerState.x = exitSide === 'left' ? 15.8 : 36.0;
-          this.playerState.z = exitSide === 'left' ? 18.5 : 15.2;
-          this.playerState.yaw = 0;
-          this.playerState.moving = false;
-          this.cameraBaseYaw = 0;
-          this.cameraAzimuthOffset = 0;
-          this.onInteriorStateChange(false);
-          this.onTransitionFade(false);
-          this.interiorTransition = null;
-          this.syncPlayerTransform();
-          this.checkStationProximity();
-        }
-      }
+      this.stepInteriorTransition(trDt);
     } else {
       const walkDt = this.isSoftwareGl ? Math.max(dt, Math.min(rawDelta, 0.25)) : dt;
       this.updateHeldMovement(walkDt);
@@ -11068,6 +10418,11 @@ export class VinhTrang3DWorld {
     }
 
     this.stepPilgrimageCompanions(dt);
+
+    if (this.guidedBeaconGroup?.visible && this.guidedBeaconGroup.userData?.diamond) {
+      this.guidedBeaconGroup.userData.diamond.rotation.y = elapsed * 1.4;
+      this.guidedBeaconGroup.userData.diamond.position.y = 5.2 + Math.sin(elapsed * 2.6) * 0.38;
+    }
 
     if (!this.inInterior) {
       for (let ni = 0; ni < this.riggedNpcRecords.length; ni++) {
@@ -11264,8 +10619,15 @@ export class VinhTrang3DWorld {
     }
 
     this.updateProjectedPins();
-    this.renderer.render(this.scene, this.camera);
+    try {
+      this.renderer.render(this.scene, this.camera);
+    } catch {}
     if (this.isSoftwareGl) {
+      const activeClip = normalizeAnimKey(this.activePlayerRecord?.activeClipName || '');
+      const hasNonIdleAction =
+        activeClip &&
+        activeClip !== 'dung' &&
+        Boolean(this.activePlayerRecord?.activeAction && !this.activePlayerRecord.activeAction.paused);
       const isActivelyAnimating =
         this.playerState.moving ||
         this.heldDirs.size > 0 ||
@@ -11275,10 +10637,8 @@ export class VinhTrang3DWorld {
         Boolean(this.proceduralPoseState?.action) ||
         this.lotusBloomState.active ||
         Boolean(this.interiorTransition) ||
-        Boolean(
-          this.activePlayerRecord?.activeAction && !this.activePlayerRecord.activeAction.paused
-        );
-      this.afterDraw(() => this.animate(), isActivelyAnimating ? 100 : 520);
+        hasNonIdleAction;
+      this.afterDraw(() => this.animate(), isActivelyAnimating ? 120 : 520);
     } else {
       requestAnimationFrame(() => this.animate());
     }
@@ -11475,15 +10835,23 @@ export class VinhTrang3DWorld {
 
     for (let i = 0; i < specs.length; i++) {
       const sp = specs[i];
-      const charKey = this.charDataCache[sp.charKey] ? sp.charKey : 'nu_ao_lam';
-      const height = CHAR_HEIGHTS[charKey] || 1.62;
-      const rec = this.cloneAnimatedCharacter(charKey, height);
+      const charKey = sp.charKey || 'nu_ao_lam';
+      if (!this.charDataCache[charKey]?.scene) {
+        this.loadCharacterGLB(charKey).then((loaded) => {
+          if (loaded?.scene && this.companionRecords?.some((cr) => cr._requestedCharKey === charKey && !cr._upgraded)) {
+            this.setPilgrimageCompanions(modeConfig, nationalityId);
+          }
+        });
+      }
+      const resolvedKey = this.charDataCache[charKey]?.scene ? charKey : (this.charDataCache.nu_ao_lam?.scene ? 'nu_ao_lam' : 'nu');
+      const height = CHAR_HEIGHTS[resolvedKey] || 1.62;
+      const rec = this.cloneAnimatedCharacter(resolvedKey, height);
       if (!rec) continue;
       const rgbTint = toRgbTuple(sp.tint) || tintByNat[nationalityId] || null;
       if (rgbTint) {
         this.recolorPastelDress(rec.root, rgbTint);
       }
-      this.equipNpcProps(rec, charKey, height, {
+      this.equipNpcProps(rec, resolvedKey, height, {
         hat: Boolean(sp.hat),
         bag: sp.bag || null,
         scarf: Boolean(sp.scarf),
@@ -11500,6 +10868,8 @@ export class VinhTrang3DWorld {
       this.scene.add(rec.root);
       this.companionRecords.push({
         rec,
+        _requestedCharKey: charKey,
+        _upgraded: resolvedKey === charKey,
         roleLabel: sp.roleLabel || sp.label || 'Bạn đồng hành',
         sideOffset: (i % 2 === 0 ? -1.15 : 1.15) * (1 + Math.floor(i / 2) * 0.45),
         backOffset: -1.45 - Math.floor(i / 2) * 1.05,

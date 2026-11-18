@@ -1,0 +1,8 @@
+{
+  "name": "Chùa Online | Chùa Vĩnh Tràng — Dạo Bước Chiêm Bái & Học Phật",
+  "description": "Không gian đi chùa Vĩnh Tràng trực tuyến: dạo bước sân chùa, lễ Phật, dâng hương, dâng hoa, niệm Phật, đọc lời Phật dạy mỗi ngày, nghe bài học tại Giảng đường và chọn quà lưu niệm.",
+  "requestFramePermissions": [],
+  "capabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

@@ -5665,7 +5665,205 @@ select {
   }
 }
 
+/* ==========================================================================
+   THÁP ĐÈN DƯỢC SƯ CẦU AN · GHI TÊN CẦU PHƯỚC CHÁNH ĐIỆN (Elder-Friendly >=48px)
+   ========================================================================== */
+.blessing-tower-modal-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
 
+.blessing-tower-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #3b150c 0%, #5e2012 100%);
+  border: 1.5px solid #e5b24c;
+  color: #fff6e5;
+}
 
+.blessing-tower-kicker {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #ffd875;
+}
 
+.blessing-tower-headline {
+  font-size: 16px;
+  font-weight: 800;
+  color: #fffdf8;
+  margin-top: 2px;
+  text-wrap: balance;
+}
+
+.blessing-tower-sub {
+  font-size: 13px;
+  line-height: 1.45;
+  color: rgba(255, 246, 229, 0.88);
+  margin-top: 4px;
+}
+
+.blessing-tower-view3d-btn {
+  min-height: 48px;
+  padding: 10px 16px;
+  border-radius: 12px;
+  border: 1.5px solid #ffd875;
+  background: #7a2b18;
+  color: #fff8e7;
+  font-size: 13.5px;
+  font-weight: 800;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.blessing-tower-view3d-btn:hover {
+  background: #94351e;
+}
+
+.blessing-tower-form-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 16px;
+  background: #fffaf0;
+  border: 1.5px solid rgba(180, 130, 52, 0.42);
+}
+
+.blessing-tower-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.blessing-tower-cat-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.blessing-tower-cat-btn {
+  min-height: 48px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1.5px solid rgba(140, 96, 48, 0.35);
+  background: #fffdf9;
+  color: #3d2310;
+  font-size: 13.5px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.blessing-tower-cat-btn.active {
+  background: #5c1f12;
+  border-color: #e5b24c;
+  color: #fff6e5;
+}
+
+.blessing-tower-row-2col {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 10px;
+}
+
+.blessing-tower-form-card .hoadang-input {
+  min-height: 48px;
+  font-size: 14.5px;
+}
+
+.blessing-tower-feedback {
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-size: 13.5px;
+  font-weight: 700;
+}
+
+.blessing-tower-feedback.ok {
+  background: #ecfdf3;
+  border: 1.5px solid #2e8555;
+  color: #155734;
+}
+
+.blessing-tower-feedback.err {
+  background: #fef2f2;
+  border: 1.5px solid #c53030;
+  color: #822020;
+}
+
+.blessing-tower-entries-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 290px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.blessing-tower-entry-row {
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: #fffdf8;
+  border: 1px solid rgba(140, 100, 60, 0.28);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.blessing-tower-entry-row.highlight {
+  background: #fff6df;
+  border: 1.5px solid #d4962a;
+}
+
+.blessing-tower-entry-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.blessing-tower-entry-name {
+  font-size: 14.5px;
+  font-weight: 800;
+  color: #4a1e10;
+}
+
+.blessing-tower-entry-meta {
+  font-size: 12px;
+  color: #785638;
+  font-variant-numeric: tabular-nums;
+}
+
+.blessing-tower-entry-family {
+  font-size: 12.5px;
+  color: #5c3d22;
+}
+
+.blessing-tower-entry-wish {
+  font-size: 13.5px;
+  line-height: 1.45;
+  color: #2f1b0c;
+  font-style: italic;
+}
+
+@media (max-width: 768px) {
+  .blessing-tower-hero {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .blessing-tower-cat-grid,
+  .blessing-tower-row-2col {
+    grid-template-columns: 1fr;
+  }
+}
 
