@@ -911,11 +911,20 @@ export function createIndoorSleepingBuddhaBed(T = THREE, opts = {}) {
     sideCap.position.set(sx, 1.42, 0);
     g.add(sideCap);
   }
-  const backScreen = new T.Mesh(new T.BoxGeometry(3.28, 1.65, 0.12), darkRosewoodMat);
-  backScreen.position.set(0, 1.72, -0.68);
-  g.add(backScreen);
-  const backHalo = new T.Mesh(new T.RingGeometry(0.38, 0.52, 28), goldMat);
-  backHalo.position.set(-0.92, 1.72, -0.59);
+  // Low carved backrest rail + open gilded lattice finials (keeps sightline open to dining platforms & monk quarters behind)
+  const backRail = new T.Mesh(new T.BoxGeometry(3.28, 0.42, 0.12), darkRosewoodMat);
+  backRail.position.set(0, 1.24, -0.68);
+  g.add(backRail);
+  const backTopBar = new T.Mesh(new T.BoxGeometry(3.32, 0.1, 0.14), goldMat);
+  backTopBar.position.set(0, 3.04, -0.68);
+  g.add(backTopBar);
+  for (const bx of [-0.92, 0, 0.92]) {
+    const mullion = new T.Mesh(new T.CylinderGeometry(0.025, 0.03, 1.62, 8), goldMat);
+    mullion.position.set(bx, 2.22, -0.68);
+    g.add(mullion);
+  }
+  const backHalo = new T.Mesh(new T.RingGeometry(0.36, 0.48, 28), goldMat);
+  backHalo.position.set(-0.92, 1.88, -0.66);
   g.add(backHalo);
 
   // 2. Four Canopy Bed Pillars, Carved Gilded Canopy Roof & Tied-Back Crimson Silk Curtains ("Khám Thờ Màn Thêu")

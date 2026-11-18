@@ -495,9 +495,17 @@ export class TempleAudioEngine {
       const onEnded = () => {
         this._voicePlaying = false;
         this._emitVoiceState();
+        const cb = this._voiceOnEnded;
+        this._voiceOnEnded = null;
+        if (typeof cb === 'function') {
+          try {
+            cb();
+          } catch {}
+        }
       };
       const onError = () => {
         this._voicePlaying = false;
+        this._voiceOnEnded = null;
         this._emitVoiceState();
       };
       const onTimeOrMeta = () => {
@@ -571,9 +579,11 @@ export class TempleAudioEngine {
     const cleanName = fileName.trim().split('/').pop() || fileName.trim();
     this.currentVoiceFile = cleanName;
     const reqId = ++this._voiceRequestId;
+    this._voiceOnEnded = typeof options?.onEnded === 'function' ? options.onEnded : null;
 
     if (!this.voiceEl) {
       this._voicePlaying = false;
+      this._voiceOnEnded = null;
       this._emitVoiceState();
       return false;
     }
@@ -583,6 +593,7 @@ export class TempleAudioEngine {
         this.voiceEl.pause();
       } catch {}
       this.voiceEl.src = url;
+      this.voiceEl.loop = Boolean(options?.loop);
       this.voiceEl.muted = this._muted;
       this.voiceEl.volume = this._muted ? 0 : clamp01(this._masterVolume * this._voiceVolume);
       const targetRate = clampRange(
@@ -607,6 +618,7 @@ export class TempleAudioEngine {
     } catch {
       if (reqId === this._voiceRequestId) {
         this._voicePlaying = false;
+        this._voiceOnEnded = null;
         this._emitVoiceState();
       }
       return false;
@@ -619,6 +631,7 @@ export class TempleAudioEngine {
 
   pauseVoice() {
     this._voiceRequestId++;
+    this._voiceOnEnded = null;
     if (this.voiceEl) {
       try {
         this.voiceEl.pause();
@@ -630,6 +643,7 @@ export class TempleAudioEngine {
 
   stopVoice() {
     this._voiceRequestId++;
+    this._voiceOnEnded = null;
     if (this.voiceEl) {
       try {
         this.voiceEl.pause();
@@ -1813,6 +1827,56 @@ export class TempleAudioEngine {
         } catch {}
       }
     }
+  }
+
+  /**
+   * Speaks Vietnamese text using the server `/api/tts` audio proxy first (clear natural Vietnamese voice
+   * across desktop, mobile WebViews, and headless Chromium), falling back to Web Speech API or local MP3.
+   */
+  async speakVietnameseSmart(text, { rate = 0.88, pitch = 0.98, onEnd, fallbackAudio = null } = {}) {
+    const cleanText = typeof text === 'string' ? text.replace(/\s+/g, ' ').trim() : '';
+    const effectiveVol = this._muted ? 0 : clamp01(this._masterVolume * this._voiceVolume);
+    if (!cleanText || effectiveVol <= 0) {
+      this.stopSpeaking();
+      this.stopVoice();
+      return { ok: false, mode: 'muted' };
+    }
+
+    this.stopSpeaking();
+    const ttsUrl = `/api/tts?tl=vi&text=${encodeURIComponent(cleanText.slice(0, 480))}`;
+    const playedServerTts = await this.playVoiceAudio(ttsUrl, {
+      rate: clampRange(rate, 0.7, 1.35, 0.9),
+      onEnded: onEnd
+    });
+    if (playedServerTts) {
+      return { ok: true, mode: 'server_tts' };
+    }
+
+    const spokeNative = this.speakText(cleanText, { rate, lang: 'vi-VN', pitch, onEnd });
+    if (spokeNative) {
+      return { ok: true, mode: 'speech_synthesis' };
+    }
+
+    if (fallbackAudio) {
+      const playedFallback = await this.playVoiceAudio(fallbackAudio, { rate, onEnded: onEnd });
+      if (playedFallback) {
+        return { ok: true, mode: 'fallback_audio' };
+      }
+    }
+    return { ok: false, mode: 'none' };
+  }
+
+  playSutraCue(cue = 'mo') {
+    if (cue === 'bell') {
+      return this.playBronzeBell(1.06, 0.9);
+    }
+    if (cue === 'bell_close') {
+      return this.playBronzeBell(0.92, 1.0);
+    }
+    if (cue === 'mo_accent') {
+      return this.playWoodenMokugyo(true);
+    }
+    return this.playWoodenMokugyo(false);
   }
 
   /* ========================================================================

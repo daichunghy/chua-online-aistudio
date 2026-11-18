@@ -412,7 +412,32 @@ export class VinhTrang3DWorld {
       sunPanel.lookAt(0, 0, 0);
       envScene.add(sunPanel);
       const envTex = pmrem.fromScene(envScene, 0.04).texture;
+      this.exteriorEnvTex = envTex;
       this.scene.environment = envTex;
+
+      // Dedicated moody dark-timber/amber environment for interior (eliminates cyan sky reflections on floor & walls)
+      const intEnvScene = new THREE.Scene();
+      const intRoom = new THREE.Mesh(
+        new THREE.BoxGeometry(20, 20, 20),
+        new THREE.MeshBasicMaterial({ color: 0x7A5538, side: THREE.BackSide })
+      );
+      intEnvScene.add(intRoom);
+      const intFloor = new THREE.Mesh(
+        new THREE.PlaneGeometry(20, 20),
+        new THREE.MeshBasicMaterial({ color: 0x543823 })
+      );
+      intFloor.rotation.x = -Math.PI / 2;
+      intFloor.position.y = -4;
+      intEnvScene.add(intFloor);
+      const intLanternBounce = new THREE.Mesh(
+        new THREE.PlaneGeometry(8, 8),
+        new THREE.MeshBasicMaterial({ color: 0xFFD294, side: THREE.DoubleSide })
+      );
+      intLanternBounce.position.set(0, 5, 0);
+      intLanternBounce.rotation.x = Math.PI / 2;
+      intEnvScene.add(intLanternBounce);
+      this.interiorEnvTex = pmrem.fromScene(intEnvScene, 0.04).texture;
+
       pmrem.dispose();
     } catch {
       // Fallback safely if PMREM is unavailable
@@ -8942,8 +8967,8 @@ export class VinhTrang3DWorld {
     const standingInterior = [
       { charKey: 'nu', x: -6.8, z: 2.2, yaw: Math.PI / 2, pose: 'Chắp tay', tint: [0.9, 0.84, 0.72], elev: 0 },
       { charKey: 'nam', x: 6.8, z: -2.0, yaw: -Math.PI / 2, pose: 'Dung', monkTone: 0, elev: 0 },
-      { charKey: 'nu', x: 24.4, z: 2.0, yaw: Math.PI, pose: 'Dung', tint: [0.88, 0.66, 0.74], elev: 0.85 },
-      { charKey: 'nam', x: 28.4, z: 5.8, yaw: 0, pose: 'Dung', tint: [0.64, 0.68, 0.78], elev: 0.85 }
+      { charKey: 'nu', x: 21.8, z: 2.8, yaw: Math.PI * 0.42, pose: 'Dung', tint: [0.88, 0.66, 0.74], elev: 0 },
+      { charKey: 'nam', x: 27.1, z: 4.4, yaw: -Math.PI / 2, pose: 'Dung', monkTone: 1, elev: 0 }
     ];
     for (const sp of standingInterior) {
       const h = CHAR_HEIGHTS[sp.charKey] || 1.64;
@@ -8967,22 +8992,12 @@ export class VinhTrang3DWorld {
     const curZ = this.playerState.z;
     let bounds;
     if (this.inInterior) {
-      const inTraiDuongArch = nz >= 2.2 && nz <= 5.8;
-      if (curX > 20.15 || (nx > 19.9 && inTraiDuongArch)) {
-        bounds = {
-          minX: inTraiDuongArch ? -20.1 : 21.4,
-          maxX: 31.6,
-          minZ: -2.8,
-          maxZ: 10.8
-        };
-      } else {
-        bounds = {
-          minX: -20.1,
-          maxX: inTraiDuongArch ? 31.6 : 20.1,
-          minZ: -20.1,
-          maxZ: 20.35
-        };
-      }
+      bounds = {
+        minX: -20.1,
+        maxX: 32.3,
+        minZ: -20.1,
+        maxZ: 20.35
+      };
     } else {
       bounds = WORLD_BOUNDS;
     }
@@ -9043,13 +9058,7 @@ export class VinhTrang3DWorld {
     }
 
     if (this.inInterior) {
-      if (x >= 22.0 && x <= 32.0 && z >= -3.2 && z <= 11.2) {
-        this.playerElevationY = 0.85;
-      } else if (x > 20.5 && x < 22.0 && z >= 2.1 && z <= 5.9) {
-        this.playerElevationY = ((x - 20.5) / 1.5) * 0.85;
-      } else {
-        this.playerElevationY = 0;
-      }
+      this.playerElevationY = 0;
     } else if (x >= 54.4 && x <= 64.6 && z >= 7.6 && z <= 21.4) {
       this.playerElevationY = 1.14;
     } else if (x >= 52.0 && x < 54.4 && z >= 12.6 && z <= 16.4) {
@@ -9416,6 +9425,9 @@ export class VinhTrang3DWorld {
         o.intensity = o.userData.baseIntensity * cfg.interiorBoost;
       }
     });
+    if (this.exteriorEnvTex && (!this.inInterior || this.interiorCutaway)) {
+      this.scene.environment = this.exteriorEnvTex;
+    }
     if (this.inInterior && !this.interiorCutaway) {
       this.applyInteriorAtmosphere();
     }
@@ -9426,27 +9438,30 @@ export class VinhTrang3DWorld {
 
   applyInteriorAtmosphere() {
     if (!this.inInterior || this.interiorCutaway) return;
-    if (this.scene.background?.setHex) this.scene.background.setHex(0x160D08);
+    if (this.interiorEnvTex) {
+      this.scene.environment = this.interiorEnvTex;
+    }
+    if (this.scene.background?.setHex) this.scene.background.setHex(0x1C110A);
     if (this.scene.fog) {
-      this.scene.fog.color?.setHex(0x1F130B);
-      this.scene.fog.density = 0.0046;
+      this.scene.fog.color?.setHex(0x2B1A0F);
+      this.scene.fog.density = 0.0028;
     }
     if (this.hemiLight) {
-      this.hemiLight.color.setHex(0xFFE0B2);
-      this.hemiLight.groundColor.setHex(0x24130A);
-      this.hemiLight.intensity = 0.34;
+      this.hemiLight.color.setHex(0xFFE0B8);
+      this.hemiLight.groundColor.setHex(0x6B462B);
+      this.hemiLight.intensity = 1.05;
     }
     if (this.sunLight) {
-      this.sunLight.color.setHex(0xFFF2D6);
-      this.sunLight.intensity = 0.56;
+      this.sunLight.color.setHex(0xFFE6BD);
+      this.sunLight.intensity = 0.62;
       this.sunLight.position.set(2, 46, 2);
     }
     if (this.frontFillLight) {
-      this.frontFillLight.color.setHex(0xFFB86B);
-      this.frontFillLight.intensity = 0.14;
+      this.frontFillLight.color.setHex(0xFFC98B);
+      this.frontFillLight.intensity = 0.32;
     }
     if (this.renderer) {
-      this.renderer.toneMappingExposure = 0.92;
+      this.renderer.toneMappingExposure = 1.04;
     }
   }
 
@@ -9771,11 +9786,11 @@ export class VinhTrang3DWorld {
       this.playerState.yaw = yaw;
       this.cameraBaseYaw = yaw;
     } else if (zoneKey === 'trai_duong') {
-      this.playerState.x = 24.0;
-      this.playerState.z = 4.0;
-      this.playerElevationY = 0.85;
-      this.playerState.yaw = Math.PI / 2;
-      this.cameraBaseYaw = Math.PI / 2;
+      this.playerState.x = 22.8;
+      this.playerState.z = 5.8;
+      this.playerElevationY = 0;
+      this.playerState.yaw = Math.PI * 0.42;
+      this.cameraBaseYaw = Math.PI * 0.42;
     } else {
       // Top Edge of Square = Chính Điện Lễ Phật
       this.playerState.x = 0.0;

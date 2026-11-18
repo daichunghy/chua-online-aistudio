@@ -111,6 +111,8 @@ import {
   createBlessingTowerState,
   registerBlessingTowerPrayer
 } from '/src/logic/chua-online-logic.mjs';
+import { createSutraStudyState } from '/src/logic/sutra-study-logic.mjs';
+import { SutraStudyController } from '/src/app/sutra-study-ui.mjs';
 import { VinhTrang3DWorld } from '/src/app/vinh-trang-3d-world.mjs';
 import { TempleAudioEngine } from '/src/app/audio-engine.mjs';
 import {
@@ -218,6 +220,8 @@ export class ChuaOnlineApp {
     this.blessingTower = createBlessingTowerState(this.saved.blessingTower);
     this.dharmaJournal = createDharmaJournalState(this.saved.dharmaJournal);
     this.academyState = createAcademyEntitlementState(this.saved.academyState);
+    this.sutraStudy = createSutraStudyState(this.saved.sutraStudy);
+    this.sutraCtrl = new SutraStudyController(this);
     this.activeCourseId = ACADEMY_COURSES.some((c) => c.id === this.saved.activeCourseId)
       ? this.saved.activeCourseId
       : 'course_1_khai_tam';
@@ -234,7 +238,7 @@ export class ChuaOnlineApp {
     // Active screen & sub-views
     this.activeScreen = 'courtyard'; // 'courtyard' | 'shop' | 'lecture'
     this.shopTab = 'souvenir'; // 'souvenir' | 'study' | '3d'
-    this.lectureTab = 'lesson'; // 'listen' | 'lesson' | 'package'
+    this.lectureTab = 'sutra'; // 'sutra' | 'listen' | 'lesson' | 'package'
     this.activePathId = 'A';
     this.activeLessonId = 'A1';
     this.selectedQuizOption = null;
@@ -311,6 +315,7 @@ export class ChuaOnlineApp {
           blessingTower: this.blessingTower,
           dharmaJournal: this.dharmaJournal,
           academyState: this.academyState,
+          sutraStudy: this.sutraStudy,
           activeCourseId: this.activeCourseId,
           activeModuleId: this.activeModuleId,
           practicedDays: this.practicedDays.slice(0, 30),
@@ -380,6 +385,8 @@ export class ChuaOnlineApp {
         blessingTowerCount: this.blessingTower?.entries?.length || 0,
         journalCount: this.dharmaJournal?.entries?.length || 0,
         academyUnlockedCourses: this.academyState?.unlockedCourses || [],
+        sutraStudy: this.sutraStudy,
+        sutraMode: this.sutraCtrl?.mode || 'chant',
         dailyDharmaSeenDate: this.lastDailyDharmaDate,
         playerPos: this.world3d
           ? {
@@ -764,6 +771,7 @@ export class ChuaOnlineApp {
           </div>
 
           <div id="quick-dock-chips" class="quick-dock-chips">
+            <button type="button" class="walk-chip-btn" id="btn-open-hoc-kinh">📿 Học Kinh</button>
             <button type="button" class="walk-chip-btn" data-walk-station="cong_tam_quan">⛩️ Tam Quan</button>
             <button type="button" class="walk-chip-btn" data-walk-station="phat_adida">🪷 A Di Đà</button>
             <button type="button" class="walk-chip-btn" data-walk-station="chanh_dien">🏛️ Chánh điện</button>
@@ -902,7 +910,15 @@ export class ChuaOnlineApp {
         <main class="lecture-center-stage" id="lecture-center-stage"></main>
 
         <footer class="lecture-bottom-dock" role="tablist">
-          <button class="lecture-dock-tab active" data-lecture-tab="listen" role="tab">
+          <button class="lecture-dock-tab active" data-lecture-tab="sutra" role="tab">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+              <path d="M12 3c4 4 6 7 6 10a6 6 0 1 1-12 0c0-3 2-6 6-10z"/>
+              <path d="M12 10v7"/>
+            </svg>
+            <span>Học Kinh</span>
+          </button>
+
+          <button class="lecture-dock-tab" data-lecture-tab="listen" role="tab">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
               <path d="M3 18v-6a9 9 0 0 1 18 0v6"/>
               <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/>
@@ -2381,19 +2397,27 @@ export class ChuaOnlineApp {
 
   switchScreen(screenName) {
     this.activeScreen = screenName;
+    const isCourtyard = screenName === 'courtyard';
     const shopEl = document.getElementById('shop-screen');
     const lectureEl = document.getElementById('lecture-screen');
     const pinsLayer = document.getElementById('scene-pins-layer');
     const quickDock = document.getElementById('courtyard-quick-dock');
+    const topHud = document.getElementById('main-top-hud');
+    const spiritualBar = document.getElementById('spiritual-actions-bar');
+    const goalsTracker = document.getElementById('daily-goals-tracker');
     if (shopEl) shopEl.classList.toggle('open', screenName === 'shop');
     if (lectureEl) lectureEl.classList.toggle('open', screenName === 'lecture');
-    if (quickDock) quickDock.style.display = screenName === 'courtyard' ? 'flex' : 'none';
+    if (quickDock) quickDock.style.display = isCourtyard ? 'flex' : 'none';
+    if (topHud) topHud.style.display = isCourtyard ? 'flex' : 'none';
+    if (spiritualBar) spiritualBar.style.display = isCourtyard ? 'flex' : 'none';
+    if (goalsTracker) goalsTracker.style.display = isCourtyard ? 'flex' : 'none';
     if (pinsLayer && !this.world3d?.insideInterior) {
-      pinsLayer.style.display = screenName === 'courtyard' ? 'block' : 'none';
+      pinsLayer.style.display = isCourtyard ? 'block' : 'none';
     }
 
     if (screenName !== 'lecture') {
       this.stopLectureSpeech();
+      this.sutraCtrl?.stopAllPlayback?.();
     }
     this.world3d?.setLectureHallMode?.(screenName === 'lecture');
     this.audio?.setAmbientZone?.(
@@ -2453,36 +2477,37 @@ export class ChuaOnlineApp {
 
   toggleLectureSpeech(lesson) {
     if (!lesson) return;
-    if (this.ttsSpeaking || this.audio?.ttsSpeaking) {
+    if (this.ttsSpeaking || this.audio?.ttsSpeaking || this.audioPlaying) {
       this.stopLectureSpeech();
+      this.pauseVoiceAudio();
       this.renderLectureStage();
       return;
     }
 
     const speechText = `${lesson.title}. ${lesson.summary.slice(0, 3).join('. ')}. Gợi ý thực hành: ${lesson.example}`;
-    const started = this.audio?.speakText?.(speechText, {
-      rate: this.readAlongRate || 1.0,
-      lang: 'vi-VN',
-      pitch: 0.98
-    });
-
-    if (started) {
+    this.playBellTone(288, 1.4);
+    if (this.audio?.speakVietnameseSmart) {
       this.ttsSpeaking = true;
-      this.playBellTone(288, 1.4);
+      this.audio
+        .speakVietnameseSmart(speechText, {
+          rate: this.readAlongRate || 1.0,
+          fallbackAudio: lesson.audio,
+          onEnd: () => {
+            this.ttsSpeaking = false;
+            if (this.activeScreen === 'lecture') this.renderLectureStage();
+          }
+        })
+        .then((res) => {
+          if (!res?.ok) {
+            this.ttsSpeaking = false;
+          }
+          if (this.activeScreen === 'lecture') this.renderLectureStage();
+        });
       this.renderLectureStage();
       return;
     }
 
-    // Fallback when SpeechSynthesis or vi-VN voice is unavailable on mobile/WebView
-    this.ttsSpeaking = false;
-    this.playBellTone(260, 2.0);
     this.playVoiceAudio(lesson.audio, { rate: this.readAlongRate || 1.0 });
-    this.showToast(
-      '🎙️ Đang phát Pháp âm ghi âm sẵn',
-      `Thiết bị chưa có giọng đọc tiếng Việt — phát bản thu trực tiếp (${this.readAlongRate === 0.85 ? '0.85x Chậm' : '1.0x Chuẩn'}).`,
-      3800,
-      false
-    );
     this.renderLectureStage();
   }
 
@@ -4168,6 +4193,11 @@ export class ChuaOnlineApp {
     document.querySelectorAll('.lecture-dock-tab').forEach((btn) => {
       btn.classList.toggle('active', btn.getAttribute('data-lecture-tab') === this.lectureTab);
     });
+
+    if (this.lectureTab === 'sutra') {
+      this.sutraCtrl.render(stage);
+      return;
+    }
 
     const lessonIdx = Math.max(0, LECTURE_LESSONS.findIndex((l) => l.id === this.activeLessonId));
     const lesson = LECTURE_LESSONS[lessonIdx] || LECTURE_LESSONS[0];
@@ -8820,6 +8850,10 @@ export class ChuaOnlineApp {
       this.saveState();
       this.refreshGoalsTrackerHUD();
     });
+    document.getElementById('btn-open-hoc-kinh')?.addEventListener('click', () => {
+      this.lectureTab = 'sutra';
+      this.switchScreen('lecture');
+    });
     document.getElementById('btn-open-garden-modal')?.addEventListener('click', () => {
       this.openTempleGardenModal(0);
     });
@@ -8877,6 +8911,11 @@ export class ChuaOnlineApp {
 
     window.addEventListener('keydown', (e) => {
       if (['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName || '')) return;
+      if (e.code === 'Space' && this.sutraCtrl?.isVisibleAndActive?.() && this.sutraCtrl.mode === 'chant') {
+        e.preventDefault();
+        this.sutraCtrl.tapWoodenMo();
+        return;
+      }
       if (e.code === 'Space' && this._rhythmSession?.active && typeof this._rhythmSession.strike === 'function') {
         e.preventDefault();
         this._rhythmSession.strike();
@@ -8979,6 +9018,9 @@ export class ChuaOnlineApp {
       btn.addEventListener('click', () => {
         const tab = btn.getAttribute('data-lecture-tab');
         if (tab) {
+          if (tab !== 'sutra') {
+            this.sutraCtrl?.stopAllPlayback?.();
+          }
           this.lectureTab = tab;
           this.renderLectureStage();
         }

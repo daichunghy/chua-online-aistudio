@@ -7,10 +7,8 @@
     "dev": "node server.mjs",
     "serve": "node server.mjs",
     "start": "node server.mjs",
-    "build": "node --check server.mjs && node --check src/logic/chua-online-logic.mjs && node --check src/app/audio-engine.mjs && node --check src/app/sculpted-buddhas.mjs && node --check src/app/garment-and-showcase-3d.mjs && node --check src/app/vinh-trang-square-interior.mjs && node --check src/app/vinh-trang-3d-world.mjs && node --check src/app/chua-online-app.mjs",
-    "lint": "node --test src/logic/chua-online-logic.test.mjs"
+    "build": "node --check server.mjs && node --check src/logic/chua-online-logic.mjs && node --check src/logic/sutra-study-logic.mjs && node --check src/app/audio-engine.mjs && node --check src/app/sculpted-buddhas.mjs && node --check src/app/garment-and-showcase-3d.mjs && node --check src/app/vinh-trang-square-interior.mjs && node --check src/app/vinh-trang-3d-world.mjs && node --check src/app/sutra-study-ui.mjs && node --check src/app/chua-online-app.mjs",
+    "lint": "node --test src/logic/chua-online-logic.test.mjs src/logic/sutra-study-logic.test.mjs"
   },
-  "dependencies": {
-    "serve": "^14.2.4"
-  }
+  "dependencies": {}
 }

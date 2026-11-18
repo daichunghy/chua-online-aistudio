@@ -1,4 +1,5 @@
 import http from 'node:http';
+import https from 'node:https';
 import fs from 'node:fs';
 import path from 'node:path';
 import zlib from 'node:zlib';
@@ -6,6 +7,124 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.PORT || 3000);
+
+const TTS_CACHE = new Map();
+const TTS_CACHE_MAX = 180;
+
+function splitTtsChunks(text, maxLen = 175) {
+  const clean = String(text || '').replace(/\s+/g, ' ').trim();
+  if (!clean) return [];
+  const limited = clean.slice(0, 480);
+  const chunks = [];
+  let remaining = limited;
+  while (remaining.length > maxLen) {
+    let splitAt = -1;
+    for (const sep of ['. ', ', ', '; ', ' ']) {
+      const idx = remaining.lastIndexOf(sep, maxLen);
+      if (idx > 40) {
+        splitAt = idx + (sep === ' ' ? 0 : 1);
+        break;
+      }
+    }
+    if (splitAt <= 0) splitAt = maxLen;
+    const part = remaining.slice(0, splitAt).trim();
+    if (part) chunks.push(part);
+    remaining = remaining.slice(splitAt).trim();
+  }
+  if (remaining) chunks.push(remaining);
+  return chunks;
+}
+
+function fetchGoogleTtsChunk(text, lang = 'vi') {
+  return new Promise((resolve, reject) => {
+    const safeLang = /^[a-z]{2}(-[A-Za-z]{2,4})?$/.test(lang) ? lang : 'vi';
+    const targetUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=${encodeURIComponent(safeLang)}&client=tw-ob`;
+    const req = https.get(
+      targetUrl,
+      {
+        timeout: 5500,
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+          Referer: 'https://translate.google.com/'
+        }
+      },
+      (resp) => {
+        if (resp.statusCode !== 200) {
+          resp.resume();
+          reject(new Error(`TTS upstream HTTP ${resp.statusCode}`));
+          return;
+        }
+        const parts = [];
+        resp.on('data', (chunk) => parts.push(chunk));
+        resp.on('end', () => resolve(Buffer.concat(parts)));
+      }
+    );
+    req.on('timeout', () => {
+      req.destroy(new Error('TTS upstream timeout'));
+    });
+    req.on('error', reject);
+  });
+}
+
+async function handleTtsRequest(req, res, urlObj) {
+  const text = (urlObj.searchParams.get('text') || '').trim();
+  const lang = (urlObj.searchParams.get('tl') || 'vi').trim();
+  if (!text) {
+    res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+    res.end(JSON.stringify({ error: 'Missing text parameter' }));
+    return;
+  }
+
+  const cacheKey = `${lang}:${text.slice(0, 480)}`;
+  let audioBuf = TTS_CACHE.get(cacheKey);
+
+  if (!audioBuf) {
+    try {
+      const chunks = splitTtsChunks(text, 175);
+      const buffers = [];
+      for (const chunk of chunks) {
+        const buf = await fetchGoogleTtsChunk(chunk, lang);
+        if (buf && buf.length > 0) buffers.push(buf);
+      }
+      audioBuf = Buffer.concat(buffers);
+      if (audioBuf.length > 0) {
+        if (TTS_CACHE.size >= TTS_CACHE_MAX) {
+          const oldestKey = TTS_CACHE.keys().next().value;
+          if (oldestKey) TTS_CACHE.delete(oldestKey);
+        }
+        TTS_CACHE.set(cacheKey, audioBuf);
+      }
+    } catch {
+      res.writeHead(503, {
+        'Content-Type': 'application/json; charset=utf-8',
+        'Access-Control-Allow-Origin': '*'
+      });
+      res.end(JSON.stringify({ error: 'TTS unavailable' }));
+      return;
+    }
+  }
+
+  if (!audioBuf || audioBuf.length === 0) {
+    res.writeHead(503, {
+      'Content-Type': 'application/json; charset=utf-8',
+      'Access-Control-Allow-Origin': '*'
+    });
+    res.end(JSON.stringify({ error: 'Empty TTS response' }));
+    return;
+  }
+
+  res.writeHead(200, {
+    'Content-Type': 'audio/mpeg',
+    'Content-Length': audioBuf.length,
+    'Cache-Control': 'public, max-age=86400',
+    'Access-Control-Allow-Origin': '*'
+  });
+  if (req.method === 'HEAD') {
+    res.end();
+    return;
+  }
+  res.end(audioBuf);
+}
 
 const MIME_TYPES = {
   '.html': 'text/html; charset=utf-8',
@@ -55,9 +174,15 @@ const IMMUTABLE_MEDIA_EXTS = new Set([
   '.ico'
 ]);
 
-const server = http.createServer((req, res) => {
+const server = http.createServer(async (req, res) => {
   try {
-    const rawUrl = (req.url || '/').split('?')[0];
+    const parsedUrl = new URL(req.url || '/', `http://localhost:${PORT}`);
+    if (parsedUrl.pathname === '/api/tts') {
+      await handleTtsRequest(req, res, parsedUrl);
+      return;
+    }
+
+    const rawUrl = parsedUrl.pathname || '/';
     let decodedPath = decodeURIComponent(rawUrl);
     if (decodedPath === '/' || decodedPath === '') {
       decodedPath = '/index.html';
