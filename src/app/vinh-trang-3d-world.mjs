@@ -57,6 +57,7 @@ import {
   attachStorePropsToCharacterRig
 } from './garment-and-showcase-3d.mjs';
 import { buildSquareChanhDienInterior } from './vinh-trang-square-interior.mjs';
+import { buildResidentialFoodHouses } from './world/residential-lane.mjs';
 
 // Pre-allocated scratch vectors for zero-GC animation & camera loop
 const _tourPos = new THREE.Vector3();
@@ -3104,6 +3105,7 @@ export class VinhTrang3DWorld {
     this.exteriorGroup.add(rightBannerGroup);
 
     this.buildVietnameseGroceryHouse();
+    buildResidentialFoodHouses.call(this); // khu dân cư + quán ăn phía Đông (world/residential-lane.mjs)
 
     const chanhDien = this.buildChanhDien13Arches();
     chanhDien.position.set(23, 0, 1.0);
@@ -10417,15 +10419,21 @@ export class VinhTrang3DWorld {
           let cur = hits[0].object;
           let stallType = 'huong_hoa';
           let stallTitle = 'Nhà Tạp Hóa Cổng Chùa Vĩnh Tràng';
+          let eateryId = null;
           while (cur) {
             if (cur.userData && cur.userData.stallType) {
               stallType = cur.userData.stallType;
               stallTitle = cur.userData.stallTitle || stallTitle;
+              eateryId = cur.userData.eateryId || cur.userData.localEateryId || null;
               break;
             }
             cur = cur.parent;
           }
-          this.onObjectClick('OPEN_MARKET_STALL', { category: stallType, title: stallTitle });
+          if (stallType === 'local_eatery' && eateryId) {
+            this.onObjectClick('OPEN_LOCAL_EATERY', { eateryId, title: stallTitle });
+          } else {
+            this.onObjectClick('OPEN_MARKET_STALL', { category: stallType, title: stallTitle });
+          }
           return;
         }
       }

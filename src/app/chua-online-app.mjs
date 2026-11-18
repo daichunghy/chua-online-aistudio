@@ -1159,6 +1159,8 @@ export class ChuaOnlineApp {
           this.openNineTabStoreModal(payload?.category || 'le_vat');
         } else if (action === 'OPEN_MARKET_STALL') {
           this.openMarketplaceStallModal(payload?.category || 'huong_hoa', payload?.title);
+        } else if (action === 'OPEN_LOCAL_EATERY') {
+          this.openLocalEateryModal(payload?.eateryId, payload?.title);
         } else if (action === 'CLOSED_MAIN_GATE') {
           this.playBellTone(260, 1.4);
           this.showToast(
@@ -1289,6 +1291,10 @@ export class ChuaOnlineApp {
       }
     }
     if (!this.world3d?.insideInterior && this.nearbyStallTrigger) {
+      if (this.nearbyStallTrigger.stallType === 'local_eatery') {
+        this.openLocalEateryModal(this.nearbyStallTrigger.eateryId, this.nearbyStallTrigger.title);
+        return true;
+      }
       this.openMarketplaceStallModal(
         this.nearbyStallTrigger.stallType || 'huong_hoa',
         this.nearbyStallTrigger.title || 'Nhà Tạp Hóa Cổng Chùa Vĩnh Tràng'
@@ -8310,6 +8316,33 @@ export class ChuaOnlineApp {
     };
 
     renderStoreBody(0);
+  }
+
+  openLocalEateryModal(eateryId, title = 'Quán ăn gia đình') {
+    const menus = {
+      hut_tieu_co_ba: {
+        intro: 'Bữa sáng trong căn nhà gia đình, với hiên nhà và bàn ăn gỗ.',
+        dishes: ['Hủ tiếu Mỹ Tho', 'Hủ tiếu khô', 'Nước trà đá']
+      },
+      banh_beo_di_sau: {
+        intro: 'Góc bếp nhỏ miền Tây, phục vụ món bánh và chè nhà làm.',
+        dishes: ['Bánh bèo', 'Bánh da lợn', 'Chè đậu xanh']
+      }
+    };
+    const menu = menus[eateryId] || { intro: 'Một quán ăn nhỏ trong khu dân cư.', dishes: ['Món ăn trong ngày'] };
+    const html = `
+      <div class="market-stall-banner">
+        <div>
+          <div style="font-size:16px;font-weight:800;color:#1C5A34;">${title}</div>
+          <div style="font-size:13px;color:#4A3222;margin-top:5px;">${menu.intro}</div>
+        </div>
+      </div>
+      <div style="display:grid;gap:10px;padding:12px 2px;">
+        ${menu.dishes.map((dish) => `<div style="display:flex;align-items:center;gap:12px;padding:12px;border-radius:12px;background:#F5EEDC;color:#4A3222;"><span style="font-size:20px;">🍜</span><strong>${dish}</strong></div>`).join('')}
+      </div>
+      <p style="font-size:12px;color:#766A59;padding:4px 2px;">Bạn có thể bước vào hiên nhà, quan sát không gian bếp và bàn ăn trong mô hình 3D.</p>
+    `;
+    this.openModal(title, html);
   }
 
   /* ========================================================================

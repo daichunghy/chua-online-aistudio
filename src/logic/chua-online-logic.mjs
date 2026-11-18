@@ -368,6 +368,51 @@ export const DISCOVERY_ZONES = [
     audio: 's5_nirvana.mp3',
     subtitle: 'Bảo tháp 7 tầng cao 35m đứng uy nghiêm ngay phía sau tượng Phật A Di Đà và cạnh tượng Phật Niết Bàn.',
     ritualType: 'hoi_huong'
+  },
+  {
+    id: 109,
+    isDiscovery: true,
+    key: 'nha_co_ba_hu_tieu',
+    name: 'Nhà Cô Ba · Hủ tiếu Mỹ Tho',
+    zoneCode: 'Khu dân cư phía Đông chùa',
+    pinLabel: 'Nhà Cô Ba',
+    pos: { x: 91.0, z: 60.0 },
+    standPos: { x: 85.4, z: 60.0 },
+    via: [[45.0, 50.0], [61.0, 50.0], [73.5, 50.0], [77.5, 55.0], [85.4, 60.0]],
+    lookAt: { x: 91.0, y: 2.5, z: 60.0 },
+    audio: 'day_di.mp3',
+    subtitle: 'Một quán ăn gia đình trong căn nhà thấp tầng, có hiên nhà và bàn ăn bên trong; phục vụ hủ tiếu Mỹ Tho.',
+    ritualType: 'welcome'
+  },
+  {
+    id: 110,
+    isDiscovery: true,
+    key: 'banh_beo_di_sau',
+    name: 'Bếp Dì Sáu · Bánh bèo & chè',
+    zoneCode: 'Khu dân cư phía Đông chùa',
+    pinLabel: 'Bếp Dì Sáu',
+    pos: { x: 91.0, z: 80.0 },
+    standPos: { x: 85.4, z: 80.0 },
+    via: [[73.5, 50.0], [77.5, 65.0], [77.5, 80.0], [85.4, 80.0]],
+    lookAt: { x: 91.0, y: 2.5, z: 80.0 },
+    audio: 'day_di.mp3',
+    subtitle: 'Căn bếp gia đình miền Tây với bàn gỗ, khay bánh bèo và món chè địa phương.',
+    ritualType: 'welcome'
+  },
+  {
+    id: 111,
+    isDiscovery: true,
+    key: 'hem_nha_vuon',
+    name: 'Hẻm nhà vườn Mỹ Tho',
+    zoneCode: 'Cuối tuyến dân cư phía Đông',
+    pinLabel: 'Hẻm nhà vườn',
+    pos: { x: 91.0, z: 100.0 },
+    standPos: { x: 85.4, z: 100.0 },
+    via: [[73.5, 50.0], [77.5, 78.0], [77.5, 96.0], [85.4, 100.0]],
+    lookAt: { x: 91.0, y: 2.5, z: 100.0 },
+    audio: 'day_di.mp3',
+    subtitle: 'Đoạn hẻm yên tĩnh với nhà ở, hàng cây, dây phơi và khoảng sân nhỏ đặc trưng khu dân cư Nam Bộ.',
+    ritualType: 'welcome'
   }
 ];
 
@@ -458,9 +503,9 @@ export function findAnyTempleDestination(keyOrId) {
 
 export const WORLD_BOUNDS = {
   minX: -66.5,
-  maxX: 66.5,
+  maxX: 100.0,
   minZ: -104.0,
-  maxZ: 56.0
+  maxZ: 112.0
 };
 
 export function stepPlayerMovement(state, input, speed = 0.22, obstacles = []) {
