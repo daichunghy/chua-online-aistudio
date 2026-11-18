@@ -386,7 +386,61 @@ export function buildSquareChanhDienInterior(world, THREE) {
     }
   }
 
-  // 4. BOTTOM-RIGHT CORNER ENTRANCE / EXIT PORTAL (+15.5, 0, +20.45)
+  // Helper to build a realistic Vietnamese Temple Shoe Rack + Sandals/Slippers left outside doors
+  const buildShoeRackUnit = (rackW = 1.65, tiers = 3) => {
+    const rg = new THREE.Group();
+    const frameWood = new THREE.MeshStandardMaterial({ color: 0x5C341B, roughness: 0.58 });
+    const coirMat = new THREE.MeshStandardMaterial({ color: 0x9C7444, roughness: 0.92 });
+    const sandalColors = [0xC84B31, 0x2D5A7B, 0xD9A441, 0x4E6E58, 0xEAE0CC, 0x6E3B2B];
+    for (const sx of [-rackW / 2 + 0.06, rackW / 2 - 0.06]) {
+      for (const sz of [-0.18, 0.18]) {
+        const leg = new THREE.Mesh(new THREE.BoxGeometry(0.05, tiers * 0.24 + 0.08, 0.05), frameWood);
+        leg.position.set(sx, (tiers * 0.24 + 0.08) / 2, sz);
+        rg.add(leg);
+      }
+    }
+    for (let t = 0; t < tiers; t++) {
+      const sy = 0.12 + t * 0.23;
+      const shelf = new THREE.Mesh(new THREE.BoxGeometry(rackW, 0.03, 0.4), frameWood);
+      shelf.position.set(0, sy, 0);
+      rg.add(shelf);
+      const pairCount = Math.max(2, Math.floor(rackW / 0.36));
+      for (let p = 0; p < pairCount; p++) {
+        const px = -rackW * 0.38 + (p / Math.max(1, pairCount - 1)) * (rackW * 0.76);
+        const sMat = new THREE.MeshStandardMaterial({
+          color: sandalColors[(t * 5 + p) % sandalColors.length],
+          roughness: 0.65
+        });
+        for (const foot of [-0.055, 0.055]) {
+          const sole = new THREE.Mesh(new THREE.BoxGeometry(0.085, 0.024, 0.22), sMat);
+          sole.position.set(px + foot, sy + 0.028, 0);
+          sole.rotation.y = (p % 2 === 0 ? 0.05 : -0.05);
+          rg.add(sole);
+          const strap = new THREE.Mesh(new THREE.BoxGeometry(0.088, 0.026, 0.07), frameWood);
+          strap.position.set(px + foot, sy + 0.046, 0.02);
+          rg.add(strap);
+        }
+      }
+    }
+    // Neat extra slippers left on woven coir mat right beside/in front of rack
+    const matMesh = new THREE.Mesh(new THREE.BoxGeometry(rackW * 0.92, 0.018, 0.52), coirMat);
+    matMesh.position.set(0, 0.009, 0.48);
+    rg.add(matMesh);
+    for (let s = 0; s < 3; s++) {
+      const sx = -0.42 + s * 0.42;
+      const slipMat = new THREE.MeshStandardMaterial({ color: sandalColors[(s + 2) % sandalColors.length], roughness: 0.7 });
+      for (const foot of [-0.055, 0.055]) {
+        const slip = new THREE.Mesh(new THREE.BoxGeometry(0.085, 0.022, 0.22), slipMat);
+        slip.position.set(sx + foot, 0.026, 0.48);
+        slip.rotation.y = 0.08 * (s - 1);
+        rg.add(slip);
+      }
+    }
+    return rg;
+  };
+  world._buildShoeRackUnit = buildShoeRackUnit;
+
+  // 4. ENTRANCE DOORWAY WITH OUTER SUNLIT SHOE-REMOVAL VERANDA (+15.5, 0, +20.45)
   const cornerDoorGroup = new THREE.Group();
   cornerDoorGroup.position.set(15.5, 0, 20.45);
   for (const dx of [-1.85, 1.85]) {
@@ -397,24 +451,83 @@ export function buildSquareChanhDienInterior(world, THREE) {
   const doorLintel = new THREE.Mesh(new THREE.BoxGeometry(4.2, 0.46, 0.5), goldLeafMat);
   doorLintel.position.set(0, 4.25, 0);
   cornerDoorGroup.add(doorLintel);
-  const daylightPortal = new THREE.Mesh(
-    new THREE.PlaneGeometry(3.3, 4.0),
-    new THREE.MeshBasicMaterial({ color: 0xFFE9BA, side: THREE.DoubleSide })
+
+  // Traditional wooden threshold sill ("Ngưỡng cửa gỗ") + open double carved wooden door leaves
+  const entrySill = new THREE.Mesh(new THREE.BoxGeometry(3.5, 0.09, 0.28), wallWoodMat);
+  entrySill.position.set(0, 0.045, 0);
+  cornerDoorGroup.add(entrySill);
+  for (const side of [-1, 1]) {
+    const leafPivot = new THREE.Group();
+    leafPivot.position.set(side * 1.65, 0, -0.05);
+    leafPivot.rotation.y = side * -1.12; // Swung wide open inward/outward cleanly
+    const leafBoard = new THREE.Mesh(new THREE.BoxGeometry(1.52, 3.92, 0.09), wallWoodMat);
+    leafBoard.position.set(-side * 0.76, 2.02, 0);
+    leafPivot.add(leafBoard);
+    const leafTrim = new THREE.Mesh(new THREE.BoxGeometry(1.32, 1.25, 0.11), baoLamMat);
+    leafTrim.position.set(-side * 0.76, 1.05, 0);
+    leafPivot.add(leafTrim);
+    for (let b = -2; b <= 2; b++) {
+      const bar = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 1.75, 8), goldLeafMat);
+      bar.position.set(-side * 0.76 + b * 0.22, 2.85, 0);
+      leafPivot.add(bar);
+    }
+    cornerDoorGroup.add(leafPivot);
+  }
+
+  // Sunlit Outer Tiled Veranda visible right outside the open wooden entrance door (with shoe racks & sandals left outside!)
+  const outerVerandaFloor = new THREE.Mesh(
+    new THREE.BoxGeometry(5.6, 0.12, 3.2),
+    new THREE.MeshStandardMaterial({ color: 0xC97653, roughness: 0.62 })
   );
-  daylightPortal.position.set(0, 2.02, 0.12);
-  daylightPortal.userData.exitSide = 'right';
-  cornerDoorGroup.add(daylightPortal);
+  outerVerandaFloor.position.set(0, -0.04, 1.65);
+  cornerDoorGroup.add(outerVerandaFloor);
+
+  const outerGardenBackdrop = new THREE.Mesh(
+    new THREE.PlaneGeometry(5.6, 4.4),
+    new THREE.MeshBasicMaterial({ color: 0xD8ECC8, side: THREE.DoubleSide })
+  );
+  outerGardenBackdrop.position.set(0, 2.15, 3.15);
+  outerGardenBackdrop.userData.exitSide = 'right';
+  cornerDoorGroup.add(outerGardenBackdrop);
+
+  const outerVerandaLight = new THREE.PointLight(0xFFF1C9, 1.45, 8.5, 1.5);
+  outerVerandaLight.position.set(0, 3.4, 1.5);
+  cornerDoorGroup.add(outerVerandaLight);
+
+  for (const rx of [-1.25, 1.25]) {
+    const outerRack = buildShoeRackUnit(1.35, 3);
+    outerRack.position.set(rx, 0.02, 1.18);
+    outerRack.rotation.y = rx < 0 ? 0.35 : -0.35;
+    cornerDoorGroup.add(outerRack);
+  }
+  const shoeNoticeOuter = new THREE.Mesh(
+    new THREE.PlaneGeometry(2.65, 0.44),
+    new THREE.MeshBasicMaterial({
+      map: world.makeSignTexture('👟 VUI LÒNG ĐỂ GIÀY DÉP BÊN NGOÀI TRƯỚC KHI VÀO ĐIỆN', {
+        w: 980,
+        h: 150,
+        bg: '#5B1810',
+        border: '#F3C654',
+        color: '#FFF6DE',
+        size: 28
+      }),
+      side: THREE.DoubleSide
+    })
+  );
+  shoeNoticeOuter.rotation.y = Math.PI;
+  shoeNoticeOuter.position.set(0, 3.58, 0.62);
+  cornerDoorGroup.add(shoeNoticeOuter);
 
   const exitSign = new THREE.Mesh(
-    new THREE.PlaneGeometry(3.2, 0.56),
+    new THREE.PlaneGeometry(3.5, 0.56),
     new THREE.MeshBasicMaterial({
-      map: world.makeSignTexture('← RA SÂN CHÙA (LỐI GÓC DƯỚI BÊN PHẢI)', {
-        w: 920,
+      map: world.makeSignTexture('← RA HIÊN BỎ DÉP & TIỆM LƯU NIỆM CUỐI ĐƯỜNG', {
+        w: 1020,
         h: 160,
         bg: '#1E462B',
         border: '#F3C85F',
         color: '#FFF8E5',
-        size: 32
+        size: 30
       })
     })
   );
@@ -423,7 +536,7 @@ export function buildSquareChanhDienInterior(world, THREE) {
   exitSign.userData.exitSide = 'right';
   cornerDoorGroup.add(exitSign);
 
-  // Directional welcome banner Overhead at Bottom-Right Corner pointing straight North along the Altar Gallery
+  // Directional welcome banner Overhead at Entrance pointing straight North along the Altar Gallery
   const guideBanner = new THREE.Mesh(
     new THREE.PlaneGeometry(3.6, 0.62),
     new THREE.MeshBasicMaterial({
@@ -443,14 +556,14 @@ export function buildSquareChanhDienInterior(world, THREE) {
   g.add(guideBanner);
 
   const exitHitbox = new THREE.Mesh(
-    new THREE.BoxGeometry(3.8, 4.4, 1.1),
+    new THREE.BoxGeometry(3.8, 4.4, 1.4),
     new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false })
   );
-  exitHitbox.position.set(0, 2.2, 0);
+  exitHitbox.position.set(0, 2.2, 0.2);
   exitHitbox.userData.exitSide = 'right';
   cornerDoorGroup.add(exitHitbox);
   g.add(cornerDoorGroup);
-  world.interiorDoorClickTargets.push(exitHitbox, daylightPortal, exitSign);
+  world.interiorDoorClickTargets.push(exitHitbox, outerGardenBackdrop, exitSign);
 
   // 5. CENTER OF THE SQUARE: OPEN-SKY "HỒ SEN BỘ" (X ∈ [-10.6, +10.6], Z ∈ [-10.6, +10.6])
   const centerGroup = new THREE.Group();
@@ -1073,17 +1186,67 @@ function buildTopChinhDienAndLeftBottomGalleries(world, THREE, ctx) {
   // 8. TOP EDGE OF THE SQUARE (z = -11.4 .. -20.8): CHÍNH ĐIỆN (ĐẠI HÙNG BỬU ĐIỆN)
   // =========================================================================================
 
-  // 8A. Carved wooden folding lattice doors ("Cửa gỗ chấn song gấp mở" — image_d3dcebc6.png)
-  // Placed at z = -11.5 with 3 wide open portals at x = 0, x = -6.0, x = +6.0
+  // 8A. Full Traditional Carved Wooden Front Door Facade ("Hệ Cửa Gỗ Bức Bàn Tam Môn Trước Chánh Điện" + Bỏ Giày Dép Bên Ngoài)
+  // Placed at z = -11.55 with 3 framed open wooden doorways at x = 0, x = -5.9, x = +5.9 and full upper carved transom sealing ceiling gap
   const partitionGroup = new THREE.Group();
   partitionGroup.position.set(0, 0, -11.55);
-  const transomBeam = new THREE.Mesh(new THREE.BoxGeometry(19.6, 1.35, 0.24), baoLamMat);
-  transomBeam.position.set(0, 5.15, 0);
+
+  // Warm Vietnamese golden-redwood ("gỗ cánh gián chạm lọng thếp vàng") matching Chùa Vĩnh Tràng's real Chánh Điện doors
+  const doorTeakMat = new THREE.MeshStandardMaterial({
+    color: 0x7A411F,
+    emissive: 0x221005,
+    roughness: 0.46,
+    metalness: 0.08
+  });
+  const doorCarvedReliefMat = new THREE.MeshStandardMaterial({
+    color: 0xA65E2E,
+    emissive: 0x2B1406,
+    roughness: 0.4,
+    metalness: 0.14
+  });
+
+  // Upper carved wooden header wall from y = 4.35 up to ceiling y = 8.85 (eliminates dark void seen across Hồ Sen Bộ)
+  const upperHeaderWall = new THREE.Mesh(new THREE.BoxGeometry(25.2, 4.45, 0.24), doorTeakMat);
+  upperHeaderWall.position.set(0, 6.62, -0.04);
+  partitionGroup.add(upperHeaderWall);
+
+  const transomBeam = new THREE.Mesh(new THREE.BoxGeometry(24.6, 1.15, 0.28), doorCarvedReliefMat);
+  transomBeam.position.set(0, 4.82, 0.04);
   partitionGroup.add(transomBeam);
 
-  // Tilted crimson-and-gold Hoành Phi ("ĐẠI HÙNG BỬU ĐIỆN") above central portal
+  const goldFriezeLine = new THREE.Mesh(new THREE.BoxGeometry(24.8, 0.14, 0.32), goldLeafMat);
+  goldFriezeLine.position.set(0, 4.24, 0.06);
+  partitionGroup.add(goldFriezeLine);
+
+  // Carved wooden side paneled walls flanking the 3 central portals (leaving East/West corridor ends x = ±14.8 open to walk around Square)
+  for (const sx of [-10.3, 10.3]) {
+    const sidePanelWall = new THREE.Mesh(new THREE.BoxGeometry(4.2, 4.35, 0.22), doorTeakMat);
+    sidePanelWall.position.set(sx, 2.18, 0);
+    partitionGroup.add(sidePanelWall);
+    const sideRelief = new THREE.Mesh(new THREE.BoxGeometry(3.4, 2.2, 0.26), doorCarvedReliefMat);
+    sideRelief.position.set(sx, 2.45, 0.04);
+    partitionGroup.add(sideRelief);
+    world.interiorRectObstacles.push({ minX: sx - 2.1, maxX: sx + 2.1, minZ: -11.75, maxZ: -11.35 });
+  }
+  // Solid wooden mullions between Center Door (x = -1.85..+1.85) and Left/Right Doors (x = ±4.25..±7.55)
+  for (const mx of [-3.05, 3.05]) {
+    const midWall = new THREE.Mesh(new THREE.BoxGeometry(2.1, 4.35, 0.22), doorTeakMat);
+    midWall.position.set(mx, 2.18, 0);
+    partitionGroup.add(midWall);
+    const midWindowFrame = new THREE.Mesh(new THREE.BoxGeometry(1.45, 1.85, 0.26), doorCarvedReliefMat);
+    midWindowFrame.position.set(mx, 2.55, 0.04);
+    partitionGroup.add(midWindowFrame);
+    for (let b = -2; b <= 2; b++) {
+      const spindle = new THREE.Mesh(new THREE.CylinderGeometry(0.024, 0.024, 1.65, 8), goldLeafMat);
+      spindle.position.set(mx + b * 0.24, 2.55, 0.08);
+      partitionGroup.add(spindle);
+    }
+    world.interiorRectObstacles.push({ minX: mx - 1.05, maxX: mx + 1.05, minZ: -11.75, maxZ: -11.35 });
+  }
+
+  // Tilted crimson-and-gold Hoành Phi ("ĐẠI HÙNG BỬU ĐIỆN") above central wooden portal
   const hoanhPhi = new THREE.Mesh(
-    new THREE.BoxGeometry(3.85, 1.05, 0.14),
+    new THREE.BoxGeometry(4.15, 1.08, 0.16),
     new THREE.MeshBasicMaterial({
       map: world.makeSignTexture('ĐẠI HÙNG BỬU ĐIỆN', {
         w: 920,
@@ -1095,35 +1258,104 @@ function buildTopChinhDienAndLeftBottomGalleries(world, THREE, ctx) {
       })
     })
   );
-  hoanhPhi.position.set(0, 5.42, 0.26);
+  hoanhPhi.position.set(0, 5.38, 0.28);
   hoanhPhi.rotation.x = 0.22;
   partitionGroup.add(hoanhPhi);
 
-  for (const px of [-9.4, -7.4, -4.4, -1.85, 1.85, 4.4, 7.4, 9.4]) {
-    const post = new THREE.Mesh(new THREE.BoxGeometry(0.24, 5.6, 0.28), darkLacquerColMat);
-    post.position.set(px, 2.8, 0);
-    partitionGroup.add(post);
+  // 3 Authentic Double-Leaf Carved Wooden Doors ("Cửa Gỗ Bức Bàn Thượng Song Hạ Bản") + Raised Wooden Sills
+  const doorBays = [
+    { cx: -5.9, width: 3.1 },
+    { cx: 0, width: 3.5 },
+    { cx: 5.9, width: 3.1 }
+  ];
+  for (const bay of doorBays) {
+    // Low carved teak threshold sill ("Bậc ngưỡng cửa gỗ trước khi bước vào Chánh Điện")
+    const sill = new THREE.Mesh(new THREE.BoxGeometry(bay.width + 0.2, 0.1, 0.3), doorTeakMat);
+    sill.position.set(bay.cx, 0.05, 0);
+    partitionGroup.add(sill);
 
-    // Folded wooden lattice leaf beside each doorway jamb
-    const leaf = new THREE.Mesh(new THREE.BoxGeometry(0.55, 4.15, 0.08), wallWoodMat);
-    leaf.position.set(px + (px < 0 ? 0.18 : -0.18), 2.1, 0.22);
-    leaf.rotation.y = px < 0 ? 0.42 : -0.42;
-    partitionGroup.add(leaf);
-    world.interiorObstacles.push({ x: px, z: -11.55, r: 0.26 });
+    for (const side of [-1, 1]) {
+      const jx = bay.cx + side * (bay.width / 2 + 0.12);
+      const post = new THREE.Mesh(new THREE.BoxGeometry(0.26, 4.4, 0.32), doorTeakMat);
+      post.position.set(jx, 2.2, 0);
+      partitionGroup.add(post);
+      world.interiorObstacles.push({ x: jx, z: -11.55, r: 0.24 });
+
+      // Hinged double-leaf wooden lattice door swung open neatly so pilgrims see the door & walk through cleanly
+      const leafW = bay.width * 0.44;
+      const leafPivot = new THREE.Group();
+      leafPivot.position.set(jx - side * 0.08, 0.08, 0.14);
+      leafPivot.rotation.y = side * -1.05;
+      const lowerPanel = new THREE.Mesh(new THREE.BoxGeometry(leafW, 1.55, 0.08), doorTeakMat);
+      lowerPanel.position.set(-side * (leafW / 2), 0.78, 0);
+      leafPivot.add(lowerPanel);
+      const carvedInset = new THREE.Mesh(new THREE.BoxGeometry(leafW * 0.78, 1.15, 0.1), doorCarvedReliefMat);
+      carvedInset.position.set(-side * (leafW / 2), 0.78, 0);
+      leafPivot.add(carvedInset);
+      const topRail = new THREE.Mesh(new THREE.BoxGeometry(leafW, 0.22, 0.08), doorTeakMat);
+      topRail.position.set(-side * (leafW / 2), 3.92, 0);
+      leafPivot.add(topRail);
+      const midRail = new THREE.Mesh(new THREE.BoxGeometry(leafW, 0.18, 0.08), doorTeakMat);
+      midRail.position.set(-side * (leafW / 2), 1.62, 0);
+      leafPivot.add(midRail);
+      for (const edge of [-1, 1]) {
+        const stile = new THREE.Mesh(new THREE.BoxGeometry(0.12, 2.4, 0.08), doorTeakMat);
+        stile.position.set(-side * (leafW / 2) + edge * (leafW / 2 - 0.06), 2.78, 0);
+        leafPivot.add(stile);
+      }
+      for (let sb = -2; sb <= 2; sb++) {
+        const bar = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 2.18, 8), goldLeafMat);
+        bar.position.set(-side * (leafW / 2) + sb * (leafW * 0.16), 2.78, 0);
+        leafPivot.add(bar);
+      }
+      partitionGroup.add(leafPivot);
+    }
   }
+
+  // Outer Shoe-Removal Racks, Coir Mats & Polite Etiquette Sign RIGHT OUTSIDE the Wooden Doors of Chính Điện
+  if (typeof world._buildShoeRackUnit === 'function') {
+    // 4 racks right against the wooden door mullions (z = -10.87) + 2 prominent racks on the sunlit courtyard edge (z = -8.95)
+    for (const rx of [-9.55, -3.05, 3.05, 9.55]) {
+      const rack = world._buildShoeRackUnit(1.55, 3);
+      rack.position.set(rx, 0, 0.68);
+      partitionGroup.add(rack);
+    }
+    for (const crx of [-2.45, 2.45]) {
+      const courtRack = world._buildShoeRackUnit(1.5, 3);
+      courtRack.position.set(crx, 0, 2.62); // sunlit terracotta courtyard edge right before stepping into Chánh Điện!
+      partitionGroup.add(courtRack);
+    }
+  }
+  const chanhDienShoeSign = new THREE.Mesh(
+    new THREE.BoxGeometry(3.35, 0.42, 0.08),
+    new THREE.MeshBasicMaterial({
+      map: world.makeSignTexture('👟 BỎ GIÀY DÉP BÊN NGOÀI CỬA TRƯỚC KHI VÀO CHÁNH ĐIỆN', {
+        w: 1080,
+        h: 150,
+        bg: '#4E160F',
+        border: '#F3C654',
+        color: '#FFF6DE',
+        size: 28
+      })
+    })
+  );
+  chanhDienShoeSign.position.set(0, 4.02, 0.24);
+  partitionGroup.add(chanhDienShoeSign);
+
   // Vertical calligraphy couplets ("Câu đối sơn son thếp vàng") on central portal jambs
   const couplets = [
-    [-1.85, 'PHẬT NHẬT TĂNG HUY'],
-    [1.85, 'PHÁP LUÂN THƯỜNG CHUYỂN']
+    [-1.92, 'PHẬT NHẬT TĂNG HUY'],
+    [1.92, 'PHÁP LUÂN THƯỜNG CHUYỂN']
   ];
   for (const [cx, text] of couplets) {
     const cp = new THREE.Mesh(
       new THREE.PlaneGeometry(0.32, 3.6),
       new THREE.MeshBasicMaterial({ map: world.makeVerticalCalligraphyTex(text) })
     );
-    cp.position.set(cx, 2.45, 0.18);
+    cp.position.set(cx, 2.45, 0.22);
     partitionGroup.add(cp);
   }
+  ctx.registerCutaway(upperHeaderWall);
   g.add(partitionGroup);
 
   // 8B. THÁP ĐÈN CẦU AN / VẠN PHẬT ("Ghi Tên Cầu Phước" — image_d3dcebc6.png)

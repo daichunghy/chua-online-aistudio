@@ -101,8 +101,8 @@ const STATUE_GLB_PATHS = {
   adida: '/Mô hình 3D Vĩnh Tràng/Tượng/phat-dung-adida.glb',
   dilac: '/Mô hình 3D Vĩnh Tràng/Tượng/di-lac.glb',
   phatnam: '/Mô hình 3D Vĩnh Tràng/Tượng/phat-nam.glb',
-  bantho: '/Mô hình 3D Vĩnh Tràng/Tượng/phat-ngoi-ban-tho.glb',
-  thichCaChanhDien: '/Mô hình 3D Vĩnh Tràng/Tượng/phat-thich-ca-chanh-dien.glb',
+  bantho: null,
+  thichCaChanhDien: null,
   quanAm: '/Mô hình 3D Vĩnh Tràng/Tượng/quan-am-nam-hai.glb',
   hoPhap: '/Mô hình 3D Vĩnh Tràng/Tượng/ho-phap-vi-da.glb',
   tieuDien: '/Mô hình 3D Vĩnh Tràng/Tượng/tieu-dien-dai-si.glb',
@@ -2916,14 +2916,23 @@ export class VinhTrang3DWorld {
     rightArrivalRoad.receiveShadow = true;
     this.exteriorGroup.add(rightArrivalRoad);
 
-    // Bougainvillea-Lined Red-Railed Right Side Garden Path -> Southern Terracotta Brick Pavers
+    // Long Straight Cool Tree-Shaded Lane from Cổng Phụ Tịnh Độ Huyền Môn (x = 40.5, z = +42 -> -27)
+    // + Left-Turn Apron at End of Road (z = -14.5) leading onto the Shoe-Removal Veranda of Chánh Điện!
     const sideWalkway = new THREE.Mesh(
-      new THREE.BoxGeometry(4.4, 0.13, 27.5),
-      new THREE.MeshStandardMaterial({ map: this.sideBrickTex, color: 0xEAD6C0, roughness: 0.8 })
+      new THREE.BoxGeometry(9.4, 0.12, 69.5),
+      new THREE.MeshStandardMaterial({ map: this.asphaltTex, color: 0xD8D4CA, roughness: 0.84 })
     );
-    sideWalkway.position.set(36.0, 0.006, 20.0);
+    sideWalkway.position.set(40.5, 0.006, 7.25);
     sideWalkway.receiveShadow = true;
     this.exteriorGroup.add(sideWalkway);
+
+    const endTurnPlaza = new THREE.Mesh(
+      new THREE.BoxGeometry(11.6, 0.13, 12.5),
+      new THREE.MeshStandardMaterial({ map: this.sideBrickTex, color: 0xEAD6C0, roughness: 0.78 })
+    );
+    endTurnPlaza.position.set(39.8, 0.008, -16.5);
+    endTurnPlaza.receiveShadow = true;
+    this.exteriorGroup.add(endTurnPlaza);
 
     this.buildFenceAndGateWall();
 
@@ -2994,6 +3003,53 @@ export class VinhTrang3DWorld {
     const sideGate = this.buildSideMosaicGate();
     sideGate.position.set(40.5, 0, 41.5);
     this.exteriorGroup.add(sideGate);
+
+    // Authentic Blue Metal A-Frame Sign ("CHO XE 2 BÁNH VÀO CHÙA") & Tall Royal Palm beside right gate pillar (photo ref!)
+    const blueGateSignGrp = new THREE.Group();
+    blueGateSignGrp.position.set(44.18, 0, 43.45);
+    blueGateSignGrp.rotation.y = -0.1;
+    for (const lx of [-0.36, 0.36]) {
+      const leg = new THREE.Mesh(new THREE.BoxGeometry(0.05, 1.38, 0.05), M.darkWood);
+      leg.position.set(lx, 0.68, 0);
+      blueGateSignGrp.add(leg);
+    }
+    const blueBoard = new THREE.Mesh(
+      new THREE.BoxGeometry(0.86, 0.96, 0.06),
+      new THREE.MeshStandardMaterial({
+        map: makeTextTex('CHO XE 2 BÁNH VÀO CHÙA', {
+          w: 420,
+          h: 460,
+          bg: '#1668C4',
+          border: '#E8F2FF',
+          color: '#FFFFFF',
+          size: 42
+        }),
+        roughness: 0.36
+      })
+    );
+    blueBoard.position.set(0, 0.92, 0.02);
+    blueGateSignGrp.add(blueBoard);
+    this.exteriorGroup.add(blueGateSignGrp);
+
+    const palmGrp = new THREE.Group();
+    palmGrp.position.set(46.8, 0, 42.9);
+    const palmTrunk = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.19, 0.34, 9.6, 12),
+      new THREE.MeshStandardMaterial({ color: 0x9C9484, roughness: 0.85 })
+    );
+    palmTrunk.position.y = 4.8;
+    palmTrunk.castShadow = true;
+    palmGrp.add(palmTrunk);
+    for (let fi = 0; fi < 10; fi++) {
+      const ang = (fi / 10) * Math.PI * 2;
+      const frond = new THREE.Mesh(new THREE.ConeGeometry(0.46, 3.2, 5), M.foliageMid);
+      frond.scale.set(0.55, 1.0, 0.18);
+      frond.position.set(Math.cos(ang) * 1.25, 9.45, Math.sin(ang) * 1.25);
+      frond.rotation.z = -Math.cos(ang) * 1.18;
+      frond.rotation.x = Math.sin(ang) * 1.18;
+      palmGrp.add(frond);
+    }
+    this.exteriorGroup.add(palmGrp);
 
     // Yellow Overhead Welcome Banner just inside Cổng Phụ
     const rightBannerGroup = new THREE.Group();
@@ -3572,15 +3628,15 @@ export class VinhTrang3DWorld {
     };
     buildMekongStiltDiningPavilion();
 
-    // Giảng đường Phật pháp (East Sanctuary Pavilion at (44.0, 0, -18.0))
+    // Giảng đường Phật pháp (East Sanctuary Pavilion shifted cleanly to (58.5, 0, -18.0) so straight lane x = 40.5 stays 100% open!)
     const giangDuong = this.buildGiangDuong();
-    giangDuong.position.set(44.0, 0, -18.0);
+    giangDuong.position.set(58.5, 0, -18.0);
     const gdSteps = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.35, 3.6), M.stoneLight);
     gdSteps.position.set(-5.2, 0.175, 0);
     giangDuong.add(gdSteps);
     this.exteriorGroup.add(giangDuong);
     this.lectureClickTargets.push(giangDuong);
-    this.addRectObstacle(39.0, 49.2, -27.5, -8.5);
+    this.addRectObstacle(53.4, 63.8, -27.5, -8.5);
 
     // 7-Tier Terracotta Bảo Tháp in the rear garden near the reclining Buddha (upgraded with bao-thap-7-tang.glb on load).
     this.stupaGroup = this.buildSevenTierStupa();
@@ -4538,82 +4594,184 @@ export class VinhTrang3DWorld {
       }
     }
 
-    // GROUND-LEVEL BOTTOM-RIGHT CORNER ENTRANCE ("Lối Vào Góc Dưới Bên Phải Chùa" — NOT the front porch doors!)
-    // Mounted directly on `g` (`this.chanhDienFacadeGroup`) at local (x = +13.0, z = +7.2) => world (36.0, 0, 8.2),
-    // aligned dead-center with the paved Right Side Path (33.8..38.2) at the bottom-right corner of Chánh Điện!
+    // END-OF-ROAD LEFT-TURN COVERED SHOE-REMOVAL VERANDA & CARVED WOODEN ENTRANCE DOOR INTO CHÁNH ĐIỆN
+    // Mounted on `g` (world origin (23, 0, 1)) at local (12.2, 0, -15.5) => world (35.2, 0, -14.5),
+    // facing East (+X) directly onto the cool tree-shaded end-of-road souvenir plaza ("đi xuống cuối đường rồi rẽ vào, bỏ dép bên ngoài mới vào chánh điện")!
     const rightCornerGate = new THREE.Group();
-    rightCornerGate.position.set(13.0, 0, 7.2);
+    rightCornerGate.position.set(12.2, 0, -15.5);
+    rightCornerGate.rotation.y = Math.PI * 0.5; // Local +Z faces East (+X) toward the straight shaded lane x = 40.5!
 
-    // Connecting yellow-ochre masonry wing joining flush with the bottom-right corner of Chánh Điện
-    const rcWingBody = new THREE.Mesh(new THREE.BoxGeometry(3.8, 5.2, 4.4), M.goldWall);
-    rcWingBody.position.set(-0.35, 2.6, -1.9);
+    const rcWingBody = new THREE.Mesh(new THREE.BoxGeometry(6.4, 5.2, 2.6), M.goldWall);
+    rcWingBody.position.set(0, 2.6, -1.1);
     rcWingBody.castShadow = true;
     rcWingBody.receiveShadow = true;
     rightCornerGate.add(rcWingBody);
-    const rcWingCornice = new THREE.Mesh(new THREE.BoxGeometry(4.05, 0.28, 4.6), M.creamTrim);
-    rcWingCornice.position.set(-0.35, 5.25, -1.9);
+    const rcWingCornice = new THREE.Mesh(new THREE.BoxGeometry(6.7, 0.28, 2.8), M.creamTrim);
+    rcWingCornice.position.set(0, 5.25, -1.1);
     rightCornerGate.add(rcWingCornice);
 
-    const rcStep = new THREE.Mesh(new THREE.BoxGeometry(3.8, 0.14, 3.2), M.stoneLight);
-    rcStep.position.set(0, 0.07, 0.4);
+    // Wide terracotta-tiled Shoe-Removal Veranda ("Hiên Để Giày Dép Bên Ngoài Trước Cửa Chánh Điện")
+    const rcStep = new THREE.Mesh(
+      new THREE.BoxGeometry(6.6, 0.16, 3.4),
+      new THREE.MeshStandardMaterial({ color: 0xC8734F, roughness: 0.65 })
+    );
+    rcStep.position.set(0, 0.08, 1.45);
     rcStep.receiveShadow = true;
     rightCornerGate.add(rcStep);
 
-    for (const px of [-1.45, 1.45]) {
-      const pier = new THREE.Mesh(new THREE.BoxGeometry(0.62, 4.1, 0.68), M.goldWall);
-      pier.position.set(px, 2.05, 0.65);
+    for (const px of [-2.45, 2.45]) {
+      const pier = new THREE.Mesh(new THREE.BoxGeometry(0.54, 4.1, 0.58), M.goldWall);
+      pier.position.set(px, 2.05, 0.25);
       pier.castShadow = true;
       rightCornerGate.add(pier);
-      const col = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.19, 3.65, 12), M.redColumn);
-      col.position.set(px * 0.82, 1.9, 0.98);
+      const col = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.18, 3.65, 12), M.redColumn);
+      col.position.set(px, 1.95, 2.75);
       rightCornerGate.add(col);
-      const cap = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.18, 0.52), M.goldAccent);
-      cap.position.set(px * 0.82, 3.8, 0.98);
+      const cap = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.18, 0.48), M.goldAccent);
+      cap.position.set(px, 3.82, 2.75);
       rightCornerGate.add(cap);
     }
 
-    const rcArch = new THREE.Mesh(new THREE.TorusGeometry(1.18, 0.16, 8, 18, Math.PI), M.creamTrim);
-    rcArch.position.set(0, 3.35, 0.72);
-    rightCornerGate.add(rcArch);
+    // Framed Double-Leaf Carved Wooden Temple Doors ("Cửa Gỗ Bức Bàn Mở Cánh") + Wooden Threshold Sill
+    const doorWoodMat = new THREE.MeshStandardMaterial({
+      color: 0x7A421E,
+      emissive: 0x1E0D04,
+      map: this.woodGrainTex,
+      roughness: 0.48
+    });
+    const doorCarvedMat = new THREE.MeshStandardMaterial({
+      color: 0x9C582B,
+      emissive: 0x241005,
+      roughness: 0.44
+    });
+    const doorSill = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.14, 0.28), doorWoodMat);
+    doorSill.position.set(0, 0.23, 0.24);
+    rightCornerGate.add(doorSill);
+    const doorFrameTop = new THREE.Mesh(new THREE.BoxGeometry(3.5, 0.34, 0.34), doorWoodMat);
+    doorFrameTop.position.set(0, 3.68, 0.24);
+    rightCornerGate.add(doorFrameTop);
 
-    // Dark recessed interior vestibule corridor behind the bottom-right archway
-    const rcDarkPortal = new THREE.Mesh(
-      new THREE.BoxGeometry(2.35, 3.45, 1.6),
-      new THREE.MeshStandardMaterial({ color: 0x1A0D07, roughness: 0.85 })
+    for (const side of [-1, 1]) {
+      const jamb = new THREE.Mesh(new THREE.BoxGeometry(0.24, 3.55, 0.32), doorWoodMat);
+      jamb.position.set(side * 1.62, 1.9, 0.24);
+      rightCornerGate.add(jamb);
+
+      // Open double wooden door leaves ("thượng song hạ bản" — solid carved bottom + lattice top)
+      const leafPiv = new THREE.Group();
+      leafPiv.position.set(side * 1.48, 0.24, 0.32);
+      leafPiv.rotation.y = side * 1.12;
+      const lowerLeaf = new THREE.Mesh(new THREE.BoxGeometry(1.38, 1.45, 0.08), doorWoodMat);
+      lowerLeaf.position.set(-side * 0.69, 0.72, 0);
+      leafPiv.add(lowerLeaf);
+      const lowerInset = new THREE.Mesh(new THREE.BoxGeometry(1.06, 1.05, 0.1), doorCarvedMat);
+      lowerInset.position.set(-side * 0.69, 0.72, 0);
+      leafPiv.add(lowerInset);
+      const topLeafRail = new THREE.Mesh(new THREE.BoxGeometry(1.38, 0.2, 0.08), doorWoodMat);
+      topLeafRail.position.set(-side * 0.69, 3.15, 0);
+      leafPiv.add(topLeafRail);
+      for (const edge of [-1, 1]) {
+        const stile = new THREE.Mesh(new THREE.BoxGeometry(0.12, 1.85, 0.08), doorWoodMat);
+        stile.position.set(-side * 0.69 + edge * 0.63, 2.32, 0);
+        leafPiv.add(stile);
+      }
+      for (let sb = -2; sb <= 2; sb++) {
+        const spindle = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 1.62, 8), M.goldAccent);
+        spindle.position.set(-side * 0.69 + sb * 0.22, 2.32, 0);
+        leafPiv.add(spindle);
+      }
+      rightCornerGate.add(leafPiv);
+    }
+
+    // Warm amber-lit temple interior vestibule portal right inside the open wooden doors
+    const rcInnerVestibule = new THREE.Mesh(
+      new THREE.BoxGeometry(3.02, 3.36, 0.28),
+      new THREE.MeshStandardMaterial({
+        color: 0x2B1509,
+        emissive: 0x3A1B08,
+        roughness: 0.78
+      })
     );
-    rcDarkPortal.position.set(0, 1.75, -0.2);
-    rightCornerGate.add(rcDarkPortal);
+    rcInnerVestibule.position.set(0, 1.9, 0.22);
+    rightCornerGate.add(rcInnerVestibule);
+    const rcInnerCarpet = new THREE.Mesh(
+      new THREE.PlaneGeometry(1.55, 0.95),
+      new THREE.MeshStandardMaterial({ color: 0x8F1D18, roughness: 0.85 })
+    );
+    rcInnerCarpet.rotation.x = -Math.PI / 2;
+    rcInnerCarpet.position.set(0, 0.168, 0.62);
+    rightCornerGate.add(rcInnerCarpet);
 
-    const rcCanopyRoof = makeHippedRoofMesh(4.4, 3.2, 1.25, M.roofTile);
-    rcCanopyRoof.position.set(0, 4.72, 0.45);
+    // 2 Multi-Tier Wooden Shoe Racks + Coir Mat + Neat Pairs of Sandals/Slippers OUTSIDE on Veranda!
+    const sandalPalette = [0xC84B31, 0x295F8A, 0xD9A441, 0x3D6E52, 0xE6DAC3, 0x7A3E2E];
+    const coirMat = new THREE.Mesh(
+      new THREE.BoxGeometry(2.2, 0.025, 0.85),
+      new THREE.MeshStandardMaterial({ color: 0x9E7543, roughness: 0.92 })
+    );
+    coirMat.position.set(0, 0.175, 1.18);
+    rightCornerGate.add(coirMat);
+
+    for (const rx of [-2.05, 2.05]) {
+      const rack = new THREE.Group();
+      rack.position.set(rx, 0.16, 1.35);
+      rack.rotation.y = rx < 0 ? 0.22 : -0.22;
+      for (const lx of [-0.68, 0.68]) {
+        for (const lz of [-0.18, 0.18]) {
+          const rLeg = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.78, 0.05), doorWoodMat);
+          rLeg.position.set(lx, 0.39, lz);
+          rack.add(rLeg);
+        }
+      }
+      for (let tier = 0; tier < 3; tier++) {
+        const ty = 0.14 + tier * 0.24;
+        const shelf = new THREE.Mesh(new THREE.BoxGeometry(1.45, 0.03, 0.4), doorWoodMat);
+        shelf.position.set(0, ty, 0);
+        rack.add(shelf);
+        for (let p = 0; p < 4; p++) {
+          const sx = -0.48 + p * 0.32;
+          const sMat = new THREE.MeshStandardMaterial({
+            color: sandalPalette[(tier * 4 + p + (rx > 0 ? 2 : 0)) % sandalPalette.length],
+            roughness: 0.65
+          });
+          for (const f of [-0.052, 0.052]) {
+            const sole = new THREE.Mesh(new THREE.BoxGeometry(0.082, 0.024, 0.21), sMat);
+            sole.position.set(sx + f, ty + 0.026, 0);
+            rack.add(sole);
+          }
+        }
+      }
+      rightCornerGate.add(rack);
+    }
+
+    const rcCanopyRoof = makeHippedRoofMesh(7.2, 4.2, 1.35, M.roofTile);
+    rcCanopyRoof.position.set(0, 4.55, 1.45);
     rightCornerGate.add(rcCanopyRoof);
 
     const rcSign = new THREE.Mesh(
-      new THREE.BoxGeometry(3.35, 0.62, 0.12),
+      new THREE.BoxGeometry(5.2, 0.68, 0.12),
       new THREE.MeshStandardMaterial({
-        map: makeTextTex('LỐI VÀO CHÍNH ĐIỆN · HÀNH LANG PHẢI →', {
-          w: 960,
+        map: makeTextTex('CỬA VÀO CHÁNH ĐIỆN · VUI LÒNG BỎ GIÀY DÉP BÊN NGOÀI', {
+          w: 1280,
           h: 180,
           bg: '#4A150D',
           border: '#E5B23D',
           color: '#FFE594',
-          size: 42
+          size: 38
         }),
         roughness: 0.35
       })
     );
-    rcSign.position.set(0, 4.02, 1.08);
+    rcSign.position.set(0, 3.56, 2.98);
     rightCornerGate.add(rcSign);
 
-    const rcGlow = new THREE.PointLight(0xFFC96B, 2.2, 8.5);
-    rcGlow.position.set(0, 3.2, 1.2);
+    const rcGlow = new THREE.PointLight(0xFFC96B, 2.2, 9.5);
+    rcGlow.position.set(0, 3.3, 1.8);
     rightCornerGate.add(rcGlow);
 
     const rcHit = new THREE.Mesh(
-      new THREE.BoxGeometry(3.4, 4.2, 2.4),
+      new THREE.BoxGeometry(5.6, 4.4, 3.4),
       new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false })
     );
-    rcHit.position.set(0, 2.1, 0.6);
+    rcHit.position.set(0, 2.2, 1.2);
     rcHit.userData.doorSide = 'right';
     rightCornerGate.add(rcHit);
     g.add(rightCornerGate);
@@ -4974,14 +5132,14 @@ export class VinhTrang3DWorld {
   }
 
   buildVietnameseGroceryHouse() {
-    // Full Vietnamese brick-and-mortar Grocery House ("NHÀ TẠP HÓA VĨNH TRÀNG") beside Cổng Phụ
-    // + Outdoor Sidewalk Ice-Cream / Cold Coconut Cart outside Cổng Phụ (image_bb72a8b0.png!)
+    // Cool Tree-Shaded End-of-Road Grocery & Buddhist Souvenir Shophouse ("TIỆM TẠP HÓA & LƯU NIỆM CUỐI ĐƯỜNG MÁT RƯỢI")
+    // Placed down at the shaded end of the straight lane from Cổng Phụ Tịnh Độ Huyền Môn (x = 48.6, z = -17.5), right across from the Chánh Điện entrance veranda!
     const M = this.MAT;
     const house = new THREE.Group();
-    house.position.set(48.6, 0, 36.0);
-    house.rotation.y = -Math.PI * 0.5; // Front open shutter faces -X onto the Cổng Phụ entry road
+    house.position.set(48.6, 0, -17.5);
+    house.rotation.y = -Math.PI * 0.5; // Front open shutter faces -X onto the shaded end-of-road plaza
     house.userData.stallType = 'am_thuc_chay';
-    house.userData.stallTitle = 'Nhà Tạp Hóa Cổng Chùa Vĩnh Tràng';
+    house.userData.stallTitle = 'Tiệm Tạp Hóa · Lưu Niệm Cuối Đường Mát';
 
     const masonryMat = new THREE.MeshStandardMaterial({ color: 0xEFE1B8, map: this.limeWallTex, roughness: 0.72 });
     const trimMat = new THREE.MeshStandardMaterial({ color: 0xD7C192, roughness: 0.68 });
@@ -5142,13 +5300,13 @@ export class VinhTrang3DWorld {
     const signBoard = new THREE.Mesh(
       new THREE.BoxGeometry(8.6, 0.88, 0.14),
       new THREE.MeshStandardMaterial({
-        map: makeTextTex('NHÀ TẠP HÓA VĨNH TRÀNG · NƯỚC GIẢI KHÁT · NHANG ĐÈN', {
+        map: makeTextTex('TIỆM TẠP HÓA · ĐỒ LƯU NIỆM & NƯỚC MÁT CUỐI ĐƯỜNG', {
           w: 1600,
           h: 180,
           bg: '#FFF3D4',
           border: '#1C5A34',
           color: '#9E241C',
-          size: 46
+          size: 44
         }),
         roughness: 0.38
       })
@@ -5168,10 +5326,55 @@ export class VinhTrang3DWorld {
     this.stallAnchors.push(house);
     this.stallClickTargets.push(counter, awning, signBoard, fridgeBody, trigRing, mainRoof);
 
-    // Physical house footprint collider (leaves x < 45.2 roadway completely open!)
-    this.addRectObstacle(45.6, 53.2, 30.8, 41.0);
+    // Physical house footprint collider at end of road (leaves x < 45.2 roadway & turn plaza completely open!)
+    this.addRectObstacle(45.6, 53.2, -22.8, -12.2);
 
-    // Secondary authentic ice-cream / cold-drinks cart just outside Cổng Phụ (image_bb72a8b0.png right edge!)
+    // End-of-Lane Shaded Buddhist Souvenir & Cold Sugarcane Kiosk facing straight South (+Z) up the Tịnh Độ Huyền Môn road!
+    const souvenirKiosk = new THREE.Group();
+    souvenirKiosk.position.set(40.5, 0, -26.4);
+    souvenirKiosk.userData.stallType = 'phap_khi';
+    souvenirKiosk.userData.stallTitle = 'Quầy Lưu Niệm Phật Giáo · Chuỗi Hạt & Quà Mỹ Tho';
+    const skRoof = makeHippedRoofMesh(8.4, 4.2, 1.25, awningMat);
+    skRoof.position.set(0, 3.45, 0);
+    skRoof.castShadow = true;
+    souvenirKiosk.add(skRoof);
+    for (const px of [-3.6, 0, 3.6]) {
+      const pCol = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.09, 3.1, 8), woodMat);
+      pCol.position.set(px, 1.55, 1.55);
+      souvenirKiosk.add(pCol);
+    }
+    const skCounter = new THREE.Mesh(new THREE.BoxGeometry(6.8, 0.98, 0.95), woodMat);
+    skCounter.position.set(0, 0.49, 0.65);
+    souvenirKiosk.add(skCounter);
+    for (let si = -3; si <= 3; si++) {
+      const disp = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.14, 0.16, 0.26, 10),
+        new THREE.MeshStandardMaterial({ color: si % 2 === 0 ? 0xD99B26 : 0xB83B28, roughness: 0.4 })
+      );
+      disp.position.set(si * 0.85, 1.12, 0.65);
+      souvenirKiosk.add(disp);
+    }
+    const skSign = new THREE.Mesh(
+      new THREE.BoxGeometry(7.6, 0.84, 0.12),
+      new THREE.MeshStandardMaterial({
+        map: makeTextTex('QUẦY LƯU NIỆM PHẬT GIÁO · TRÀNG HẠT · TƯỢNG NHỎ · NƯỚC MÁT', {
+          w: 1600,
+          h: 180,
+          bg: '#1E5B3A',
+          border: '#FFD875',
+          color: '#FFF8E7',
+          size: 40
+        }),
+        roughness: 0.36
+      })
+    );
+    skSign.position.set(0, 2.95, 1.85);
+    souvenirKiosk.add(skSign);
+    this.exteriorGroup.add(souvenirKiosk);
+    this.stallClickTargets.push(skCounter, skSign, skRoof);
+    this.addRectObstacle(36.6, 44.4, -28.4, -24.8);
+
+    // Secondary authentic ice-cream / cold-drinks cart just outside Cổng Phụ
     const cart = new THREE.Group();
     cart.position.set(46.2, 0, 44.8);
     cart.rotation.y = -Math.PI * 0.5;
@@ -5204,11 +5407,19 @@ export class VinhTrang3DWorld {
 
     this.stallTriggers.push(
       {
-        x: 43.2,
-        z: 36.0,
-        radius: 6.5,
+        x: 42.6,
+        z: -17.5,
+        radius: 6.8,
         stallType: 'am_thuc_chay',
-        title: 'Nhà Tạp Hóa Cổng Chùa Vĩnh Tràng',
+        title: 'Tiệm Tạp Hóa · Lưu Niệm Cuối Đường Mát',
+        ring: trigRing
+      },
+      {
+        x: 40.5,
+        z: -23.0,
+        radius: 5.5,
+        stallType: 'phap_khi',
+        title: 'Quầy Lưu Niệm Phật Giáo · Quà Chùa Vĩnh Tràng',
         ring: trigRing
       },
       {
@@ -6118,13 +6329,16 @@ export class VinhTrang3DWorld {
     midHedge.position.set(-10.5, 0.325, 16.5);
     this.exteriorGroup.add(midHedge);
 
-    // 3. RIGHT (East) Side Garden Pathway: Ordered Bougainvillea Planters strictly along pathway curb (no scattered yard clutter)
+    // 3. Straight Cool Tree-Shaded Lane (x = 40.5, z = +36 -> -24): Bougainvillea planters lining outer curbs (35.2 & 45.4)
     const bougCoords = [
-      [33.8, 29.8, 0.92],
-      [33.8, 18.2, 0.92],
-      [38.2, 28.5, 0.92],
-      [38.2, 21.0, 0.92],
-      [38.2, 14.0, 0.92]
+      [35.2, 29.8, 0.92],
+      [35.2, 18.2, 0.92],
+      [35.2, 4.5, 0.92],
+      [35.2, -6.5, 0.92],
+      [45.4, 28.5, 0.92],
+      [45.4, 15.0, 0.92],
+      [45.4, 1.5, 0.92],
+      [45.4, -9.5, 0.92]
     ];
     const makeOrganicClusterGeo = (rad, seed) => {
       const geo = new THREE.IcosahedronGeometry(rad, 2);
@@ -6208,35 +6422,62 @@ export class VinhTrang3DWorld {
       roughness: 0.22
     });
 
-    for (const sideX of [33.8, 38.2]) {
-      const curb = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.38, 22.0), M.goldLight);
-      curb.position.set(sideX, 0.19, 21.0);
+    // Low stone curbs, globe lamps & lush overarching shade trees lining the Straight Side Lane (x = 35.6 .. 45.4, z = +34 -> -24)
+    for (const [sideX, minZ, maxZ] of [
+      [35.6, -9.8, 34.0],
+      [45.4, -10.5, 34.0]
+    ]) {
+      const len = maxZ - minZ;
+      const midZ = (minZ + maxZ) * 0.5;
+      const curb = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.24, len), M.goldLight);
+      curb.position.set(sideX, 0.12, midZ);
       curb.receiveShadow = true;
       this.exteriorGroup.add(curb);
-
-      const shrubStrip = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.62, 21.5), M.foliageLight);
-      shrubStrip.position.set(sideX + (sideX < 36 ? -0.35 : 0.35), 0.36, 21.0);
-      this.exteriorGroup.add(shrubStrip);
-
-      // Painted crimson-red garden fence railing along Right Side Path (image_97204806.png right middle!)
-      const topBar = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.09, 21.5), redFenceMat);
-      topBar.position.set(sideX, 0.92, 21.0);
-      this.exteriorGroup.add(topBar);
-      for (let z = 11.0; z <= 31.0; z += 2.5) {
-        const post = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.07, 0.95, 8), redFenceMat);
-        post.position.set(sideX, 0.475, z);
-        post.castShadow = true;
-        this.exteriorGroup.add(post);
-      }
     }
 
-    // Yellow square-post white-globe lamps along Right Side Path
+    // Overarching Tropical Shade Trees ("Hàng cây bóng mát rượi dọc lối xuống tiệm lưu niệm cuối đường")
+    for (const [tx, tz, sc] of [
+      [35.0, 24.0, 1.25],
+      [35.0, 10.5, 1.3],
+      [35.0, -2.5, 1.32],
+      [46.2, 31.0, 1.28],
+      [46.2, 18.5, 1.35],
+      [46.2, 5.5, 1.35],
+      [46.2, -6.5, 1.38],
+      [44.2, -23.5, 1.42],
+      [36.2, -22.5, 1.36]
+    ]) {
+      const shTree = new THREE.Group();
+      const trk = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.36, 4.1, 10), M.trunk);
+      trk.position.y = 2.05;
+      trk.castShadow = true;
+      shTree.add(trk);
+      for (const [cx, cy, cz, cr, cMat] of [
+        [0, 4.65, 0, 2.35, M.foliageMid],
+        [-1.15, 4.25, 0.5, 1.75, M.foliageDark],
+        [1.15, 4.35, -0.45, 1.8, M.foliageLight],
+        [0, 5.45, 0, 1.65, M.foliageLight]
+      ]) {
+        const crown = new THREE.Mesh(new THREE.SphereGeometry(cr, 10, 8), cMat);
+        crown.scale.set(1.25, 0.68, 1.22);
+        crown.position.set(cx, cy, cz);
+        crown.castShadow = true;
+        shTree.add(crown);
+      }
+      shTree.position.set(tx, 0, tz);
+      shTree.scale.setScalar(sc);
+      this.exteriorGroup.add(shTree);
+      this.addObstacle(tx, tz, 0.52);
+    }
+
+    // Yellow square-post white-globe lamps along Straight Shaded Lane
     for (const [lx, lz] of [
-      [33.8, 12.5],
-      [33.8, 20.5],
-      [33.8, 28.5],
-      [38.2, 16.5],
-      [38.2, 26.5]
+      [35.6, 26.0],
+      [35.6, 12.0],
+      [35.6, -1.0],
+      [45.4, 22.0],
+      [45.4, 8.0],
+      [45.4, -5.0]
     ]) {
       const ped = new THREE.Mesh(new THREE.BoxGeometry(0.42, 1.35, 0.42), M.goldWall);
       ped.position.set(lx, 0.675, lz);
@@ -6249,30 +6490,35 @@ export class VinhTrang3DWorld {
       this.exteriorGroup.add(globe);
     }
 
-    // Directional signpost at entrance to Right Side Pathway ("↑ LỐI VÀO GÓC DƯỚI BÊN PHẢI")
-    const dirSignGroup = new THREE.Group();
-    dirSignGroup.position.set(38.4, 0, 32.8);
-    const dirPost = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.07, 1.55, 8), M.darkWood);
-    dirPost.position.y = 0.775;
-    dirSignGroup.add(dirPost);
-    const dirBoard = new THREE.Mesh(
-      new THREE.BoxGeometry(2.35, 0.52, 0.1),
-      new THREE.MeshStandardMaterial({
-        map: makeTextTex('↑ LỐI VÀO GÓC DƯỚI BÊN PHẢI', {
-          w: 820,
-          h: 170,
-          bg: '#1C5A34',
-          border: '#FFD875',
-          color: '#FFF6E5',
-          size: 44
-        }),
-        roughness: 0.4
-      })
-    );
-    dirBoard.position.set(0, 1.48, 0);
-    dirBoard.rotation.y = -0.35;
-    dirSignGroup.add(dirBoard);
-    this.exteriorGroup.add(dirSignGroup);
+    // Directional signposts guiding pilgrims straight down the cool lane to the Souvenir Plaza & Left-Turn Chánh Điện Door
+    for (const [sx, sz, rotY, labelTxt] of [
+      [44.6, 30.5, -0.22, '↑ ĐI THẲNG CUỐI ĐƯỜNG: TIỆM LƯU NIỆM & LỐI VÀO CHÁNH ĐIỆN'],
+      [43.8, -8.5, -0.35, '← RẼ TRÁI BỎ GIÀY DÉP VÀO CỬA CHÁNH ĐIỆN · TIỆM TẠP HÓA ↓']
+    ]) {
+      const dirSignGroup = new THREE.Group();
+      dirSignGroup.position.set(sx, 0, sz);
+      const dirPost = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.07, 1.65, 8), M.darkWood);
+      dirPost.position.y = 0.825;
+      dirSignGroup.add(dirPost);
+      const dirBoard = new THREE.Mesh(
+        new THREE.BoxGeometry(3.15, 0.54, 0.1),
+        new THREE.MeshStandardMaterial({
+          map: makeTextTex(labelTxt, {
+            w: 1120,
+            h: 170,
+            bg: '#1C5A34',
+            border: '#FFD875',
+            color: '#FFF6E5',
+            size: 36
+          }),
+          roughness: 0.4
+        })
+      );
+      dirBoard.position.set(0, 1.56, 0);
+      dirBoard.rotation.y = rotY;
+      dirSignGroup.add(dirBoard);
+      this.exteriorGroup.add(dirSignGroup);
+    }
 
     // Outer-right garden remains open beside the side-gate grocery house; no duplicate statue row.
 
@@ -6872,7 +7118,7 @@ export class VinhTrang3DWorld {
       this.loadGLB(STATUE_GLB_PATHS.adida),
       this.loadGLB(STATUE_GLB_PATHS.dilac),
       this.loadGLB(STATUE_GLB_PATHS.phatnam),
-      this.loadGLB(STATUE_GLB_PATHS.bantho),
+      STATUE_GLB_PATHS.bantho ? this.loadGLB(STATUE_GLB_PATHS.bantho) : Promise.resolve(null),
       this.loadGLB(STATUE_GLB_PATHS.quanAm),
       this.loadGLB(ARCH_GLB_PATHS.mat_tien),
       this.loadGLB(ARCH_GLB_PATHS.tam_quan),
@@ -7188,7 +7434,7 @@ export class VinhTrang3DWorld {
         capHacRuaGltf,
         nhangKhoanhDongGltf
       ] = await Promise.all([
-        this.loadGLB(STATUE_GLB_PATHS.thichCaChanhDien),
+        STATUE_GLB_PATHS.thichCaChanhDien ? this.loadGLB(STATUE_GLB_PATHS.thichCaChanhDien) : Promise.resolve(null),
         this.loadGLB(STATUE_GLB_PATHS.hoPhap),
         this.loadGLB(STATUE_GLB_PATHS.tieuDien),
         this.loadGLB(STATUE_GLB_PATHS.toDatMa),
@@ -8293,8 +8539,8 @@ export class VinhTrang3DWorld {
 
     // 2. Rigged GLB Vietnamese Shopkeepers inside Nhà Tạp Hóa & across Bustling Market Street Stalls
     const vendorSpecs = [
-      { x: 47.0, z: 36.2, yaw: -Math.PI * 0.5, charKey: 'nu', tint: [0.86, 0.66, 0.54], hat: false, bag: null, hand: 'quat' },
-      { x: 47.2, z: 33.4, yaw: -Math.PI * 0.5, charKey: 'nam', tint: [0.58, 0.48, 0.36], hat: false, scarf: true },
+      { x: 46.8, z: -17.2, yaw: -Math.PI * 0.5, charKey: 'nu', tint: [0.86, 0.66, 0.54], hat: false, bag: null, hand: 'quat' },
+      { x: 40.5, z: -24.8, yaw: 0, charKey: 'nam', tint: [0.58, 0.48, 0.36], hat: false, scarf: true },
       { x: -12.0, z: 48.0, yaw: 0, charKey: 'nu', tint: [0.88, 0.72, 0.78], hat: true, hand: 'hoa_sen' },
       { x: 7.4, z: 49.6, yaw: 0, charKey: 'nam', tint: [0.54, 0.64, 0.72], hat: false, scarf: true },
       { x: -7.5, z: 65.8, yaw: Math.PI, charKey: 'nu', tint: [0.82, 0.76, 0.56], hat: true, hand: 'quat' },
@@ -8997,9 +9243,8 @@ export class VinhTrang3DWorld {
         this.exitInteriorGradual('right');
       }
     } else {
-      if (pz >= 7.6 && pz <= 10.0 && Math.abs(px - 36.0) <= 1.95) {
-        this.enterInteriorGradual('right');
-      } else if (pz >= 7.8 && pz <= 9.65 && Math.abs(px - 30.2) <= 1.45) {
+      // Stepping onto the End-of-Road Left-Turn Shoe-Removal Veranda & Wooden Door (x = 34.4..37.2, z = -17.2..-11.8)
+      if (pz >= -17.2 && pz <= -11.8 && px >= 34.2 && px <= 37.0) {
         this.enterInteriorGradual('right');
       }
     }
@@ -9325,10 +9570,11 @@ export class VinhTrang3DWorld {
       return true;
     }
     this.lastDoorSide = 'right';
-    // Ground-level Bottom-Right Corner Entrance ("lối ở góc dưới bên phải luôn") at world (36.0, 8.2)
-    const cornerX = 36.0;
-    const cornerApproachZ = 12.0;
-    const dist = Math.hypot(this.playerState.x - cornerX, this.playerState.z - cornerApproachZ);
+    // Walk straight down the cool tree-shaded lane (x = 40.5) to the end of the road (z = -14.5),
+    // then turn LEFT (-X) onto the Shoe-Removal Veranda (x = 37.8 -> 35.6) and step through the wooden door!
+    const verandaApproachX = 38.2;
+    const verandaZ = -14.5;
+    const dist = Math.hypot(this.playerState.x - verandaApproachX, this.playerState.z - verandaZ);
 
     const startApproach = () => {
       this.cancelAutoWalk();
@@ -9336,34 +9582,35 @@ export class VinhTrang3DWorld {
         phase: 'climb_side_door',
         side: 'right',
         timer: 0,
-        duration: 0.72,
+        duration: 0.68,
         startX: this.playerState.x,
         startZ: this.playerState.z,
-        targetX: cornerX,
-        targetZ: 8.6,
+        targetX: 35.6,
+        targetZ: verandaZ,
         onEntered
       };
       this.playerState.moving = true;
-      this.playerState.yaw = Math.PI;
+      this.playerState.yaw = -Math.PI * 0.5;
     };
 
     if (dist > 3.6) {
       const pts = this.buildPerimeterSafeWaypoints(
         this.playerState.x,
         this.playerState.z,
-        cornerX,
-        cornerApproachZ,
+        verandaApproachX,
+        verandaZ,
         [
-          [36.0, 24.0],
-          [36.0, 15.6]
+          [40.5, 32.0],
+          [40.5, 8.0],
+          [40.5, -14.5]
         ],
-        { x: cornerX, y: 2.2, z: 8.2 }
+        { x: 35.2, y: 2.2, z: verandaZ }
       );
       this.autoWalkWaypoints = pts;
       this.autoWalkCallback = () => startApproach();
-      this.autoWalkStation = { name: 'Lối vào Góc Dưới Bên Phải Chùa', key: 'chanh_dien' };
+      this.autoWalkStation = { name: 'Cuối đường rẽ trái · Hiên bỏ dép vào Chánh điện', key: 'chanh_dien' };
       if (this.walkTargetRing) {
-        this.walkTargetRing.position.set(cornerX, 0.06, cornerApproachZ);
+        this.walkTargetRing.position.set(verandaApproachX, 0.06, verandaZ);
         this.walkTargetRing.visible = true;
       }
       this.updateWalkPathLine();
@@ -9386,12 +9633,13 @@ export class VinhTrang3DWorld {
       phase: 'exit_veil',
       side: this.lastDoorSide || 'right',
       timer: 0,
-      duration: 0.28
+      duration: 0.22
     };
     return false;
   }
 
   setInteriorCutaway(enabled = null) {
+    this.onTransitionFade(false);
     const next = enabled !== null ? Boolean(enabled) : !this.interiorCutaway;
     this.interiorCutaway = next;
     for (let i = 0; i < this.cutawayTargets.length; i++) {
@@ -9414,10 +9662,10 @@ export class VinhTrang3DWorld {
     this.cancelEntranceTour();
     this.cancelAutoWalk();
     this.interiorTransition = null;
+    this.onTransitionFade(false);
     if (side === 'left' || side === 'right') {
       this.lastDoorSide = side;
     }
-    const useSide = this.lastDoorSide || 'right';
     this._doorCooldownUntil = performance.now() + 2200;
     this.inInterior = Boolean(enter ?? !this.inInterior);
     if (this.inInterior) {
@@ -9438,10 +9686,10 @@ export class VinhTrang3DWorld {
       this.cameraBaseYaw = startYaw;
     } else {
       this.setTimeOfDay(this.timeOfDay, false);
-      this.playerState.x = 36.0;
-      this.playerState.z = 12.6;
-      this.playerState.yaw = 0;
-      this.cameraBaseYaw = 0;
+      this.playerState.x = 38.8;
+      this.playerState.z = -14.5;
+      this.playerState.yaw = Math.PI * 0.5;
+      this.cameraBaseYaw = Math.PI * 0.5;
     }
     this.cameraAzimuthOffset = 0;
     this.syncPlayerTransform();
@@ -10345,11 +10593,11 @@ export class VinhTrang3DWorld {
         this.setTimeOfDay(this.timeOfDay, false);
         this.playerElevationY = 0;
         this._doorCooldownUntil = performance.now() + 2400;
-        this.playerState.x = 36.0;
-        this.playerState.z = 12.6;
-        this.playerState.yaw = 0;
+        this.playerState.x = 38.8;
+        this.playerState.z = -14.5;
+        this.playerState.yaw = Math.PI * 0.5;
         this.playerState.moving = false;
-        this.cameraBaseYaw = 0;
+        this.cameraBaseYaw = Math.PI * 0.5;
         this.cameraAzimuthOffset = 0;
         this.onInteriorStateChange(false);
         this.onTransitionFade(false);

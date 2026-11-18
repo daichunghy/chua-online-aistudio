@@ -521,7 +521,7 @@ export class ChuaOnlineApp {
           <button type="button" class="walk-chip-btn" data-interior-zone="trai_duong">🍚 Trai Đường</button>
           <button type="button" class="walk-chip-btn" id="btn-interior-cutaway" title="Mặt cắt 3D toàn cảnh mặt bằng Hình Vuông &amp; Hồ Sen Bộ">✂️ Mặt cắt 3D</button>
           <button type="button" class="walk-chip-btn" id="btn-interior-history" title="Đối chiếu tư liệu Tôn tượng Tam Bảo">📜 Tư liệu</button>
-          <button type="button" class="walk-chip-btn interior-exit-chip" id="btn-interior-exit-courtyard">← Ra Lối Góc Phải</button>
+          <button type="button" class="walk-chip-btn interior-exit-chip" id="btn-interior-exit-courtyard">← Ra Hiên Bỏ Dép</button>
         </nav>
 
         <!-- Protagonist Hotspot in Courtyard -->
@@ -1032,12 +1032,34 @@ export class ChuaOnlineApp {
       },
       onTransitionFade: (active) => {
         const veil = document.getElementById('temple-transition-veil');
-        if (veil) veil.classList.toggle('active', Boolean(active));
+        if (this._veilTimer) {
+          clearTimeout(this._veilTimer);
+          this._veilTimer = null;
+        }
+        if (veil) {
+          const isOn = Boolean(active);
+          veil.classList.toggle('active', isOn);
+          if (isOn) {
+            this._veilTimer = setTimeout(() => {
+              veil.classList.remove('active');
+              this._veilTimer = null;
+            }, 520);
+          }
+        }
       },
       onInteriorZoneChange: (zoneKey) => {
         this.highlightInteriorZoneChip(zoneKey);
         if (zoneKey === 'chanh_dien') {
           this.tryAutoDiscoverHeritageById('relic_long_tru', { silent: false });
+          if (!this._shownShoeEtiquetteToast) {
+            this._shownShoeEtiquetteToast = true;
+            this.showToast(
+              'Cửa Gỗ Bức Bàn · Đã Bỏ Dép Bên Ngoài',
+              'Bước qua kệ để dép và ngưỡng cửa gỗ bức bàn phía trước để tiến vào Đại Hùng Bửu Điện lễ Phật.',
+              3800,
+              false
+            );
+          }
         } else if (zoneKey === 'hanh_lang_trai' || zoneKey === 'khu_tho') {
           this.tryAutoDiscoverHeritageById('relic_bat_bo_la_han', { silent: false });
           this.tryAutoDiscoverHeritageById('relic_to_dat_ma', { silent: false });
@@ -1058,7 +1080,7 @@ export class ChuaOnlineApp {
           this.refreshProximityPrompt();
           if (btn) {
             btn.classList.add('active');
-            btn.innerHTML = '← Ra Lối Góc Phải';
+            btn.innerHTML = '← Ra Hiên Bỏ Dép';
           }
           this.highlightInteriorZoneChip(this.world3d?.getInteriorZoneKey() || 'day_ban_tho_phai');
           const cutBtn = document.getElementById('btn-interior-cutaway');
@@ -1069,8 +1091,8 @@ export class ChuaOnlineApp {
           this.updateActionBadges();
           this.playBellTone(216, 2.6);
           this.showToast(
-            'Lối Góc Dưới Bên Phải · Hành Trình Hình Vuông',
-            'Đi thẳng qua Tượng Phật Nghìn Mắt Nghìn Tay & Chỗ Ngủ Của Phật, vòng theo hình vuông quanh Hồ Sen Bộ giữa chùa để lên cạnh trên lễ Phật tại Chính Điện.',
+            'Cửa Gỗ & Hiên Bỏ Dép · Hành Trình Hình Vuông',
+            'Đã cất giày dép trên kệ ngoài hiên! Đi qua Tượng Phật Nghìn Mắt Nghìn Tay & Chỗ Ngủ Của Phật, dạo quanh Hồ Sen Bộ rồi qua cửa gỗ bức bàn vào Chính Điện.',
             5600,
             false
           );
@@ -1079,12 +1101,12 @@ export class ChuaOnlineApp {
           if (cutBtn) cutBtn.classList.remove('active');
           if (btn) {
             btn.classList.remove('active');
-            btn.innerHTML = '🚪 Vào Lối Góc Phải';
+            btn.innerHTML = '🚪 Vào Chánh Điện';
           }
           this.refreshProximityPrompt();
           this.showToast(
-            'Ra lối góc dưới bên phải',
-            'Bạn đã bước ra khỏi hành lang bên phải, trở lại khuôn viên sân chùa.',
+            'Ra Hiên Bỏ Dép · Lối Mát Cuối Đường',
+            'Bạn đã mang lại giày dép và bước ra sân mát cạnh Tiệm Tạp Hóa · Lưu Niệm cuối đường Tịnh Độ Huyền Môn.',
             3200
           );
         }
@@ -1500,9 +1522,9 @@ export class ChuaOnlineApp {
       this.world3d.enterInteriorHall(false, onEntered);
       this.playChanhDienBellCadence({ force: true });
       this.showToast(
-        'Đang tiến tới Lối Vào Góc Dưới Bên Phải Chùa...',
-        'Từ góc dưới bên phải, bạn đi thẳng qua dải bàn thờ Nghìn Mắt Nghìn Tay & Chỗ Ngủ Của Phật rồi dạo quanh Hình Vuông Hồ Sen Bộ.',
-        3600,
+        'Đi thẳng cuối đường Tịnh Độ Huyền Môn → Rẽ trái vào Hiên Bỏ Dép...',
+        'Đi dọc đường rợp bóng cây tới Tiệm Tạp Hóa Lưu Niệm cuối đường, rẽ trái bỏ giày dép bên ngoài cửa gỗ rồi bước vào Chánh Điện.',
+        3800,
         false
       );
     } else {
@@ -5790,15 +5812,15 @@ export class ChuaOnlineApp {
               <circle cx="${mapX(-24.5)}" cy="${mapY(4)}" r="21" fill="#fffdf8" stroke="#5C381F" stroke-width="2"/>
               <text x="${mapX(-24.5)}" y="${mapY(4) + 3}" text-anchor="middle" fill="#5C381F" font-size="8.5" font-weight="800">Phật Di Lặc</text>
 
-              <!-- East Wing -->
-              <rect x="${mapX(44) - 36}" y="${mapY(-18) - 14}" width="72" height="28" rx="7" fill="#8A4A34" stroke="#f6cd72" stroke-width="1.8"/>
-              <text x="${mapX(44)}" y="${mapY(-18) + 4}" text-anchor="middle" fill="#FFF6E5" font-size="8.6" font-weight="800">Giảng Đường</text>
+              <!-- East Wing & Cool End-of-Road Souvenir Lane -->
+              <rect x="${mapX(58.5) - 36}" y="${mapY(-18) - 14}" width="72" height="28" rx="7" fill="#8A4A34" stroke="#f6cd72" stroke-width="1.8"/>
+              <text x="${mapX(58.5)}" y="${mapY(-18) + 4}" text-anchor="middle" fill="#FFF6E5" font-size="8.6" font-weight="800">Giảng Đường</text>
               <rect x="${mapX(58) - 36}" y="${mapY(-12) - 13}" width="72" height="26" rx="7" fill="#3D6B4A" stroke="#FFD875" stroke-width="1.8"/>
               <text x="${mapX(58)}" y="${mapY(-12) + 3}" text-anchor="middle" fill="#FFF6E5" font-size="8.2" font-weight="800">Lầu Trà Thiền</text>
               <rect x="${mapX(59.5) - 38}" y="${mapY(14.5) - 13}" width="76" height="26" rx="7" fill="#7A4924" stroke="#FFD875" stroke-width="1.8"/>
               <text x="${mapX(59.5)}" y="${mapY(14.5) + 3}" text-anchor="middle" fill="#FFF6E5" font-size="8.2" font-weight="800">Nhà Sàn Ăn</text>
-              <rect x="${mapX(48.6) - 34}" y="${mapY(36) - 12}" width="68" height="24" rx="6" fill="#C96F4A" stroke="#fff" stroke-width="1.5"/>
-              <text x="${mapX(48.6)}" y="${mapY(36) + 3}" text-anchor="middle" fill="#FFF6E5" font-size="8.2" font-weight="800">Tạp Hóa</text>
+              <rect x="${mapX(47.8) - 36}" y="${mapY(-17.5) - 12}" width="72" height="24" rx="6" fill="#C96F4A" stroke="#fff" stroke-width="1.5"/>
+              <text x="${mapX(47.8)}" y="${mapY(-17.5) + 3}" text-anchor="middle" fill="#FFF6E5" font-size="8.2" font-weight="800">Tạp Hóa Cuối Đường</text>
 
               <!-- Front Lotus Pond & Gates -->
               <ellipse cx="${mapX(3.5)}" cy="${mapY(33)}" rx="36" ry="16" fill="#3B6E5C" stroke="#8fc9b3" stroke-width="1.6"/>
