@@ -4,7 +4,7 @@
  * Mixin của ChuaOnlineApp: 12 method (showToast … refreshGoalsTrackerHUD).
  * Được gắn vào class trong chua-online-app.mjs qua applyMixins().
  */
-import { stepPlayerMovement, findNearestStation, recordSpiritualMilestone, checkUGCMilestoneUnlock, calculateCartSummary, getLocalDateKey, calculateMeritSummary, TIME_OF_DAY_PRESETS, ensureDailyMissionDate, getDailyMissionsWithProgress, claimDailyMissionReward, getExplorationChaptersStatus, getQuestsWithProgress, getMailboxWithStatus, getPilgrimRankInfo } from './shared.mjs';
+import { stepPlayerMovement, findNearestStation, recordSpiritualMilestone, checkUGCMilestoneUnlock, calculateCartSummary, getLocalDateKey, calculateMeritSummary, TIME_OF_DAY_PRESETS, ensureDailyMissionDate, getDailyMissionsWithProgress, claimDailyMissionReward, getExplorationChaptersStatus, getQuestsWithProgress, getMailboxWithStatus, getPilgrimRankInfo, buildVisitorPresenceSummary } from './shared.mjs';
 
 export const hudNavigationMethods = {
   showToast(title, desc, durationMs = 4500, showCheckinBtn = false) {
@@ -89,17 +89,33 @@ export const hudNavigationMethods = {
     const pinsLayer = document.getElementById('scene-pins-layer');
     const quickDock = document.getElementById('courtyard-quick-dock');
     const topHud = document.getElementById('main-top-hud');
+    const elderDock = document.getElementById('elder-bottom-dock');
+    const softJoystick = document.getElementById('soft-joystick-zone');
     const spiritualBar = document.getElementById('spiritual-actions-bar');
     const goalsTracker = document.getElementById('daily-goals-tracker');
+    const topRightCluster = document.getElementById('hud-topright-cluster');
+    const visitorCounter = document.getElementById('hud-visitor-counter');
+    const visitorPopover = document.getElementById('visitor-community-popover');
     if (shopEl) shopEl.classList.toggle('open', screenName === 'shop');
     if (lectureEl) lectureEl.classList.toggle('open', screenName === 'lecture');
     if (quickDock) quickDock.style.display = isCourtyard ? 'flex' : 'none';
     if (topHud) topHud.style.display = isCourtyard ? 'flex' : 'none';
+    if (elderDock) elderDock.style.display = isCourtyard ? 'flex' : 'none';
+    if (softJoystick) softJoystick.style.display = isCourtyard ? 'flex' : 'none';
     if (spiritualBar) spiritualBar.style.display = isCourtyard ? 'flex' : 'none';
     if (goalsTracker) goalsTracker.style.display = isCourtyard ? 'flex' : 'none';
+    if (topRightCluster) topRightCluster.style.display = isCourtyard ? 'inline-flex' : 'none';
+    if (!isCourtyard) {
+      this.toggleUtilityDrawer?.(false);
+    }
+    if (!isCourtyard && visitorPopover) {
+      visitorPopover.style.display = 'none';
+      visitorCounter?.setAttribute('aria-expanded', 'false');
+    }
     if (pinsLayer && !this.world3d?.insideInterior) {
       pinsLayer.style.display = isCourtyard ? 'block' : 'none';
     }
+    this.syncVisitorPresence?.();
 
     if (screenName !== 'lecture') {
       this.stopLectureSpeech();
@@ -135,6 +151,9 @@ export const hudNavigationMethods = {
   applyElderFontScale(scale, save = true) {
     const valid = ['normal', 'large', 'xlarge'].includes(scale) ? scale : 'normal';
     this.elderFontScale = valid;
+    if (typeof document !== 'undefined') {
+      document.documentElement.setAttribute('data-font-scale', valid);
+    }
     const screenEl = document.getElementById('lecture-screen');
     if (screenEl) {
       screenEl.setAttribute('data-font-scale', valid);
@@ -143,7 +162,10 @@ export const hudNavigationMethods = {
     const incBtn = document.getElementById('btn-lecture-font-inc');
     if (decBtn) decBtn.disabled = valid === 'normal';
     if (incBtn) incBtn.disabled = valid === 'xlarge';
-    if (save) this.saveState();
+    if (save) {
+      this.saveState();
+      this.scheduleCloudSync?.({ profile: true, temple: false });
+    }
   },
 
   stepElderFontScale(delta) {
@@ -346,5 +368,118 @@ export const hudNavigationMethods = {
         this.updateActionBadges();
       });
     });
+  },
+
+  getCurrentVisitorZoneLabel() {
+    if (this.activeScreen === 'lecture') return 'Giảng đường';
+    if (this.activeScreen === 'shop') return 'Cửa hàng';
+    if (this.world3d?.insideInterior) return 'Chánh điện';
+    return 'Sân chùa';
+  },
+
+  renderVisitorCounterHUD() {
+    const summary = buildVisitorPresenceSummary(this.visitorPresenceState, this.visitorClientId);
+    const btn = document.getElementById('hud-visitor-counter');
+    const countEl = document.getElementById('hud-visitor-count');
+    const labelEl = document.getElementById('hud-visitor-label');
+    if (countEl) countEl.textContent = summary.countText;
+    if (labelEl) labelEl.textContent = summary.labelText;
+    if (btn) btn.setAttribute('aria-label', summary.compactAriaLabel);
+
+    const popOnline = document.getElementById('visitor-popover-online');
+    const popToday = document.getElementById('visitor-popover-today');
+    const listEl = document.getElementById('visitor-active-list');
+    if (popOnline) popOnline.textContent = String(summary.onlineCount);
+    if (popToday) popToday.textContent = String(summary.todayVisits);
+
+    if (listEl) {
+      const visible = summary.visitors.slice(0, 8);
+      const hiddenCount = Math.max(0, summary.onlineCount - visible.length);
+      listEl.innerHTML =
+        visible
+          .map(
+            (v) => `
+          <div class="visitor-active-row ${v.isSelf ? 'self' : ''}">
+            <span class="visitor-active-role">${v.flag} ${v.roleLabel}${v.isSelf ? ' (Bạn)' : ''}</span>
+            <span class="visitor-active-zone">${v.zone}</span>
+          </div>`
+          )
+          .join('') +
+        (hiddenCount > 0 ? `<div class="visitor-active-more">+ ${hiddenCount} đồng tu khác đang trực tuyến</div>` : '');
+    }
+  },
+
+  async syncVisitorPresence() {
+    if (!this.visitorClientId || typeof fetch !== 'function') return;
+    try {
+      const resp = await fetch('/api/visitors/presence', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          clientId: this.visitorClientId,
+          nationalityId: this.nationalityId || 'vn',
+          characterModelKey: this.characterModelKey || 'nu',
+          zone: this.getCurrentVisitorZoneLabel()
+        })
+      });
+      if (!resp.ok) return;
+      const data = await resp.json();
+      if (data && typeof data.onlineCount === 'number') {
+        this.visitorPresenceState = data;
+        this.renderVisitorCounterHUD();
+      }
+    } catch {}
+  },
+
+  initVisitorPresence() {
+    this.renderVisitorCounterHUD();
+    if (typeof window === 'undefined') return;
+
+    const connectStream = () => {
+      if (typeof EventSource === 'undefined') return;
+      try {
+        this._visitorEventSource?.close?.();
+        const params = new URLSearchParams({
+          clientId: this.visitorClientId,
+          nationalityId: this.nationalityId || 'vn',
+          charKey: this.characterModelKey || 'nu',
+          zone: this.getCurrentVisitorZoneLabel()
+        });
+        const es = new EventSource(`/api/visitors/stream?${params.toString()}`);
+        this._visitorEventSource = es;
+        es.addEventListener('presence', (evt) => {
+          try {
+            const data = JSON.parse(evt.data);
+            if (data && typeof data.onlineCount === 'number') {
+              this.visitorPresenceState = data;
+              this.renderVisitorCounterHUD();
+            }
+          } catch {}
+        });
+      } catch {}
+    };
+
+    connectStream();
+    this.syncVisitorPresence();
+
+    if (this._visitorHeartbeatTimer) clearInterval(this._visitorHeartbeatTimer);
+    this._visitorHeartbeatTimer = setInterval(() => {
+      this.syncVisitorPresence();
+    }, 25000);
+
+    if (!this._visitorLeaveBound) {
+      this._visitorLeaveBound = true;
+      const sendLeave = () => {
+        try {
+          this._visitorEventSource?.close?.();
+          const payload = JSON.stringify({ clientId: this.visitorClientId });
+          if (navigator.sendBeacon) {
+            navigator.sendBeacon('/api/visitors/leave', new Blob([payload], { type: 'application/json' }));
+          }
+        } catch {}
+      };
+      window.addEventListener('pagehide', sendLeave);
+      window.addEventListener('beforeunload', sendLeave);
+    }
   }
 };

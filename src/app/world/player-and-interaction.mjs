@@ -7,37 +7,64 @@
 import { THREE, PILGRIMAGE_STATIONS, DISCOVERY_ZONES, attachStorePropsToCharacterRig, CHAR_HEIGHTS } from './shared.mjs';
 
 export const playerAndInteractionMethods = {
-  triggerActionAnimation(clipName = 'Vái') {
+  triggerActionAnimation(clipName = 'Vái', opts = {}) {
     const mapName = {
       Vai: 'Vái',
       Vái: 'Vái',
+      vai: 'Vái',
       'Chap tay': 'Chắp tay',
       'Chắp tay': 'Chắp tay',
+      chap_tay: 'Chắp tay',
       'Thap nhang': 'Thắp nhang',
       'Thắp nhang': 'Thắp nhang',
+      thap_nhang: 'Thắp nhang',
       Quy: 'Quỳ',
       Quỳ: 'Quỳ',
+      quy: 'Quỳ',
       'Di bo': 'Di bo',
       'Đi bộ': 'Di bo',
-      Dung: 'Dung'
+      Dung: 'Dung',
+      chup_anh: 'Chụp ảnh',
+      'Chụp ảnh': 'Chụp ảnh',
+      selfie: 'Selfie',
+      Selfie: 'Selfie',
+      tro_chuyen: 'Trò chuyện',
+      'Trò chuyện': 'Trò chuyện',
+      vay_tay: 'Vẫy tay',
+      'Vẫy tay': 'Vẫy tay',
+      quat_mat: 'Ngắm cảnh',
+      'Ngắm cảnh': 'Ngắm cảnh'
     };
     const resolved = mapName[clipName] || 'Vái';
+    const isCustomGesture = ['Chụp ảnh', 'Selfie', 'Trò chuyện', 'Vẫy tay', 'Ngắm cảnh'].includes(resolved);
+    const dur =
+      Number(opts?.duration) ||
+      (resolved === 'Selfie'
+        ? 3.4
+        : resolved === 'Trò chuyện'
+        ? 4.2
+        : resolved === 'Quỳ'
+        ? 3.0
+        : resolved === 'Chụp ảnh'
+        ? 2.8
+        : 2.6);
     this.playerState.pose = resolved;
     this.proceduralPoseState = {
       action: resolved === 'Di bo' || resolved === 'Dung' ? null : resolved,
       timer: 0,
-      duration: resolved === 'Quỳ' ? 3.0 : 2.5
+      duration: dur,
+      partnerNpc: opts?.partnerNpc || null
     };
     if (this.activePlayerRecord) {
-      this.playClipCrossfade(this.activePlayerRecord, resolved, 0.22, true);
+      this.playClipCrossfade(this.activePlayerRecord, isCustomGesture ? 'Dung' : resolved, 0.2, !isCustomGesture);
       clearTimeout(this._poseReturnTimer);
       this._poseReturnTimer = setTimeout(() => {
         if (!this.playerState.moving && this.activePlayerRecord) {
           this.playerState.pose = 'Dung';
-          this.proceduralPoseState.action = null;
+          if (this.proceduralPoseState) this.proceduralPoseState.action = null;
           this.playClipCrossfade(this.activePlayerRecord, 'Dung', 0.25, false);
         }
-      }, 2800);
+      }, Math.round(dur * 1000) + 180);
     }
   },
 
@@ -112,6 +139,50 @@ export const playerAndInteractionMethods = {
     this.renderFrame();
   },
 
+  setTitlePanMode(active) {
+    this._titlePanActive = Boolean(active);
+    if (!this._titlePanActive) {
+      this.syncPlayerTransform();
+    }
+  },
+
+  snapCameraImmediate() {
+    this.syncPlayerTransform();
+    this._camCurrentPos.copy(this._camDesiredPos);
+    this._camCurrentLook.copy(this._camDesiredLook);
+    this._camInitialized = true;
+    this.camera.position.copy(this._camCurrentPos);
+    this.camera.lookAt(this._camCurrentLook);
+  },
+
+  updateCameraDamped(dt = 0.016) {
+    if (this.entranceTour?.active || this.arrivalCutscene?.active) return;
+
+    if (this._titlePanActive && !this.inInterior) {
+      this._titlePanTime = (this._titlePanTime || 0) + dt;
+      const sway = Math.sin(this._titlePanTime * 0.22) * 3.8;
+      const elev = 4.2 + Math.sin(this._titlePanTime * 0.16) * 0.45;
+      this._camDesiredPos.set(40.5 + sway, elev, 52.8);
+      this._camDesiredLook.set(34.0, 4.1, 18.0);
+    } else {
+      this.syncPlayerTransform();
+    }
+
+    if (!this._camInitialized) {
+      this._camCurrentPos.copy(this._camDesiredPos);
+      this._camCurrentLook.copy(this._camDesiredLook);
+      this._camInitialized = true;
+    } else {
+      const posFactor = 1 - Math.exp(-7.5 * Math.min(0.12, dt));
+      const lookFactor = 1 - Math.exp(-8.5 * Math.min(0.12, dt));
+      this._camCurrentPos.lerp(this._camDesiredPos, posFactor);
+      this._camCurrentLook.lerp(this._camDesiredLook, lookFactor);
+    }
+
+    this.camera.position.copy(this._camCurrentPos);
+    this.camera.lookAt(this._camCurrentLook);
+  },
+
   syncPlayerTransform() {
     this.playerContainer.position.set(
       this.playerState.x,
@@ -128,12 +199,12 @@ export const playerAndInteractionMethods = {
       const cutHeight = Math.max(16.0, 26.5 + (this.cameraPitchOffset || 0));
       const focusX = this.playerState.x * 0.22;
       const focusZ = Math.max(-12.0, Math.min(12.0, this.playerState.z * 0.22));
-      this.camera.position.set(
+      this._camDesiredPos.set(
         focusX - Math.sin(cutAngle) * cutDist,
         cutHeight,
         focusZ - Math.cos(cutAngle) * cutDist
       );
-      this.camera.lookAt(focusX, 1.8, focusZ - 1.5);
+      this._camDesiredLook.set(focusX, 1.8, focusZ - 1.5);
       const zKey = this.getInteriorZoneKey();
       if (zKey !== this._lastInteriorZone) {
         this._lastInteriorZone = zKey;
@@ -142,42 +213,61 @@ export const playerAndInteractionMethods = {
       return;
     }
 
+    // Front-facing Selfie Camera Mode (positions camera in front-right of player looking back with scenic temple backdrop)
+    if (this.selfieCamActive) {
+      const pYaw = this.playerState.yaw || 0;
+      const fwdX = Math.sin(pYaw);
+      const fwdZ = Math.cos(pYaw);
+      const rightX = -fwdZ;
+      const rightZ = fwdX;
+      const camX = this.playerState.x + fwdX * 2.25 + rightX * 0.42;
+      const camZ = this.playerState.z + fwdZ * 2.25 + rightZ * 0.42;
+      const baseH = (this.playerElevationY || 0) + 1.66;
+      this._camDesiredPos.set(camX, baseH, camZ);
+      this._camDesiredLook.set(
+        this.playerState.x - fwdX * 0.65,
+        (this.playerElevationY || 0) + 1.46,
+        this.playerState.z - fwdZ * 0.65
+      );
+      return;
+    }
+
     const isAdidaPlaza =
       !this.inInterior &&
       (this.currentStationId === 2 ||
-        Math.hypot(this.playerState.x - 8.5, this.playerState.z - 25.0) < 9.5);
+        Math.hypot(this.playerState.x - -9.5, this.playerState.z - -12.8) < 9.5);
     const isMonumental =
       !this.inInterior &&
       ([2, 3, 8].includes(this.currentStationId) ||
         isAdidaPlaza ||
-        Math.hypot(this.playerState.x - -24.5, this.playerState.z - 22.0) < 8.0 ||
-        Math.hypot(this.playerState.x - -24.5, this.playerState.z - -10.5) < 8.5);
+        Math.hypot(this.playerState.x - -26.5, this.playerState.z - 22.8) < 8.5 ||
+        Math.hypot(this.playerState.x - 14.5, this.playerState.z - -37.2) < 9.0);
 
-    const transitionPull = this.interiorTransition?.phase === 'climb_side_door' ? 2.1 : 0;
+    const transitionPull = this.interiorTransition?.phase === 'climb_side_door' ? 1.8 : 0;
     const baseDist = this.inInterior
-      ? 4.4
-      : (isAdidaPlaza ? 11.2 : isMonumental ? 11.2 : 7.0) - transitionPull;
+      ? 4.35
+      : (isAdidaPlaza ? 9.0 : isMonumental ? 8.6 : 6.6) - transitionPull;
     const camDist = Math.max(2.6, Math.min(18.5, baseDist + (this.cameraZoomOffset || 0)));
     const camHeight = Math.max(
-      1.2,
+      1.35,
       (this.inInterior
-        ? 2.15 + (this.playerElevationY || 0) * 0.9
-        : (isAdidaPlaza ? 2.35 : isMonumental ? 2.15 : 2.1) + (this.playerElevationY || 0) * 0.7) +
+        ? 2.28 + (this.playerElevationY || 0) * 0.9
+        : (isAdidaPlaza ? 2.85 : isMonumental ? 2.8 : 2.72) + (this.playerElevationY || 0) * 0.7) +
         (this.cameraPitchOffset || 0) * 0.55
     );
     const lookY = Math.max(
-      0.8,
+      0.85,
       (this.inInterior
-        ? 2.35 + (this.playerElevationY || 0) * 0.85
+        ? 1.92 + (this.playerElevationY || 0) * 0.85
         : isAdidaPlaza
-        ? 12.0
+        ? 4.6
         : isMonumental
-        ? 7.6
-        : 3.65) -
+        ? 4.2
+        : 1.88) -
         (this.cameraPitchOffset || 0) * 0.65
     );
     const lookAngle = this.cameraBaseYaw + this.cameraAzimuthOffset;
-    const sideOffset = this.inInterior ? 0 : isMonumental ? 0.48 : 0.62;
+    const sideOffset = this.inInterior ? 0 : isMonumental ? 0.28 : 0.30;
     let cx =
       this.playerState.x - Math.sin(lookAngle) * camDist - Math.cos(lookAngle) * sideOffset;
     let cz =
@@ -186,9 +276,8 @@ export const playerAndInteractionMethods = {
       const px = this.playerState.x;
       const pz = this.playerState.z;
       const maxCamX = 31.1;
-      cx = Math.max(-35.6, Math.min(maxCamX, cx));
-      cz = Math.max(-37.2, Math.min(20.05, cz));
-      // Keep camera inside the active gallery corridor or Grand Chánh Điện Hall so walls/doors never occlude altars
+      cx = Math.max(-40.8, Math.min(maxCamX, cx));
+      cz = Math.max(-55.2, Math.min(20.05, cz));
       if (px > 10.9 && px <= 31.1 && cx < 11.15 && Math.sin(lookAngle) > 0.25) {
         cx = 11.15;
       } else if (px < -15.4 && cx > -15.65 && Math.sin(lookAngle) < -0.25) {
@@ -198,12 +287,19 @@ export const playerAndInteractionMethods = {
         cz = -20.15;
       }
     }
-    this.camera.position.set(cx, camHeight, cz);
-    this.camera.lookAt(
-      this.playerState.x + Math.sin(lookAngle) * 12,
+    this._camDesiredPos.set(cx, camHeight, cz);
+    this._camDesiredLook.set(
+      this.playerState.x + Math.sin(lookAngle) * 10.5,
       lookY,
-      this.playerState.z + Math.cos(lookAngle) * 12
+      this.playerState.z + Math.cos(lookAngle) * 10.5
     );
+    if (!this._camInitialized) {
+      this._camCurrentPos.copy(this._camDesiredPos);
+      this._camCurrentLook.copy(this._camDesiredLook);
+      this._camInitialized = true;
+      this.camera.position.copy(this._camCurrentPos);
+      this.camera.lookAt(this._camCurrentLook);
+    }
     if (this.inInterior) {
       const zKey = this.getInteriorZoneKey();
       if (zKey !== this._lastInteriorZone) {
@@ -222,12 +318,12 @@ export const playerAndInteractionMethods = {
       const px = this.playerState.x;
       const pz = this.playerState.z;
       let intPrompt = null;
-      if (Math.hypot(px - 20.4, pz - 6.2) <= 3.4) {
+      if (Math.hypot(px - 20.4, pz - 4.2) <= 3.4) {
         intPrompt = {
           kind: 'nghin_mat_nghin_tay',
           label: '🙏 [E] Chiêm Bái Tượng Phật Nghìn Mắt Nghìn Tay'
         };
-      } else if (Math.hypot(px - 20.4, pz - -6.6) <= 3.4) {
+      } else if (Math.hypot(px - 20.4, pz - -13.4) <= 3.4) {
         intPrompt = {
           kind: 'cho_ngu_cua_phat',
           label: '🪷 [E] Chiêm Bái Chỗ Ngủ Của Phật · Phật Nhập Niết Bàn'
@@ -243,16 +339,36 @@ export const playerAndInteractionMethods = {
           label: '🥁 [E] Khởi Hồi Trống Bát Nhã Ngoài Cửa Chánh Điện'
         };
       } else if (
-        Math.hypot(px - -29.8, pz - -7.2) <= 3.4 ||
-        Math.hypot(px - -29.8, pz - 7.2) <= 3.2
+        Math.hypot(px - -27.2, pz - -7.8) <= 3.4 ||
+        Math.hypot(px - -27.2, pz - 7.8) <= 3.2
       ) {
         intPrompt = {
           kind: 'chanh_dien_bell',
           label: '🔔 [E] Thỉnh Đại Hồng Chung · Chuông Gia Trì Chánh Điện'
         };
+      } else if (px >= 12.2 && px <= 19.0 && pz >= 18.2) {
+        intPrompt = {
+          kind: 'exit_interior',
+          exitSide: 'right',
+          label: '🚪 [E] Ra ngoài sân chùa (Cửa hông)'
+        };
+      } else if (px >= 12.2 && px <= 22.0 && pz <= -51.5) {
+        intPrompt = {
+          kind: 'exit_interior',
+          exitSide: 'north_buddha',
+          label: '🚪 [E] Ra vườn Phật Nằm & Bảo Tháp'
+        };
+      } else if (px <= -36.5 && Math.abs(pz) <= 5.5) {
+        intPrompt = {
+          kind: 'exit_interior',
+          exitSide: 'front_tam_quan',
+          label: '🚪 [E] Ra sân trước Chánh Điện'
+        };
       }
-      const prevKey = this.nearestInteractPrompt ? this.nearestInteractPrompt.kind : '';
-      const nextKey = intPrompt ? intPrompt.kind : '';
+      const prevKey = this.nearestInteractPrompt
+        ? `${this.nearestInteractPrompt.kind}:${this.nearestInteractPrompt.exitSide || ''}`
+        : '';
+      const nextKey = intPrompt ? `${intPrompt.kind}:${intPrompt.exitSide || ''}` : '';
       if (prevKey !== nextKey) {
         this.nearestInteractPrompt = intPrompt;
         this.onInteractProximity(intPrompt);
@@ -320,6 +436,19 @@ export const playerAndInteractionMethods = {
       }
     }
     if (!interactPrompt) {
+      if (
+        this.playerState.x >= 18.0 &&
+        this.playerState.x <= 28.0 &&
+        this.playerState.z >= 7.2 &&
+        this.playerState.z <= 14.5
+      ) {
+        interactPrompt = {
+          kind: 'enter_chanh_dien_front',
+          label: '🚪 [E] Vào Chánh Điện (Cửa Trước)'
+        };
+      }
+    }
+    if (!interactPrompt) {
       const bellDist = Math.hypot(this.playerState.x - -44.0, this.playerState.z - -56.0);
       if (bellDist <= 7.5) {
         interactPrompt = {
@@ -383,6 +512,7 @@ export const playerAndInteractionMethods = {
       if (Math.hypot(dx, dy) > 6) {
         movedDrag = true;
         this.cancelEntranceTour();
+        this._lastCamDragAt = performance.now();
         this.cameraAzimuthOffset -= dx * 0.0045;
         this.cameraPitchOffset = THREE.MathUtils.clamp(
           (this.cameraPitchOffset || 0) + dy * 0.012,
@@ -472,7 +602,19 @@ export const playerAndInteractionMethods = {
         const hits = raycaster.intersectObjects(this.interiorDoorClickTargets, true);
         if (hits.length > 0) {
           const exitSide = hits[0].object?.userData?.exitSide || 'right';
-          this.exitInteriorGradual(exitSide);
+          const doorSpecs = {
+            right: { x: 15.6, z: 18.6, walkX: 15.6, walkZ: 17.8, label: 'Cửa hông Chánh điện' },
+            north_buddha: { x: 17.3, z: -55.2, walkX: 17.3, walkZ: -52.5, label: 'Cổng cuối hành lang ra vườn tượng' },
+            front_tam_quan: { x: -40.8, z: 0.0, walkX: -37.8, walkZ: 0.0, label: 'Cửa chính mặt tiền' }
+          };
+          const spec = doorSpecs[exitSide] || doorSpecs.right;
+          const distToDoor = Math.hypot(this.playerState.x - spec.x, this.playerState.z - spec.z);
+          if (distToDoor <= 4.2) {
+            this.exitInteriorGradual(exitSide);
+          } else {
+            // Clicking a distant gate/end of corridor walks inside toward it instead of abruptly exiting outside
+            this.walkToPoint(spec.walkX, spec.walkZ, spec.label);
+          }
           return;
         }
       }
@@ -537,6 +679,16 @@ export const playerAndInteractionMethods = {
         }
       }
     } else {
+      if (this.lanternClickTargets?.length) {
+        const hits = raycaster.intersectObjects(this.lanternClickTargets, false);
+        if (hits.length > 0) {
+          const wish = hits[0].object?.userData?.lanternWish;
+          if (wish) {
+            this.onObjectClick('OPEN_LANTERN_WISH', { wish });
+            return;
+          }
+        }
+      }
       if (this.courtyardLeafClickTargets?.length) {
         const visibleLeaves = this.courtyardLeafClickTargets.filter((t) => t.parent?.visible);
         if (visibleLeaves.length) {
@@ -565,6 +717,13 @@ export const playerAndInteractionMethods = {
           return;
         }
       }
+      if (this.frontDoorClickTargets?.length) {
+        const hits = raycaster.intersectObjects(this.frontDoorClickTargets, true);
+        if (hits.length > 0) {
+          this.enterInteriorGradual('front_tam_quan');
+          return;
+        }
+      }
       if (this.sideDoorClickTargets?.length) {
         const hits = raycaster.intersectObjects(this.sideDoorClickTargets, true);
         if (hits.length > 0) {
@@ -575,7 +734,8 @@ export const playerAndInteractionMethods = {
       if (this.mainCompoundClickTargets?.length) {
         const hits = raycaster.intersectObjects(this.mainCompoundClickTargets, true);
         if (hits.length > 0) {
-          this.enterInteriorGradual('right');
+          const preferFront = this.playerState.z > -4.0 && this.playerState.x < 34.0;
+          this.enterInteriorGradual(preferFront ? 'front_tam_quan' : 'right');
           return;
         }
       }
@@ -645,17 +805,23 @@ export const playerAndInteractionMethods = {
         }
       }
       const clamped = this.tryMove(hit.x, hit.z);
-      this.autoWalkWaypoints = this.inInterior
-        ? [{ x: clamped.x, z: clamped.z }]
-        : this.buildPerimeterSafeWaypoints(
-            this.playerState.x,
-            this.playerState.z,
-            clamped.x,
-            clamped.z
-          );
+      const pts = this.computeSmartWaypoints(
+        this.playerState.x,
+        this.playerState.z,
+        clamped.x,
+        clamped.z
+      );
+      this.autoWalkWaypoints = pts;
       this.autoWalkCallback = null;
       this.autoWalkStation = null;
-      this.walkTargetRing.position.set(clamped.x, 0.06, clamped.z);
+      this._stuckTracker = {
+        lastX: this.playerState.x,
+        lastZ: this.playerState.z,
+        timer: 0,
+        rerouted: false
+      };
+      const finalPt = pts[pts.length - 1] || clamped;
+      this.walkTargetRing.position.set(finalPt.x, 0.06, finalPt.z);
       this.walkTargetRing.visible = true;
       this.updateWalkPathLine();
     }

@@ -565,11 +565,11 @@ export const charactersNpcsMethods = {
     const kneelSpots = [
       { charKey: 'nu', x: 21.4, z: 13.4, yaw: Math.PI, tint: [0.76, 0.64, 0.72] },
       { charKey: 'nam', x: 24.6, z: 13.4, yaw: Math.PI, monkTone: 0 },
-      { charKey: 'nu', x: 14.2, z: 17.5, yaw: -Math.PI / 2, tint: [0.80, 0.72, 0.62] },
-      { charKey: 'nam', x: -24.5, z: 17.5, yaw: Math.PI, monkTone: 1 },
+      { charKey: 'nu', x: -9.5, z: -14.0, yaw: Math.PI, tint: [0.80, 0.72, 0.62] },
+      { charKey: 'nam', x: -26.5, z: 21.8, yaw: Math.PI, monkTone: 1 },
       { charKey: 'nu', x: 35.2, z: 22.5, yaw: -Math.PI / 2, tint: [0.85, 0.70, 0.76] },
-      { charKey: 'nam', x: -24.5, z: -10.5, yaw: 0, monkTone: 2 },
-      { charKey: 'nu', x: 22.0, z: -49.5, yaw: Math.PI, tint: [0.68, 0.76, 0.84] }
+      { charKey: 'nam', x: 14.5, z: -37.2, yaw: Math.PI, monkTone: 2 },
+      { charKey: 'nu', x: 14.5, z: -66.0, yaw: Math.PI, tint: [0.68, 0.76, 0.84] }
     ];
     for (let ki = 0; ki < kneelSpots.length; ki++) {
       const ks = kneelSpots[ki];
@@ -599,15 +599,15 @@ export const charactersNpcsMethods = {
       this.kneelingRecords.push(rec);
     }
 
-    // 2. Rigged GLB Vietnamese Shopkeepers inside Nhà Tạp Hóa & across Bustling Market Street Stalls
+    // 2. Rigged GLB Vietnamese Shopkeepers inside walk-in Nhà Lưu Niệm & along East Storefront Sidewalk
     const vendorSpecs = [
-      { x: 53.0, z: -21.2, yaw: -Math.PI * 0.5, charKey: 'nu', tint: [0.86, 0.66, 0.54], hat: false, bag: null, hand: 'quat' },
-      { x: 41.8, z: -35.9, yaw: 0, charKey: 'nam', tint: [0.58, 0.48, 0.36], hat: false, scarf: true },
-      { x: -12.0, z: 48.0, yaw: 0, charKey: 'nu', tint: [0.88, 0.72, 0.78], hat: true, hand: 'hoa_sen' },
-      { x: 7.4, z: 49.6, yaw: 0, charKey: 'nam', tint: [0.54, 0.64, 0.72], hat: false, scarf: true },
-      { x: -7.5, z: 65.8, yaw: Math.PI, charKey: 'nu', tint: [0.82, 0.76, 0.56], hat: true, hand: 'quat' },
-      { x: 16.5, z: 65.8, yaw: Math.PI, charKey: 'nu', tint: [0.64, 0.72, 0.80], hat: false, bag: 'tui_sen' },
-      { x: 40.5, z: 65.8, yaw: Math.PI, charKey: 'nam', tint: [0.60, 0.52, 0.40], hat: true, hand: 'nhang' }
+      { x: 47.0, z: -34.0, yOffset: 0.1, yaw: -Math.PI / 2, charKey: 'nu', tint: [0.86, 0.66, 0.54], hat: false, bag: null, hand: 'quat' },
+      { x: 47.0, z: -31.8, yOffset: 0.1, yaw: -Math.PI / 2, charKey: 'nam', tint: [0.58, 0.48, 0.36], hat: false, scarf: true },
+      { x: 50.4, z: 53.5, yaw: -Math.PI / 2, charKey: 'nu', tint: [0.88, 0.72, 0.78], hat: true, hand: 'quat' },
+      { x: 50.4, z: 63.5, yaw: -Math.PI / 2, charKey: 'nu', tint: [0.82, 0.76, 0.56], hat: true, hand: 'hoa_sen' },
+      { x: 50.8, z: 75.0, yaw: -Math.PI / 2, charKey: 'nu', tint: [0.64, 0.72, 0.80], hat: false, bag: 'tui_sen' },
+      { x: 50.8, z: 89.0, yaw: -Math.PI / 2, charKey: 'nam', tint: [0.54, 0.64, 0.72], hat: false, scarf: true },
+      { x: 50.2, z: 103.5, yaw: -Math.PI / 2, charKey: 'nam', tint: [0.60, 0.52, 0.40], hat: true, hand: 'nhang' }
     ];
     for (let vi = 0; vi < vendorSpecs.length; vi++) {
       const vs = vendorSpecs[vi];
@@ -616,7 +616,7 @@ export const charactersNpcsMethods = {
       if (!rec) continue;
       if (vs.tint) this.recolorPastelDress(rec.root, vs.tint);
       this.equipNpcProps(rec, vs.charKey, h, vs);
-      rec.root.position.set(vs.x, rec.baseY, vs.z);
+      rec.root.position.set(vs.x, rec.baseY + (vs.yOffset || 0), vs.z);
       rec.root.rotation.y = vs.yaw;
       this.playClipCrossfade(rec, 'Dung', 0.1, false);
       rec.npcMeta = {
@@ -629,27 +629,26 @@ export const charactersNpcsMethods = {
       this.vendorNpcRecords.push(rec);
     }
 
-    // 3. Richly Dressed, Logically Animated Pilgrims & Monks (22 active routes with contextual poses & obstacle-clear paths)
+    // 3. Richly Dressed, Logically Animated Pilgrims & Monks (bustling Tết / peak-season flow on the 170m straight approach road!)
     const wp = (x, z, action = 'pass', wait = 0, lookX = null, lookZ = null) => ({ x, z, action, wait, lookX, lookZ });
     const routes = [
-      // --- A. Bustling Market Street & Coach Arrival (Outside Gates z = 44..64) ---
+      // --- A. Bustling Straight Approach Road (Peak-Season / Tết Pilgrims walking from outer parking z=146 straight into Cổng Phụ!) ---
       {
-        charKey: 'nu',
-        tint: [0.78, 0.66, 0.78],
+        charKey: this.charDataCache.nu_ao_lam ? 'nu_ao_lam' : 'nu',
+        isMeshyChar: Boolean(this.charDataCache.nu_ao_lam),
         hat: true,
         bag: 'tui_sen',
         hand: 'hoa_sen',
         speed: 1.08,
         pts: [
-          wp(-22.0, 50.6, 'dung', 2.4, -24.0, 48.2),
-          wp(-11.8, 50.8, 'dung', 2.6, -12.0, 48.2),
-          wp(2.0, 51.0, 'pass'),
-          wp(18.0, 50.8, 'pass'),
-          wp(38.5, 49.5, 'pass'),
-          wp(39.8, 43.0, 'pass'),
-          wp(36.4, 34.0, 'pass'),
-          wp(39.5, 43.5, 'pass'),
-          wp(14.0, 50.8, 'pass')
+          wp(38.6, 52.0, 'pass'),
+          wp(40.2, 41.5, 'pass'),
+          wp(40.6, 32.0, 'pass'),
+          wp(42.8, 41.5, 'pass'),
+          wp(43.2, 86.0, 'pass'),
+          wp(43.0, 128.0, 'pass'),
+          wp(38.2, 128.0, 'pass'),
+          wp(38.4, 84.0, 'pass')
         ]
       },
       {
@@ -659,25 +658,74 @@ export const charactersNpcsMethods = {
         hand: 'nhang',
         speed: 1.12,
         pts: [
-          wp(-6.5, 64.0, 'dung', 2.5, -7.5, 66.8),
-          wp(16.5, 63.8, 'dung', 2.2, 16.5, 66.8),
-          wp(39.5, 63.5, 'pass'),
-          wp(40.5, 51.0, 'pass'),
-          wp(16.0, 63.8, 'pass')
+          wp(42.2, 58.0, 'pass'),
+          wp(41.2, 41.5, 'pass'),
+          wp(39.8, 34.5, 'pass'),
+          wp(43.6, 44.5, 'pass'),
+          wp(44.2, 98.0, 'pass'),
+          wp(44.0, 140.0, 'pass'),
+          wp(39.4, 138.0, 'pass'),
+          wp(39.8, 92.0, 'pass')
         ]
       },
       {
         charKey: 'nu',
         tint: [0.88, 0.68, 0.74],
+        hat: true,
         bag: 'gio_may',
-        hand: 'quat',
-        speed: 1.05,
+        hand: 'hoa_sen',
+        speed: 1.04,
         pts: [
-          wp(52.0, 63.6, 'dung', 2.4, 52.0, 66.8),
-          wp(28.5, 63.6, 'dung', 2.8, 28.5, 66.8),
-          wp(4.5, 63.8, 'dung', 2.2, 4.5, 66.8),
-          wp(-28.0, 63.8, 'pass'),
-          wp(10.0, 63.6, 'pass')
+          wp(37.2, 66.0, 'pass'),
+          wp(39.4, 46.0, 'pass'),
+          wp(40.5, 36.0, 'pass'),
+          wp(42.4, 48.0, 'pass'),
+          wp(42.8, 114.0, 'pass'),
+          wp(37.0, 114.0, 'pass')
+        ]
+      },
+      {
+        charKey: 'tre_em',
+        tint: [0.92, 0.78, 0.62],
+        hand: 'hoa_sen',
+        speed: 1.16,
+        pts: [
+          wp(38.4, 67.4, 'pass'),
+          wp(40.2, 46.8, 'pass'),
+          wp(41.2, 36.8, 'pass'),
+          wp(43.4, 48.8, 'pass'),
+          wp(43.6, 115.2, 'pass'),
+          wp(38.2, 115.2, 'pass')
+        ]
+      },
+      {
+        charKey: this.charDataCache.nam_ao_nau ? 'nam_ao_nau' : 'nam',
+        isMeshyChar: Boolean(this.charDataCache.nam_ao_nau),
+        hand: 'nhang',
+        speed: 1.06,
+        pts: [
+          wp(44.6, 74.0, 'pass'),
+          wp(42.2, 52.0, 'pass'),
+          wp(40.6, 41.5, 'pass'),
+          wp(41.8, 33.5, 'pass'),
+          wp(44.8, 54.0, 'pass'),
+          wp(45.2, 134.0, 'pass'),
+          wp(40.4, 134.0, 'pass')
+        ]
+      },
+      {
+        charKey: this.charDataCache.du_khach ? 'du_khach' : 'nu',
+        isMeshyChar: Boolean(this.charDataCache.du_khach),
+        bag: 'tui_sen',
+        hand: 'quat',
+        speed: 1.10,
+        pts: [
+          wp(36.4, 82.0, 'pass'),
+          wp(37.6, 52.0, 'pass'),
+          wp(40.2, 41.5, 'pass'),
+          wp(43.0, 49.0, 'pass'),
+          wp(43.8, 122.0, 'pass'),
+          wp(36.2, 122.0, 'pass')
         ]
       },
       {
@@ -685,29 +733,129 @@ export const charactersNpcsMethods = {
         tint: [0.64, 0.78, 0.70],
         hat: true,
         bag: 'tui_sen',
-        speed: 1.06,
+        speed: 1.02,
         pts: [
-          wp(59.0, 50.6, 'pass'),
-          wp(50.2, 50.2, 'dung', 2.2, 50.5, 48.2),
-          wp(40.8, 44.5, 'pass'),
-          wp(40.6, 40.5, 'pass'),
-          wp(42.5, 36.2, 'dung', 2.6, 47.0, 36.2),
-          wp(40.6, 41.5, 'pass'),
-          wp(52.0, 49.5, 'pass')
+          wp(41.0, 92.0, 'pass'),
+          wp(40.8, 56.0, 'pass'),
+          wp(40.4, 41.5, 'pass'),
+          wp(42.6, 54.0, 'pass'),
+          wp(48.8, 75.0, 'dung', 2.4, 54.0, 75.0),
+          wp(44.4, 110.0, 'pass'),
+          wp(39.0, 118.0, 'pass')
         ]
       },
       {
         charKey: 'nam',
         tint: [0.48, 0.44, 0.38],
         bag: 'gio_may',
+        speed: 1.08,
+        pts: [
+          wp(43.4, 102.0, 'pass'),
+          wp(42.0, 62.0, 'pass'),
+          wp(40.8, 41.5, 'pass'),
+          wp(43.2, 60.0, 'pass'),
+          wp(49.2, 89.0, 'dung', 2.4, 54.0, 89.0),
+          wp(44.8, 136.0, 'pass'),
+          wp(39.6, 136.0, 'pass')
+        ]
+      },
+      {
+        charKey: this.charDataCache.nu_ao_lam ? 'nu_ao_lam' : 'nu',
+        isMeshyChar: Boolean(this.charDataCache.nu_ao_lam),
+        hat: true,
+        hand: 'hoa_sen',
+        speed: 1.05,
+        pts: [
+          wp(38.0, 112.0, 'pass'),
+          wp(38.8, 68.0, 'pass'),
+          wp(40.2, 44.0, 'pass'),
+          wp(43.2, 68.0, 'pass'),
+          wp(44.2, 146.0, 'pass'),
+          wp(37.6, 146.0, 'pass')
+        ]
+      },
+      {
+        charKey: 'nu',
+        tint: [0.84, 0.72, 0.58],
+        bag: 'tui_sen',
+        hand: 'quat',
+        speed: 1.06,
+        pts: [
+          wp(44.2, 124.0, 'pass'),
+          wp(41.8, 78.0, 'pass'),
+          wp(40.6, 46.0, 'pass'),
+          wp(37.8, 62.0, 'pass'),
+          wp(37.4, 136.0, 'pass'),
+          wp(44.2, 136.0, 'pass')
+        ]
+      },
+      {
+        charKey: 'nam',
+        tint: [0.58, 0.66, 0.72],
+        scarf: true,
+        speed: 1.10,
+        pts: [
+          wp(39.2, 136.0, 'pass'),
+          wp(39.6, 86.0, 'pass'),
+          wp(40.5, 48.0, 'pass'),
+          wp(43.8, 86.0, 'pass'),
+          wp(44.6, 148.0, 'pass')
+        ]
+      },
+      {
+        charKey: 'nu',
+        tint: [0.76, 0.64, 0.80],
+        hat: true,
+        hand: 'hoa_sen',
         speed: 1.04,
         pts: [
-          wp(57.0, 50.8, 'pass'),
-          wp(41.2, 45.2, 'pass'),
-          wp(41.0, 39.5, 'pass'),
-          wp(43.2, 35.8, 'dung', 2.4, 47.0, 35.8),
-          wp(40.8, 42.5, 'pass'),
-          wp(53.0, 50.4, 'pass')
+          wp(45.2, 64.0, 'pass'),
+          wp(48.8, 63.0, 'dung', 2.2, 54.0, 63.0),
+          wp(42.0, 47.0, 'pass'),
+          wp(40.5, 40.5, 'pass'),
+          wp(43.5, 50.0, 'pass'),
+          wp(45.5, 96.0, 'pass')
+        ]
+      },
+      // --- A2. Công viên Vĩnh Tràng Strollers (Right side when looking out from Cổng Phụ!) ---
+      {
+        charKey: 'nu',
+        tint: [0.78, 0.66, 0.78],
+        hat: true,
+        hand: 'quat',
+        speed: 0.96,
+        pts: [
+          wp(24.0, 70.0, 'pass'),
+          wp(8.0, 70.0, 'pass'),
+          wp(8.0, 92.0, 'dung', 2.6, 8.0, 104.0),
+          wp(20.0, 104.0, 'pass'),
+          wp(32.0, 104.0, 'pass'),
+          wp(32.0, 70.0, 'pass')
+        ]
+      },
+      {
+        charKey: 'nam',
+        tint: [0.54, 0.62, 0.56],
+        speed: 0.98,
+        pts: [
+          wp(22.0, 104.0, 'pass'),
+          wp(19.5, 114.0, 'pass'),
+          wp(8.0, 116.5, 'dung', 2.5, 8.0, 104.0),
+          wp(8.0, 138.0, 'pass'),
+          wp(28.0, 138.0, 'pass'),
+          wp(28.0, 104.0, 'pass')
+        ]
+      },
+      {
+        charKey: 'tre_em',
+        tint: [0.72, 0.84, 0.68],
+        speed: 1.12,
+        pts: [
+          wp(32.2, 82.0, 'pass'),
+          wp(32.2, 62.0, 'dung', 2.0, 29.4, 61.5),
+          wp(24.0, 50.0, 'pass'),
+          wp(36.0, 50.0, 'pass'),
+          wp(32.2, 70.0, 'pass')
         ]
       },
 
@@ -782,7 +930,7 @@ export const charactersNpcsMethods = {
           wp(41.2, -14.5, 'pass'),
           wp(37.2, -14.5, 'chap_tay', 3.4, 35.2, -14.5),
           wp(42.2, -14.5, 'pass'),
-          wp(42.0, -31.0, 'dung', 2.6, 41.8, -37.5),
+          wp(42.2, -28.4, 'dung', 2.6, 42.2, -33.5),
           wp(42.4, 4.0, 'pass')
         ]
       },
@@ -794,7 +942,7 @@ export const charactersNpcsMethods = {
         pts: [
           wp(43.4, 24.0, 'pass'),
           wp(43.2, -4.0, 'pass'),
-          wp(43.4, -21.5, 'dung', 2.8, 49.0, -21.5),
+          wp(48.8, -13.3, 'dung', 2.8, 52.4, -13.3),
           wp(40.8, -15.5, 'pass'),
           wp(37.5, -14.5, 'chap_tay', 3.2, 35.2, -14.5),
           wp(43.0, 8.0, 'pass')
@@ -811,13 +959,13 @@ export const charactersNpcsMethods = {
           wp(40.6, -14.5, 'pass'),
           wp(37.4, -14.5, 'chap_tay', 3.0, 35.2, -14.5),
           wp(42.6, -24.0, 'pass'),
-          wp(41.8, -32.2, 'dung', 2.8, 41.8, -37.5),
+          wp(42.2, -28.6, 'dung', 2.8, 42.2, -33.5),
           wp(43.2, -12.0, 'pass'),
           wp(43.0, 14.0, 'pass')
         ]
       },
 
-      // --- C. Central Courtyard, Hồ Sen, Lư Hương & Chánh Điện Plaza ---
+      // --- C. Central Courtyard, Hồ Sen, Lư Hương & Chánh Điện Plaza (Purposeful Photo, Selfie, Chat & Worship!) ---
       {
         charKey: 'nu',
         tint: [0.88, 0.64, 0.76],
@@ -825,11 +973,11 @@ export const charactersNpcsMethods = {
         bag: 'tui_sen',
         speed: 1.05,
         pts: [
-          wp(14.5, 34.0, 'dung', 2.8, 3.5, 33.0),
+          wp(14.5, 34.0, 'chup_anh', 3.4, 3.5, 33.0),
           wp(18.5, 22.0, 'pass'),
-          wp(23.0, 16.5, 'chap_tay', 3.4, 23.0, 12.0),
+          wp(21.2, 17.5, 'chup_anh', 3.6, 23.0, 1.0),
           wp(28.5, 22.0, 'pass'),
-          wp(27.0, 34.5, 'pass')
+          wp(27.0, 34.5, 'quat_mat', 2.8, 23.0, 12.0)
         ]
       },
       {
@@ -839,23 +987,51 @@ export const charactersNpcsMethods = {
         speed: 1.06,
         pts: [
           wp(26.5, 28.0, 'pass'),
-          wp(23.8, 17.0, 'chap_tay', 3.6, 23.0, 12.0),
+          wp(24.5, 17.0, 'chap_tay', 3.6, 23.0, 12.0),
           wp(15.5, 19.0, 'pass'),
-          wp(14.2, 31.5, 'dung', 2.4, 3.5, 33.0),
+          wp(14.2, 31.5, 'quat_mat', 2.8, 3.5, 33.0),
           wp(19.5, 35.5, 'pass')
         ]
       },
+      // Friendly family pair stopping to chat & take a selfie together in the sunny central avenue!
+      {
+        charKey: this.charDataCache.du_khach ? 'du_khach' : 'nu',
+        isMeshyChar: Boolean(this.charDataCache.du_khach),
+        bag: 'tui_sen',
+        speed: 1.02,
+        pts: [
+          wp(16.8, 16.5, 'selfie', 4.2, 23.0, 1.0),
+          wp(14.2, 19.5, 'tro_chuyen', 4.0, 15.8, 19.5),
+          wp(-6.5, 16.5, 'pass'),
+          wp(-9.5, -11.5, 'chup_anh', 3.6, -9.5, -23.5),
+          wp(2.5, 12.5, 'pass')
+        ]
+      },
+      {
+        charKey: 'nam',
+        tint: [0.56, 0.64, 0.72],
+        speed: 1.02,
+        pts: [
+          wp(15.8, 19.5, 'tro_chuyen', 4.4, 14.2, 19.5),
+          wp(18.2, 16.8, 'vay_tay', 3.2, 16.8, 16.5),
+          wp(14.5, 23.0, 'pass'),
+          wp(15.8, 19.5, 'quat_mat', 3.2, 23.0, 1.0)
+        ]
+      },
+      // Monk strolling cleanly along the open central stone avenue (ZERO pond clipping!)
       {
         charKey: this.charDataCache.su_thay ? 'su_thay' : 'nam',
         isMeshyChar: Boolean(this.charDataCache.su_thay),
         monkTone: this.charDataCache.su_thay ? undefined : 1,
         hand: 'beads',
-        speed: 0.96,
+        speed: 0.94,
         pts: [
-          wp(-2.0, 19.0, 'pass'),
-          wp(-2.0, -5.0, 'pass'),
-          wp(23.0, 38.0, 'chap_tay', 3.8, 23.0, 27.0),
-          wp(-2.5, 6.0, 'pass')
+          wp(1.5, 18.0, 'pass'),
+          wp(1.5, -6.0, 'pass'),
+          wp(-9.5, -11.8, 'chap_tay', 3.8, -9.5, -23.5),
+          wp(4.0, -34.0, 'pass'),
+          wp(14.5, -36.5, 'chap_tay', 3.8, 14.5, -49.0),
+          wp(2.0, -14.0, 'pass')
         ]
       },
       {
@@ -866,9 +1042,10 @@ export const charactersNpcsMethods = {
         speed: 1.02,
         pts: [
           wp(-13.5, 32.0, 'pass'),
-          wp(-24.5, 21.8, 'chap_tay', 3.4, -24.5, 4.0),
+          wp(-26.5, 23.2, 'chup_anh', 3.6, -26.5, 4.0),
+          wp(-29.0, 23.5, 'selfie', 3.4, -26.5, 4.0),
           wp(-34.5, 26.0, 'pass'),
-          wp(-20.0, 35.5, 'pass')
+          wp(-20.0, 35.5, 'quat_mat', 2.8, -26.5, 4.0)
         ]
       },
 
@@ -920,9 +1097,9 @@ export const charactersNpcsMethods = {
         speed: 0.96,
         pts: [
           wp(-37.0, -48.0, 'chap_tay', 3.4, -44.0, -56.0),
-          wp(-16.0, -46.0, 'dung', 2.8, -16.0, -56.0),
-          wp(6.0, -45.5, 'pass'),
-          wp(-20.0, -44.5, 'pass')
+          wp(-22.0, -48.0, 'quat_mat', 2.8, -28.0, -58.5),
+          wp(-3.0, -37.0, 'pass'),
+          wp(-20.0, -37.0, 'pass')
         ]
       },
       {
@@ -932,13 +1109,12 @@ export const charactersNpcsMethods = {
         hand: 'nhang',
         speed: 1.02,
         pts: [
-          wp(22.0, -47.5, 'chap_tay', 3.4, 22.0, -58.0),
-          wp(36.0, -45.5, 'pass'),
-          wp(0.0, -45.5, 'pass'),
-          wp(0.0, -10.5, 'pass'),
-          wp(-24.5, -10.5, 'chap_tay', 3.2, -24.5, -24.0),
-          wp(-46.0, -10.5, 'pass'),
-          wp(-46.0, -45.5, 'pass')
+          wp(18.0, -36.8, 'chup_anh', 3.6, 14.5, -49.0),
+          wp(36.0, -37.0, 'pass'),
+          wp(3.0, -36.5, 'pass'),
+          wp(-9.5, -13.5, 'chap_tay', 3.2, -9.5, -23.5),
+          wp(2.0, -14.0, 'pass'),
+          wp(6.0, -36.8, 'pass')
         ]
       },
       {
@@ -947,10 +1123,113 @@ export const charactersNpcsMethods = {
         hat: true,
         speed: 1.06,
         pts: [
-          wp(40.0, -45.5, 'dung', 2.6, 46.0, -56.0),
-          wp(14.0, -45.5, 'pass'),
-          wp(-14.0, -45.5, 'dung', 2.8, -16.0, -56.0),
-          wp(18.0, -45.5, 'pass')
+          wp(36.5, -39.0, 'selfie', 3.6, 14.5, -49.0),
+          wp(14.5, -36.8, 'chup_anh', 3.4, 14.5, -49.0),
+          wp(-1.5, -37.0, 'quat_mat', 2.8, -9.5, -44.5),
+          wp(22.0, -37.0, 'pass')
+        ]
+      },
+      // --- E2. Bustling Rear Courtyard Restroom Crowd (Khu Nhà Vệ Sinh Nam — Nữ sân sau luôn đông khách đoàn!) ---
+      {
+        charKey: 'nu',
+        tint: [0.86, 0.64, 0.72],
+        hat: true,
+        bag: 'tui_sen',
+        speed: 1.02,
+        pts: [
+          wp(39.4, -61.8, 'dung', 3.6, 39.5, -64.5),
+          wp(35.8, -62.2, 'dung', 2.8, 35.5, -64.2),
+          wp(36.8, -56.0, 'tro_chuyen', 3.2, 34.5, -56.0),
+          wp(39.4, -60.5, 'pass')
+        ]
+      },
+      {
+        charKey: this.charDataCache.nu_ao_lam ? 'nu_ao_lam' : 'nu',
+        isMeshyChar: Boolean(this.charDataCache.nu_ao_lam),
+        bag: 'gio_may',
+        hand: 'quat',
+        speed: 1.0,
+        pts: [
+          wp(40.4, -60.2, 'quat_mat', 3.4, 39.5, -64.5),
+          wp(39.6, -61.9, 'dung', 3.2, 39.5, -64.5),
+          wp(35.2, -62.1, 'dung', 2.4, 35.5, -64.2),
+          wp(33.5, -55.0, 'pass'),
+          wp(39.0, -56.5, 'pass')
+        ]
+      },
+      {
+        charKey: 'nam',
+        tint: [0.54, 0.64, 0.74],
+        scarf: true,
+        speed: 1.06,
+        pts: [
+          wp(31.5, -61.8, 'dung', 3.4, 31.5, -64.5),
+          wp(34.6, -62.1, 'dung', 2.6, 35.5, -64.2),
+          wp(29.8, -62.6, 'dung', 2.4, 29.4, -63.2),
+          wp(31.5, -57.5, 'tro_chuyen', 3.0, 33.2, -57.5)
+        ]
+      },
+      {
+        charKey: this.charDataCache.nam_ao_nau ? 'nam_ao_nau' : 'nam',
+        isMeshyChar: Boolean(this.charDataCache.nam_ao_nau),
+        speed: 1.04,
+        pts: [
+          wp(30.6, -59.8, 'dung', 3.0, 31.5, -64.5),
+          wp(31.8, -61.9, 'dung', 2.8, 31.5, -64.5),
+          wp(36.2, -62.0, 'dung', 2.2, 35.5, -64.2),
+          wp(34.0, -51.5, 'pass'),
+          wp(30.5, -55.5, 'pass')
+        ]
+      },
+      {
+        charKey: 'nu',
+        tint: [0.74, 0.82, 0.68],
+        hat: true,
+        speed: 1.08,
+        pts: [
+          wp(38.6, -58.8, 'tro_chuyen', 3.2, 40.0, -59.0),
+          wp(39.8, -61.4, 'dung', 3.0, 39.5, -64.5),
+          wp(35.0, -61.8, 'pass'),
+          wp(27.5, -60.5, 'pass'),
+          wp(35.5, -57.5, 'pass')
+        ]
+      },
+      {
+        charKey: 'tre_em',
+        tint: [0.92, 0.78, 0.64],
+        speed: 1.14,
+        pts: [
+          wp(34.2, -58.5, 'dung', 2.4, 35.5, -64.2),
+          wp(29.6, -61.8, 'dung', 2.4, 29.4, -63.2),
+          wp(35.6, -61.4, 'dung', 2.2, 35.5, -64.2),
+          wp(37.5, -58.2, 'pass')
+        ]
+      },
+      {
+        charKey: 'nam',
+        tint: [0.62, 0.56, 0.48],
+        hat: true,
+        speed: 1.02,
+        pts: [
+          wp(27.2, -58.0, 'pass'),
+          wp(31.4, -61.5, 'dung', 3.2, 31.5, -64.5),
+          wp(34.8, -61.9, 'dung', 2.6, 35.5, -64.2),
+          wp(33.5, -39.5, 'pass'),
+          wp(35.5, -55.0, 'pass')
+        ]
+      },
+      // Visitors walking INSIDE the new Walk-In Nhà Lưu Niệm browsing Kho Quẹt Chay & souvenirs!
+      {
+        charKey: 'nu',
+        tint: [0.84, 0.70, 0.78],
+        bag: 'tui_sen',
+        speed: 0.96,
+        pts: [
+          wp(42.2, -28.0, 'pass'),
+          wp(40.2, -31.8, 'dung', 3.0, 40.2, -36.0),
+          wp(43.8, -32.2, 'dung', 3.2, 46.5, -32.2),
+          wp(40.4, -34.5, 'dung', 2.8, 40.4, -36.2),
+          wp(42.2, -28.2, 'pass')
         ]
       },
 
@@ -962,10 +1241,11 @@ export const charactersNpcsMethods = {
         hand: 'quat',
         speed: 1.04,
         pts: [
-          wp(49.2, 16.0, 'pass'),
-          wp(49.0, -8.0, 'dung', 3.0, 54.8, -21.5),
-          wp(49.2, -29.0, 'dung', 2.4, 60.0, -20.0),
-          wp(49.4, 2.0, 'pass')
+          wp(48.8, 16.0, 'pass'),
+          wp(48.8, -13.3, 'dung', 2.6, 52.4, -13.3),
+          wp(54.2, -18.0, 'dung', 2.8, 64.5, -18.0),
+          wp(48.8, -18.0, 'pass'),
+          wp(48.8, 2.0, 'pass')
         ]
       },
       {
@@ -977,8 +1257,10 @@ export const charactersNpcsMethods = {
         pts: [
           wp(39.0, 4.0, 'pass'),
           wp(39.0, -14.5, 'chap_tay', 2.8, 35.2, -14.5),
-          wp(49.2, -14.0, 'dung', 3.0, 60.0, -14.0),
-          wp(49.0, 10.0, 'pass')
+          wp(48.6, -18.0, 'pass'),
+          wp(55.0, -18.0, 'dung', 3.0, 64.5, -18.0),
+          wp(48.6, -18.0, 'pass'),
+          wp(48.4, 10.0, 'pass')
         ]
       }
     ];
@@ -1037,10 +1319,10 @@ export const charactersNpcsMethods = {
     this.interiorWalkingRecords = [];
 
     const kneelingSpots = [
-      { charKey: 'nu', x: -23.0, z: -2.2, yaw: -Math.PI / 2, tint: [0.84, 0.60, 0.70] },
-      { charKey: 'nam', x: -23.0, z: 2.2, yaw: -Math.PI / 2, monkTone: 0 },
-      { charKey: 'nu', x: 20.4, z: 6.2, yaw: Math.PI / 2, tint: [0.76, 0.78, 0.86] },
-      { charKey: 'tre_em', x: 20.4, z: -6.6, yaw: Math.PI / 2, tint: [0.62, 0.74, 0.84] },
+      { charKey: 'nu', x: -31.8, z: -2.2, yaw: Math.PI / 2, tint: [0.84, 0.60, 0.70] },
+      { charKey: 'nam', x: -31.8, z: 2.2, yaw: Math.PI / 2, monkTone: 0 },
+      { charKey: 'nu', x: 20.4, z: 4.2, yaw: Math.PI / 2, tint: [0.76, 0.78, 0.86] },
+      { charKey: 'tre_em', x: 20.4, z: -13.4, yaw: Math.PI / 2, tint: [0.62, 0.74, 0.84] },
       { charKey: 'nam', x: -2.0, z: -16.8, yaw: Math.PI, monkTone: 1 }
     ];
     for (const sp of kneelingSpots) {
@@ -1104,10 +1386,11 @@ export const charactersNpcsMethods = {
         speed: 0.92,
         pts: [
           wp(16.0, 18.0, 'pass'),
-          wp(18.6, 6.2, 'chap_tay', 3.2, 22.8, 6.2),
-          wp(18.6, -6.6, 'chap_tay', 3.0, 22.8, -6.6),
-          wp(18.6, -19.4, 'chap_tay', 2.8, 22.8, -19.4),
-          wp(16.0, -33.0, 'pass'),
+          wp(18.6, 4.2, 'chap_tay', 3.2, 22.8, 4.2),
+          wp(18.6, -13.4, 'chap_tay', 3.0, 22.8, -13.4),
+          wp(18.6, -31.0, 'chap_tay', 2.8, 22.8, -31.0),
+          wp(18.6, -48.6, 'chap_tay', 2.6, 22.8, -48.6),
+          wp(16.0, -51.5, 'pass'),
           wp(16.0, 4.0, 'pass')
         ]
       },
@@ -1122,7 +1405,13 @@ export const charactersNpcsMethods = {
           wp(13.8, -14.0, 'pass'),
           wp(-12.2, -14.0, 'pass'),
           wp(-12.2, 0.0, 'pass'),
-          wp(-21.0, 0.0, 'chap_tay', 3.6, -33.2, 0.0),
+          wp(-18.4, 0.0, 'pass'),
+          wp(-18.4, -6.4, 'pass'),
+          wp(-34.2, -6.4, 'pass'),
+          wp(-34.2, 0.0, 'chap_tay', 3.8, -25.2, 0.0),
+          wp(-34.2, 6.4, 'pass'),
+          wp(-18.4, 6.4, 'pass'),
+          wp(-18.4, 0.0, 'pass'),
           wp(-12.2, 0.0, 'pass'),
           wp(-12.2, 14.5, 'pass')
         ]
@@ -1146,10 +1435,10 @@ export const charactersNpcsMethods = {
         speed: 0.94,
         pts: [
           wp(17.4, 16.5, 'pass'),
-          wp(18.8, -0.2, 'chap_tay', 3.0, 22.8, -0.2),
-          wp(18.8, -13.0, 'chap_tay', 3.0, 22.8, -13.0),
-          wp(18.8, -25.8, 'chap_tay', 3.0, 22.8, -25.8),
-          wp(17.4, -5.0, 'pass')
+          wp(18.8, -4.6, 'chap_tay', 3.0, 22.8, -4.6),
+          wp(18.8, -22.2, 'chap_tay', 3.0, 22.8, -22.2),
+          wp(18.8, -39.8, 'chap_tay', 3.0, 22.8, -39.8),
+          wp(17.4, -10.0, 'pass')
         ]
       },
       {

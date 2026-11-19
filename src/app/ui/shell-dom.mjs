@@ -147,86 +147,68 @@ export const shellDomMethods = {
 
         <div id="temple-transition-veil"></div>
 
-        <!-- Top Navigation Bar (Matches Reference Image 1) -->
-        <header class="top-hud-bar" id="main-top-hud">
-          <button class="brand-pill" id="btn-brand-home" title="Về sân Chánh điện Chùa Vĩnh Tràng">
-            <svg class="lotus-logo" viewBox="0 0 64 46" fill="none">
-              <path d="M32 4C27 13 24 22 32 34C40 22 37 13 32 4Z" stroke="white" stroke-width="3.2" stroke-linejoin="round"/>
-              <path d="M32 34C22 28 15 19 16 10C23 13 28 20 32 34Z" stroke="white" stroke-width="3.2" stroke-linejoin="round"/>
-              <path d="M32 34C42 28 49 19 48 10C41 13 36 20 32 34Z" stroke="white" stroke-width="3.2" stroke-linejoin="round"/>
-              <path d="M32 35C18 35 8 28 5 19C14 19 23 25 32 35Z" stroke="white" stroke-width="3.2" stroke-linejoin="round"/>
-              <path d="M32 35C46 35 56 28 59 19C50 19 41 25 32 35Z" stroke="white" stroke-width="3.2" stroke-linejoin="round"/>
-              <path d="M12 40H52" stroke="white" stroke-width="3.2" stroke-linecap="round"/>
+        <!-- Live 3D Title Overlay (Calm orbital pan behind title before entering) -->
+        <section id="temple-title-overlay" class="temple-title-overlay" aria-label="Chào mừng đến Chùa Vĩnh Tràng">
+          <div class="title-overlay-inner">
+            <svg class="title-lotus-emblem" viewBox="0 0 64 46" fill="none" aria-hidden="true">
+              <path d="M32 4C27 13 24 22 32 34C40 22 37 13 32 4Z" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round"/>
+              <path d="M32 34C22 28 15 19 16 10C23 13 28 20 32 34Z" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round"/>
+              <path d="M32 34C42 28 49 19 48 10C41 13 36 20 32 34Z" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round"/>
+              <path d="M32 35C18 35 8 28 5 19C14 19 23 25 32 35Z" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round"/>
+              <path d="M32 35C46 35 56 28 59 19C50 19 41 25 32 35Z" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round"/>
+              <path d="M12 41H52" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
             </svg>
-            <span class="brand-main">Chùa Online</span>
-            <span class="brand-divider"></span>
-            <span class="brand-sub">Chùa Vĩnh Tràng</span>
-          </button>
-
-          <nav class="top-nav-group" aria-label="Điều hướng chính">
-            <div class="time-toggle-group" id="time-of-day-switch" role="group" aria-label="Thời gian trong ngày">
-              <button type="button" class="time-toggle-btn ${this.timeOfDay === 'morning' ? 'active' : ''}" data-time-of-day="morning" title="Buổi Sáng (07:30)">🌅 <span>Sáng</span></button>
-              <button type="button" class="time-toggle-btn ${this.timeOfDay === 'midday' ? 'active' : ''}" data-time-of-day="midday" title="Giữa Trưa (12:00)">☀️ <span>Trưa</span></button>
-              <button type="button" class="time-toggle-btn ${this.timeOfDay === 'evening' ? 'active' : ''}" data-time-of-day="evening" title="Buổi Tối Đèn Lồng (19:00)">🕯️ <span>Tối</span></button>
+            <div class="title-eyebrow">Cổ Tự Miền Tây · Mỹ Tho, Tiền Giang</div>
+            <h1 class="title-main-heading">Chùa Vĩnh Tràng</h1>
+            <p class="title-subtitle">Dạo bước thanh tịnh giữa sân cổ tự, lễ Phật, thả hoa đăng và lưu giữ Sổ Hành Hương mỗi ngày.</p>
+            <button type="button" id="btn-title-enter-temple" class="title-cta-primary">
+              Bắt đầu đi chùa
+            </button>
+            <div class="title-secondary-row">
+              <button type="button" id="btn-title-change-char" class="title-cta-secondary">👤 Đổi nhân vật</button>
+              <button type="button" id="btn-title-google-signin" class="title-cta-secondary">☁️ Đăng nhập Google (Lưu Sổ Hành Hương)</button>
             </div>
+            <div class="title-control-hint">Chạm mặt sân hoặc gạt nút trái để đi · Kéo để xoay góc nhìn · Bấm Enter để vào chùa</div>
+          </div>
+        </section>
 
-            <button type="button" class="nav-pill-btn nav-seasonal-pill" id="nav-seasonal-pill" title="Lịch Âm &amp; Lộ trình 30 ngày tu tập">
-              <span>${getTempleSeasonalContext().isFestivalDay ? '🏮' : '📅'}</span>
-              <span>${getTempleSeasonalContext().activeFestival ? getTempleSeasonalContext().activeFestival.name.split('—')[0].trim() : getTempleSeasonalContext().lunarLabel.replace(' (ước lượng)', '')}</span>
-            </button>
-
-            <button class="nav-pill-btn nav-activity-btn" id="nav-btn-activity" title="Điểm danh 7 ngày · Lộ trình 30 ngày · Nhật Ký An Tâm · Hộp thư Nhà Chùa">
-              <span aria-hidden="true">🔔</span>
-              <span>Hành trình</span>
-              <span class="nav-activity-badge" id="nav-activity-badge" style="display:none;">0</span>
-            </button>
-
-            <button class="nav-pill-btn nav-merit-btn" id="nav-btn-merit" title="Sổ Công Đức &amp; Cấp Bậc Hành Hương">
-              <span class="merit-lotus-glyph" id="nav-rank-badge" aria-hidden="true">🪷</span>
-              <span>Công đức: <strong id="nav-merit-count">0</strong></span>
-              <span class="nav-rank-pill" id="nav-rank-xp-chip">0 XP</span>
-            </button>
-
-            <button class="nav-pill-btn" id="nav-btn-explore">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-                <circle cx="12" cy="12" r="9"/>
-                <polygon points="15.5,8.5 13.5,13.5 8.5,15.5 10.5,10.5" fill="currentColor" stroke="none"/>
+        <!-- Minimal 3-Zone Top Bar (Zero pills on metadata, no backdrop-filter) -->
+        <header class="elder-top-hud" id="main-top-hud">
+          <div class="elder-top-left">
+            <button type="button" class="elder-temple-title-btn" id="btn-brand-home" title="Về sân Chánh điện Chùa Vĩnh Tràng">
+              <svg width="24" height="18" viewBox="0 0 64 46" fill="none" aria-hidden="true">
+                <path d="M32 4C27 13 24 22 32 34C40 22 37 13 32 4Z" stroke="#F4D38D" stroke-width="3.2" stroke-linejoin="round"/>
+                <path d="M32 34C22 28 15 19 16 10C23 13 28 20 32 34Z" stroke="#F4D38D" stroke-width="3.2" stroke-linejoin="round"/>
+                <path d="M32 34C42 28 49 19 48 10C41 13 36 20 32 34Z" stroke="#F4D38D" stroke-width="3.2" stroke-linejoin="round"/>
+                <path d="M12 40H52" stroke="#F4D38D" stroke-width="3.2" stroke-linecap="round"/>
               </svg>
-              <span>Khám phá</span>
+              <span>Chùa Vĩnh Tràng</span>
             </button>
+            <span class="elder-temple-meta">
+              · ${getTempleSeasonalContext().activeFestival ? getTempleSeasonalContext().activeFestival.name.split('—')[0].trim() : getTempleSeasonalContext().lunarLabel.replace(' (ước lượng)', '')}
+              · <span id="hud-stamp-summary">Dấu mộc 0/10</span>
+            </span>
+          </div>
 
-            <button class="nav-pill-btn" id="nav-btn-lecture">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M2 4h7a4 4 0 0 1 4 4v13a3 3 0 0 0-3-3H2z"/>
-                <path d="M22 4h-7a4 4 0 0 0-4 4v13a3 3 0 0 1 3-3h8z"/>
-              </svg>
-              <span>Học Phật</span>
-            </button>
-
-            <button class="nav-pill-btn" id="nav-btn-store">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M6 7h12l1.2 12H4.8L6 7z"/>
-                <path d="M9 7V5a3 3 0 0 1 6 0v2"/>
-              </svg>
-              <span>Cửa hàng</span>
-            </button>
-
-            <button type="button" class="nav-pill-btn nav-audio-btn ${this.audioMuted ? 'muted' : ''}" id="nav-btn-audio" title="Điều chỉnh âm thanh &amp; tắt/mở tiếng" aria-expanded="false">
+          <div class="elder-top-actions">
+            <button type="button" class="elder-top-btn ${this.audioMuted ? 'muted' : ''}" id="nav-btn-audio" title="Điều chỉnh âm thanh &amp; tắt/mở tiếng" aria-expanded="false">
               <span id="nav-audio-icon" aria-hidden="true">${this.audioMuted ? '🔇' : '🔊'}</span>
-              <span id="nav-audio-label">${this.audioMuted ? 'Đã tắt tiếng' : 'Âm thanh'}</span>
+              <span class="top-btn-label" id="nav-audio-label">${this.audioMuted ? 'Tắt tiếng' : 'Âm thanh'}</span>
             </button>
 
-            <button class="nav-pill-btn" id="nav-btn-account">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
-                <circle cx="12" cy="8" r="4"/>
-                <path d="M4 20c1.5-4 5-6 8-6s6.5 2 8 6"/>
-              </svg>
-              <span>Tài khoản</span>
+            <button type="button" class="elder-top-btn" id="nav-btn-auth" title="Đăng nhập Google để lưu Sổ Hành Hương">
+              <span aria-hidden="true">👤</span>
+              <span class="top-btn-label" id="nav-auth-label">Đăng nhập</span>
             </button>
-          </nav>
+
+            <button type="button" class="elder-top-btn" id="nav-btn-utility-drawer" title="Mở bảng tiện ích chùa" aria-expanded="false" aria-controls="temple-utility-drawer">
+              <span aria-hidden="true">☰</span>
+              <span class="top-btn-label">Tiện ích</span>
+            </button>
+          </div>
         </header>
 
-        <!-- 3-Channel Audio Mixer Popover -->
+        <!-- 3-Channel Audio Mixer & Ambient Soundscape Popover -->
         <div id="audio-mixer-popover" class="audio-mixer-popover" style="display:none;" role="dialog" aria-label="Điều chỉnh âm thanh Chùa Online">
           <div class="audio-mixer-head">
             <strong>🎧 Âm thanh Chùa Vĩnh Tràng</strong>
@@ -235,12 +217,48 @@ export const shellDomMethods = {
           <button type="button" id="btn-audio-global-mute" class="audio-mute-toggle-btn ${this.audioMuted ? 'muted' : ''}">
             ${this.audioMuted ? '🔇 Đang Tắt toàn bộ tiếng (Bấm để Mở lại)' : '🔊 Đang Bật âm thanh (Bấm để Tắt tiếng)'}
           </button>
+
+          <div class="audio-ambient-section">
+            <div class="audio-ambient-master-row">
+              <div class="audio-ambient-meta">
+                <strong>🪷 Âm thanh không gian chùa</strong>
+                <span id="mixer-ambient-subtitle">Niệm Phật xa &amp; chuông chùa lặp nhẹ nhàng</span>
+              </div>
+              <button
+                type="button"
+                id="btn-mixer-ambient-toggle"
+                class="audio-switch-btn ${this.ambientSettings?.enabled && !this.audioMuted ? 'is-on' : ''}"
+                role="switch"
+                aria-checked="${this.ambientSettings?.enabled && !this.audioMuted ? 'true' : 'false'}"
+                aria-label="Bật hoặc tắt âm thanh không gian chùa"
+              >
+                <span class="ambient-switch-track" aria-hidden="true">
+                  <span class="ambient-switch-thumb"></span>
+                </span>
+              </button>
+            </div>
+            <div class="audio-layer-list">
+              <label class="audio-layer-item">
+                <input type="checkbox" id="chk-ambient-chanting" ${this.ambientSettings?.chanting !== false ? 'checked' : ''} />
+                <span>📿 Niệm Phật từ xa</span>
+              </label>
+              <label class="audio-layer-item">
+                <input type="checkbox" id="chk-ambient-bells" ${this.ambientSettings?.bells !== false ? 'checked' : ''} />
+                <span>🔔 Chuông chùa &amp; chuông gió</span>
+              </label>
+              <label class="audio-layer-item">
+                <input type="checkbox" id="chk-ambient-atmosphere" ${this.ambientSettings?.atmosphere !== false ? 'checked' : ''} />
+                <span>🌿 Gió sân &amp; điện thờ</span>
+              </label>
+            </div>
+          </div>
+
           <div class="audio-slider-row">
-            <label for="slider-ambient-vol"><span>🌿 Tiếng gió &amp; Chuông gió</span><strong id="val-ambient-vol">${Math.round((this.audio?.ambientVolume ?? 0.45) * 100)}%</strong></label>
+            <label for="slider-ambient-vol"><span>🪷 Âm lượng nền (Niệm Phật &amp; Chuông)</span><strong id="val-ambient-vol">${Math.round((this.audio?.ambientVolume ?? 0.45) * 100)}%</strong></label>
             <input type="range" id="slider-ambient-vol" min="0" max="100" value="${Math.round((this.audio?.ambientVolume ?? 0.45) * 100)}" />
           </div>
           <div class="audio-slider-row">
-            <label for="slider-sfx-vol"><span>🔔 Chuông · Mõ · Bước chân · Xe</span><strong id="val-sfx-vol">${Math.round((this.audio?.sfxVolume ?? 0.85) * 100)}%</strong></label>
+            <label for="slider-sfx-vol"><span>🔔 Chuông · Mõ · Bước chân</span><strong id="val-sfx-vol">${Math.round((this.audio?.sfxVolume ?? 0.85) * 100)}%</strong></label>
             <input type="range" id="slider-sfx-vol" min="0" max="100" value="${Math.round((this.audio?.sfxVolume ?? 0.85) * 100)}" />
           </div>
           <div class="audio-slider-row">
@@ -249,154 +267,118 @@ export const shellDomMethods = {
           </div>
         </div>
 
-        <!-- Bottom-Right 4 Spiritual Action Buttons -->
-        <section class="spiritual-actions-bar" id="spiritual-actions-bar" aria-label="Nghi thức tâm linh">
-          <button class="action-square-btn" id="act-le-phat">
-            <span class="action-badge-count" id="badge-le-phat" style="display:none;">0</span>
-            <div class="action-icon">
-              <svg viewBox="0 0 64 52" width="48" height="42" fill="#FFF3DC">
-                <path d="M32 6C27 16 25 25 32 37C39 25 37 16 32 6Z"/>
-                <path d="M29 38C20 31 15 22 17 13C23 17 27 25 29 38Z"/>
-                <path d="M35 38C44 31 49 22 47 13C41 17 37 25 35 38Z"/>
-                <path d="M26 42C14 39 7 31 6 22C14 23 21 30 26 42Z"/>
-                <path d="M38 42C50 39 57 31 58 22C50 23 43 30 38 42Z"/>
-              </svg>
-            </div>
-            <span class="action-label">Lễ Phật</span>
-          </button>
-
-          <button class="action-square-btn" id="act-dang-huong">
-            <span class="action-badge-count" id="badge-dang-huong" style="display:none;">0</span>
-            <div class="action-icon">
-              <svg viewBox="0 0 64 56" width="46" height="42" fill="none">
-                <path d="M24 20C22 14 26 10 24 4" stroke="#FFF3DC" stroke-width="3" stroke-linecap="round"/>
-                <path d="M32 18C30 12 34 8 32 2" stroke="#FFF3DC" stroke-width="3" stroke-linecap="round"/>
-                <path d="M40 20C38 14 42 10 40 4" stroke="#FFF3DC" stroke-width="3" stroke-linecap="round"/>
-                <rect x="16" y="24" width="32" height="5" rx="2.5" fill="#FFF3DC"/>
-                <path d="M18 30H46L43 44C42 47 38 49 32 49C26 49 22 47 21 44L18 30Z" fill="#FFF3DC"/>
-                <path d="M23 48L20 54M41 48L44 54M32 49V54" stroke="#FFF3DC" stroke-width="3.2" stroke-linecap="round"/>
-              </svg>
-            </div>
-            <span class="action-label">Dâng hương</span>
-          </button>
-
-          <button class="action-square-btn" id="act-dang-hoa">
-            <span class="action-badge-count" id="badge-dang-hoa" style="display:none;">0</span>
-            <div class="action-icon">
-              <svg viewBox="0 0 64 56" width="46" height="42" fill="#FFF3DC">
-                <path d="M32 6C28 14 27 22 32 30C37 22 36 14 32 6Z"/>
-                <path d="M30 30C22 26 17 18 19 11C24 14 28 20 30 30Z"/>
-                <path d="M34 30C42 26 47 18 45 11C40 14 36 20 34 30Z"/>
-                <path d="M28 32C18 32 11 26 10 19C17 20 23 24 28 32Z"/>
-                <path d="M36 32C46 32 53 26 54 19C47 20 41 24 36 32Z"/>
-                <path d="M32 33V50M22 42C26 42 30 45 32 49M42 42C38 42 34 45 32 49" stroke="#FFF3DC" stroke-width="3.2" stroke-linecap="round" fill="none"/>
-              </svg>
-            </div>
-            <span class="action-label">Dâng hoa</span>
-          </button>
-
-          <button class="action-square-btn" id="act-niem-phat">
-            <span class="action-badge-count" id="badge-niem-phat" style="display:none;">0</span>
-            <div class="action-icon">
-              <svg viewBox="0 0 64 56" width="46" height="42" fill="#FFF3DC">
-                <circle cx="32" cy="8" r="3.4"/>
-                <circle cx="41" cy="10" r="3.4"/>
-                <circle cx="47" cy="17" r="3.4"/>
-                <circle cx="48" cy="26" r="3.4"/>
-                <circle cx="43" cy="34" r="3.4"/>
-                <circle cx="35" cy="39" r="3.4"/>
-                <circle cx="27" cy="39" r="3.4"/>
-                <circle cx="19" cy="34" r="3.4"/>
-                <circle cx="16" cy="25" r="3.4"/>
-                <circle cx="18" cy="16" r="3.4"/>
-                <circle cx="24" cy="10" r="3.4"/>
-                <path d="M26 42L21 53M28 43L26 54" stroke="#FFF3DC" stroke-width="2.8" stroke-linecap="round"/>
-              </svg>
-            </div>
-            <span class="action-label">Niệm Phật</span>
-          </button>
-        </section>
-
-        <!-- Collapsible Corner Daily Goals & Pilgrim Rank Tracker -->
-        <aside id="daily-goals-tracker" class="daily-goals-tracker ${this.goalsTrackerCollapsed ? 'collapsed' : ''}" aria-label="Mục tiêu hôm nay">
-          <div class="goals-tracker-head">
-            <div class="goals-rank-line">
-              <span id="goals-rank-badge" class="goals-rank-badge">🌱</span>
-              <div class="goals-rank-meta">
-                <div id="goals-rank-title" class="goals-rank-title">Thiện Duyên · Cấp 1</div>
-                <div id="goals-rank-xp" class="goals-rank-xp">0 / 120 XP</div>
-              </div>
-            </div>
-            <button type="button" id="btn-toggle-goals-tracker" class="goals-collapse-btn" aria-expanded="${!this.goalsTrackerCollapsed}" title="Thu gọn hoặc mở rộng Mục Tiêu Hôm Nay">
-              ${this.goalsTrackerCollapsed ? 'Mục tiêu ▾' : '✕'}
-            </button>
-          </div>
-          <div class="goals-xp-bar"><div id="goals-xp-fill" class="goals-xp-fill" style="width:0%"></div></div>
-          <div id="daily-goals-list" class="daily-goals-list"></div>
-        </aside>
-
-        <!-- Unified Interactive Proximity Prompt (Market Stall, Leaves, Garden, Bell, Koi) -->
+        <!-- Unified Interactive Proximity Prompt -->
         <button id="stall-proximity-btn" class="stall-proximity-prompt" type="button" style="display:none;" aria-label="Tương tác điểm gần bạn">
-          <span class="stall-proximity-icon" id="stall-proximity-icon">🛒</span>
-          <span id="stall-proximity-label">Ghé Nhà Tạp Hóa</span>
+          <span class="stall-proximity-icon" id="stall-proximity-icon">🪷</span>
+          <span id="stall-proximity-label">Chiêm bái</span>
           <span class="stall-proximity-key">E</span>
         </button>
 
-        <!-- Bottom-Left Quick Pilgrimage & Touch/Help Dock -->
-        <aside id="courtyard-quick-dock" class="courtyard-quick-dock" aria-label="Lối tắt chiêm bái và cách di chuyển">
-          <div id="courtyard-help-popover" class="courtyard-help-popover" style="display:none;" role="region" aria-label="Hướng dẫn di chuyển">
-            <div class="courtyard-help-head">
-              <strong>Hướng dẫn tham quan Chùa 3D</strong>
-              <button type="button" id="btn-close-controls-help" class="courtyard-help-close" aria-label="Đóng hướng dẫn">✕</button>
+        <!-- Bottom-Left Soft Analog Touch Joystick -->
+        <div id="soft-joystick-zone" class="soft-joystick-zone" aria-label="Cần gạt di chuyển nhẹ nhàng">
+          <div id="soft-joystick-base" class="soft-joystick-base">
+            <div class="soft-joystick-arrows" aria-hidden="true">
+              <span class="joy-n">▲</span>
+              <span class="joy-s">▼</span>
+              <span class="joy-w">◀</span>
+              <span class="joy-e">▶</span>
             </div>
-            <ul class="courtyard-help-list">
-              <li><strong>Đi lại:</strong> Dùng phím <b>W A S D</b> / mũi tên, bật <b>Phím đi</b> hoặc <b>chạm vào mặt sân</b>.</li>
-              <li><strong>Xoay &amp; thu phóng:</strong> Kéo chuột (hoặc vuốt) để xoay góc nhìn · Cuộn để phóng to/nhỏ.</li>
-              <li><strong>Hoạt động mỗi ngày:</strong> Quét lá Bồ Đề vàng trên sân, trồng hoa <b>Vườn Phật</b>, <b>Thỉnh Chuông – Gõ Mõ</b>, thả <b>🏮 Hoa Đăng</b> và đóng dấu <b>Sổ Di Sản</b> (bấm <b>E</b> hoặc chạm trực tiếp).</li>
-            </ul>
+            <div id="soft-joystick-knob" class="soft-joystick-knob"></div>
           </div>
+        </div>
 
-          <div id="courtyard-dpad-pad" class="courtyard-dpad-pad" style="display:none;" aria-label="Phím điều hướng trên màn hình">
-            <span></span>
-            <button type="button" class="dpad-btn" data-dpad-dir="up" aria-label="Đi tới">▲</button>
-            <span></span>
-            <button type="button" class="dpad-btn" data-dpad-dir="left" aria-label="Sang trái">◀</button>
-            <span class="dpad-center-dot" aria-hidden="true">🪷</span>
-            <button type="button" class="dpad-btn" data-dpad-dir="right" aria-label="Sang phải">▶</button>
-            <span></span>
-            <button type="button" class="dpad-btn" data-dpad-dir="down" aria-label="Đi lùi">▼</button>
-            <span></span>
+        <!-- Bottom-Center Collapsible Elderly Dock (with Cửa hàng & Cử chỉ directly on main screen) -->
+        <nav id="elder-bottom-dock" class="elder-bottom-dock" aria-label="Thao tác đi chùa chính">
+          <div id="gesture-action-bar" class="gesture-action-bar" style="display:none;" role="toolbar" aria-label="Cử chỉ và hành động nhân vật">
+            <button type="button" class="gesture-chip-btn" data-gesture="chup_anh">📸 Chụp ảnh</button>
+            <button type="button" class="gesture-chip-btn" data-gesture="selfie">🤳 Selfie</button>
+            <button type="button" class="gesture-chip-btn" data-gesture="tro_chuyen">💬 Nói chuyện bố mẹ</button>
+            <button type="button" class="gesture-chip-btn" data-gesture="vai">🙏 Vái lễ</button>
+            <button type="button" class="gesture-chip-btn" data-gesture="vay_tay">👋 Vẫy tay</button>
+            <button type="button" class="gesture-chip-btn" data-gesture="quat_mat">🪷 Ngắm cảnh</button>
           </div>
-
-          <div class="courtyard-dock-toolbar">
-            <button type="button" id="btn-toggle-quick-dock" class="dock-tool-btn active" aria-expanded="true">
-              <span>🧭 Đi nhanh</span>
-              <span class="dock-chevron" id="quick-dock-chevron">▾</span>
+          <button type="button" id="btn-dock-zen-toggle" class="dock-zen-toggle-btn" aria-expanded="true" title="Thu gọn hoặc hiện các nút (phím H)">
+            ▾ Ẩn nút
+          </button>
+          <div class="elder-dock-row">
+            <button type="button" class="elder-dock-btn primary" id="btn-guided-next">
+              <span aria-hidden="true">🚶</span>
+              <span id="btn-guided-next-label">Đi tiếp: Cổng Tam Quan</span>
             </button>
-            <button type="button" id="btn-toggle-dpad" class="dock-tool-btn" aria-expanded="false">
-              <span>🕹️ Phím đi</span>
+            <button type="button" class="elder-dock-btn" id="btn-dock-ritual">
+              <span aria-hidden="true">🙏</span>
+              <span>Lễ / Dâng hương</span>
             </button>
-            <button type="button" id="btn-toggle-controls-help" class="dock-tool-btn" aria-expanded="false">
-              <span>❔ Cách đi</span>
+            <button type="button" class="elder-dock-btn" id="btn-dock-gestures" aria-expanded="false" aria-controls="gesture-action-bar">
+              <span aria-hidden="true">✨</span>
+              <span>Cử chỉ</span>
+            </button>
+            <button type="button" class="elder-dock-btn" id="btn-dock-shop">
+              <span aria-hidden="true">🛍️</span>
+              <span>Cửa hàng</span>
+            </button>
+            <button type="button" class="elder-dock-btn" id="btn-dock-passport">
+              <span aria-hidden="true">📖</span>
+              <span>Sổ Hành Hương</span>
+            </button>
+            <button type="button" class="elder-dock-btn" id="btn-dock-sutra">
+              <span aria-hidden="true">📿</span>
+              <span>Nghe Kinh</span>
             </button>
           </div>
+        </nav>
 
-          <div id="quick-dock-chips" class="quick-dock-chips">
-            <button type="button" class="walk-chip-btn" id="btn-open-hoc-kinh">📿 Học Kinh</button>
-            <button type="button" class="walk-chip-btn" data-walk-station="cong_tam_quan">⛩️ Tam Quan</button>
-            <button type="button" class="walk-chip-btn" data-walk-station="phat_adida">🪷 A Di Đà</button>
-            <button type="button" class="walk-chip-btn" data-walk-station="chanh_dien">🏛️ Chánh điện</button>
-            <button type="button" class="walk-chip-btn" id="btn-toggle-interior-hall">🚪 Vào Chánh điện</button>
-            <button type="button" class="walk-chip-btn" data-walk-station="phat_di_lac">😊 Di Lặc</button>
-            <button type="button" class="walk-chip-btn" data-walk-station="phat_niet_ban">☸️ Niết Bàn</button>
-            <button type="button" class="walk-chip-btn" data-walk-station="cua_hang_luu_niem">🛒 Tạp Hóa</button>
-            <button type="button" class="walk-chip-btn" id="btn-open-garden-modal">🌱 Vườn Phật</button>
-            <button type="button" class="walk-chip-btn" id="btn-open-bell-rhythm">🔔 Chuông Mõ</button>
-            <button type="button" class="walk-chip-btn" id="btn-open-heritage-book">📜 Di Sản</button>
-            <button type="button" class="walk-chip-btn" id="btn-open-blessing-tower">🏮 Cầu Phước</button>
-            <button type="button" class="walk-chip-btn" id="btn-open-hoa-dang">🏮 Hoa Đăng</button>
-            <button type="button" class="walk-chip-btn" id="btn-open-30day">🗓️ 30 Ngày</button>
-            <button type="button" class="walk-chip-btn" id="btn-open-journal">📓 Nhật Ký</button>
+        <!-- Slide-Out Utility Drawer Backdrop & Panel -->
+        <div id="utility-drawer-backdrop" class="utility-drawer-backdrop"></div>
+        <aside id="temple-utility-drawer" class="temple-utility-drawer" aria-label="Tiện ích Chùa Vĩnh Tràng" aria-hidden="true">
+          <div class="drawer-header">
+            <h2>Tiện ích Chùa Vĩnh Tràng</h2>
+            <button type="button" id="btn-close-utility-drawer" class="drawer-close-btn" aria-label="Đóng bảng tiện ích">✕</button>
+          </div>
+          <div class="drawer-body">
+            <div>
+              <h3 class="drawer-group-title">Hành hương &amp; Chiêm bái</h3>
+              <div class="drawer-btn-stack">
+                <button type="button" class="drawer-action-btn" id="btn-drawer-interior"><span>🚪 Vào trong Chánh Điện</span><span>→</span></button>
+                <button type="button" class="drawer-action-btn" id="btn-drawer-explore"><span>🗺️ Bản đồ &amp; 18 Vị La Hán</span><span>→</span></button>
+                <button type="button" class="drawer-action-btn" id="btn-drawer-oracle"><span>🎋 Rút Quẻ Bình An hôm nay</span><span>→</span></button>
+                <button type="button" class="drawer-action-btn" id="btn-drawer-lanterns"><span>🏮 Thả Hoa Đăng Hồ Sen</span><span>→</span></button>
+                <button type="button" class="drawer-action-btn" id="btn-drawer-blessing-tower"><span>🕯️ Tháp Đèn Cầu An</span><span>→</span></button>
+                <button type="button" class="drawer-action-btn" id="btn-drawer-photo"><span>📸 Chụp Ảnh Kỷ Niệm Sạch HUD</span><span>→</span></button>
+              </div>
+            </div>
+
+            <div>
+              <h3 class="drawer-group-title">Cửa hàng &amp; Tu học</h3>
+              <div class="drawer-btn-stack">
+                <button type="button" class="drawer-action-btn" id="btn-drawer-shop"><span>👘 Cửa Hàng (Trang Phục 3D &amp; Quà)</span><span>→</span></button>
+                <button type="button" class="drawer-action-btn" id="btn-drawer-lecture"><span>📚 Học Viện &amp; Tủ Sách Phật Học</span><span>→</span></button>
+                <button type="button" class="drawer-action-btn" id="btn-drawer-character"><span>👤 Đổi Nhân Vật &amp; Hồ Sơ</span><span>→</span></button>
+              </div>
+            </div>
+
+            <div>
+              <h3 class="drawer-group-title">Ánh sáng sân chùa</h3>
+              <div class="drawer-segment-row" role="group" aria-label="Thời gian trong ngày">
+                <button type="button" class="drawer-segment-btn ${this.timeOfDay === 'morning' ? 'active' : ''}" data-time-of-day="morning">🌅 Sáng</button>
+                <button type="button" class="drawer-segment-btn ${this.timeOfDay === 'midday' ? 'active' : ''}" data-time-of-day="midday">☀️ Trưa</button>
+                <button type="button" class="drawer-segment-btn ${this.timeOfDay === 'evening' ? 'active' : ''}" data-time-of-day="evening">🕯️ Tối</button>
+              </div>
+            </div>
+
+            <div>
+              <h3 class="drawer-group-title">Cỡ chữ dễ đọc</h3>
+              <div class="drawer-segment-row" style="grid-template-columns:1fr 1fr;">
+                <button type="button" class="drawer-segment-btn" id="btn-drawer-font-dec">A- Nhỏ lại</button>
+                <button type="button" class="drawer-segment-btn" id="btn-drawer-font-inc">A+ Chữ lớn</button>
+              </div>
+            </div>
+
+            <div class="drawer-cloud-box">
+              <h3 class="drawer-group-title" style="margin-bottom:2px;">Lưu giữ Sổ Hành Hương</h3>
+              <p id="drawer-cloud-status">Chưa đăng nhập · Đang lưu trên thiết bị này</p>
+              <button type="button" class="passport-primary-btn" id="btn-drawer-cloud-auth">Đăng nhập Google</button>
+            </div>
           </div>
         </aside>
 

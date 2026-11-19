@@ -50,7 +50,7 @@ export class VinhTrang3DWorld {
     this.scene.background = new THREE.Color(0xA6D0F0);
     this.scene.fog = new THREE.FogExp2(0xEADBC4, 0.0033);
 
-    this.camera = new THREE.PerspectiveCamera(48, 16 / 9, 0.2, 420);
+    this.camera = new THREE.PerspectiveCamera(48, 16 / 9, 0.2, 900);
 
     this.contextLost = false;
     this.lectureHallMode = false;
@@ -184,6 +184,19 @@ export class VinhTrang3DWorld {
     this.playerElevationY = 0;
     this.lastDoorSide = 'right';
     this._doorCooldownUntil = 0;
+    this._camCurrentPos = new THREE.Vector3();
+    this._camCurrentLook = new THREE.Vector3();
+    this._camDesiredPos = new THREE.Vector3();
+    this._camDesiredLook = new THREE.Vector3();
+    this._camInitialized = false;
+    this._lastCamDragAt = 0;
+    this._titlePanActive = false;
+    this._titlePanTime = 0;
+    this.joystickVec = { x: 0, z: 0 };
+    this.navGridExterior = null;
+    this.navGridInterior = null;
+    this.lanternClickTargets = [];
+    this._stuckTracker = { lastX: 40.5, lastZ: 43.8, timer: 0, rerouted: false };
 
     this.charDataCache = {};
     this.propMeshCache = {};
@@ -305,8 +318,15 @@ export class VinhTrang3DWorld {
     this.initPointerAndWheelControls();
     this.handleResize(false);
     window.addEventListener('resize', () => this.handleResize(true));
+    window.addEventListener('blur', () => {
+      this.heldDirs.clear();
+      this.joystickVec.x = 0;
+      this.joystickVec.z = 0;
+      this.stopMoving();
+    });
 
     this.syncPlayerTransform();
+    this.snapCameraImmediate();
     this._animateStarted = false;
     this.loaded = false;
     this.loadAllGLBAssets();

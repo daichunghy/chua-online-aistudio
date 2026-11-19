@@ -11,8 +11,8 @@ import { createStoreProfileState } from './store-items.mjs';
 // ============================================================================
 export const MARKETPLACE_STALL_CATEGORIES = [
   { id: 'huong_hoa', icon: '🪷', label: 'Hương, Đèn & Hoa lễ' },
-  { id: 'thu_cong', icon: '🧺', label: 'Tạp hóa & Lưu niệm' },
-  { id: 'am_thuc_chay', icon: '🥤', label: 'Nước giải khát & Bánh chay' }
+  { id: 'thu_cong', icon: '📿', label: 'Lưu niệm & Văn hóa phẩm' },
+  { id: 'am_thuc_chay', icon: '🍲', label: 'Kho quẹt chay & Đặc sản chay' }
 ];
 
 export const MARKETPLACE_STALL_CATALOG = [
@@ -173,15 +173,99 @@ export const MARKETPLACE_STALL_CATALOG = [
     cartProductId: 'tui_vai_theu_sen',
     image: '/Thiết kế giao diện/Vật phẩm 3D/render-tui-vai-theu-sen-34.png'
   },
+  {
+    id: 'sap_my_nghe_go_dua',
+    category: 'thu_cong',
+    icon: '🥥',
+    name: 'Bộ mỹ nghệ gỗ dừa Mỹ Tho (Chén & Đũa chạm sen)',
+    subtitle: 'Đồ thủ công mỹ nghệ từ gỗ dừa lão Tiền Giang tiện mịn, thơm mộc làm quà lưu niệm.',
+    desc: 'Đồ thủ công mỹ nghệ từ gỗ dừa lão Tiền Giang tiện mịn, thơm mộc làm quà lưu niệm.',
+    priceVnd: 120000,
+    lotusCost: 52,
+    actionType: 'handicraft',
+    offeringType: null,
+    cartProductId: 'gio_may_tre_3d',
+    image: '/Thiết kế giao diện/Vật phẩm 3D/fixed/fixed_gio_may_tre.png'
+  },
+  {
+    id: 'sap_tuong_di_lac_mini',
+    category: 'thu_cong',
+    icon: '🙏',
+    name: 'Tượng Phật Di Lặc lưu niệm để bàn (gỗ mít sơn son)',
+    subtitle: 'Pho tượng nhỏ nhắn mang nụ cười hoan hỉ thỉnh từ Quầy Lưu Niệm Chùa Vĩnh Tràng.',
+    desc: 'Pho tượng nhỏ nhắn mang nụ cười hoan hỉ thỉnh từ Quầy Lưu Niệm Chùa Vĩnh Tràng.',
+    priceVnd: 185000,
+    lotusCost: 80,
+    actionType: 'handicraft',
+    offeringType: null,
+    cartProductId: 'trang_hat_go',
+    image: '/Thiết kế giao diện/Vật phẩm 3D/fixed/fixed_bo_doan_tron.png'
+  },
+  {
+    id: 'sap_kinh_sach_niem_phat',
+    category: 'thu_cong',
+    icon: '📖',
+    name: 'Sách Kinh Nhật Tụng & Cẩm Nang Ăn Chay',
+    subtitle: 'Ấn phẩm Phật giáo chữ to dễ đọc cho cô bác hành hương mang về thực tập hằng ngày.',
+    desc: 'Ấn phẩm Phật giáo chữ to dễ đọc cho cô bác hành hương mang về thực tập hằng ngày.',
+    priceVnd: 45000,
+    lotusCost: 20,
+    actionType: 'handicraft',
+    offeringType: null,
+    cartProductId: 'trang_hat_go',
+    image: '/Thiết kế giao diện/Vật phẩm 3D/fixed/fixed_bo_doan_tron.png'
+  },
 
-  // === 3. NƯỚC GIẢI KHÁT & BÁNH CHAY (NHÀ TẠP HÓA) ===
+  // === 3. KHO QUẸT CHAY, ĐẶC SẢN CHAY & GIẢI KHÁT CHÙA VĨNH TRÀNG ===
+  {
+    id: 'sap_kho_quet_chay',
+    category: 'am_thuc_chay',
+    icon: '🍲',
+    name: 'Hũ Kho Quẹt Chay Nấm Hương & Tiêu Xanh (250g)',
+    subtitle: 'Đặc sản chay nổi tiếng ở nhà lưu niệm chùa miền Tây: nấm đông cô, đậu hũ, tiêu xanh rim sệt chấm rau luộc cơm cháy cực hao cơm.',
+    desc: 'Đặc sản chay nổi tiếng ở nhà lưu niệm chùa miền Tây: nấm đông cô, đậu hũ, tiêu xanh rim sệt chấm rau luộc cơm cháy cực hao cơm.',
+    priceVnd: 65000,
+    lotusCost: 30,
+    actionType: 'refreshment',
+    offeringType: null,
+    cartProductId: 'combo_qua_que_mien_tay',
+    image: '/Thiết kế giao diện/Vật phẩm 3D/fixed/fixed_dia_banh_bo.png'
+  },
+  {
+    id: 'sap_chao_mon_chay',
+    category: 'am_thuc_chay',
+    icon: '🫙',
+    name: 'Hũ Chao Môn Chay Béo Bùi Miền Tây',
+    subtitle: 'Chao khoai môn ủ men tự nhiên thơm béo, ăn kèm rau muống luộc, đậu bắp hay làm nước chấm lẩu chay.',
+    desc: 'Chao khoai môn ủ men tự nhiên thơm béo, ăn kèm rau muống luộc, đậu bắp hay làm nước chấm lẩu chay.',
+    priceVnd: 55000,
+    lotusCost: 25,
+    actionType: 'refreshment',
+    offeringType: null,
+    cartProductId: 'combo_qua_que_mien_tay',
+    image: '/Thiết kế giao diện/Vật phẩm 3D/fixed/fixed_dia_banh_da_lon.png'
+  },
+  {
+    id: 'sap_tuong_hot_muoi_me_chay',
+    category: 'am_thuc_chay',
+    icon: '🥜',
+    name: 'Cặp Hũ Muối Mè Đậu Phộng & Tương Hột Chay',
+    subtitle: 'Món chay mộc mạc rang thủ công tại bếp chay miền Tây, đóng hũ thủy tinh sạch sẽ mang về biếu gia đình.',
+    desc: 'Món chay mộc mạc rang thủ công tại bếp chay miền Tây, đóng hũ thủy tinh sạch sẽ mang về biếu gia đình.',
+    priceVnd: 60000,
+    lotusCost: 28,
+    actionType: 'refreshment',
+    offeringType: null,
+    cartProductId: 'combo_qua_que_mien_tay',
+    image: '/Thiết kế giao diện/Vật phẩm 3D/fixed/fixed_dia_banh_bo.png'
+  },
   {
     id: 'sap_dua_xiem_my_tho',
     category: 'am_thuc_chay',
     icon: '🥥',
     name: 'Trái dừa xiêm xanh Mỹ Tho ướp lạnh',
-    subtitle: 'Nước dừa ngọt thanh từ thùng đá mát lạnh ngay cạnh Cổng Phụ Chùa Vĩnh Tràng.',
-    desc: 'Nước dừa ngọt thanh từ thùng đá mát lạnh ngay cạnh Cổng Phụ Chùa Vĩnh Tràng.',
+    subtitle: 'Nước dừa ngọt thanh từ thùng đá mát lạnh ngay tại khu lưu niệm Chùa Vĩnh Tràng.',
+    desc: 'Nước dừa ngọt thanh từ thùng đá mát lạnh ngay tại khu lưu niệm Chùa Vĩnh Tràng.',
     priceVnd: 25000,
     lotusCost: 15,
     actionType: 'refreshment',

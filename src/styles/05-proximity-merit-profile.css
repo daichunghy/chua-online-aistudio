@@ -2,11 +2,11 @@
    VIETNAMESE STALL PROXIMITY PROMPT & ENTRANCE CAMERA TOUR BANNER
    ========================================================================== */
 .stall-proximity-prompt {
-  position: absolute;
+  position: fixed;
   left: 50%;
-  bottom: 138px;
+  bottom: 128px;
   transform: translateX(-50%);
-  z-index: 29;
+  z-index: 126;
   display: inline-flex;
   align-items: center;
   gap: 10px;
@@ -19,7 +19,15 @@
   font-weight: 800;
   cursor: pointer;
   box-shadow: 0 10px 26px rgba(36, 20, 9, 0.34);
-  transition: transform 0.16s ease, background 0.16s ease;
+  transition: transform 0.16s ease, background 0.16s ease, bottom 0.18s ease;
+}
+
+body.gesture-bar-open .stall-proximity-prompt {
+  bottom: 194px;
+}
+
+body.zen-hud-collapsed .stall-proximity-prompt {
+  bottom: 66px;
 }
 
 .stall-proximity-prompt:hover {

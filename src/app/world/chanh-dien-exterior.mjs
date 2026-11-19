@@ -59,6 +59,29 @@ export const chanhDienExteriorMethods = {
       }
     }
 
+    // Inviting Front Main Entrance Welcome Mat, Subtle Amber Glow & Direct Click Target ("Cửa Trước Chánh Điện")
+    this.frontDoorClickTargets = this.frontDoorClickTargets || [];
+    const frontCarpet = new THREE.Mesh(
+      new THREE.PlaneGeometry(2.6, 3.6),
+      new THREE.MeshStandardMaterial({ color: 0x8F1D18, roughness: 0.86 })
+    );
+    frontCarpet.rotation.x = -Math.PI / 2 - 0.34;
+    frontCarpet.position.set(0, 0.72, D / 2 + 2.65);
+    g.add(frontCarpet);
+
+    const frontDoorGlow = new THREE.PointLight(0xFFD07A, 1.8, 8.5);
+    frontDoorGlow.position.set(0, 3.2, D / 2 + 1.6);
+    g.add(frontDoorGlow);
+
+    const frontDoorHit = new THREE.Mesh(
+      new THREE.BoxGeometry(8.2, 4.4, 4.2),
+      new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false })
+    );
+    frontDoorHit.position.set(0, 2.3, D / 2 + 2.2);
+    frontDoorHit.userData.doorSide = 'front_tam_quan';
+    g.add(frontDoorHit);
+    this.frontDoorClickTargets.push(frontDoorHit);
+
     // END-OF-ROAD LEFT-TURN COVERED SHOE-REMOVAL VERANDA & CARVED WOODEN ENTRANCE DOOR INTO CHÁNH ĐIỆN
     // Mounted on `g` (world origin (23, 0, 1)) at local (12.2, 0, -15.5) => world (35.2, 0, -14.5),
     // facing East (+X) directly onto the cool tree-shaded end-of-road souvenir plaza ("đi xuống cuối đường rồi rẽ vào, bỏ dép bên ngoài mới vào chánh điện")!

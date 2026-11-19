@@ -4,7 +4,13 @@
  * Mixin của ChuaOnlineApp: 15 method (initParticleFX … syncHoaDangLanternsTo3D).
  * Được gắn vào class trong chua-online-app.mjs qua applyMixins().
  */
-import { getPilgrimageMode, TempleAudioEngine } from './shared.mjs';
+import {
+  getPilgrimageMode,
+  TempleAudioEngine,
+  toggleAmbientSettings,
+  toggleAmbientLayer,
+  formatAmbientToggleDisplay
+} from './shared.mjs';
 
 export const effectsAudioMethods = {
   /* ========================================================================
@@ -97,7 +103,7 @@ export const effectsAudioMethods = {
      ======================================================================== */
   ensureAudioContext() {
     this.audio?.unlock?.();
-    if (this.audio && !this.audio.isAmbientRunning) {
+    if (this.audio && this.audio.ambientEnabled && !this.audio.isAmbientRunning && !this.audioMuted) {
       this.audio.startAmbient(this.world3d?.insideInterior ? 'interior' : 'exterior');
     }
   },
@@ -172,6 +178,40 @@ export const effectsAudioMethods = {
         : '🔊 Đang Bật âm thanh (Bấm để Tắt tiếng)';
     }
 
+    const display = formatAmbientToggleDisplay(this.ambientSettings, { audioMuted: this.audioMuted });
+    const hudToggle = document.getElementById('hud-ambient-toggle');
+    if (hudToggle) {
+      hudToggle.classList.toggle('is-on', display.isOn);
+      hudToggle.setAttribute('aria-checked', display.isOn ? 'true' : 'false');
+      hudToggle.setAttribute('aria-label', display.ariaLabel);
+      const iconEl = hudToggle.querySelector('.ambient-hud-icon');
+      if (iconEl) iconEl.textContent = display.isOn ? '🔔' : '🔕';
+    }
+
+    const mixerToggle = document.getElementById('btn-mixer-ambient-toggle');
+    if (mixerToggle) {
+      mixerToggle.classList.toggle('is-on', display.isOn);
+      mixerToggle.setAttribute('aria-checked', display.isOn ? 'true' : 'false');
+    }
+    const mixerSub = document.getElementById('mixer-ambient-subtitle');
+    if (mixerSub) {
+      mixerSub.textContent = display.isOn
+        ? `Đang phát nhẹ (${display.statusLabel})`
+        : this.audioMuted
+          ? 'Toàn bộ âm thanh đang tắt tiếng'
+          : 'Âm thanh nền đang tắt';
+    }
+
+    const layerChecks = [
+      ['chk-ambient-chanting', this.ambientSettings?.chanting !== false],
+      ['chk-ambient-bells', this.ambientSettings?.bells !== false],
+      ['chk-ambient-atmosphere', this.ambientSettings?.atmosphere !== false]
+    ];
+    for (const [id, checked] of layerChecks) {
+      const el = document.getElementById(id);
+      if (el) el.checked = Boolean(checked);
+    }
+
     const pairs = [
       ['slider-ambient-vol', 'val-ambient-vol', st.ambientVolume],
       ['slider-sfx-vol', 'val-sfx-vol', st.sfxVolume],
@@ -184,6 +224,47 @@ export const effectsAudioMethods = {
       if (sEl && Number(sEl.value) !== pct) sEl.value = String(pct);
       if (vEl) vEl.textContent = `${pct}%`;
     }
+  },
+
+  toggleAmbientAudio(forceEnabled = null) {
+    const turningOn =
+      typeof forceEnabled === 'boolean'
+        ? forceEnabled
+        : this.audioMuted || !this.ambientSettings?.enabled;
+
+    if (turningOn && this.audioMuted) {
+      this.audio?.setMuted?.(false);
+      this.audioMuted = false;
+    }
+
+    this.ambientSettings = toggleAmbientSettings(this.ambientSettings, turningOn);
+    if (turningOn && !this.ambientSettings.chanting && !this.ambientSettings.bells && !this.ambientSettings.atmosphere) {
+      this.ambientSettings = { ...this.ambientSettings, chanting: true, bells: true, atmosphere: true };
+      this.audio?.setAmbientLayers?.(this.ambientSettings);
+    }
+    this.audio?.setAmbientEnabled?.(this.ambientSettings.enabled);
+    this.updateAudioMixerUI();
+    this.saveState();
+    this.showToast?.(
+      this.ambientSettings.enabled ? '🪷 Đã bật nhạc nền chùa' : '🔕 Đã tắt nhạc nền chùa',
+      this.ambientSettings.enabled
+        ? 'Tiếng niệm Phật từ xa & chuông chùa sẽ ngân nhẹ nhàng trong không gian.'
+        : 'Đã tạm lắng nhạc nền. Cô bác vẫn nghe tiếng chuông, mõ khi hành lễ.',
+      2600,
+      false
+    );
+  },
+
+  toggleAmbientAudioLayer(layerKey, forceValue = null) {
+    this.ambientSettings = toggleAmbientLayer(this.ambientSettings, layerKey, forceValue);
+    if (this.ambientSettings.enabled && this.audioMuted) {
+      this.audio?.setMuted?.(false);
+      this.audioMuted = false;
+    }
+    this.audio?.setAmbientLayers?.(this.ambientSettings);
+    this.audio?.setAmbientEnabled?.(this.ambientSettings.enabled);
+    this.updateAudioMixerUI();
+    this.saveState();
   },
 
   setAudioMuted(muted) {

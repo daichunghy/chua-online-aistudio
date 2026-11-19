@@ -94,8 +94,19 @@ import {
   COURTYARD_NPC_DHARMA_QUOTES,
   getCourtyardNpcSpeaker,
   pickNpcDharmaQuote,
-  evaluateCourtyardNpcProximity
+  evaluateCourtyardNpcProximity,
+  createVisitorClientId,
+  sanitizeVisitorPayload,
+  formatVisitorCountText,
+  buildVisitorPresenceSummary,
+  AMBIENT_SOUNDSCAPE_LAYERS,
+  createAmbientSettingsState,
+  toggleAmbientSettings,
+  toggleAmbientLayer,
+  shouldDuckAmbientChanting,
+  formatAmbientToggleDisplay
 } from './chua-online-logic.mjs';
+import { TempleAudioEngine } from '../app/audio-engine.mjs';
 
 test('OKLab/OKLCH perceptual color engine (meodai/skill.color-expert) preserves perceptual lightness and prevents muddy mid-tones', () => {
   const gold = hexToOklch('#D9A441');
@@ -351,13 +362,13 @@ test('9-category Store catalog, live try-on, level gating, and Tam Quan South->N
   const nietBan = PILGRIMAGE_STATIONS.find((s) => s.key === 'phat_niet_ban');
   assert.ok(tamQuan.standPos.z > tamQuan.pos.z); // Spawns South outside Tam Quan gate
   assert.equal(tamQuan.pos.x, 23); // Front Tam Quan axis aligned with Chánh điện
-  assert.equal(phatAdida.pos.x, 8.5); // Relocated slightly West to preserve clear Tam Quan -> Chánh Điện sightline
-  assert.equal(phatAdida.pos.z, 17.5);
+  assert.equal(phatAdida.pos.x, -9.5); // Central-west garden axis straight in front of 7-tier Bảo Tháp
+  assert.equal(phatAdida.pos.z, -23.5);
   assert.ok(phatAdida.pos.z < tamQuan.pos.z);
   assert.equal(chanhDien.pos.x, 23);
-  assert.equal(nietBan.pos.x, -24.5);
-  assert.ok(nietBan.pos.z < -15); // Rear-west garden behind Chánh điện
-  assert.equal(nietBan.pos.x, phatDiLac.pos.x); // Near the Di Lặc garden
+  assert.equal(nietBan.pos.x, 14.5); // Directly behind Chánh Điện tiled roofs & beside 7-tier Bảo Tháp
+  assert.ok(nietBan.pos.z < -40);
+  assert.ok(phatDiLac.pos.x < -20); // Front-west Di Lặc garden park
 
   assert.equal(STORE_CATEGORIES.length, 9);
   assert.deepEqual(
@@ -768,6 +779,121 @@ test('Courtyard NPC interaction evaluates proximity with hysteresis and picks no
   // Walking beyond exitRadius clears active NPC
   assert.equal(evaluateCourtyardNpcProximity({ x: 20, z: 20 }, npcs, 'npc_b'), null);
 });
+
+test('Live visitor presence sanitizes payloads, formats subtle HUD text, and sorts self first', () => {
+  const id1 = createVisitorClientId(() => 0.123456, () => 1700000000000);
+  assert.ok(id1.startsWith('vt_'));
+  assert.ok(id1.length >= 10);
+
+  const sanitized = sanitizeVisitorPayload({
+    clientId: 'tab_abc123',
+    nationalityId: 'jp',
+    characterModelKey: 'su_thay',
+    zone: 'Chánh điện'
+  });
+  assert.deepEqual(sanitized, {
+    clientId: 'tab_abc123',
+    nationalityId: 'jp',
+    characterModelKey: 'su_thay',
+    zone: 'Chánh điện'
+  });
+
+  const fallbackSanitized = sanitizeVisitorPayload({
+    clientId: 'bad id with spaces!!',
+    nationalityId: 'xx',
+    characterModelKey: 'unknown_char',
+    zone: 'Invalid Zone'
+  });
+  assert.ok(fallbackSanitized.clientId.startsWith('vt_'));
+  assert.equal(fallbackSanitized.nationalityId, 'vn');
+  assert.equal(fallbackSanitized.characterModelKey, 'nu');
+  assert.equal(fallbackSanitized.zone, 'Sân chùa');
+
+  const formatted = formatVisitorCountText(5);
+  assert.equal(formatted.countText, '5');
+  assert.equal(formatted.labelText, 'đang viếng chùa');
+
+  const summary = buildVisitorPresenceSummary(
+    {
+      onlineCount: 2,
+      todayVisits: 7,
+      visitors: [
+        { clientId: 'other_1', nationalityId: 'kr', characterModelKey: 'nam_ao_nau', zone: 'Giảng đường' },
+        { clientId: 'self_1', nationalityId: 'vn', characterModelKey: 'nu', zone: 'Sân chùa' }
+      ]
+    },
+    'self_1'
+  );
+  assert.equal(summary.onlineCount, 2);
+  assert.equal(summary.todayVisits, 7);
+  assert.equal(summary.visitors[0].clientId, 'self_1');
+  assert.equal(summary.visitors[0].isSelf, true);
+  assert.equal(summary.visitors[0].flag, '🇻🇳');
+  assert.equal(summary.visitors[1].isSelf, false);
+  assert.equal(summary.visitors[1].flag, '🇰🇷');
+  assert.equal(summary.visitors[1].zone, 'Giảng đường');
+});
+
+test('Ambient audio manager state validates layers, toggles HUD switch display, and handles TempleAudioEngine controls safely', () => {
+  assert.equal(AMBIENT_SOUNDSCAPE_LAYERS.length, 3);
+  const initial = createAmbientSettingsState();
+  assert.deepEqual(initial, { enabled: true, chanting: true, bells: true, atmosphere: true });
+
+  const toggledOff = toggleAmbientSettings(initial);
+  assert.equal(toggledOff.enabled, false);
+  const displayOff = formatAmbientToggleDisplay(toggledOff);
+  assert.equal(displayOff.isOn, false);
+  assert.equal(displayOff.shortLabel, 'Nhạc chùa');
+
+  // Re-enabling a single layer brings master ambient switch back on
+  const onlyBells = toggleAmbientLayer(
+    { enabled: false, chanting: false, bells: false, atmosphere: false },
+    'bells',
+    true
+  );
+  assert.equal(onlyBells.enabled, true);
+  assert.equal(onlyBells.bells, true);
+  const displayBells = formatAmbientToggleDisplay(onlyBells);
+  assert.equal(displayBells.isOn, true);
+  assert.equal(displayBells.statusLabel, 'Chuông chùa');
+
+  // Turning off all individual layers disables ambient cleanly
+  let allOff = toggleAmbientLayer(initial, 'chanting', false);
+  allOff = toggleAmbientLayer(allOff, 'bells', false);
+  allOff = toggleAmbientLayer(allOff, 'atmosphere', false);
+  assert.equal(allOff.enabled, false);
+
+  assert.equal(shouldDuckAmbientChanting({ audioPlaying: true }), true);
+  assert.equal(shouldDuckAmbientChanting({ ttsSpeaking: true }), true);
+  assert.equal(shouldDuckAmbientChanting({ sutraAudioActive: true }), true);
+  assert.equal(shouldDuckAmbientChanting({}), false);
+
+  // Headless-safe TempleAudioEngine ambient toggle & layer management
+  const events = [];
+  const engine = new TempleAudioEngine({
+    autoUnlock: false,
+    ambientEnabled: true,
+    ambientLayers: { chanting: true, bells: true, atmosphere: true },
+    onAmbientStateChange: (st) => events.push(st)
+  });
+  assert.equal(engine.ambientEnabled, true);
+  assert.equal(engine.resolveAudioUrl('niem_phat_xa.mp3'), '/Mô hình 3D Vĩnh Tràng/audio_v5/niem_phat_xa.mp3');
+
+  engine.toggleAmbientEnabled();
+  assert.equal(engine.ambientEnabled, false);
+  engine.setAmbientLayers({ chanting: false, bells: true, atmosphere: false });
+  assert.equal(engine.getAmbientState().layers.chanting, false);
+  assert.equal(engine.getAmbientState().layers.bells, true);
+
+  engine.setAmbientDucking(true);
+  assert.equal(engine.getAmbientState().ducked, true);
+  engine.setAmbientDucking(false);
+  assert.equal(engine.getAmbientState().ducked, false);
+  assert.ok(events.length >= 2);
+  engine.dispose();
+});
+
+
 
 
 

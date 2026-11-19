@@ -1,81 +1,71 @@
 /**
- * Di chuyển, va chạm, tự đi tới trạm (walkToStation) và đường dẫn.
+ * Di chuyển, giải va chạm đa lượt (MTV), tìm đường A* tránh vật cản và soft joystick.
  *
- * Mixin của VinhTrang3DWorld: 12 method (tryMove … walkToPoint).
+ * Mixin của VinhTrang3DWorld.
  * Được gắn vào class trong vinh-trang-3d-world.mjs qua applyMixins().
  */
 import { THREE, findAnyTempleDestination, WORLD_BOUNDS } from './shared.mjs';
+import {
+  resolveMultiPassCollision,
+  buildNavigationGrid,
+  findGridPathAStar
+} from '../../logic/modules/pathfinding-and-collision.mjs';
+
+const INTERIOR_BOUNDS = {
+  minX: -40.6,
+  maxX: 31.3,
+  minZ: -55.6,
+  maxZ: 20.35
+};
 
 export const movementMethods = {
-  tryMove(nx, nz, radius = 0.42) {
+  getActiveBounds() {
+    return this.inInterior ? INTERIOR_BOUNDS : WORLD_BOUNDS;
+  },
+
+  getNavigationGrid() {
+    if (this.inInterior) {
+      if (!this.navGridInterior) {
+        this.navGridInterior = buildNavigationGrid({
+          bounds: INTERIOR_BOUNDS,
+          cellSize: 0.95,
+          circles: this.interiorObstacles || [],
+          rects: this.interiorRectObstacles || [],
+          agentRadius: 0.54,
+          clearance: 0.14
+        });
+      }
+      return this.navGridInterior;
+    }
+    if (!this.navGridExterior) {
+      this.navGridExterior = buildNavigationGrid({
+        bounds: WORLD_BOUNDS,
+        cellSize: 1.45,
+        circles: this.obstacles || [],
+        rects: this.rectObstacles || [],
+        agentRadius: 0.56,
+        clearance: 0.18
+      });
+    }
+    return this.navGridExterior;
+  },
+
+  tryMove(nx, nz, radius = 0.52) {
     const curX = this.playerState.x;
     const curZ = this.playerState.z;
-    let bounds;
-    if (this.inInterior) {
-      bounds = {
-        minX: -35.8,
-        maxX: 31.3,
-        minZ: -37.6,
-        maxZ: 20.35
-      };
-    } else {
-      bounds = WORLD_BOUNDS;
-    }
-    let x = Math.max(bounds.minX, Math.min(bounds.maxX, nx));
-    let z = Math.max(bounds.minZ, Math.min(bounds.maxZ, nz));
-
+    const bounds = this.getActiveBounds();
     const circles = this.inInterior ? this.interiorObstacles : this.obstacles;
     const rects = this.inInterior ? this.interiorRectObstacles : this.rectObstacles;
 
-    for (const c of circles) {
-      const dx = x - c.x;
-      const dz = z - c.z;
-      const dist = Math.hypot(dx, dz);
-      const minD = c.r + radius;
-      if (dist < minD) {
-        const prevDist = Math.hypot(curX - c.x, curZ - c.z);
-        if (prevDist < minD && dist > prevDist) {
-          continue;
-        }
-        const nLen = dist || 0.001;
-        x = c.x + (dx / nLen) * minD;
-        z = c.z + (dz / nLen) * minD;
-      }
-    }
-
-    for (const b of rects) {
-      if (
-        x > b.minX - radius &&
-        x < b.maxX + radius &&
-        z > b.minZ - radius &&
-        z < b.maxZ + radius
-      ) {
-        const prevInside =
-          curX > b.minX - radius &&
-          curX < b.maxX + radius &&
-          curZ > b.minZ - radius &&
-          curZ < b.maxZ + radius;
-        if (prevInside) continue;
-        const canX = !(
-          x > b.minX - radius &&
-          x < b.maxX + radius &&
-          curZ > b.minZ - radius &&
-          curZ < b.maxZ + radius
-        );
-        const canZ = !(
-          curX > b.minX - radius &&
-          curX < b.maxX + radius &&
-          z > b.minZ - radius &&
-          z < b.maxZ + radius
-        );
-        if (canX) z = curZ;
-        else if (canZ) x = curX;
-        else {
-          x = curX;
-          z = curZ;
-        }
-      }
-    }
+    const solved = resolveMultiPassCollision(curX, curZ, nx, nz, {
+      radius,
+      bounds,
+      circles,
+      rects,
+      passes: 3
+    });
+    const x = solved.x;
+    const z = solved.z;
 
     if (this.inInterior) {
       this.playerElevationY = 0;
@@ -87,48 +77,86 @@ export const movementMethods = {
       this.playerElevationY = 0;
     }
 
-    return { x, z };
+    return { x, z, collided: solved.collided };
   },
 
   lerpAngle(a, b, t) {
-    let diff = ((b - a + Math.PI) % (Math.PI * 2)) - Math.PI;
-    if (diff < -Math.PI) diff += Math.PI * 2;
-    return a + diff * Math.min(1, t);
+    const diff = Math.atan2(Math.sin(b - a), Math.cos(b - a));
+    return a + diff * Math.min(1, Math.max(0, t));
+  },
+
+  computeSmartWaypoints(fromX, fromZ, toX, toZ, lookAt = null) {
+    const grid = this.getNavigationGrid();
+    const segments = [];
+
+    if (!this.inInterior) {
+      const curOutside = fromZ > 42.1;
+      const destInside = toZ < 40.9;
+      const curInside = fromZ < 40.9;
+      const destOutside = toZ > 42.1;
+
+      if (curOutside && destInside) {
+        segments.push({ x: 40.5, z: 45.2 });
+        segments.push({ x: 40.5, z: 41.5 });
+        segments.push({ x: 39.2, z: 35.8 });
+      } else if (curInside && destOutside) {
+        segments.push({ x: 39.2, z: 35.8 });
+        segments.push({ x: 40.5, z: 41.5 });
+        segments.push({ x: 40.5, z: 45.2 });
+      }
+    }
+    segments.push({ x: toX, z: toZ });
+
+    const finalPts = [];
+    let curX = fromX;
+    let curZ = fromZ;
+
+    for (let s = 0; s < segments.length; s++) {
+      const seg = segments[s];
+      const leg = findGridPathAStar(grid, curX, curZ, seg.x, seg.z);
+      for (const p of leg) {
+        const last = finalPts[finalPts.length - 1];
+        if (!last || Math.hypot(p.x - last.x, p.z - last.z) > 0.45) {
+          finalPts.push({ x: p.x, z: p.z });
+        }
+      }
+      curX = seg.x;
+      curZ = seg.z;
+    }
+
+    // Drop jittery / backwards initial waypoints snapped to a cell behind the player
+    while (finalPts.length > 1) {
+      const p0 = finalPts[0];
+      const p1 = finalPts[1];
+      const d0 = Math.hypot(p0.x - fromX, p0.z - fromZ);
+      if (d0 < 1.15) {
+        finalPts.shift();
+        continue;
+      }
+      const vx0 = p0.x - fromX;
+      const vz0 = p0.z - fromZ;
+      const vx1 = p1.x - fromX;
+      const vz1 = p1.z - fromZ;
+      const dot = vx0 * vx1 + vz0 * vz1;
+      // If p0 is behind the vector to p1 and p1 is close enough along clear sight, skip p0
+      if (dot < -0.15 && d0 < 2.8) {
+        finalPts.shift();
+        continue;
+      }
+      break;
+    }
+
+    if (finalPts.length === 0) {
+      finalPts.push({ x: toX, z: toZ });
+    }
+    if (lookAt) {
+      finalPts[finalPts.length - 1].lookAt = lookAt;
+    }
+    return finalPts;
   },
 
   buildPerimeterSafeWaypoints(fromX, fromZ, toX, toZ, via = null, lookAt = null) {
-    const pts = [];
-    const curOutside = fromZ > 42.1;
-    const destInside = toZ < 40.9;
-    const curInside = fromZ < 40.9;
-    const destOutside = toZ > 42.1;
-
-    if (curOutside && destInside) {
-      if (Math.hypot(fromX - 40.5, fromZ - 45.2) > 1.8) pts.push({ x: 40.5, z: 45.2 });
-      pts.push({ x: 40.5, z: 41.5 });
-      pts.push({ x: 39.2, z: 35.8 });
-    } else if (curInside && destOutside) {
-      if (Math.hypot(fromX - 39.2, fromZ - 35.8) > 1.8) pts.push({ x: 39.2, z: 35.8 });
-      pts.push({ x: 40.5, z: 41.5 });
-      pts.push({ x: 40.5, z: 45.2 });
-    }
-
-    if (Array.isArray(via)) {
-      const distToDest = Math.hypot(toX - fromX, toZ - fromZ);
-      for (const [vx, vz] of via) {
-        if ((vx === 40.5 && vz === 41.5) && pts.some((p) => p.x === 40.5 && p.z === 41.5)) {
-          continue;
-        }
-        const lastPt = pts.length ? pts[pts.length - 1] : { x: fromX, z: fromZ };
-        const dFromLast = Math.hypot(vx - lastPt.x, vz - lastPt.z);
-        const wpToDest = Math.hypot(toX - vx, toZ - vz);
-        if (dFromLast > 1.6 && (pts.length > 0 || wpToDest < distToDest - 1.2)) {
-          pts.push({ x: vx, z: vz });
-        }
-      }
-    }
-    pts.push({ x: toX, z: toZ, lookAt });
-    return pts;
+    return this.computeSmartWaypoints(fromX, fromZ, toX, toZ, lookAt);
   },
 
   walkToStation(stationOrId, onArrival = null) {
@@ -145,20 +173,28 @@ export const movementMethods = {
 
     const tx = st.standPos ? st.standPos.x : st.pos.x;
     const tz = st.standPos ? st.standPos.z : st.pos.z;
-    const pts = this.buildPerimeterSafeWaypoints(
+    const pts = this.computeSmartWaypoints(
       this.playerState.x,
       this.playerState.z,
       tx,
       tz,
-      st.via,
       st.lookAt
     );
 
     this.autoWalkWaypoints = pts;
     this.autoWalkCallback = onArrival;
     this.autoWalkStation = st;
-    this.walkTargetRing.position.set(tx, 0.06, tz);
-    this.walkTargetRing.visible = true;
+    this._stuckTracker = {
+      lastX: this.playerState.x,
+      lastZ: this.playerState.z,
+      timer: 0,
+      rerouted: false
+    };
+    const finalTarget = pts[pts.length - 1] || { x: tx, z: tz };
+    if (this.walkTargetRing) {
+      this.walkTargetRing.position.set(finalTarget.x, 0.06, finalTarget.z);
+      this.walkTargetRing.visible = true;
+    }
     this.updateWalkPathLine();
     this.onAutoWalkTargetChange(st);
   },
@@ -181,14 +217,28 @@ export const movementMethods = {
       this.walkPathLine = null;
     }
     if (!this.autoWalkWaypoints.length) return;
-    const points = [new THREE.Vector3(this.playerState.x, 0.08, this.playerState.z)];
+    const points = [new THREE.Vector3(this.playerState.x, 0.09, this.playerState.z)];
     for (const wp of this.autoWalkWaypoints) {
-      points.push(new THREE.Vector3(wp.x, 0.08, wp.z));
+      points.push(new THREE.Vector3(wp.x, 0.09, wp.z));
     }
     const geom = new THREE.BufferGeometry().setFromPoints(points);
     const mat = new THREE.LineBasicMaterial({ color: 0xFFD166, transparent: true, opacity: 0.85 });
     this.walkPathLine = new THREE.Line(geom, mat);
     this.scene.add(this.walkPathLine);
+  },
+
+  setJoystickInput(vx = 0, vz = 0) {
+    const mag = Math.hypot(vx, vz);
+    if (mag > 0.08) {
+      this.cancelEntranceTour();
+      this.cancelAutoWalk();
+      this.joystickVec.x = Math.max(-1, Math.min(1, vx));
+      this.joystickVec.z = Math.max(-1, Math.min(1, vz));
+    } else {
+      this.joystickVec.x = 0;
+      this.joystickVec.z = 0;
+      this.stopMoving();
+    }
   },
 
   moveStep(dx, dz, speed = 0.22) {
@@ -213,7 +263,11 @@ export const movementMethods = {
     this.playerState.moving = true;
     clearTimeout(this._nudgeStopTimer);
     this._nudgeStopTimer = setTimeout(() => {
-      if (this.heldDirs.size === 0 && this.autoWalkWaypoints.length === 0) {
+      if (
+        this.heldDirs.size === 0 &&
+        this.autoWalkWaypoints.length === 0 &&
+        Math.hypot(this.joystickVec?.x || 0, this.joystickVec?.z || 0) <= 0.08
+      ) {
         this.playerState.moving = false;
       }
     }, 360);
@@ -224,18 +278,29 @@ export const movementMethods = {
   },
 
   updateHeldMovement(dt) {
-    if (!this.heldDirs || this.heldDirs.size === 0) return;
     let ix = 0;
     let iz = 0;
-    if (this.heldDirs.has('up')) iz -= 1;
-    if (this.heldDirs.has('down')) iz += 1;
-    if (this.heldDirs.has('left')) ix -= 1;
-    if (this.heldDirs.has('right')) ix += 1;
-    if (ix === 0 && iz === 0) return;
+    if (this.heldDirs && this.heldDirs.size > 0) {
+      if (this.heldDirs.has('up')) iz -= 1;
+      if (this.heldDirs.has('down')) iz += 1;
+      if (this.heldDirs.has('left')) ix -= 1;
+      if (this.heldDirs.has('right')) ix += 1;
+    }
 
-    const len = Math.hypot(ix, iz) || 1;
-    ix /= len;
-    iz /= len;
+    const jx = this.joystickVec?.x || 0;
+    const jz = this.joystickVec?.z || 0;
+    const jMag = Math.hypot(jx, jz);
+    if (ix === 0 && iz === 0 && jMag > 0.08) {
+      ix = jx;
+      iz = jz;
+    }
+
+    const inputMag = Math.hypot(ix, iz);
+    if (inputMag < 0.05) return;
+
+    const clampedMag = Math.min(1, inputMag);
+    const normX = ix / inputMag;
+    const normZ = iz / inputMag;
 
     const angle = this.cameraBaseYaw + this.cameraAzimuthOffset;
     const forwardX = Math.sin(angle);
@@ -243,9 +308,10 @@ export const movementMethods = {
     const rightX = -forwardZ;
     const rightZ = forwardX;
 
-    const worldDx = forwardX * (-iz) + rightX * ix;
-    const worldDz = forwardZ * (-iz) + rightZ * ix;
-    const speed = 5.4 * dt;
+    const worldDx = forwardX * (-normZ) + rightX * normX;
+    const worldDz = forwardZ * (-normZ) + rightZ * normX;
+    const baseSpeed = this.inInterior ? 4.6 : 5.5;
+    const speed = baseSpeed * clampedMag * dt;
     const moved = this.tryMove(
       this.playerState.x + worldDx * speed,
       this.playerState.z + worldDz * speed
@@ -255,9 +321,18 @@ export const movementMethods = {
     this.playerState.yaw = this.lerpAngle(
       this.playerState.yaw,
       Math.atan2(worldDx, worldDz),
-      Math.min(1, dt * 12)
+      1 - Math.exp(-9.5 * dt)
     );
     this.playerState.moving = true;
+
+    // Only auto-follow camera yaw when walking predominantly forward (never fight A/D strafing or reverse)
+    const manualDragRecent = performance.now() - (this._lastCamDragAt || 0) < 2600;
+    if (!manualDragRecent && normZ < -0.55 && Math.abs(normX) < 0.45) {
+      const followRate = 1 - Math.exp(-1.55 * dt);
+      this.cameraBaseYaw = this.lerpAngle(this.cameraBaseYaw, this.playerState.yaw, followRate);
+      this.cameraAzimuthOffset *= Math.exp(-2.2 * dt);
+    }
+
     this.syncPlayerTransform();
     this.checkStationProximity();
     this.checkInteriorDoorTransition();
@@ -268,21 +343,26 @@ export const movementMethods = {
     const px = this.playerState.x;
     const pz = this.playerState.z;
     if (this.inInterior) {
-      if (px >= 13.5 && px <= 17.5 && pz >= 19.65) {
-        this.exitInteriorGradual('right');
-      } else if (px >= 12.6 && px <= 22.0 && pz <= -36.8) {
-        this.exitInteriorGradual('north_buddha');
-      }
-    } else {
-      // Stepping onto the widened End-of-Road Left-Turn Shoe-Removal Veranda & Wooden Door (x = 34.0..38.0, z = -18.4..-10.6)
-      if (pz >= -18.4 && pz <= -10.6 && px >= 34.0 && px <= 38.0) {
-        this.enterInteriorGradual('right');
-      }
+      // Never silently eject the user outside while exploring Chánh Điện —
+      // explicit [E] / button prompts at interior doors handle exiting cleanly.
+      return;
+    }
+    // Never hijack an active auto-walk route that is heading to a different outdoor destination
+    if (this.autoWalkWaypoints?.length > 0 && this.autoWalkStation?.key !== 'chanh_dien') {
+      return;
+    }
+    // Stepping onto the widened End-of-Road Left-Turn Shoe-Removal Veranda & Wooden Door (x = 34.0..37.2, z = -18.4..-10.6)
+    if (pz >= -18.4 && pz <= -10.6 && px >= 34.0 && px <= 37.2) {
+      this.enterInteriorGradual('right');
+    } else if (px >= 20.4 && px <= 25.6 && pz >= 7.6 && pz <= 9.1) {
+      // Walking directly up the top of the front central staircase enters Chánh Điện front nave
+      this.enterInteriorGradual('front_tam_quan');
     }
   },
 
   stopMoving() {
-    if (this.autoWalkWaypoints.length === 0 && this.heldDirs.size === 0) {
+    const jMag = Math.hypot(this.joystickVec?.x || 0, this.joystickVec?.z || 0);
+    if (this.autoWalkWaypoints.length === 0 && this.heldDirs.size === 0 && jMag <= 0.08) {
       this.playerState.moving = false;
     }
   },
@@ -305,6 +385,7 @@ export const movementMethods = {
     this.playerState.moving = false;
     this.currentStationId = st.id;
     this.syncPlayerTransform();
+    this.snapCameraImmediate();
     this.checkStationProximity();
     this.onStationProximity(st, 0);
   },
@@ -314,22 +395,25 @@ export const movementMethods = {
     const tz = Number(z);
     if (!Number.isFinite(tx) || !Number.isFinite(tz)) return;
     this.cancelEntranceTour();
-    if (this.inInterior) {
-      this.toggleInterior(false, this.lastDoorSide);
-    }
-    const pts = this.buildPerimeterSafeWaypoints(
+    const pts = this.computeSmartWaypoints(
       this.playerState.x,
       this.playerState.z,
       tx,
       tz,
-      null,
       { x: tx, y: 1.2, z: tz }
     );
     this.autoWalkWaypoints = pts;
     this.autoWalkCallback = null;
     this.autoWalkStation = label ? { name: label, key: 'walk_point' } : null;
+    this._stuckTracker = {
+      lastX: this.playerState.x,
+      lastZ: this.playerState.z,
+      timer: 0,
+      rerouted: false
+    };
+    const finalTarget = pts[pts.length - 1] || { x: tx, z: tz };
     if (this.walkTargetRing) {
-      this.walkTargetRing.position.set(tx, 0.06, tz);
+      this.walkTargetRing.position.set(finalTarget.x, 0.06, finalTarget.z);
       this.walkTargetRing.visible = true;
     }
     this.updateWalkPathLine();

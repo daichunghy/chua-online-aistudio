@@ -417,8 +417,8 @@ export function buildRightEntranceRoadProps() {
     roughness: 0.25
   });
 
-  // Đèn đường tay cong dọc mép lề phải (x = 48.35)
-  for (const lz of [31.5, 19.5, 7.5, -4.5, -16.5, -28.5]) {
+  // Đèn đường tay cong dọc mép lề phải (x = 48.35 — chừa thoáng lối rẽ phải vào Giảng Đường z = -20.8..-15.4)
+  for (const lz of [31.5, 19.5, 7.5, -4.5, -14.4, -28.2]) {
     const lPost = new THREE.Group();
     lPost.position.set(48.35, 0, lz);
     const base = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.18, 0.45, 8), ironLampMat);
@@ -438,7 +438,7 @@ export function buildRightEntranceRoadProps() {
   }
 
   // Cột điện bê tông mảnh & dây điện nhẹ vắt dọc ven đường (rất đặc trưng trong ảnh Cổng Phụ image_bb72a8b0.png!)
-  const utilityZs = [38.2, 19.5, 0.5, -18.5];
+  const utilityZs = [38.2, 19.5, 0.5, -10.2];
   for (const uz of utilityZs) {
     const uPole = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.16, 7.4, 8), poleGreyMat);
     uPole.position.set(49.35, 3.7, uz);

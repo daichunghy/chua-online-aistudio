@@ -136,6 +136,8 @@ export class TempleAudioEngine {
       typeof opts.onVoiceStateChange === 'function' ? opts.onVoiceStateChange : null;
     this.onSpeechStateChange =
       typeof opts.onSpeechStateChange === 'function' ? opts.onSpeechStateChange : null;
+    this.onAmbientStateChange =
+      typeof opts.onAmbientStateChange === 'function' ? opts.onAmbientStateChange : null;
 
     // WebAudio graph
     this.ctx = null;
@@ -152,12 +154,30 @@ export class TempleAudioEngine {
       this.unlock();
     };
 
-    // Ambient soundscape state
+    // Ambient soundscape state (distant chanting + bronze temple bells + nature/hall)
+    this._ambientEnabled = opts.ambientEnabled !== false;
+    const rawLayers = opts.ambientLayers && typeof opts.ambientLayers === 'object' ? opts.ambientLayers : {};
+    this._ambientLayers = {
+      chanting: rawLayers.chanting !== false,
+      bells: rawLayers.bells !== false,
+      atmosphere: rawLayers.atmosphere !== false
+    };
     this._ambientActive = false;
     this._ambientZone = 'exterior';
     this._ambientNodes = null;
     this._chimeTimer = null;
     this._rippleTimer = null;
+    this._bellTimer = null;
+    this._lastAmbientBellAt = 0;
+
+    // Distant chanting loop element (niem_phat_xa.mp3)
+    this._ambientChantEl = null;
+    this._chantMediaSource = null;
+    this._chantFilter = null;
+    this._chantGain = null;
+    this._chantViaWebAudio = false;
+    this._chantPendingStart = false;
+    this._externalDuck = false;
 
     // Footstep cadence guard to avoid rapid stacking/clipping
     this._lastFootstepAt = 0;
@@ -242,6 +262,20 @@ export class TempleAudioEngine {
     return this._ambientActive;
   }
 
+  get ambientEnabled() {
+    return this._ambientEnabled;
+  }
+
+  getAmbientState() {
+    return {
+      enabled: Boolean(this._ambientEnabled),
+      running: Boolean(this._ambientActive),
+      zone: this._ambientZone,
+      ducked: Boolean(this._voicePlaying || this._ttsSpeaking || this._externalDuck),
+      layers: { ...this._ambientLayers }
+    };
+  }
+
   setMasterVolume(value) {
     this._masterVolume = clamp01(value, this._masterVolume);
     this._applyMixer();
@@ -272,7 +306,11 @@ export class TempleAudioEngine {
     this._applyMixer({ immediate: true });
     if (nextMuted) {
       this.stopSpeaking();
+      this._pauseAmbientChant();
+    } else if (this._ambientEnabled) {
+      this.startAmbient(this._ambientZone);
     }
+    this._emitAmbientState();
     return this._muted;
   }
 
@@ -286,7 +324,9 @@ export class TempleAudioEngine {
       ambientVolume: this._ambientVolume,
       sfxVolume: this._sfxVolume,
       voiceVolume: this._voiceVolume,
-      muted: this._muted
+      muted: this._muted,
+      ambientEnabled: this._ambientEnabled,
+      ambientLayers: { ...this._ambientLayers }
     };
   }
 
@@ -379,7 +419,7 @@ export class TempleAudioEngine {
 
   _applyMixer({ immediate = false } = {}) {
     const masterTarget = this._muted ? 0 : this._masterVolume;
-    const ambientTarget = this._muted ? 0 : this._ambientVolume;
+    const ambientTarget = this._muted || !this._ambientEnabled ? 0 : this._ambientVolume;
     const sfxTarget = this._muted ? 0 : this._sfxVolume;
     const voiceTarget = this._muted ? 0 : clamp01(this._masterVolume * this._voiceVolume);
 
@@ -395,6 +435,8 @@ export class TempleAudioEngine {
         this.voiceEl.volume = voiceTarget;
       } catch {}
     }
+
+    this._applyAmbientChantVolume(immediate);
   }
 
   _installUnlockHooks() {
@@ -435,7 +477,12 @@ export class TempleAudioEngine {
    */
   async unlock() {
     const ctx = this._ensureContext();
-    if (!ctx) return false;
+    if (!ctx) {
+      if (this._ambientEnabled && !this._muted && this._ambientLayers.chanting && this._chantPendingStart) {
+        this._startAmbientChant();
+      }
+      return false;
+    }
 
     try {
       if (ctx.state === 'suspended' && typeof ctx.resume === 'function') {
@@ -456,6 +503,13 @@ export class TempleAudioEngine {
 
     if (ctx.state === 'running') {
       this._removeUnlockHooks();
+      if (this._ambientEnabled && !this._muted) {
+        if (!this._ambientActive) {
+          this.startAmbient(this._ambientZone);
+        } else if (this._chantPendingStart && this._ambientLayers.chanting) {
+          this._startAmbientChant();
+        }
+      }
       return true;
     }
     return false;
@@ -548,6 +602,7 @@ export class TempleAudioEngine {
   }
 
   _emitVoiceState() {
+    this._applyAmbientChantVolume();
     if (!this.onVoiceStateChange) return;
     try {
       this.onVoiceStateChange(this.getVoiceState());
@@ -904,11 +959,332 @@ export class TempleAudioEngine {
   }
 
   /* ========================================================================
-     3. AMBIENT TEMPLE SOUNDSCAPE (EXTERIOR MEKONG GARDEN / INTERIOR WOOD HALL)
+     3. AMBIENT TEMPLE SOUNDSCAPE (DISTANT CHANTING + TEMPLE BELLS + GARDEN/HALL)
      ======================================================================== */
 
+  _emitAmbientState() {
+    if (!this.onAmbientStateChange) return;
+    try {
+      this.onAmbientStateChange(this.getAmbientState());
+    } catch {}
+  }
+
+  setAmbientDucking(ducked) {
+    const next = Boolean(ducked);
+    if (this._externalDuck === next) return;
+    this._externalDuck = next;
+    this._applyAmbientChantVolume();
+    this._emitAmbientState();
+  }
+
+  _initAmbientChantElement() {
+    if (this._ambientChantEl) return this._ambientChantEl;
+    try {
+      const AudioCtor =
+        typeof Audio === 'function'
+          ? Audio
+          : typeof window !== 'undefined' && typeof window.Audio === 'function'
+            ? window.Audio
+            : null;
+      if (!AudioCtor) return null;
+
+      const el = new AudioCtor();
+      el.loop = true;
+      el.preload = 'none';
+      try {
+        el.crossOrigin = 'anonymous';
+      } catch {}
+      el.muted = this._muted;
+      el.volume = 0;
+      this._ambientChantEl = el;
+      return el;
+    } catch {
+      this._ambientChantEl = null;
+      return null;
+    }
+  }
+
+  _ensureChantWebAudioRoute() {
+    const el = this._ambientChantEl;
+    const ctx = this.ctx;
+    if (!el || !ctx || !this._ambientGain) return false;
+    if (this._chantViaWebAudio && this._chantGain) return true;
+
+    try {
+      if (typeof ctx.createMediaElementSource === 'function' && !this._chantMediaSource) {
+        const mediaSrc = ctx.createMediaElementSource(el);
+        const lowpass = ctx.createBiquadFilter();
+        lowpass.type = 'lowpass';
+        lowpass.frequency.setValueAtTime(1650, ctx.currentTime);
+        lowpass.Q.setValueAtTime(0.65, ctx.currentTime);
+
+        const chantGain = ctx.createGain();
+        chantGain.gain.setValueAtTime(0, ctx.currentTime);
+
+        mediaSrc.connect(lowpass);
+        lowpass.connect(chantGain);
+        chantGain.connect(this._ambientGain);
+
+        this._chantMediaSource = mediaSrc;
+        this._chantFilter = lowpass;
+        this._chantGain = chantGain;
+        this._chantViaWebAudio = true;
+        el.volume = 1;
+        return true;
+      }
+    } catch {
+      this._chantViaWebAudio = false;
+    }
+    return this._chantViaWebAudio;
+  }
+
+  _applyAmbientChantVolume(immediate = false) {
+    const duckMult = this._voicePlaying || this._ttsSpeaking || this._externalDuck ? 0.2 : 1.0;
+    const chantActive =
+      Boolean(this._ambientEnabled) &&
+      Boolean(this._ambientLayers.chanting) &&
+      !this._muted &&
+      this._ambientVolume > 0 &&
+      this._masterVolume > 0;
+
+    // Gentle distant presence: slightly warmer/closer inside Chánh Điện than out in courtyard
+    const zoneFactor = this._ambientZone === 'interior' ? 0.28 : 0.19;
+    const targetWebAudioGain = chantActive ? zoneFactor * duckMult : 0;
+
+    if (this._chantViaWebAudio && this._chantGain && this.ctx) {
+      this._setGainParam(this._chantGain, targetWebAudioGain, immediate);
+      if (this._chantFilter && typeof this._chantFilter.frequency?.setTargetAtTime === 'function') {
+        const cutoff = this._ambientZone === 'interior' ? 2100 : 1480;
+        try {
+          this._chantFilter.frequency.setTargetAtTime(cutoff, this.ctx.currentTime, 0.35);
+        } catch {}
+      }
+      if (this._ambientChantEl) {
+        try {
+          this._ambientChantEl.muted = this._muted;
+          this._ambientChantEl.volume = 1;
+        } catch {}
+      }
+      return;
+    }
+
+    if (this._ambientChantEl) {
+      const directVol = chantActive
+        ? clamp01(this._masterVolume * this._ambientVolume * zoneFactor * duckMult)
+        : 0;
+      try {
+        this._ambientChantEl.muted = this._muted;
+        this._ambientChantEl.volume = directVol;
+      } catch {}
+    }
+  }
+
+  async _startAmbientChant() {
+    if (!this._ambientEnabled || !this._ambientLayers.chanting || this._muted) {
+      return false;
+    }
+    const el = this._initAmbientChantElement();
+    if (!el) return false;
+
+    const chantUrl = this.resolveAudioUrl('niem_phat_xa.mp3');
+    if (!chantUrl) return false;
+
+    try {
+      if (!el.src || !el.src.endsWith(encodeURI('niem_phat_xa.mp3'))) {
+        el.src = chantUrl;
+      }
+      el.loop = true;
+      this._ensureChantWebAudioRoute();
+      this._applyAmbientChantVolume();
+
+      const playPromise = el.play();
+      if (playPromise && typeof playPromise.then === 'function') {
+        await playPromise;
+      }
+      this._chantPendingStart = false;
+      this._applyAmbientChantVolume();
+      return true;
+    } catch {
+      this._chantPendingStart = true;
+      return false;
+    }
+  }
+
+  _pauseAmbientChant() {
+    this._chantPendingStart = false;
+    if (this._chantGain && this.ctx) {
+      this._setGainParam(this._chantGain, 0, true);
+    }
+    if (this._ambientChantEl) {
+      try {
+        this._ambientChantEl.volume = 0;
+        this._ambientChantEl.pause();
+      } catch {}
+    }
+  }
+
   /**
-   * Starts the procedural ambient temple soundscape (idempotent).
+   * Turns the entire looping ambient temple soundscape On/Off independently of SFX & Voice.
+   * @param {boolean} enabled
+   * @returns {boolean}
+   */
+  setAmbientEnabled(enabled) {
+    const next = Boolean(enabled);
+    this._ambientEnabled = next;
+
+    if (next) {
+      if (!this._muted) {
+        const hadStarted = this._ambientActive;
+        this.unlock();
+        this.startAmbient(this._ambientZone);
+        if (!hadStarted || this._ambientLayers.bells) {
+          this.playDistantAmbientBell(0.16);
+        }
+      }
+    } else {
+      this.stopAmbient();
+    }
+
+    this._applyMixer();
+    this._emitAmbientState();
+    return this._ambientEnabled;
+  }
+
+  toggleAmbientEnabled() {
+    return this.setAmbientEnabled(!this._ambientEnabled);
+  }
+
+  /**
+   * Updates individual ambient layers (chanting, bells, atmosphere) live.
+   * @param {{chanting?: boolean, bells?: boolean, atmosphere?: boolean}} layers
+   */
+  setAmbientLayers(layers = {}) {
+    if (layers && typeof layers === 'object') {
+      if (typeof layers.chanting === 'boolean') this._ambientLayers.chanting = layers.chanting;
+      if (typeof layers.bells === 'boolean') this._ambientLayers.bells = layers.bells;
+      if (typeof layers.atmosphere === 'boolean') this._ambientLayers.atmosphere = layers.atmosphere;
+    }
+
+    if (!this._ambientLayers.chanting && !this._ambientLayers.bells && !this._ambientLayers.atmosphere) {
+      this._ambientEnabled = false;
+    }
+
+    if (!this._ambientEnabled || this._muted) {
+      this._pauseAmbientChant();
+      this._applyMixer();
+      this._emitAmbientState();
+      return this.getAmbientState();
+    }
+
+    if (this._ambientActive) {
+      if (this._ambientNodes?.atmosphereBus && this.ctx) {
+        this._setGainParam(
+          this._ambientNodes.atmosphereBus,
+          this._ambientLayers.atmosphere ? 1.0 : 0.0,
+          false
+        );
+      }
+      if (this._ambientLayers.chanting) {
+        this._startAmbientChant();
+      } else {
+        this._pauseAmbientChant();
+      }
+      if (this._ambientLayers.bells) {
+        if (!this._bellTimer) this._scheduleDistantBell();
+        if (!this._chimeTimer) this._scheduleAmbientChime();
+      } else {
+        if (this._bellTimer) {
+          clearTimeout(this._bellTimer);
+          this._bellTimer = null;
+        }
+        if (this._chimeTimer) {
+          clearTimeout(this._chimeTimer);
+          this._chimeTimer = null;
+        }
+      }
+      if (this._ambientLayers.atmosphere && !this._rippleTimer) {
+        this._scheduleLotusRipple();
+      }
+    } else {
+      this.startAmbient(this._ambientZone);
+    }
+
+    this._applyMixer();
+    this._emitAmbientState();
+    return this.getAmbientState();
+  }
+
+  /**
+   * Plays a soft, distant resonant bronze temple bell routed through the ambient bus.
+   * @param {number} [strength=0.18]
+   * @returns {boolean}
+   */
+  playDistantAmbientBell(strength = 0.18) {
+    if (this._muted || !this._ambientEnabled || !this._ambientLayers.bells) return false;
+    if (this._masterVolume <= 0 || this._ambientVolume <= 0) return false;
+
+    const ctx = this._ensureContext();
+    if (!ctx || !this._ambientGain) return false;
+    if (ctx.state === 'suspended' && typeof ctx.resume === 'function') {
+      try {
+        Promise.resolve(ctx.resume()).catch(() => {});
+      } catch {}
+    }
+
+    const nowMs = Date.now();
+    if (nowMs - this._lastAmbientBellAt < 1800) return false;
+    this._lastAmbientBellAt = nowMs;
+
+    try {
+      const now = ctx.currentTime;
+      const pitches = [164.81, 196.0, 220.0]; // Warm distant E3 / G3 / A3 bronze bell tones
+      const fundamental = pitches[Math.floor(Math.random() * pitches.length)];
+      const vel = clampRange(strength, 0.05, 0.45, 0.18);
+
+      const lp = ctx.createBiquadFilter();
+      lp.type = 'lowpass';
+      lp.frequency.setValueAtTime(1120, now);
+      lp.frequency.exponentialRampToValueAtTime(340, now + 3.6);
+      lp.Q.setValueAtTime(0.65, now);
+
+      const bus = ctx.createGain();
+      bus.gain.setValueAtTime(vel, now);
+      lp.connect(bus);
+      bus.connect(this._ambientGain);
+
+      const partials = [
+        { ratio: 1.0, amp: 0.46, dur: 5.2 },
+        { ratio: 1.0032, amp: 0.12, dur: 4.8 },
+        { ratio: 2.0, amp: 0.22, dur: 3.6 },
+        { ratio: 2.42, amp: 0.12, dur: 2.6 },
+        { ratio: 3.01, amp: 0.07, dur: 1.8 }
+      ];
+
+      for (const p of partials) {
+        const osc = ctx.createOscillator();
+        const g = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(fundamental * p.ratio, now);
+
+        // Soft distant swell attack (45ms) so it sounds far away across the temple courtyard
+        g.gain.setValueAtTime(0.0001, now);
+        g.gain.linearRampToValueAtTime(p.amp, now + 0.045);
+        g.gain.exponentialRampToValueAtTime(0.0001, now + p.dur);
+
+        osc.connect(g);
+        g.connect(lp);
+        osc.start(now);
+        osc.stop(now + p.dur + 0.08);
+      }
+
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Starts the looping ambient temple soundscape (idempotent).
    * @param {'exterior' | 'interior' | string} [zone='exterior']
    * @returns {boolean}
    */
@@ -916,25 +1292,42 @@ export class TempleAudioEngine {
     const normalizedZone = normalizeAmbientZone(zone);
     this._ambientZone = normalizedZone;
 
+    if (!this._ambientEnabled) {
+      return false;
+    }
+
     if (this._ambientActive) {
       this.setAmbientZone(normalizedZone);
+      if (this._ambientLayers.chanting && !this._muted) {
+        this._startAmbientChant();
+      }
       return true;
     }
 
     const ctx = this._ensureContext();
-    if (!ctx || !this._ambientGain) return false;
+    if (!ctx || !this._ambientGain) {
+      if (this._ambientLayers.chanting && !this._muted) {
+        this._startAmbientChant();
+      }
+      return false;
+    }
 
     try {
       const now = ctx.currentTime;
       const noiseBuf = this._getPinkNoiseBuffer(ctx, 4.0);
+
+      // Atmosphere sub-bus (allows toggling wind/water/hall independently of bells & chanting)
+      const atmosphereBus = ctx.createGain();
+      atmosphereBus.gain.setValueAtTime(this._ambientLayers.atmosphere ? 1.0 : 0.0, now);
+      atmosphereBus.connect(this._ambientGain);
 
       // Sub-buses for smooth outdoor <-> indoor crossfading
       const outdoorBus = ctx.createGain();
       const indoorBus = ctx.createGain();
       outdoorBus.gain.setValueAtTime(normalizedZone === 'exterior' ? 1.0 : 0.0, now);
       indoorBus.gain.setValueAtTime(normalizedZone === 'interior' ? 1.0 : 0.0, now);
-      outdoorBus.connect(this._ambientGain);
-      indoorBus.connect(this._ambientGain);
+      outdoorBus.connect(atmosphereBus);
+      indoorBus.connect(atmosphereBus);
 
       // --- Outdoor: Pink-filtered Mekong garden breeze ---
       const breezeSrc = ctx.createBufferSource();
@@ -1036,14 +1429,24 @@ export class TempleAudioEngine {
       droneOsc2.start(now);
 
       this._ambientNodes = {
+        atmosphereBus,
         outdoorBus,
         indoorBus,
         sources: [breezeSrc, breezeLfo, waterSrc, waterLfo, hallSrc, droneOsc1, droneOsc2]
       };
       this._ambientActive = true;
 
-      this._scheduleAmbientChime();
-      this._scheduleLotusRipple();
+      if (this._ambientLayers.bells) {
+        this._scheduleAmbientChime();
+        this._scheduleDistantBell();
+      }
+      if (this._ambientLayers.atmosphere) {
+        this._scheduleLotusRipple();
+      }
+      if (this._ambientLayers.chanting && !this._muted) {
+        this._startAmbientChant();
+      }
+      this._emitAmbientState();
       return true;
     } catch {
       this._ambientActive = false;
@@ -1059,6 +1462,7 @@ export class TempleAudioEngine {
   setAmbientZone(zone) {
     const normalizedZone = normalizeAmbientZone(zone);
     this._ambientZone = normalizedZone;
+    this._applyAmbientChantVolume();
     if (!this._ambientActive || !this._ambientNodes || !this.ctx) return;
 
     const now = this.ctx.currentTime;
@@ -1071,17 +1475,43 @@ export class TempleAudioEngine {
     } catch {}
   }
 
+  _scheduleDistantBell() {
+    if (this._bellTimer) {
+      clearTimeout(this._bellTimer);
+      this._bellTimer = null;
+    }
+    if (!this._ambientActive || !this._ambientEnabled || !this._ambientLayers.bells) return;
+
+    const delayMs = 16000 + Math.random() * 14000; // Calm 16s–30s distant bronze temple bell toll
+    this._bellTimer = setTimeout(() => {
+      this._bellTimer = null;
+      if (!this._ambientActive || !this._ambientEnabled || !this._ambientLayers.bells) return;
+
+      if (
+        !this._muted &&
+        this._masterVolume > 0 &&
+        this._ambientVolume > 0 &&
+        this.ctx &&
+        this.ctx.state === 'running'
+      ) {
+        const duckFactor = this._voicePlaying || this._ttsSpeaking || this._externalDuck ? 0.45 : 1.0;
+        this.playDistantAmbientBell((0.15 + Math.random() * 0.06) * duckFactor);
+      }
+      this._scheduleDistantBell();
+    }, delayMs);
+  }
+
   _scheduleAmbientChime() {
     if (this._chimeTimer) {
       clearTimeout(this._chimeTimer);
       this._chimeTimer = null;
     }
-    if (!this._ambientActive) return;
+    if (!this._ambientActive || !this._ambientEnabled || !this._ambientLayers.bells) return;
 
     const delayMs = 7000 + Math.random() * 8000; // Sparse 7s–15s calm wind chime swells
     this._chimeTimer = setTimeout(() => {
       this._chimeTimer = null;
-      if (!this._ambientActive) return;
+      if (!this._ambientActive || !this._ambientEnabled || !this._ambientLayers.bells) return;
 
       if (
         !this._muted &&
@@ -1100,12 +1530,11 @@ export class TempleAudioEngine {
   _triggerDistantWindChime() {
     const ctx = this.ctx;
     const nodes = this._ambientNodes;
-    if (!ctx || !nodes) return;
+    if (!ctx || !nodes || !this._ambientGain) return;
 
     try {
       const now = ctx.currentTime;
       const count = Math.random() < 0.45 ? 2 : 1;
-      const destBus = this._ambientZone === 'interior' ? nodes.indoorBus : nodes.outdoorBus;
       const baseGain = this._ambientZone === 'interior' ? 0.012 : 0.026;
 
       for (let i = 0; i < count; i++) {
@@ -1137,7 +1566,7 @@ export class TempleAudioEngine {
         overtone.connect(overGain);
         overGain.connect(lp);
         lp.connect(gain);
-        gain.connect(destBus);
+        gain.connect(this._ambientGain);
 
         osc.start(start);
         overtone.start(start);
@@ -1152,12 +1581,12 @@ export class TempleAudioEngine {
       clearTimeout(this._rippleTimer);
       this._rippleTimer = null;
     }
-    if (!this._ambientActive) return;
+    if (!this._ambientActive || !this._ambientEnabled || !this._ambientLayers.atmosphere) return;
 
     const delayMs = 3200 + Math.random() * 4800;
     this._rippleTimer = setTimeout(() => {
       this._rippleTimer = null;
-      if (!this._ambientActive) return;
+      if (!this._ambientActive || !this._ambientEnabled || !this._ambientLayers.atmosphere) return;
 
       if (
         this._ambientZone === 'exterior' &&
@@ -1201,6 +1630,7 @@ export class TempleAudioEngine {
 
   stopAmbient() {
     this._ambientActive = false;
+    this._pauseAmbientChant();
 
     if (this._chimeTimer) {
       clearTimeout(this._chimeTimer);
@@ -1210,19 +1640,24 @@ export class TempleAudioEngine {
       clearTimeout(this._rippleTimer);
       this._rippleTimer = null;
     }
+    if (this._bellTimer) {
+      clearTimeout(this._bellTimer);
+      this._bellTimer = null;
+    }
 
     const nodes = this._ambientNodes;
     this._ambientNodes = null;
-    if (!nodes) return;
-
-    try {
-      const stopAt = (this.ctx?.currentTime || 0) + 0.05;
-      for (const src of nodes.sources) {
-        try {
-          src.stop(stopAt);
-        } catch {}
-      }
-    } catch {}
+    if (nodes) {
+      try {
+        const stopAt = (this.ctx?.currentTime || 0) + 0.05;
+        for (const src of nodes.sources) {
+          try {
+            src.stop(stopAt);
+          } catch {}
+        }
+      } catch {}
+    }
+    this._emitAmbientState();
   }
 
   /* ========================================================================
@@ -1779,6 +2214,7 @@ export class TempleAudioEngine {
       const finish = () => {
         if (token !== this._speechToken) return;
         this._ttsSpeaking = false;
+        this._applyAmbientChantVolume();
         if (this.onSpeechStateChange) {
           try {
             this.onSpeechStateChange({ speaking: false, text: cleanText });
@@ -1795,6 +2231,7 @@ export class TempleAudioEngine {
       utter.onerror = finish;
 
       this._ttsSpeaking = true;
+      this._applyAmbientChantVolume();
       if (this.onSpeechStateChange) {
         try {
           this.onSpeechStateChange({ speaking: true, text: cleanText });
@@ -1806,6 +2243,7 @@ export class TempleAudioEngine {
     } catch {
       if (token === this._speechToken) {
         this._ttsSpeaking = false;
+        this._applyAmbientChantVolume();
       }
       return false;
     }
@@ -1821,6 +2259,7 @@ export class TempleAudioEngine {
     }
     if (this._ttsSpeaking) {
       this._ttsSpeaking = false;
+      this._applyAmbientChantVolume();
       if (this.onSpeechStateChange) {
         try {
           this.onSpeechStateChange({ speaking: false, text: '' });
@@ -1910,6 +2349,10 @@ export class TempleAudioEngine {
     }
     this._voiceListeners = null;
     this.voiceEl = null;
+    this._ambientChantEl = null;
+    this._chantMediaSource = null;
+    this._chantFilter = null;
+    this._chantGain = null;
 
     if (this.ctx) {
       try {

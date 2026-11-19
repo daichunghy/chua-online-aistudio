@@ -73,6 +73,7 @@ export class SutraStudyController {
   }
 
   _stopTempleChantAudio() {
+    this.app.audio?.setAmbientDucking?.(false);
     if (this._templeChantEl) {
       try {
         this._templeChantEl.pause();
@@ -90,6 +91,7 @@ export class SutraStudyController {
         this._templeChantEl = new AudioCtor();
         this._templeChantEl.loop = true;
       }
+      this.app.audio?.setAmbientDucking?.(true);
       const mixer = this.app.audio?.getMixerState?.() || {};
       const effVol = mixer.muted ? 0 : Math.max(0, Math.min(1, (mixer.masterVolume ?? 1) * (mixer.voiceVolume ?? 0.9) * 0.72));
       this._templeChantEl.src = url;
@@ -99,6 +101,7 @@ export class SutraStudyController {
       if (p && typeof p.catch === 'function') p.catch(() => {});
       return true;
     } catch {
+      this.app.audio?.setAmbientDucking?.(false);
       return false;
     }
   }

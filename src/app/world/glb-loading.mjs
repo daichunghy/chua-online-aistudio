@@ -268,7 +268,7 @@ export const glbLoadingMethods = {
         3.62 - box2.min.y,
         -(box2.min.z + box2.max.z) / 2
       );
-      s.rotation.y = Math.PI;
+      s.rotation.y = 0;
       this.nietBanGroup.add(s);
     }
 
@@ -300,7 +300,7 @@ export const glbLoadingMethods = {
       const box2 = new THREE.Box3().setFromObject(qa);
       qa.position.set(
         -(box2.min.x + box2.max.x) / 2,
-        2.68 - box2.min.y,
+        1.82 - box2.min.y,
         -(box2.min.z + box2.max.z) / 2
       );
       this.quanAmGroup.add(qa);
@@ -417,12 +417,61 @@ export const glbLoadingMethods = {
       }
     }
     this.renderFrame();
+
+    // Phase 3 (Background Idle Load Balancing): Gently warm interior GLB cache 1-by-1 while player explores outside
+    window.setTimeout(() => {
+      this._preloadInteriorAssetsIdle().catch(() => {});
+    }, this.isSoftwareGl ? 2400 : 1200);
+  },
+
+  async _preloadInteriorAssetsIdle() {
+    if (this._interiorIdlePreloadStarted || this._interiorGLBsMounted) return;
+    this._interiorIdlePreloadStarted = true;
+    const urls = [
+      STATUE_GLB_PATHS.hoPhap,
+      STATUE_GLB_PATHS.tieuDien,
+      STATUE_GLB_PATHS.toDatMa,
+      STATUE_GLB_PATHS.nghinMatNghinTay,
+      STATUE_GLB_PATHS.choNguCuaPhat,
+      ARCH_GLB_PATHS.long_tru,
+      ARCH_GLB_PATHS.bao_lam,
+      ARCH_GLB_PATHS.thap_den_cau_an,
+      ARCH_GLB_PATHS.hon_non_bo,
+      PROP_GLB_PATHS.cap_hac_rua,
+      PROP_GLB_PATHS.nhang_khoanh_dong,
+      ARHAT_GLB_PATHS.kyTuong,
+      ARHAT_GLB_PATHS.toaLoc,
+      ARHAT_GLB_PATHS.phucHo,
+      ARHAT_GLB_PATHS.hangLong,
+      ARHAT_GLB_PATHS.hoanHi,
+      ARHAT_GLB_PATHS.phucHo2,
+      ARHAT_GLB_PATHS.thienDinh,
+      ARHAT_GLB_PATHS.cuBat,
+      ARHAT_GLB_PATHS.thacThap,
+      ARHAT_GLB_PATHS.khaiTam,
+      ARHAT_GLB_PATHS.tieuSu
+    ];
+    for (const url of urls) {
+      if (this._interiorLoadPromise || this._interiorGLBsMounted) return;
+      await this.loadGLB(url);
+      await new Promise((r) => window.setTimeout(r, this.isSoftwareGl ? 260 : 140));
+    }
   },
 
   ensureInteriorAssetsLoaded() {
     if (this._interiorLoadPromise) return this._interiorLoadPromise;
     this._interiorLoadPromise = (async () => {
-      // Load all interior sculpted GLBs & Meshy PBR architectural assets
+      const yieldBatch = () => new Promise((r) => window.setTimeout(r, this.isSoftwareGl ? 32 : 14));
+      const stripCastShadow = (root) => {
+        if (!root) return;
+        root.traverse((o) => {
+          if (o.isMesh) {
+            o.castShadow = false;
+            o.receiveShadow = false;
+          }
+        });
+      };
+      // Load interior GLBs in balanced staggered batches instead of one giant spike
       const [
         adidaGltf,
         dilacGltf,
@@ -432,15 +481,7 @@ export const glbLoadingMethods = {
         tieuDienGltf,
         toDatMaGltf,
         nghinMatNghinTayGltf,
-        choNguCuaPhatGltf,
-        longTruGltf,
-        baoLamGltf,
-        thapDenCauAnGltf,
-        honNonBoGltf,
-        daiHongChungGltf,
-        trongBatNhaGltf,
-        capHacRuaGltf,
-        nhangKhoanhDongGltf
+        choNguCuaPhatGltf
       ] = await Promise.all([
         this.loadGLB(STATUE_GLB_PATHS.adida),
         this.loadGLB(STATUE_GLB_PATHS.dilac),
@@ -450,7 +491,19 @@ export const glbLoadingMethods = {
         this.loadGLB(STATUE_GLB_PATHS.tieuDien),
         this.loadGLB(STATUE_GLB_PATHS.toDatMa),
         this.loadGLB(STATUE_GLB_PATHS.nghinMatNghinTay),
-        this.loadGLB(STATUE_GLB_PATHS.choNguCuaPhat),
+        this.loadGLB(STATUE_GLB_PATHS.choNguCuaPhat)
+      ]);
+      await yieldBatch();
+      const [
+        longTruGltf,
+        baoLamGltf,
+        thapDenCauAnGltf,
+        honNonBoGltf,
+        daiHongChungGltf,
+        trongBatNhaGltf,
+        capHacRuaGltf,
+        nhangKhoanhDongGltf
+      ] = await Promise.all([
         this.loadGLB(ARCH_GLB_PATHS.long_tru),
         this.loadGLB(ARCH_GLB_PATHS.bao_lam),
         this.loadGLB(ARCH_GLB_PATHS.thap_den_cau_an),
@@ -460,6 +513,7 @@ export const glbLoadingMethods = {
         this.loadGLB(PROP_GLB_PATHS.cap_hac_rua),
         this.loadGLB(PROP_GLB_PATHS.nhang_khoanh_dong)
       ]);
+      await yieldBatch();
 
       const [kyTuongGltf, toaLocGltf, phucHoGltf, hangLongGltf, hoanHiGltf] = await Promise.all([
         this.loadGLB(ARHAT_GLB_PATHS.kyTuong),
@@ -558,6 +612,7 @@ export const glbLoadingMethods = {
           (opts.offsetY || 0) - b2.min.y,
           (opts.offsetZ || 0) - (b2.min.z + b2.max.z) / 2
         );
+        stripCastShadow(mesh);
         anchor.add(mesh);
         return mesh;
       };
@@ -567,8 +622,8 @@ export const glbLoadingMethods = {
         const btModel = this.archMeshCache.thap_den_cau_an.clone(true);
         btModel.traverse((o) => {
           if (o.isMesh) {
-            o.castShadow = true;
-            o.receiveShadow = true;
+            o.castShadow = false;
+            o.receiveShadow = false;
             if (o.geometry && !o.geometry.getAttribute('normal')) o.geometry.computeVertexNormals();
             if (o.material) {
               o.material = o.material.clone();
@@ -592,8 +647,8 @@ export const glbLoadingMethods = {
         const nbModel = this.archMeshCache.hon_non_bo.clone(true);
         nbModel.traverse((o) => {
           if (o.isMesh) {
-            o.castShadow = true;
-            o.receiveShadow = true;
+            o.castShadow = false;
+            o.receiveShadow = false;
             if (o.geometry && !o.geometry.getAttribute('normal')) o.geometry.computeVertexNormals();
           }
         });
@@ -632,8 +687,8 @@ export const glbLoadingMethods = {
         const bl = this.archMeshCache.bao_lam.clone(true);
         bl.traverse((o) => {
           if (o.isMesh) {
-            o.castShadow = true;
-            o.receiveShadow = true;
+            o.castShadow = false;
+            o.receiveShadow = false;
             if (o.geometry && !o.geometry.getAttribute('normal')) o.geometry.computeVertexNormals();
           }
         });
@@ -656,6 +711,7 @@ export const glbLoadingMethods = {
           matKind: 'jackfruit_wood'
         });
       }
+      await yieldBatch();
 
       // 6. All 8 Extended East Corridor Shrines — 100% Authentic Sculpted GLB Buddhas & Bodhisattvas!
       const eastShrineGltfMap = {
@@ -688,6 +744,7 @@ export const glbLoadingMethods = {
           rotY: Math.PI
         });
       }
+      await yieldBatch();
 
       // 8. 18 Thập Bát La Hán neatly arranged along North & South Side Wall Plinths INSIDE Grand Chánh Điện
       //    Strictly uses verified sculpted GLBs (ZERO handmade procedural Arhat statues!)
@@ -734,11 +791,14 @@ export const glbLoadingMethods = {
           slot.y - bounds.min.y,
           slot.z - (bounds.min.z + bounds.max.z) / 2
         );
+        stripCastShadow(statue);
         statue.userData.arhatIndex = item.index;
         statue.userData.arhatTitle = item.title;
         this.interiorGroup.add(statue);
         this.arhatGroups.push(statue);
+        if (i % 6 === 5) await yieldBatch();
       }
+      await yieldBatch();
 
       // 9. Đại Hồng Chung (with rich antique bronze/teakwood PBR material — NOT flat grey!)
       if (this.archMeshCache.dai_hong_chung && this.interiorBellAnchor?.group) {
@@ -751,6 +811,7 @@ export const glbLoadingMethods = {
         ibell.scale.setScalar(2.45 / Math.max(0.1, sz.y));
         const bb = new THREE.Box3().setFromObject(ibell);
         ibell.position.set(-(bb.min.x + bb.max.x) / 2, -bb.min.y, -(bb.min.z + bb.max.z) / 2);
+        stripCastShadow(ibell);
         this.interiorBellAnchor.group.add(ibell);
       }
 
@@ -762,8 +823,8 @@ export const glbLoadingMethods = {
         const drumRaw = this.archMeshCache.trong_bat_nha.clone(true);
         drumRaw.traverse((o) => {
           if (o.isMesh) {
-            o.castShadow = true;
-            o.receiveShadow = true;
+            o.castShadow = false;
+            o.receiveShadow = false;
             if (o.geometry && !o.geometry.getAttribute('normal')) {
               o.geometry.computeVertexNormals();
             }
@@ -790,6 +851,7 @@ export const glbLoadingMethods = {
           ltModel.rotation.y = ph.sideSign < 0 ? 0.35 : -0.35;
           const lb = new THREE.Box3().setFromObject(ltModel);
           ltModel.position.set(-(lb.min.x + lb.max.x) / 2, 0.44 - lb.min.y, -(lb.min.z + lb.max.z) / 2);
+          stripCastShadow(ltModel);
           ph.group.add(ltModel);
         }
       }
@@ -801,6 +863,7 @@ export const glbLoadingMethods = {
           const coil = this.fitProp(this.propMeshCache.nhang_khoanh_dong, 1.02);
           const cb = new THREE.Box3().setFromObject(coil);
           coil.position.set(-(cb.min.x + cb.max.x) / 2, -cb.max.y, -(cb.min.z + cb.max.z) / 2);
+          stripCastShadow(coil);
           anc.add(coil);
         }
       }
@@ -813,6 +876,7 @@ export const glbLoadingMethods = {
           const cb = new THREE.Box3().setFromObject(crane);
           crane.position.set(cx - (cb.min.x + cb.max.x) / 2, -cb.min.y, -(cb.min.z + cb.max.z) / 2);
           crane.rotation.y = cx < 0 ? 0.16 : -0.16;
+          stripCastShadow(crane);
           this.craneTortoiseAnchor.add(crane);
         }
       }

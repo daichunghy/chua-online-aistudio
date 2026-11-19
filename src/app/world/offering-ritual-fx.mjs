@@ -21,7 +21,7 @@ const EXTERIOR_BURNERS = [
 ];
 
 const INTERIOR_BURNERS = [
-  { x: -32.24, y: 1.38, z: 0.0 }, // Bàn thờ Tam Bảo (Chánh Điện chính cạnh Tây)
+  { x: -26.16, y: 1.38, z: 0.0 }, // Bàn thờ Tam Bảo (Phật ở giữa Chánh Điện, quay mặt hướng ra Cổng Tam Quan)
   { x: -2.0, y: 1.36, z: -18.83 }, // Bàn thờ Tổ Đạt Ma (Tổ Đường cạnh Bắc)
   { x: 22.42, y: 1.24, z: 12.6 }, // Hộ Pháp Vi Đà
   { x: 22.42, y: 1.24, z: 6.2 }, // Phật Bà Nghìn Mắt Nghìn Tay
@@ -348,12 +348,12 @@ export const offeringRitualFxMethods = {
           onPond: true
         };
       } else {
-        // Dâng lên hai bên mặt bàn thờ Tam Bảo
+        // Dâng lên hai bên mặt trước bàn thờ Tam Bảo (quay mặt hướng -X ra Cổng Tam Quan)
         const side = nInt % 2 === 0 ? -1 : 1;
         targetWorld = {
-          x: side * (1.28 + Math.floor(nInt / 2) * 0.28),
-          y: 1.44,
-          z: -16.88,
+          x: -26.08,
+          y: 1.38,
+          z: side * (1.28 + Math.floor(nInt / 2) * 0.28),
           onPond: false
         };
       }

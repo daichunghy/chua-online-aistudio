@@ -186,24 +186,24 @@ export const gatesAndDiscoveryMethods = {
     this.exteriorGroup.add(arhatGarden);
     this.addObstacle(-49.5, -24.0, 5.2);
 
-    // 4. HỒ PHÓNG SINH LỚN & CẦU GỖ CHỮ Z (-16.0, -56.0)
-    const releasePond = this.buildLotusPond(24.0, 15.0, 18, false);
-    releasePond.position.set(-16.0, 0, -56.0);
+    // 4. HỒ PHÓNG SINH LỚN & CẦU GỖ CHỮ Z (-28.0, -58.5)
+    const releasePond = this.buildLotusPond(20.0, 13.5, 16, false);
+    releasePond.position.set(-28.0, 0, -58.5);
     this.exteriorGroup.add(releasePond);
-    this.addRectObstacle(-28.5, -3.5, -64.0, -48.0);
+    this.addRectObstacle(-38.5, -17.5, -65.5, -51.5);
     // Zig-zag wooden bridge over Hồ Phóng Sinh
     const zBridge = new THREE.Group();
     const woodRed = new THREE.MeshStandardMaterial({ color: 0x8A3224, roughness: 0.64 });
-    const bridgeSeg1 = new THREE.Mesh(new THREE.BoxGeometry(8.5, 0.16, 1.55), woodRed);
-    bridgeSeg1.position.set(-5.2, 0.88, 2.4);
+    const bridgeSeg1 = new THREE.Mesh(new THREE.BoxGeometry(7.2, 0.16, 1.45), woodRed);
+    bridgeSeg1.position.set(-4.5, 0.88, 2.2);
     zBridge.add(bridgeSeg1);
-    const bridgeSeg2 = new THREE.Mesh(new THREE.BoxGeometry(1.55, 0.16, 6.2), woodRed);
-    bridgeSeg2.position.set(-0.6, 0.88, 0.0);
+    const bridgeSeg2 = new THREE.Mesh(new THREE.BoxGeometry(1.45, 0.16, 5.6), woodRed);
+    bridgeSeg2.position.set(-0.5, 0.88, 0.0);
     zBridge.add(bridgeSeg2);
-    const bridgeSeg3 = new THREE.Mesh(new THREE.BoxGeometry(8.8, 0.16, 1.55), woodRed);
-    bridgeSeg3.position.set(4.0, 0.88, -2.4);
+    const bridgeSeg3 = new THREE.Mesh(new THREE.BoxGeometry(7.5, 0.16, 1.45), woodRed);
+    bridgeSeg3.position.set(3.5, 0.88, -2.2);
     zBridge.add(bridgeSeg3);
-    zBridge.position.set(-16.0, 0, -56.0);
+    zBridge.position.set(-28.0, 0, -58.5);
     this.exteriorGroup.add(zBridge);
 
     // 5. THÁP ĐẠI HỒNG CHUNG (-44, -56) & LẦU TRỐNG BÁT NHÃ (46, -56)
@@ -258,9 +258,9 @@ export const gatesAndDiscoveryMethods = {
     buildBellDrumTower(-44.0, -56.0, 'LẦU ĐẠI HỒNG CHUNG', true);
     buildBellDrumTower(46.0, -56.0, 'LẦU TRỐNG BÁT NHÃ', false);
 
-    // 6. HẬU TỔ · NHÀ THỜ TỔ MIỀN NAM (22.0, -58.0)
+    // 6. HẬU TỔ · NHÀ THỜ TỔ MIỀN NAM (14.5, -72.0 — phía sau vườn Phật Niết Bàn)
     const nhaTo = new THREE.Group();
-    nhaTo.position.set(22.0, 0, -58.0);
+    nhaTo.position.set(14.5, 0, -72.0);
     const ntPlinth = new THREE.Mesh(new THREE.BoxGeometry(20.5, 0.68, 11.5), M.stoneLight);
     ntPlinth.position.y = 0.34;
     ntPlinth.receiveShadow = true;
@@ -290,7 +290,166 @@ export const gatesAndDiscoveryMethods = {
     ntBurner.position.set(0, 0.68, 6.2);
     nhaTo.add(ntBurner);
     this.exteriorGroup.add(nhaTo);
-    this.addRectObstacle(11.6, 32.4, -64.0, -51.5);
+    this.addRectObstacle(4.1, 24.9, -78.0, -65.5);
+
+    // 6b. KHU NHÀ VỆ SINH NAM — NỮ SÂN SAU CHÙA (35.5, -66.5 — sạch sẽ, rộng rãi, đông khách hành hương!)
+    const restroomGroup = new THREE.Group();
+    restroomGroup.position.set(35.5, 0, -66.5);
+    const rrCeramicMat = new THREE.MeshStandardMaterial({ color: 0xC9DDD8, roughness: 0.36 });
+    const rrWallMat = new THREE.MeshStandardMaterial({ map: this.limeWallTex, color: 0xF1E5C8, roughness: 0.82 });
+    const rrTileApronMat = new THREE.MeshStandardMaterial({ map: this.pavingTex, color: 0xC5BAA6, roughness: 0.82 });
+    const rrChromeMat = new THREE.MeshStandardMaterial({ color: 0xDCE2E8, roughness: 0.2, metalness: 0.82 });
+    const rrMirrorMat = new THREE.MeshStandardMaterial({ color: 0xB8D8E6, roughness: 0.1, metalness: 0.72 });
+    const rrDoorDarkMat = new THREE.MeshStandardMaterial({ color: 0x4E3222, roughness: 0.65 });
+
+    // Sân lát gạch rộng phía trước nhà vệ sinh nối ra lối đi sân sau
+    const rrApron = new THREE.Mesh(new THREE.BoxGeometry(15.2, 0.1, 10.6), rrTileApronMat);
+    rrApron.position.set(0, 0.05, 3.6);
+    rrApron.receiveShadow = true;
+    restroomGroup.add(rrApron);
+
+    // Khối nhà chính 12.6m x 4.8m tường kem-vàng + gạch ốp chân tường xanh ngọc sạch sẽ
+    const rrPlinth = new THREE.Mesh(new THREE.BoxGeometry(12.8, 0.24, 5.2), M.stoneLight);
+    rrPlinth.position.set(0, 0.12, 0);
+    restroomGroup.add(rrPlinth);
+
+    const rrDado = new THREE.Mesh(new THREE.BoxGeometry(12.4, 1.35, 4.6), rrCeramicMat);
+    rrDado.position.set(0, 0.915, 0);
+    rrDado.castShadow = true;
+    restroomGroup.add(rrDado);
+
+    const rrUpper = new THREE.Mesh(new THREE.BoxGeometry(12.4, 1.95, 4.56), rrWallMat);
+    rrUpper.position.set(0, 2.56, 0);
+    rrUpper.castShadow = true;
+    restroomGroup.add(rrUpper);
+
+    // Ô gạch bông gió thoáng khí dọc trên cao
+    for (let vi = -5; vi <= 5; vi++) {
+      const vent = new THREE.Mesh(new THREE.BoxGeometry(0.68, 0.42, 0.12), M.stoneDark);
+      vent.position.set(vi * 1.02, 3.05, 2.28);
+      restroomGroup.add(vent);
+    }
+
+    // Mái ngói đỏ 2 mái truyền thống + mái hiên che nắng mưa phía trước
+    const rrRoof = makeHippedRoofMesh(13.8, 6.2, 1.75, M.roofTile);
+    rrRoof.position.set(0, 4.35, 0);
+    rrRoof.castShadow = true;
+    restroomGroup.add(rrRoof);
+
+    const rrEave = new THREE.Mesh(new THREE.BoxGeometry(13.2, 0.12, 2.4), M.roofTile);
+    rrEave.position.set(0, 3.36, 3.25);
+    rrEave.rotation.x = 0.16;
+    rrEave.castShadow = true;
+    restroomGroup.add(rrEave);
+
+    for (const cx of [-5.8, -2.2, 2.2, 5.8]) {
+      const col = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.14, 3.25, 8), M.creamTrim);
+      col.position.set(cx, 1.72, 4.15);
+      col.castShadow = true;
+      restroomGroup.add(col);
+    }
+
+    // Lối vào riêng biệt NAM (bên trái) & NỮ (bên phải) có vách ngăn lịch sự và biển hiệu rõ ràng
+    const maleDoor = new THREE.Mesh(new THREE.BoxGeometry(1.45, 2.2, 0.16), rrDoorDarkMat);
+    maleDoor.position.set(-4.0, 1.32, 2.28);
+    restroomGroup.add(maleDoor);
+    const maleScreen = new THREE.Mesh(new THREE.BoxGeometry(1.75, 2.05, 0.14), rrCeramicMat);
+    maleScreen.position.set(-4.0, 1.24, 3.15);
+    restroomGroup.add(maleScreen);
+    const maleSign = new THREE.Mesh(
+      new THREE.BoxGeometry(2.6, 0.62, 0.1),
+      new THREE.MeshStandardMaterial({
+        map: makeTextTex('🚹 NHÀ VỆ SINH NAM', {
+          w: 720, h: 170, bg: '#155B9E', border: '#FFFFFF', color: '#FFFFFF', size: 44
+        }),
+        roughness: 0.35
+      })
+    );
+    maleSign.position.set(-4.0, 2.86, 4.18);
+    restroomGroup.add(maleSign);
+
+    const femaleDoor = new THREE.Mesh(new THREE.BoxGeometry(1.45, 2.2, 0.16), rrDoorDarkMat);
+    femaleDoor.position.set(4.0, 1.32, 2.28);
+    restroomGroup.add(femaleDoor);
+    const femaleScreen = new THREE.Mesh(new THREE.BoxGeometry(1.75, 2.05, 0.14), rrCeramicMat);
+    femaleScreen.position.set(4.0, 1.24, 3.15);
+    restroomGroup.add(femaleScreen);
+    const femaleSign = new THREE.Mesh(
+      new THREE.BoxGeometry(2.6, 0.62, 0.1),
+      new THREE.MeshStandardMaterial({
+        map: makeTextTex('🚺 NHÀ VỆ SINH NỮ', {
+          w: 720, h: 170, bg: '#B92E5D', border: '#FFFFFF', color: '#FFFFFF', size: 44
+        }),
+        roughness: 0.35
+      })
+    );
+    femaleSign.position.set(4.0, 2.86, 4.18);
+    restroomGroup.add(femaleSign);
+
+    // Biển tổng trên mái hiên
+    const rrMainSign = new THREE.Mesh(
+      new THREE.BoxGeometry(5.2, 0.68, 0.12),
+      new THREE.MeshStandardMaterial({
+        map: makeTextTex('KHU VỆ SINH · BỒN RỬA TAY', {
+          w: 1100, h: 160, bg: '#1E5B3A', border: '#F2D178', color: '#FFFDF2', size: 46
+        }),
+        roughness: 0.38
+      })
+    );
+    rrMainSign.position.set(0, 3.68, 4.25);
+    restroomGroup.add(rrMainSign);
+
+    // Khu Bồn Rửa Tay ngoài trời ở giữa (4 bồn sứ, vòi inox, gương soi lớn)
+    const washCounter = new THREE.Mesh(new THREE.BoxGeometry(3.8, 0.82, 0.68), M.stoneLight);
+    washCounter.position.set(0, 0.56, 2.68);
+    restroomGroup.add(washCounter);
+    const mirror = new THREE.Mesh(new THREE.BoxGeometry(3.4, 0.92, 0.05), rrMirrorMat);
+    mirror.position.set(0, 1.68, 2.34);
+    restroomGroup.add(mirror);
+    for (const bx of [-1.2, -0.4, 0.4, 1.2]) {
+      const basin = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.18, 0.16, 12), M.statueWhite);
+      basin.position.set(bx, 1.0, 2.74);
+      restroomGroup.add(basin);
+      const faucet = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.22, 6), rrChromeMat);
+      faucet.position.set(bx, 1.12, 2.52);
+      restroomGroup.add(faucet);
+    }
+
+    // Bình nước uống inox miễn phí bên cạnh cho khách hành hương
+    const waterTank = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.28, 0.92, 14), rrChromeMat);
+    waterTank.position.set(-6.05, 1.18, 3.25);
+    restroomGroup.add(waterTank);
+    const waterStand = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.72, 0.62), M.stoneDark);
+    waterStand.position.set(-6.05, 0.36, 3.25);
+    restroomGroup.add(waterStand);
+    const waterLabel = new THREE.Mesh(
+      new THREE.BoxGeometry(1.15, 0.34, 0.06),
+      new THREE.MeshStandardMaterial({
+        map: makeTextTex('NƯỚC UỐNG MIỄN PHÍ', {
+          w: 512, h: 140, bg: '#155B9E', border: '#FFFFFF', color: '#FFFFFF', size: 32
+        })
+      })
+    );
+    waterLabel.position.set(-6.05, 1.92, 3.28);
+    restroomGroup.add(waterLabel);
+
+    // 2 ghế đá chờ dưới bóng cây trước sân nhà vệ sinh
+    for (const bx of [-4.2, 4.2]) {
+      const seat = new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.12, 0.56), M.stoneLight);
+      seat.position.set(bx, 0.5, 7.6);
+      restroomGroup.add(seat);
+      const back = new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.44, 0.08), M.stoneLight);
+      back.position.set(bx, 0.78, 7.86);
+      restroomGroup.add(back);
+      for (const lx of [-0.75, 0.75]) {
+        const leg = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.48, 0.48), M.stoneDark);
+        leg.position.set(bx + lx, 0.24, 7.6);
+        restroomGroup.add(leg);
+      }
+    }
+
+    this.exteriorGroup.add(restroomGroup);
+    this.addRectObstacle(29.0, 42.0, -69.2, -62.8);
 
     // 7. LẦU TRÀ THIỀN & VƯỜN LAN CỔ TỰ (58.0, -12.0)
     const teaGroup = new THREE.Group();

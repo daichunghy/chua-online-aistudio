@@ -128,6 +128,7 @@ export const pilgrimageModalsMethods = {
         this.syncPilgrimageCompanionsTo3D();
         this.saveState();
         this.updateEquippedTags();
+        this.syncVisitorPresence?.();
       };
 
       document.getElementById('btn-arrival-start-car')?.addEventListener('click', () => {

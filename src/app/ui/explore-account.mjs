@@ -836,6 +836,7 @@ export const exploreAccountMethods = {
         this.syncStoreVisualsTo3D();
         this.saveState();
         this.updateEquippedTags();
+        this.syncVisitorPresence?.();
         this.openAccountModal();
       });
     });
@@ -845,6 +846,7 @@ export const exploreAccountMethods = {
         this.nationalityId = btn.getAttribute('data-acc-nat') || 'vn';
         this.syncPilgrimageCompanionsTo3D();
         this.saveState();
+        this.syncVisitorPresence?.();
         this.playMokugyoTap();
         this.openAccountModal();
       });

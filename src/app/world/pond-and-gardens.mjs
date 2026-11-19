@@ -532,8 +532,8 @@ export const pondAndGardensMethods = {
       [48.6, 28.5, 0.92],
       [48.6, 15.0, 0.92],
       [48.6, 1.5, 0.92],
-      [48.6, -9.5, 0.92],
-      [48.6, -21.5, 0.92]
+      [48.6, -9.2, 0.92],
+      [49.2, -28.8, 0.92]
     ];
     const makeOrganicClusterGeo = (rad, seed) => {
       const geo = new THREE.IcosahedronGeometry(rad, 2);
@@ -621,29 +621,44 @@ export const pondAndGardensMethods = {
       this.exteriorGroup.add(curb);
     }
 
-    // Bảng chỉ dẫn gọn đặt cuối đoạn đường rẽ trái vào Chánh Điện
+    // Biển chỉ dẫn gỗ cổ điển nhỏ gọn đặt sát lề phải (không chắn tầm nhìn sân rẽ trái)
     const dirSignGroup = new THREE.Group();
-    dirSignGroup.position.set(45.2, 0, -9.2);
-    const dirPost = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.065, 1.85, 8), M.darkWood);
-    dirPost.position.y = 0.925;
+    dirSignGroup.position.set(48.35, 0, -10.1);
+    const dirBase = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.24, 0.34), M.stoneDark);
+    dirBase.position.y = 0.12;
+    dirSignGroup.add(dirBase);
+    const dirPost = new THREE.Mesh(new THREE.BoxGeometry(0.11, 2.05, 0.11), M.darkWood);
+    dirPost.position.y = 1.14;
+    dirPost.castShadow = true;
     dirSignGroup.add(dirPost);
-    const dirBoard = new THREE.Mesh(
-      new THREE.BoxGeometry(2.85, 0.5, 0.1),
-      new THREE.MeshStandardMaterial({
-        map: makeTextTex('← RẼ TRÁI VÀO CHÁNH ĐIỆN · TIỆM TẠP HÓA ↓', {
-          w: 1120,
-          h: 170,
-          bg: '#1C5A34',
-          border: '#FFD875',
-          color: '#FFF6E5',
-          size: 36
-        }),
-        roughness: 0.4
-      })
-    );
-    dirBoard.position.set(0, 1.72, 0);
-    dirBoard.rotation.y = -0.35;
-    dirSignGroup.add(dirBoard);
+    const dirCap = makeHippedRoofMesh(0.42, 0.42, 0.18, M.roofTile);
+    dirCap.position.y = 2.24;
+    dirSignGroup.add(dirCap);
+
+    const signEntries = [
+      { text: '← LỐI VÀO CHÁNH ĐIỆN', y: 1.92, rotY: -0.25 },
+      { text: '↑ QUẦY LƯU NIỆM', y: 1.60, rotY: -0.25 },
+      { text: '→ GIẢNG ĐƯỜNG · NHÀ KHÁCH', y: 1.28, rotY: -0.25 }
+    ];
+    for (const se of signEntries) {
+      const plank = new THREE.Mesh(
+        new THREE.BoxGeometry(1.78, 0.26, 0.06),
+        new THREE.MeshStandardMaterial({
+          map: makeTextTex(se.text, {
+            w: 760,
+            h: 120,
+            bg: '#5B2C16',
+            border: '#E8C56E',
+            color: '#FFF5DC',
+            size: 38
+          }),
+          roughness: 0.56
+        })
+      );
+      plank.position.set(0, se.y, 0.04);
+      plank.rotation.y = se.rotY;
+      dirSignGroup.add(plank);
+    }
     this.exteriorGroup.add(dirSignGroup);
 
     // Low ornamental bonsai urns neatly framing the outer Chánh Điện porch corners without blocking the 13-arch facade

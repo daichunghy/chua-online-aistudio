@@ -9,10 +9,8 @@ import { makeHippedRoofMesh, makeTextTex } from './shared.mjs';
 
 export function buildResidentialFoodHouses() {
   const M = this.MAT;
-  const asphaltMat = new THREE.MeshStandardMaterial({ color: 0x5B5C57, roughness: 0.96 });
   const pavementMat = new THREE.MeshStandardMaterial({ color: 0xBDB6A8, roughness: 0.9 });
   const curbMat = new THREE.MeshStandardMaterial({ color: 0x8E8A80, roughness: 0.92 });
-  const drainMat = new THREE.MeshStandardMaterial({ color: 0x4B514A, roughness: 0.98 });
   const timberMat = new THREE.MeshStandardMaterial({ map: this.woodGrainTex, color: 0x69452D, roughness: 0.78 });
   const darkTimberMat = new THREE.MeshStandardMaterial({ color: 0x3D2A20, roughness: 0.84 });
   const glassMat = new THREE.MeshStandardMaterial({ color: 0x9DB5B2, roughness: 0.2, metalness: 0.12 });
@@ -20,72 +18,8 @@ export function buildResidentialFoodHouses() {
   const bowlMat = new THREE.MeshStandardMaterial({ color: 0xE9E1D0, roughness: 0.36 });
   const foodMat = new THREE.MeshStandardMaterial({ color: 0xD8B96F, roughness: 0.72 });
 
-  // A narrow neighbourhood lane branches from the Nguyễn Trung Trực approach.
-  // It is intentionally modest: patched asphalt, shallow drains, concrete footpath and overhead wires.
-  const junction = new THREE.Mesh(new THREE.BoxGeometry(19, 0.12, 8.4), asphaltMat);
-  junction.position.set(73.5, 0.015, 50.4);
-  junction.receiveShadow = true;
-  this.exteriorGroup.add(junction);
-
-  const lane = new THREE.Mesh(new THREE.BoxGeometry(7.2, 0.12, 62), asphaltMat);
-  lane.position.set(77.5, 0.02, 81);
-  lane.receiveShadow = true;
-  this.exteriorGroup.add(lane);
-
-  const westCurb = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.2, 62), curbMat);
-  westCurb.position.set(73.75, 0.08, 81);
-  this.exteriorGroup.add(westCurb);
-  const eastCurb = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.2, 62), curbMat);
-  eastCurb.position.set(81.25, 0.08, 81);
-  this.exteriorGroup.add(eastCurb);
-
-  const footpath = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.12, 62), pavementMat);
-  footpath.position.set(82.7, 0.04, 81);
-  footpath.receiveShadow = true;
-  this.exteriorGroup.add(footpath);
-
-  const drain = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.18, 61.5), drainMat);
-  drain.position.set(72.95, 0.03, 81);
-  this.exteriorGroup.add(drain);
-  for (let z = 53; z <= 109; z += 2.4) {
-    const grate = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.04, 0.08), curbMat);
-    grate.position.set(72.95, 0.14, z);
-    this.exteriorGroup.add(grate);
-  }
-
-  // Faded edge marks, not a modern multilane road.
-  const edgeMarkMat = new THREE.MeshBasicMaterial({ color: 0xC8C3B7, transparent: true, opacity: 0.48 });
-  for (const x of [74.0, 81.0]) {
-    const mark = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.015, 60), edgeMarkMat);
-    mark.position.set(x, 0.09, 81);
-    this.exteriorGroup.add(mark);
-  }
-
-  // Three weathered utility poles and loose overhead service wires.
-  const poleMat = new THREE.MeshStandardMaterial({ color: 0x817C70, roughness: 0.88 });
-  const wireMat = new THREE.LineBasicMaterial({ color: 0x303538, transparent: true, opacity: 0.62 });
-  const poleZs = [57, 78, 99];
-  for (const pz of poleZs) {
-    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.17, 7.6, 8), poleMat);
-    pole.position.set(72.25, 3.8, pz);
-    pole.castShadow = true;
-    this.exteriorGroup.add(pole);
-    const crossbar = new THREE.Mesh(new THREE.BoxGeometry(1.45, 0.12, 0.14), poleMat);
-    crossbar.position.set(72.25, 7.25, pz);
-    this.exteriorGroup.add(crossbar);
-  }
-  for (let i = 0; i < poleZs.length - 1; i++) {
-    const z1 = poleZs[i];
-    const z2 = poleZs[i + 1];
-    for (const x of [71.85, 72.25, 72.65]) {
-      const pts = [
-        new THREE.Vector3(x, 7.25, z1),
-        new THREE.Vector3(x + 0.08, 6.72, (z1 + z2) * 0.5),
-        new THREE.Vector3(x, 7.25, z2)
-      ];
-      this.exteriorGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), wireMat));
-    }
-  }
+  // Family eateries now sit directly along the East sidewalk (x = 47.6..51.6) of the straight approach road
+  // leading into Cổng Phụ Chùa Vĩnh Tràng — no detached separate rural lane needed!
 
   const addPotPlant = (parent, x, z, flowerColor = 0xE783A8) => {
     const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.22, 0.48, 12), M.terracottaPot);
@@ -313,71 +247,10 @@ export function buildResidentialFoodHouses() {
     this.exteriorGroup.add(apron);
   };
 
-  buildFamilyEatery('hut_tieu_co_ba', 'Nhà Cô Ba · Hủ tiếu Mỹ Tho', 91, 60, 'hut_tieu');
-  buildFamilyEatery('banh_beo_di_sau', 'Bếp Dì Sáu · Bánh bèo & chè', 91, 80, 'banh_beo');
+  buildFamilyEatery('hut_tieu_co_ba', 'Nhà Cô Ba · Hủ tiếu Mỹ Tho', 58.2, 75.0, 'hut_tieu');
+  buildFamilyEatery('banh_beo_di_sau', 'Bếp Dì Sáu · Bánh bèo & chè', 58.2, 89.0, 'banh_beo');
 
-  // An ordinary family home completes the short lane: closed timber doors, a tiny garden and a clothesline.
-  const home = new THREE.Group();
-  home.position.set(91, 0, 100);
-  home.rotation.y = -Math.PI / 2;
-  const homeWall = new THREE.MeshStandardMaterial({ map: this.limeWallTex, color: 0xE6E1D2, roughness: 0.9 });
-  const homeRoofMat = new THREE.MeshStandardMaterial({ map: this.tinRoofTex, color: 0x536F78, roughness: 0.76, metalness: 0.1 });
-  const homeFloor = new THREE.Mesh(new THREE.BoxGeometry(9.8, 0.18, 10.4), pavementMat);
-  homeFloor.position.set(0, 0.09, 0.2);
-  home.add(homeFloor);
-  const homeBody = new THREE.Mesh(new THREE.BoxGeometry(9.2, 3.25, 8.8), homeWall);
-  homeBody.position.set(0, 1.72, -0.1);
-  home.add(homeBody);
-  const homeRoof = makeHippedRoofMesh(10.8, 11.3, 1.7, homeRoofMat);
-  homeRoof.position.set(0, 3.95, 0);
-  home.add(homeRoof);
-  const homePorch = new THREE.Mesh(new THREE.BoxGeometry(10.0, 0.12, 2.3), homeRoofMat);
-  homePorch.position.set(0, 3.0, 5.15);
-  homePorch.rotation.x = 0.08;
-  home.add(homePorch);
-  for (const sx of [-4.2, 0, 4.2]) {
-    const post = new THREE.Mesh(new THREE.BoxGeometry(0.18, 2.8, 0.18), timberMat);
-    post.position.set(sx, 1.45, 5.7);
-    home.add(post);
-  }
-  const frontDoor = new THREE.Mesh(new THREE.BoxGeometry(1.7, 2.2, 0.12), timberMat);
-  frontDoor.position.set(0, 1.2, 4.35);
-  home.add(frontDoor);
-  for (const sx of [-3.0, 3.0]) {
-    const window = new THREE.Mesh(new THREE.BoxGeometry(1.35, 1.15, 0.12), glassMat);
-    window.position.set(sx, 1.85, 4.4);
-    home.add(window);
-    const shutter = new THREE.Mesh(new THREE.BoxGeometry(1.48, 1.28, 0.12), shutterMat);
-    shutter.position.set(sx, 1.85, 4.48);
-    home.add(shutter);
-  }
-  addPotPlant(home, -4.1, 5.9, 0xE58D9C);
-  addPotPlant(home, 4.1, 5.9, 0xD7A75D);
-  const clothesPoleA = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.05, 2.8, 7), timberMat);
-  clothesPoleA.position.set(-5.4, 1.4, -1.8);
-  home.add(clothesPoleA);
-  const clothesPoleB = clothesPoleA.clone();
-  clothesPoleB.position.x = 5.4;
-  home.add(clothesPoleB);
-  const clothesLine = new THREE.Line(
-    new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-5.4, 2.65, -1.8), new THREE.Vector3(5.4, 2.65, -1.8)]),
-    new THREE.LineBasicMaterial({ color: 0x6D6A61 })
-  );
-  home.add(clothesLine);
-  for (let i = 0; i < 4; i++) {
-    const cloth = new THREE.Mesh(
-      new THREE.BoxGeometry(0.9, 0.75, 0.05),
-      new THREE.MeshStandardMaterial({ color: [0xE6D8C1, 0xA7C3B4, 0xD9A0A1, 0xE6C76C][i], roughness: 0.86, side: THREE.DoubleSide })
-    );
-    cloth.position.set(-3.2 + i * 1.9, 2.05, -1.8);
-    home.add(cloth);
-  }
-  this.exteriorGroup.add(home);
-  this.addRectObstacle(95.45, 95.95, 95.4, 104.6);
-  this.addRectObstacle(86.05, 95.45, 95.0, 95.5);
-  this.addRectObstacle(86.05, 95.45, 104.5, 105.0);
-
-  // Two parked motorbikes and a few household objects make the lane feel lived-in, not commercial.
+  // Two parked neighbor motorbikes neatly on the East eatery veranda edge
   const addNeighbourMotorbike = (mx, mz, color) => {
     const bike = new THREE.Group();
     const rubber = new THREE.MeshStandardMaterial({ color: 0x202225, roughness: 0.88 });
@@ -401,20 +274,6 @@ export function buildResidentialFoodHouses() {
     bike.rotation.y = Math.PI / 2;
     this.exteriorGroup.add(bike);
   };
-  addNeighbourMotorbike(84.4, 64.2, 0x8D2D27);
-  addNeighbourMotorbike(84.4, 84.1, 0x345C83);
-
-  // Low garden tree and banana clump soften the edge of the residential lane.
-  const tree = new THREE.Group();
-  const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.25, 3.2, 8), M.trunk);
-  trunk.position.y = 1.6;
-  tree.add(trunk);
-  for (let i = 0; i < 7; i++) {
-    const crown = new THREE.Mesh(new THREE.DodecahedronGeometry(1.45, 1), i % 2 ? M.foliageLight : M.foliageMid);
-    crown.scale.set(1.15, 0.72, 1.1);
-    crown.position.set(Math.cos(i * 0.9) * 0.72, 3.15 + (i % 3) * 0.25, Math.sin(i * 0.9) * 0.72);
-    tree.add(crown);
-  }
-  tree.position.set(84.2, 0, 94.0);
-  this.exteriorGroup.add(tree);
+  addNeighbourMotorbike(51.2, 70.6, 0x8D2D27);
+  addNeighbourMotorbike(51.2, 84.5, 0x345C83);
 }

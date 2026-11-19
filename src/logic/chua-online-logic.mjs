@@ -27,3 +27,7 @@ export * from './modules/thirty-day-journal.mjs'; // Lộ trình 30 ngày, lịc
 export * from './modules/academy.mjs'; // Học viện Phật học: khóa, học phần, thi, VietQR, chứng nhận
 export * from './modules/blessing-tower.mjs'; // Tháp đèn cầu an: danh mục & lời nguyện
 export * from './modules/npc-dharma.mjs'; // Tương tác NPC sân chùa & thoại Pháp ngữ ngẫu nhiên
+export * from './modules/visitor-presence.mjs'; // Hiện diện cộng đồng trực tuyến (Visitor Counter)
+export * from './modules/ambient-audio.mjs'; // Quản lý âm thanh không gian chùa (niệm Phật xa & chuông chùa)
+export * from './modules/pathfinding-and-collision.mjs'; // Giải va chạm đa lượt (MTV) & tìm đường A* tránh vật cản
+export * from './modules/pilgrimage-passport.mjs'; // Sổ Hành Hương liên chùa (templeId), Quẻ Bình An 30 ngày, Vườn Sen ngày thực

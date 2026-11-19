@@ -57,18 +57,17 @@ export const roadTrafficMethods = {
       if (spec.tint) this.recolorPastelDress(rec.root, spec.tint);
       this.equipNpcProps(rec, spec.charKey, height, spec);
 
-      const startX = 65.1 + (i % 2) * 0.28;
-      const startZ = 50.6 + spec.offset;
-      const zOffset = spec.offset;
+      const startX = 49.0 + (i % 2) * 0.45;
+      const startZ = 111.5 + spec.offset * 0.9;
+      const xOffset = spec.offset * 0.95;
       const pts = [
         { x: startX, z: startZ, action: 'pass', wait: 0, lookX: null, lookZ: null },
-        // Step around the shuttle's front onto the pedestrian sidewalk before walking west.
-        { x: startX, z: 46.2 + zOffset * 0.2, action: 'pass', wait: 0, lookX: null, lookZ: null },
-        { x: 53.0, z: 46.2 + zOffset * 0.2, action: 'pass', wait: 0, lookX: null, lookZ: null },
-        { x: 42.0, z: 47.0 + zOffset * 0.42, action: 'pass', wait: 0, lookX: null, lookZ: null },
-        { x: 41.0, z: 41.5 + zOffset * 0.25, action: 'pass', wait: 0, lookX: null, lookZ: null },
-        { x: 38.6, z: 34.2 + zOffset * 0.16, action: 'pass', wait: 0, lookX: null, lookZ: null },
-        { x: 36.1, z: 23.5 + zOffset * 0.12, action: 'dung', wait: 3.2, lookX: 32.5, lookZ: 22.5 }
+        { x: 43.2 + xOffset * 0.6, z: 106.0, action: 'pass', wait: 0, lookX: null, lookZ: null },
+        { x: 42.4 + xOffset * 0.5, z: 74.0, action: 'pass', wait: 0, lookX: null, lookZ: null },
+        { x: 41.2 + xOffset * 0.4, z: 48.0, action: 'pass', wait: 0, lookX: null, lookZ: null },
+        { x: 40.8 + xOffset * 0.25, z: 41.5, action: 'pass', wait: 0, lookX: null, lookZ: null },
+        { x: 39.2 + xOffset * 0.16, z: 33.5, action: 'pass', wait: 0, lookX: null, lookZ: null },
+        { x: 36.1, z: 23.5 + spec.offset * 0.12, action: 'dung', wait: 3.2, lookX: 32.5, lookZ: 22.5 }
       ];
       const first = pts[0];
       const next = pts[1];
@@ -115,39 +114,39 @@ export const roadTrafficMethods = {
   stepRoadTraffic(dt = 0.016) {
     if (!this.trafficVehicleRecords) return;
 
-    // Light local traffic: usually one vehicle, occasionally a pair with a natural following gap.
+    // Distant urban passing traffic flows smoothly along Đường Nguyễn Trung Trực (z = 202.2 / 208.2),
+    // keeping the 170m straight pagoda approach road calm & pedestrian-first.
     this.trafficSpawnTimer -= dt;
     if (this.trafficSpawnTimer <= 0) {
-      // Keep the shuttle's lane clear while it approaches or leaves the drop-off.
-      const direction = this.activeVisitorShuttle ? 1 : (Math.random() < 0.5 ? 1 : -1);
-      const count = Math.random() < 0.24 ? 2 : 1;
+      const direction = Math.random() < 0.5 ? 1 : -1;
+      const count = Math.random() < 0.35 ? 2 : 1;
       for (let i = 0; i < count; i++) {
         const kindRoll = Math.random();
-        const kind = kindRoll < 0.48 ? 'bike' : kindRoll < 0.9 ? 'sedan' : 'van';
+        const kind = kindRoll < 0.45 ? 'bike' : kindRoll < 0.85 ? 'sedan' : 'van';
         this.trafficSpawnQueue.push({
-          wait: i === 0 ? 0 : 2.2 + Math.random() * 1.0,
+          wait: i === 0 ? 0 : 2.0 + Math.random() * 1.1,
           direction,
           kind
         });
       }
-      this.trafficSpawnTimer = 25 + Math.random() * 28;
+      this.trafficSpawnTimer = 18 + Math.random() * 20;
     }
 
     for (let i = this.trafficSpawnQueue.length - 1; i >= 0; i--) {
       const queued = this.trafficSpawnQueue[i];
       queued.wait -= dt;
       if (queued.wait > 0) continue;
-      const direction = this.activeVisitorShuttle ? 1 : queued.direction;
+      const direction = queued.direction;
       const kind = queued.kind;
       const colors = kind === 'bike'
         ? [0x9C2C26, 0x254E8A, 0x3D434A, 0xB89342, 0xE6E1D6]
         : [0xD2D8D9, 0xAEB9C1, 0x6E7D88, 0xB7A58B, 0xF0EEE8];
       const color = colors[Math.floor(Math.random() * colors.length)];
-      const laneZ = direction > 0 ? 55.25 : 59.75;
-      const startX = direction > 0 ? -114 : 134;
+      const laneZ = direction > 0 ? 202.2 : 208.2;
+      const startX = direction > 0 ? -105 : 155;
       const speed = kind === 'bike'
-        ? 5.8 + Math.random() * 1.45
-        : 6.4 + Math.random() * 1.55;
+        ? 6.4 + Math.random() * 1.45
+        : 7.4 + Math.random() * 1.65;
       const record = this.spawnRoadTrafficVehicle({
         kind, x: startX, z: laneZ, direction, speed, color
       });
@@ -155,7 +154,8 @@ export const roadTrafficMethods = {
       this.trafficSpawnQueue.splice(i, 1);
     }
 
-    // A small passenger shuttle arrives only occasionally, pauses at the pull-in, then leaves.
+    // Occasional visitor shuttle enters from Đường Nguyễn Trung Trực up the straight road into Bãi Giữ Xe (z = 114),
+    // drops off pilgrims who walk straight up to Cổng Phụ, then departs South.
     this.visitorConvoyTimer -= dt;
     if (
       this.visitorConvoyTimer <= 0 &&
@@ -166,15 +166,16 @@ export const roadTrafficMethods = {
     ) {
       const group = this.spawnRoadTrafficVehicle({
         kind: 'van',
-        x: 138,
-        z: 59.6,
+        x: 43.2,
+        z: 198.0,
         direction: -1,
-        speed: 6.0,
+        speed: 6.4,
         color: 0xD9DEE0
       });
+      if (group?.group) group.group.rotation.y = Math.PI;
       group.kind = 'visitor_shuttle';
       group.state = 'arriving';
-      group.path = [{ x: 63.0, z: 59.6 }, { x: 63.0, z: 50.6 }];
+      group.path = [{ x: 43.2, z: 120.0 }, { x: 52.0, z: 114.0 }];
       group.pathIndex = 0;
       group.dwellTimer = 0;
       this.activeVisitorShuttle = group;
@@ -191,7 +192,7 @@ export const roadTrafficMethods = {
         const dx = target.x - pos.x;
         const dz = target.z - pos.z;
         const distance = Math.hypot(dx, dz);
-        if (distance < 0.38) {
+        if (distance < 0.42) {
           if (vehicle.pathIndex < vehicle.path.length - 1) {
             vehicle.pathIndex += 1;
           } else if (vehicle.state === 'arriving') {
@@ -217,13 +218,13 @@ export const roadTrafficMethods = {
         vehicle.dwellTimer -= dt;
         if (vehicle.dwellTimer <= 0) {
           vehicle.state = 'departing';
-          vehicle.path = [{ x: 63.0, z: 59.6 }, { x: 138, z: 59.6 }];
+          vehicle.path = [{ x: 43.2, z: 124.0 }, { x: 43.2, z: 204.0 }];
           vehicle.pathIndex = 0;
           vehicle.speed = 6.8;
         }
       } else {
         pos.x += vehicle.direction * vehicle.speed * dt;
-        if ((vehicle.direction > 0 && pos.x > 132) || (vehicle.direction < 0 && pos.x < -112)) {
+        if ((vehicle.direction > 0 && pos.x > 160) || (vehicle.direction < 0 && pos.x < -112)) {
           this.disposeRoadTrafficVehicle(vehicle);
           this.trafficVehicleRecords.splice(i, 1);
           continue;

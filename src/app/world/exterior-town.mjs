@@ -11,7 +11,7 @@ export const exteriorTownMethods = {
     // Morning Pilgrimage Sky (7:30 AM Mỹ Tho / Mekong Delta — golden-mist horizon fading to clear cerulean)
     const skyTex = this._buildSkyTextureForPreset('morning');
     const skyDome = new THREE.Mesh(
-      new THREE.SphereGeometry(260, 36, 20),
+      new THREE.SphereGeometry(360, 36, 20),
       new THREE.MeshBasicMaterial({ map: skyTex, side: THREE.BackSide, fog: false })
     );
     this.skyDome = skyDome;
@@ -19,11 +19,11 @@ export const exteriorTownMethods = {
 
     const M = this.MAT;
     const extGround = new THREE.Mesh(
-      new THREE.PlaneGeometry(360, 360),
+      new THREE.PlaneGeometry(560, 560),
       new THREE.MeshStandardMaterial({ map: this.mekongEarthTex, color: 0xffffff, roughness: 0.96 })
     );
     extGround.rotation.x = -Math.PI / 2;
-    extGround.position.y = -0.09;
+    extGround.position.set(0, -0.09, 55);
     extGround.receiveShadow = true;
     this.exteriorGroup.add(extGround);
 
@@ -368,96 +368,639 @@ export const exteriorTownMethods = {
     // Keep the frontage road open. Local food and daily-life activity belongs to family-house porches,
     // not to continuous rows of temporary market kiosks.
 
-    // Low-rise Mekong family houses beyond the frontage road and temple boundary.
-    const sideBackHouses = [
-      [-42, 83.5, 9.8, 7.8, 3.8, Math.PI, 0, 0, false],
-      [-16, 84.5, 10.4, 8.0, 4.0, Math.PI, 1, 2, false],
-      [14, 83.5, 9.6, 7.8, 3.7, Math.PI, 2, 1, false],
-      [44, 84.0, 10.2, 8.0, 3.9, Math.PI, 3, 0, false],
-      [-80, 26, 9.5, 8.2, 3.7, Math.PI / 2, 1, 2, false],
-      [-82, -6, 10.8, 8.6, 4.0, Math.PI / 2, 0, 1, true],
-      [-80, -38, 9.4, 8.0, 3.6, Math.PI / 2, 3, 2, false],
-      [80, 24, 9.6, 8.0, 3.9, -Math.PI / 2, 0, 0, true],
-      [82, -10, 10.8, 8.6, 4.0, -Math.PI / 2, 1, 1, false],
-      [80, -42, 9.4, 8.0, 3.6, -Math.PI / 2, 3, 0, false],
-      [-30, -84, 10.0, 8.2, 3.6, 0, 2, 2, false],
-      [4, -86, 11.0, 8.4, 3.8, 0, 0, 1, false],
-      [36, -84, 10.0, 8.0, 3.7, 0, 4, 0, false]
-    ];
-    for (const hArgs of sideBackHouses) addMekongCountryHouse(...hArgs);
+    // =========================================================================================
+    // AUTHENTIC TP. MỸ THO URBAN STREETSCAPE & CÔNG VIÊN VĨNH TRÀNG (OSM GeoJSON way/266761436)
+    // Replaces rural shacks, muddy front ditches & countryside hills with real urban Phường 8, Mỹ Tho!
+    // =========================================================================================
+    const urbanConcreteMat = new THREE.MeshStandardMaterial({ color: 0xB8B1A4, roughness: 0.90 });
+    const urbanCurbMat = new THREE.MeshStandardMaterial({ color: 0x9C978E, roughness: 0.88 });
+    const parkLawnMat = new THREE.MeshStandardMaterial({ color: 0x4A7D40, roughness: 0.94 });
+    const parkHedgeMat = new THREE.MeshStandardMaterial({ color: 0x305F2F, roughness: 0.86 });
+    const parkTileTex = this.pavingTex.clone();
+    parkTileTex.needsUpdate = true;
+    parkTileTex.repeat.set(14, 14);
+    const parkPathMat = new THREE.MeshStandardMaterial({ map: parkTileTex, color: 0xC6B9A3, roughness: 0.88 });
+    const ironRailingMat = new THREE.MeshStandardMaterial({ color: 0x2E343A, roughness: 0.48, metalness: 0.55 });
+    const windowGlassMat = new THREE.MeshStandardMaterial({ color: 0x5C849A, roughness: 0.18, metalness: 0.25 });
+    const rollingDoorMat = new THREE.MeshStandardMaterial({ color: 0xB4BCC2, roughness: 0.52, metalness: 0.35 });
+    const urbanRoofTileMat = new THREE.MeshStandardMaterial({ color: 0x9E4632, roughness: 0.68 });
+    const urbanBlueRoofMat = new THREE.MeshStandardMaterial({ color: 0x3B5E7D, roughness: 0.62, metalness: 0.15 });
+    const facadeColors = [0xF3ECE0, 0xECE3C8, 0xDCE5E3, 0xEEDFD2, 0xE6EAEF, 0xF1E8D5];
 
-    // No separate roadside carts: the outer approach remains a quiet residential lane.
-
-    // Mekong Alluvial Ditch & Wooden Plank Bridge ("Mương rạch phù sa, lục bình & cầu ván")
-    const addMekongCanalDitch = (cx, cz, length = 34, width = 3.2, rotY = 0) => {
-      const dg = new THREE.Group();
-      const bankMat = new THREE.MeshStandardMaterial({ map: this.dirtRoadTex, color: 0x6F563B, roughness: 0.94 });
-      for (const side of [-1, 1]) {
-        const bank = new THREE.Mesh(new THREE.BoxGeometry(length, 0.22, 1.05), bankMat);
-        bank.position.set(0, -0.01, side * (width * 0.5 + 0.42));
-        dg.add(bank);
+    // Helper: Clean Urban Shade Tree in Tiled Sidewalk Tree Pit (cây dầu / bằng lăng đô thị)
+    const addUrbanShadeTree = (tx, tz, scale = 1.0, inPit = true) => {
+      const tg = new THREE.Group();
+      if (inPit) {
+        const pitCurb = new THREE.Mesh(new THREE.BoxGeometry(1.55, 0.16, 1.55), urbanCurbMat);
+        pitCurb.position.y = 0.08;
+        tg.add(pitCurb);
+        const soil = new THREE.Mesh(
+          new THREE.BoxGeometry(1.25, 0.17, 1.25),
+          new THREE.MeshStandardMaterial({ color: 0x5A4736, roughness: 0.94 })
+        );
+        soil.position.y = 0.085;
+        tg.add(soil);
       }
-      const water = new THREE.Mesh(
-        new THREE.PlaneGeometry(length, width),
-        new THREE.MeshStandardMaterial({ color: 0x626842, roughness: 0.22, metalness: 0.3 })
+      const trunkH = 3.2 * scale;
+      const trunk = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.14 * scale, 0.22 * scale, trunkH, 9),
+        M.trunk
       );
-      water.rotation.x = -Math.PI / 2;
-      water.position.y = 0.015;
-      dg.add(water);
-      // Floating water hyacinth ("lục bình") clusters with pale-lavender blossoms
-      const hyacinthLeafMat = new THREE.MeshStandardMaterial({ color: 0x4E823E, roughness: 0.78 });
-      const hyacinthFlowerMat = new THREE.MeshStandardMaterial({ color: 0xBE9CD8, roughness: 0.65 });
-      for (let i = 0; i < 16; i++) {
-        const hx = -length * 0.44 + (i * length * 0.88) / 15;
-        const hz = ((i % 3) - 1) * (width * 0.24);
-        const pad = new THREE.Mesh(new THREE.SphereGeometry(0.42, 7, 5), hyacinthLeafMat);
-        pad.scale.set(1.3, 0.35, 1.1);
-        pad.position.set(hx, 0.05, hz);
-        dg.add(pad);
-        if (i % 3 === 0) {
-          const fl = new THREE.Mesh(new THREE.ConeGeometry(0.11, 0.22, 6), hyacinthFlowerMat);
-          fl.position.set(hx + 0.08, 0.19, hz);
-          dg.add(fl);
-        }
-      }
-      // Rustic wooden footbridge spanning the ditch
-      for (const bx of [-0.55, 0.55]) {
-        const beam = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.14, width + 1.5), woodPostMat);
-        beam.position.set(bx, 0.16, 0);
-        dg.add(beam);
-      }
-      for (let pz = -width * 0.5 - 0.5; pz <= width * 0.5 + 0.5; pz += 0.28) {
-        const plank = new THREE.Mesh(new THREE.BoxGeometry(1.45, 0.06, 0.22), woodPostMat);
-        plank.position.set(0, 0.24, pz);
-        dg.add(plank);
-      }
-      dg.position.set(cx, 0, cz);
-      dg.rotation.y = rotY;
-      this.exteriorGroup.add(dg);
+      trunk.position.y = trunkH * 0.5;
+      trunk.castShadow = true;
+      tg.add(trunk);
+      const crownOffsets = [
+        [0, trunkH + 1.15 * scale, 0, 1.85 * scale],
+        [0.95 * scale, trunkH + 0.65 * scale, 0.5 * scale, 1.28 * scale],
+        [-0.95 * scale, trunkH + 0.72 * scale, -0.45 * scale, 1.25 * scale],
+        [0.35 * scale, trunkH + 0.82 * scale, -0.85 * scale, 1.18 * scale],
+        [-0.45 * scale, trunkH + 0.68 * scale, 0.82 * scale, 1.16 * scale]
+      ];
+      crownOffsets.forEach(([cx, cy, cz, r], idx) => {
+        const puff = new THREE.Mesh(
+          new THREE.DodecahedronGeometry(r, 1),
+          idx % 2 === 0 ? M.foliageMid : M.foliageLight
+        );
+        puff.scale.set(1.12, 0.78, 1.12);
+        puff.position.set(cx, cy, cz);
+        puff.castShadow = true;
+        tg.add(puff);
+      });
+      tg.position.set(tx, 0, tz);
+      this.exteriorGroup.add(tg);
     };
-    // Visible Mekong canal ditch running along West roadside & East orchard outside expanded fences
-    addMekongCanalDitch(-54, 51.6, 26, 2.7, 0);
-    addMekongCanalDitch(74.5, 12, 46, 3.0, Math.PI / 2);
 
-    // Street utility poles + sagging overhead power wires outside front fence
-    const wirePoleMat = new THREE.MeshStandardMaterial({ color: 0x8F8C84, roughness: 0.78 });
-    const wireMat = new THREE.LineBasicMaterial({ color: 0x3A3D42, transparent: true, opacity: 0.58 });
-    const poleXs = [-46, -24, -2, 18, 36, 56, 78];
-    for (let i = 0; i < poleXs.length; i++) {
-      const px = poleXs[i];
-      const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.19, 8.2, 8), wirePoleMat);
-      pole.position.set(px, 4.1, 61.8);
+    // Helper: Classic Urban Park / Street Double-Globe Lamp Post (đèn công viên đô thị)
+    const addUrbanParkLamp = (lx, lz, height = 4.6) => {
+      const lg = new THREE.Group();
+      const base = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.22, 0.7, 10), ironRailingMat);
+      base.position.y = 0.35;
+      lg.add(base);
+      const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.085, height, 8), ironRailingMat);
+      pole.position.y = height * 0.5;
+      lg.add(pole);
+      const arm = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.06, 0.06), ironRailingMat);
+      arm.position.y = height - 0.12;
+      lg.add(arm);
+      const globeMat = new THREE.MeshStandardMaterial({
+        color: 0xFFF7E2,
+        emissive: 0xFFE3A6,
+        emissiveIntensity: 0.45,
+        roughness: 0.22
+      });
+      for (const gx of [-0.52, 0.52]) {
+        const globe = new THREE.Mesh(new THREE.SphereGeometry(0.18, 10, 8), globeMat);
+        globe.position.set(gx, height + 0.04, 0);
+        lg.add(globe);
+      }
+      lg.position.set(lx, 0, lz);
+      this.exteriorGroup.add(lg);
+    };
+
+    // Helper: Urban Park Granite Stone Bench (ghế đá công viên Mỹ Tho)
+    const addParkStoneBench = (bx, bz, rotY = 0) => {
+      const bg = new THREE.Group();
+      const seat = new THREE.Mesh(new THREE.BoxGeometry(1.75, 0.1, 0.52), M.stoneLight);
+      seat.position.set(0, 0.46, 0);
+      seat.castShadow = true;
+      bg.add(seat);
+      const back = new THREE.Mesh(new THREE.BoxGeometry(1.75, 0.42, 0.08), M.stoneLight);
+      back.position.set(0, 0.72, -0.22);
+      back.rotation.x = -0.14;
+      bg.add(back);
+      for (const sx of [-0.62, 0.62]) {
+        const leg = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.46, 0.44), urbanCurbMat);
+        leg.position.set(sx, 0.23, 0);
+        bg.add(leg);
+      }
+      bg.position.set(bx, 0, bz);
+      bg.rotation.y = rotY;
+      this.exteriorGroup.add(bg);
+    };
+
+    // Helper: Authentic TP. Mỹ Tho 2-to-3 Story Vietnamese Urban Townhouse / Shophouse (Nhà phố đô thị)
+    const addUrbanTownhouse = (hx, hz, w, d, floors = 2, rotY = 0, cfg = {}) => {
+      const hg = new THREE.Group();
+      const floorH = 3.25;
+      const totalH = floors * floorH;
+      const facadeMat = new THREE.MeshStandardMaterial({
+        map: this.limeWallTex,
+        color: facadeColors[(cfg.colorIdx || 0) % facadeColors.length],
+        roughness: 0.82
+      });
+      const trimMat = new THREE.MeshStandardMaterial({ color: 0xF6F3EC, roughness: 0.74 });
+      const awningMat = new THREE.MeshStandardMaterial({
+        color: cfg.awningColor || 0x295B82,
+        roughness: 0.66
+      });
+
+      // Raised tiled urban porch apron
+      const apron = new THREE.Mesh(new THREE.BoxGeometry(w + 0.2, 0.18, d + 1.4), urbanConcreteMat);
+      apron.position.set(0, 0.09, 0.5);
+      apron.receiveShadow = true;
+      hg.add(apron);
+
+      // Main multi-story concrete structure
+      const body = new THREE.Mesh(new THREE.BoxGeometry(w, totalH, d), facadeMat);
+      body.position.y = totalH * 0.5 + 0.12;
+      body.castShadow = true;
+      body.receiveShadow = true;
+      hg.add(body);
+
+      // Ground-floor urban storefront: rolling shutter / glass shopfront + retractable awning + signage
+      const frontZ = d * 0.5 + 0.04;
+      const doorW = Math.min(w * 0.68, 4.4);
+      const shopDoor = new THREE.Mesh(
+        new THREE.BoxGeometry(doorW, 2.55, 0.1),
+        cfg.glassFront ? windowGlassMat : rollingDoorMat
+      );
+      shopDoor.position.set(0, 1.42, frontZ);
+      hg.add(shopDoor);
+      // Side framing pilasters
+      for (const sx of [-w * 0.44, w * 0.44]) {
+        const pilaster = new THREE.Mesh(new THREE.BoxGeometry(0.42, totalH, 0.16), trimMat);
+        pilaster.position.set(sx, totalH * 0.5 + 0.12, frontZ);
+        hg.add(pilaster);
+      }
+
+      // Ground-floor cantilevered concrete awning / shop canopy
+      const canopy = new THREE.Mesh(new THREE.BoxGeometry(w + 0.15, 0.16, 1.35), awningMat);
+      canopy.position.set(0, floorH - 0.12, d * 0.5 + 0.62);
+      canopy.rotation.x = 0.08;
+      canopy.castShadow = true;
+      hg.add(canopy);
+
+      if (cfg.sign) {
+        const signMesh = new THREE.Mesh(
+          new THREE.BoxGeometry(Math.min(w * 0.88, 5.8), 0.72, 0.12),
+          new THREE.MeshStandardMaterial({
+            map: makeTextTex(cfg.sign, {
+              w: 960,
+              h: 160,
+              bg: cfg.signBg || '#1E4C7A',
+              border: '#F2E5C4',
+              color: cfg.signColor || '#FFFFFF',
+              size: 40
+            }),
+            roughness: 0.4
+          })
+        );
+        signMesh.position.set(0, floorH + 0.22, d * 0.5 + 1.24);
+        hg.add(signMesh);
+      }
+
+      // Upper stories (2nd & 3rd floor): recessed balconies, iron railings, glass windows & concrete sun-hoods
+      for (let fl = 1; fl < floors; fl++) {
+        const fy = fl * floorH + 0.14;
+        const slab = new THREE.Mesh(new THREE.BoxGeometry(w + 0.2, 0.18, 1.05), trimMat);
+        slab.position.set(0, fy, d * 0.5 + 0.48);
+        hg.add(slab);
+        const railTop = new THREE.Mesh(new THREE.BoxGeometry(w - 0.35, 0.07, 0.07), ironRailingMat);
+        railTop.position.set(0, fy + 0.92, d * 0.5 + 0.94);
+        hg.add(railTop);
+        for (let rx = -w * 0.42; rx <= w * 0.43; rx += 0.55) {
+          const post = new THREE.Mesh(new THREE.BoxGeometry(0.045, 0.86, 0.045), ironRailingMat);
+          post.position.set(rx, fy + 0.48, d * 0.5 + 0.94);
+          hg.add(post);
+        }
+        // Balcony door + upper windows
+        const bDoor = new THREE.Mesh(new THREE.BoxGeometry(1.35, 2.05, 0.1), windowGlassMat);
+        bDoor.position.set(-w * 0.18, fy + 1.15, frontZ);
+        hg.add(bDoor);
+        const bWin = new THREE.Mesh(new THREE.BoxGeometry(1.45, 1.28, 0.1), windowGlassMat);
+        bWin.position.set(w * 0.22, fy + 1.42, frontZ);
+        hg.add(bWin);
+        const hood = new THREE.Mesh(new THREE.BoxGeometry(w * 0.92, 0.12, 0.58), trimMat);
+        hood.position.set(0, fy + 2.48, d * 0.5 + 0.28);
+        hg.add(hood);
+        // AC outdoor condenser unit
+        const acUnit = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.44, 0.28), urbanConcreteMat);
+        acUnit.position.set(w * 0.36, fy + 0.55, d * 0.5 + 0.2);
+        hg.add(acUnit);
+      }
+
+      // Clean urban parapet cornice + pitched tile roof cap
+      const parapet = new THREE.Mesh(new THREE.BoxGeometry(w + 0.26, 0.55, d + 0.26), trimMat);
+      parapet.position.set(0, totalH + 0.38, 0);
+      hg.add(parapet);
+      const roofCap = new THREE.Mesh(
+        new THREE.ConeGeometry(Math.max(w, d) * 0.62, 1.35, 4),
+        (cfg.roofIdx || 0) % 2 === 0 ? urbanRoofTileMat : urbanBlueRoofMat
+      );
+      roofCap.rotation.y = Math.PI / 4;
+      roofCap.scale.set((w + 0.5) / Math.max(w, d), 1, (d + 0.5) / Math.max(w, d));
+      roofCap.position.set(0, totalH + 1.18, 0);
+      hg.add(roofCap);
+
+      hg.position.set(hx, 0, hz);
+      hg.rotation.y = rotY;
+      this.exteriorGroup.add(hg);
+    };
+
+    // =========================================================================================
+    // 1. CÔNG VIÊN VĨNH TRÀNG — THIẾT KẾ THỰC TẾ PHƯỜNG 8, TP. MỸ THO (OSM way/266761436)
+    //    Nằm bên phải khi từ Cổng Phụ nhìn thẳng ra đường (x = -26.0 .. +31.2, z = 54.0 .. 168.0).
+    //    Gồm: Quảng trường tròn lát gạch bông terrazzo, đài phun nước hoa sen có tia nước,
+    //    bồn hoa gạch đỏ trồng bông giấy & vạn thọ, chòi nghỉ mát mái ngói đỏ, khu dụng cụ
+    //    tập thể dục công viên ngoài trời (vàng-xanh đặc trưng VN), hàng cau cảnh & cây dầu cổ thụ!
+    // =========================================================================================
+    const parkGroup = new THREE.Group();
+    const parkBrickMat = new THREE.MeshStandardMaterial({ map: this.sideBrickTex, color: 0xB5684A, roughness: 0.84 });
+    const parkTerrazzoMat = new THREE.MeshStandardMaterial({ map: parkTileTex, color: 0xC8BCAA, roughness: 0.82 });
+    const parkGymYellow = new THREE.MeshStandardMaterial({ color: 0xE2A61E, roughness: 0.36, metalness: 0.38 });
+    const parkGymBlue = new THREE.MeshStandardMaterial({ color: 0x1D5D9B, roughness: 0.36, metalness: 0.4 });
+    const parkSoilMat = new THREE.MeshStandardMaterial({ color: 0x59422E, roughness: 0.95 });
+
+    const parkLawn = new THREE.Mesh(new THREE.BoxGeometry(57.2, 0.14, 114.0), parkLawnMat);
+    parkLawn.position.set(2.6, 0.01, 111.0);
+    parkLawn.receiveShadow = true;
+    parkGroup.add(parkLawn);
+
+    // Đường dạo viền gạch đỏ ôm quanh công viên + hàng bồn hoa giấy nở rực mặt tiền công viên
+    const perimeterEastWalk = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.09, 113.4), parkTerrazzoMat);
+    perimeterEastWalk.position.set(29.2, 0.06, 111.0);
+    perimeterEastWalk.receiveShadow = true;
+    parkGroup.add(perimeterEastWalk);
+
+    const perimeterNorthWalk = new THREE.Mesh(new THREE.BoxGeometry(56.6, 0.09, 3.2), parkTerrazzoMat);
+    perimeterNorthWalk.position.set(2.6, 0.06, 56.2);
+    perimeterNorthWalk.receiveShadow = true;
+    parkGroup.add(perimeterNorthWalk);
+
+    // Bồn hoa gạch đỏ viền công viên + bụi hoa giấy hồng / cam / vàng đặc trưng TP. Mỹ Tho
+    const bougainvilleaMats = [
+      new THREE.MeshStandardMaterial({ color: 0xD83878, roughness: 0.72 }),
+      new THREE.MeshStandardMaterial({ color: 0xE86A2A, roughness: 0.72 }),
+      new THREE.MeshStandardMaterial({ color: 0xF2B832, roughness: 0.72 }),
+      new THREE.MeshStandardMaterial({ color: 0xC93636, roughness: 0.72 })
+    ];
+    const addParkFlowerBed = (fx, fz, fw, fd, colorIdx = 0) => {
+      const curb = new THREE.Mesh(new THREE.BoxGeometry(fw, 0.34, fd), parkBrickMat);
+      curb.position.set(fx, 0.17, fz);
+      curb.castShadow = true;
+      parkGroup.add(curb);
+      const soil = new THREE.Mesh(new THREE.BoxGeometry(fw - 0.3, 0.36, fd - 0.3), parkSoilMat);
+      soil.position.set(fx, 0.18, fz);
+      parkGroup.add(soil);
+      const count = Math.max(3, Math.floor(Math.max(fw, fd) / 1.45));
+      for (let i = 0; i < count; i++) {
+        const t = count === 1 ? 0 : (i / (count - 1)) - 0.5;
+        const bx = fw >= fd ? fx + t * (fw - 1.1) : fx;
+        const bz = fd > fw ? fz + t * (fd - 1.1) : fz;
+        const leaf = new THREE.Mesh(new THREE.DodecahedronGeometry(0.46, 0), parkHedgeMat);
+        leaf.scale.set(1.15, 0.72, 1.15);
+        leaf.position.set(bx, 0.52, bz);
+        parkGroup.add(leaf);
+        const bloom = new THREE.Mesh(
+          new THREE.DodecahedronGeometry(0.32, 0),
+          bougainvilleaMats[(colorIdx + i) % bougainvilleaMats.length]
+        );
+        bloom.position.set(bx + ((i % 2) ? 0.12 : -0.12), 0.72, bz);
+        parkGroup.add(bloom);
+      }
+    };
+    addParkFlowerBed(-9.5, 59.0, 14.0, 1.5, 0);
+    addParkFlowerBed(18.5, 59.0, 11.5, 1.5, 1);
+    addParkFlowerBed(26.5, 79.0, 1.5, 10.0, 2);
+    addParkFlowerBed(26.5, 121.0, 1.5, 11.0, 3);
+    addParkFlowerBed(26.5, 152.0, 1.5, 9.5, 0);
+
+    // Biển đá chào mừng "CÔNG VIÊN VĨNH TRÀNG · TP. MỸ THO" đặt trên bồn hoa góc Đông-Bắc
+    const parkSignBase = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.65, 5.4), parkBrickMat);
+    parkSignBase.position.set(27.8, 0.33, 62.0);
+    parkGroup.add(parkSignBase);
+    const parkSignSlab = new THREE.Mesh(
+      new THREE.BoxGeometry(4.8, 1.25, 0.24),
+      new THREE.MeshStandardMaterial({
+        map: makeTextTex('CÔNG VIÊN VĨNH TRÀNG · TP. MỸ THO', {
+          w: 1100, h: 280, bg: '#1B5A38', border: '#F0D388', color: '#FFFDF2', size: 46
+        }),
+        roughness: 0.42
+      })
+    );
+    parkSignSlab.position.set(27.8, 1.32, 62.0);
+    parkSignSlab.rotation.y = Math.PI / 2;
+    parkGroup.add(parkSignSlab);
+
+    // Quảng trường tròn trung tâm (OSM way/1147384259) lát gạch terrazzo & viền gạch tàu đỏ
+    const plazaX = 8.0;
+    const plazaZ = 104.0;
+    const plazaRing = new THREE.Mesh(new THREE.RingGeometry(5.8, 12.6, 48), parkTerrazzoMat);
+    plazaRing.rotation.x = -Math.PI / 2;
+    plazaRing.position.set(plazaX, 0.095, plazaZ);
+    plazaRing.receiveShadow = true;
+    parkGroup.add(plazaRing);
+
+    const plazaBrickAccent = new THREE.Mesh(new THREE.RingGeometry(11.6, 12.6, 48), parkBrickMat);
+    plazaBrickAccent.rotation.x = -Math.PI / 2;
+    plazaBrickAccent.position.set(plazaX, 0.102, plazaZ);
+    parkGroup.add(plazaBrickAccent);
+
+    // Đài phun nước hoa sen 2 tầng giữa quảng trường tròn
+    const centerPlanter = new THREE.Mesh(new THREE.CylinderGeometry(5.8, 6.0, 0.38, 36), parkBrickMat);
+    centerPlanter.position.set(plazaX, 0.22, plazaZ);
+    parkGroup.add(centerPlanter);
+    const centerSoil = new THREE.Mesh(new THREE.CylinderGeometry(5.45, 5.45, 0.4, 32), parkLawnMat);
+    centerSoil.position.set(plazaX, 0.23, plazaZ);
+    parkGroup.add(centerSoil);
+
+    const basinOuter = new THREE.Mesh(new THREE.CylinderGeometry(2.9, 3.1, 0.62, 24), M.stoneLight);
+    basinOuter.position.set(plazaX, 0.62, plazaZ);
+    parkGroup.add(basinOuter);
+    const basinWater = new THREE.Mesh(
+      new THREE.CylinderGeometry(2.6, 2.6, 0.12, 24),
+      new THREE.MeshStandardMaterial({ color: 0x3D94AA, roughness: 0.16, metalness: 0.24 })
+    );
+    basinWater.position.set(plazaX, 0.9, plazaZ);
+    parkGroup.add(basinWater);
+    const fountainCol = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.48, 2.1, 16), M.stoneLight);
+    fountainCol.position.set(plazaX, 1.75, plazaZ);
+    parkGroup.add(fountainCol);
+    const fountainBowl = new THREE.Mesh(new THREE.CylinderGeometry(1.25, 0.48, 0.34, 18), M.stoneLight);
+    fountainBowl.position.set(plazaX, 2.55, plazaZ);
+    parkGroup.add(fountainBowl);
+    const fountainLotus = new THREE.Mesh(
+      new THREE.SphereGeometry(0.42, 12, 10),
+      new THREE.MeshStandardMaterial({ color: 0xEE7BA5, roughness: 0.4 })
+    );
+    fountainLotus.scale.set(1.15, 0.85, 1.15);
+    fountainLotus.position.set(plazaX, 2.95, plazaZ);
+    parkGroup.add(fountainLotus);
+    // Tia nước phun hình vòng cung quanh đài sen
+    const sprayMat = new THREE.MeshBasicMaterial({ color: 0xD8F4FF, transparent: true, opacity: 0.65 });
+    for (let si = 0; si < 8; si++) {
+      const sa = (si / 8) * Math.PI * 2;
+      const jet = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.055, 1.25, 6), sprayMat);
+      jet.position.set(plazaX + Math.cos(sa) * 1.15, 1.55, plazaZ + Math.sin(sa) * 1.15);
+      jet.rotation.z = Math.cos(sa) * 0.48;
+      jet.rotation.x = -Math.sin(sa) * 0.48;
+      parkGroup.add(jet);
+    }
+
+    for (let fi = 0; fi < 16; fi++) {
+      const fa = (fi / 16) * Math.PI * 2;
+      const fx = plazaX + Math.cos(fa) * 4.4;
+      const fz = plazaZ + Math.sin(fa) * 4.4;
+      const flBush = new THREE.Mesh(
+        new THREE.DodecahedronGeometry(0.46, 0),
+        bougainvilleaMats[fi % bougainvilleaMats.length]
+      );
+      flBush.scale.set(1.2, 0.68, 1.2);
+      flBush.position.set(fx, 0.56, fz);
+      parkGroup.add(flBush);
+    }
+
+    // Lối đi trục Bắc–Nam, 3 lối ngang Đông–Tây & 2 lối xéo xuyên vườn cỏ
+    const nsParkPath = new THREE.Mesh(new THREE.BoxGeometry(4.6, 0.08, 114.0), parkPathMat);
+    nsParkPath.position.set(plazaX, 0.06, 111.0);
+    nsParkPath.receiveShadow = true;
+    parkGroup.add(nsParkPath);
+
+    for (const pz of [70.0, 104.0, 138.0]) {
+      const ewPath = new THREE.Mesh(new THREE.BoxGeometry(57.2, 0.08, pz === 104.0 ? 4.4 : 3.6), parkPathMat);
+      ewPath.position.set(2.6, 0.058, pz);
+      ewPath.receiveShadow = true;
+      parkGroup.add(ewPath);
+    }
+
+    // KHU TẬP THỂ DỤC CÔNG VIÊN NGOÀI TRỜI (dụng cụ sơn vàng-xanh đặc trưng công viên Việt Nam tại x = 19.5, z = 86.0)
+    const gymPad = new THREE.Mesh(new THREE.BoxGeometry(10.5, 0.11, 11.5), parkTerrazzoMat);
+    gymPad.position.set(19.5, 0.075, 86.0);
+    gymPad.receiveShadow = true;
+    parkGroup.add(gymPad);
+
+    const gymSign = new THREE.Mesh(
+      new THREE.BoxGeometry(2.6, 0.56, 0.1),
+      new THREE.MeshStandardMaterial({
+        map: makeTextTex('KHU THỂ DỤC CÔNG VIÊN', {
+          w: 640, h: 150, bg: '#1D5D9B', border: '#F2C94C', color: '#FFFFFF', size: 36
+        }),
+        roughness: 0.4
+      })
+    );
+    gymSign.position.set(23.8, 1.45, 81.2);
+    gymSign.rotation.y = Math.PI / 2;
+    parkGroup.add(gymSign);
+
+    // Máy đi bộ trên không (2 chiếc)
+    for (const gx of [16.5, 19.2]) {
+      const frame = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 1.55, 8), parkGymBlue);
+      frame.position.set(gx, 0.86, 83.2);
+      parkGroup.add(frame);
+      const topBar = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.08, 0.08), parkGymYellow);
+      topBar.position.set(gx, 1.58, 83.2);
+      parkGroup.add(topBar);
+      for (const lx of [-0.25, 0.25]) {
+        const pendulum = new THREE.Mesh(new THREE.CylinderGeometry(0.032, 0.032, 1.15, 6), parkGymYellow);
+        pendulum.position.set(gx + lx, 0.96, 83.2 + (lx < 0 ? 0.18 : -0.18));
+        pendulum.rotation.x = lx < 0 ? 0.28 : -0.28;
+        parkGroup.add(pendulum);
+        const pedal = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.05, 0.36), ironRailingMat);
+        pedal.position.set(gx + lx, 0.38, 83.2 + (lx < 0 ? 0.32 : -0.32));
+        parkGroup.add(pedal);
+      }
+    }
+    // Bàn xoay eo 3 trụ tròn
+    const twistPost = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.09, 1.45, 10), parkGymBlue);
+    twistPost.position.set(21.8, 0.82, 86.2);
+    parkGroup.add(twistPost);
+    for (let ti = 0; ti < 3; ti++) {
+      const ta = (ti / 3) * Math.PI * 2;
+      const disc = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.26, 0.07, 14), parkGymYellow);
+      disc.position.set(21.8 + Math.cos(ta) * 0.62, 0.2, 86.2 + Math.sin(ta) * 0.62);
+      parkGroup.add(disc);
+      const handle = new THREE.Mesh(new THREE.TorusGeometry(0.24, 0.032, 6, 14), parkGymYellow);
+      handle.position.set(21.8 + Math.cos(ta) * 0.45, 1.24, 86.2 + Math.sin(ta) * 0.45);
+      handle.rotation.y = ta;
+      parkGroup.add(handle);
+    }
+    // Khung xà đơn & xà kép tập thể lực
+    for (const [px, pz] of [[16.2, 89.2], [18.8, 89.2], [21.4, 89.2]]) {
+      const p = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.06, 2.25, 8), parkGymBlue);
+      p.position.set(px, 1.2, pz);
+      parkGroup.add(p);
+    }
+    const pullBar = new THREE.Mesh(new THREE.CylinderGeometry(0.032, 0.032, 5.3, 8), parkGymYellow);
+    pullBar.rotation.z = Math.PI / 2;
+    pullBar.position.set(18.8, 2.25, 89.2);
+    parkGroup.add(pullBar);
+
+    // CHÒI LỤC GIÁC NGHỈ MÁT CÔNG VIÊN (mái ngói đỏ, cột gỗ, ghế ngồi vòng quanh tại x = -8.0, z = 82.0)
+    const gazebo = new THREE.Group();
+    gazebo.position.set(-8.0, 0, 82.0);
+    const gzBase = new THREE.Mesh(new THREE.CylinderGeometry(4.2, 4.5, 0.36, 8), parkTerrazzoMat);
+    gzBase.position.y = 0.18;
+    gzBase.receiveShadow = true;
+    gazebo.add(gzBase);
+    for (let gi = 0; gi < 6; gi++) {
+      const ga = (gi / 6) * Math.PI * 2;
+      const gCol = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.16, 3.2, 8), M.redColumn);
+      gCol.position.set(Math.cos(ga) * 3.25, 1.9, Math.sin(ga) * 3.25);
+      gCol.castShadow = true;
+      gazebo.add(gCol);
+    }
+    const gzRoof = new THREE.Mesh(new THREE.ConeGeometry(4.8, 2.0, 6), M.roofTile);
+    gzRoof.position.y = 4.45;
+    gzRoof.castShadow = true;
+    gazebo.add(gzRoof);
+    const gzFinial = new THREE.Mesh(new THREE.SphereGeometry(0.24, 10, 8), M.gold);
+    gzFinial.position.y = 5.55;
+    gazebo.add(gzFinial);
+    const gzBench = new THREE.Mesh(new THREE.TorusGeometry(2.6, 0.24, 6, 6), M.stoneLight);
+    gzBench.rotation.x = Math.PI / 2;
+    gzBench.position.y = 0.64;
+    gazebo.add(gzBench);
+    parkGroup.add(gazebo);
+
+    // Hàng cau kiểng / dừa cảnh thanh mảnh dọc lối vào công viên
+    const addParkPalm = (px, pz, h = 6.2) => {
+      const pg = new THREE.Group();
+      const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.17, h, 8), M.trunk);
+      trunk.position.y = h * 0.5;
+      trunk.castShadow = true;
+      pg.add(trunk);
+      for (let fi = 0; fi < 7; fi++) {
+        const fa = (fi / 7) * Math.PI * 2;
+        const frond = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.06, 2.25), M.foliageLight);
+        frond.position.set(Math.cos(fa) * 0.95, h + 0.15, Math.sin(fa) * 0.95);
+        frond.rotation.y = -fa + Math.PI / 2;
+        frond.rotation.x = 0.32;
+        pg.add(frond);
+      }
+      pg.position.set(px, 0, pz);
+      parkGroup.add(pg);
+    };
+    [
+      [25.2, 66.5, 6.2], [25.2, 74.0, 5.8], [25.2, 99.5, 6.4],
+      [25.2, 108.5, 6.0], [25.2, 134.5, 6.2], [25.2, 142.0, 5.9],
+      [3.5, 66.0, 5.8], [12.5, 66.0, 6.1], [3.5, 142.0, 6.0], [12.5, 142.0, 5.7]
+    ].forEach(([px, pz, h]) => addParkPalm(px, pz, h));
+
+    this.exteriorGroup.add(parkGroup);
+
+    // Ghế đá công viên Mỹ Tho, đèn cầu đôi cổ điển & cây xanh tỏa bóng khắp Công viên Vĩnh Tràng
+    [
+      [21.5, 67.4, 0], [15.5, 72.6, Math.PI],
+      [plazaX - 13.0, plazaZ - 4.2, Math.PI * 0.35],
+      [plazaX + 13.0, plazaZ - 4.2, -Math.PI * 0.35],
+      [plazaX - 13.0, plazaZ + 4.2, Math.PI * 0.65],
+      [plazaX + 13.0, plazaZ + 4.2, -Math.PI * 0.65],
+      [24.5, 99.6, 0], [24.5, 108.4, Math.PI],
+      [21.5, 135.4, 0], [15.5, 140.6, Math.PI],
+      [4.2, 84.0, Math.PI / 2], [11.8, 124.0, -Math.PI / 2],
+      [15.0, 58.2, 0], [-2.0, 58.2, 0]
+    ].forEach(([bx, bz, ry]) => addParkStoneBench(bx, bz, ry));
+
+    [
+      [28.5, 67.4], [28.5, 72.6], [28.5, 100.8], [28.5, 107.2], [28.5, 135.4], [28.5, 140.6],
+      [plazaX - 12.2, plazaZ - 8.2], [plazaX + 12.2, plazaZ - 8.2],
+      [plazaX - 12.2, plazaZ + 8.2], [plazaX + 12.2, plazaZ + 8.2],
+      [5.0, 62.0], [11.0, 154.0], [14.0, 86.0]
+    ].forEach(([lx, lz]) => addUrbanParkLamp(lx, lz, 4.6));
+
+    [
+      [-18.0, 62.0, 1.15], [-3.0, 63.5, 1.10], [17.5, 63.0, 1.06],
+      [-18.0, 92.0, 1.18], [-18.0, 122.0, 1.16], [-5.5, 122.5, 1.12], [20.5, 124.0, 1.14],
+      [-17.5, 152.0, 1.15], [-4.0, 154.0, 1.10], [20.5, 152.5, 1.12],
+      [19.0, 162.5, 1.06], [-10.0, 163.0, 1.08]
+    ].forEach(([tx, tz, sc]) => addUrbanShadeTree(tx, tz, sc, false));
+
+    // =========================================================================================
+    // 2. TP. MỸ THO URBAN STREETSCAPE LINING THE 170m STRAIGHT APPROACH ROAD & FAR MAIN AVENUE
+    //    Left side looking out from Cổng Phụ (East, x = 57.5) = continuous shophouses, eateries
+    //    & open Bãi Giữ Xe Ô Tô · Xe Du Lịch (z = 102..138).
+    //    Far South (z = 221.5) = Đường Nguyễn Trung Trực urban townhouses closing the 170m vista!
+    // =========================================================================================
+    const urbanTownhouses = [
+      // EAST SIDE OF STRAIGHT APPROACH ROAD (facing West -PI/2 directly onto the 170m straight road!)
+      [57.2, 52.5, 9.6, 10.2, 2, -Math.PI / 2, { colorIdx: 0, roofIdx: 0, glassFront: true, awningColor: 0x1E6A46, sign: 'CÀ PHÊ · GIẢI KHÁT', signBg: '#1D5C3B' }],
+      [57.2, 63.0, 9.8, 10.2, 3, -Math.PI / 2, { colorIdx: 2, roofIdx: 1, glassFront: false, awningColor: 0x8F2D24, sign: 'HOA TƯƠI · NHANG ĐÈN', signBg: '#8F2D24' }],
+      // (z = 75.0 Nhà Cô Ba · Hủ tiếu Mỹ Tho & z = 89.0 Bếp Dì Sáu · Bánh bèo & chè live in residential-lane.mjs)
+      // (z = 102.0 .. 138.0 is the open paved BÃI GIỮ XE Ô TÔ · XE DU LỊCH parking lot!)
+      [57.2, 146.5, 9.8, 10.2, 2, -Math.PI / 2, { colorIdx: 1, roofIdx: 0, glassFront: true, awningColor: 0x266A46, sign: 'NƯỚC DỪA XIÊM · GIẢI KHÁT', signBg: '#1D5C3B' }],
+      [57.2, 157.0, 9.8, 10.2, 3, -Math.PI / 2, { colorIdx: 4, roofIdx: 1, glassFront: false, awningColor: 0x2F6E4E, sign: 'CỬA HÀNG TẠP HÓA', signBg: '#255F40' }],
+      [57.2, 167.5, 9.6, 10.2, 2, -Math.PI / 2, { colorIdx: 3, roofIdx: 0, glassFront: true, awningColor: 0x7A4922, sign: 'TIỆM BÁNH · NƯỚC MÁT', signBg: '#6B3E1C' }],
+      [57.2, 178.0, 9.8, 10.2, 3, -Math.PI / 2, { colorIdx: 0, roofIdx: 1, glassFront: true, awningColor: 0x1D5D8A, sign: 'NHÀ THUỐC TÂY', signBg: '#155084' }],
+      [57.2, 188.5, 9.8, 10.2, 2, -Math.PI / 2, { colorIdx: 5, roofIdx: 0, glassFront: true, awningColor: 0x6E241C, sign: 'VẬT PHẨM PHẬT GIÁO', signBg: '#6E241C' }],
+
+      // WEST SIDE SOUTH OF CÔNG VIÊN VĨNH TRÀNG (facing East +PI/2 onto the outer straight approach road)
+      [25.2, 175.5, 9.8, 10.2, 2, Math.PI / 2, { colorIdx: 2, roofIdx: 0, glassFront: true, awningColor: 0x22577A, sign: 'CÀ PHÊ · ĐIỂM TÂM', signBg: '#22577A' }],
+      [25.2, 186.5, 10.0, 10.2, 3, Math.PI / 2, { colorIdx: 1, roofIdx: 1, glassFront: true, awningColor: 0x8F3426, sign: 'HỦ TIẾU MỸ THO', signBg: '#7E261C' }],
+
+      // WEST SIDE OVERLOOKING CÔNG VIÊN VĨNH TRÀNG (x = -36.5, facing East +PI/2)
+      [-36.5, 64.0, 11.4, 10.2, 2, Math.PI / 2, { colorIdx: 0, roofIdx: 0, glassFront: false, awningColor: 0x295B82 }],
+      [-36.5, 78.0, 11.6, 10.2, 3, Math.PI / 2, { colorIdx: 3, roofIdx: 1, glassFront: true, awningColor: 0x1E6A46 }],
+      [-36.5, 92.0, 11.2, 10.2, 2, Math.PI / 2, { colorIdx: 1, roofIdx: 0, glassFront: false, awningColor: 0x7A4922 }],
+      [-36.5, 106.0, 11.6, 10.2, 3, Math.PI / 2, { colorIdx: 4, roofIdx: 1, glassFront: true, awningColor: 0x295B82 }],
+      [-36.5, 120.0, 11.4, 10.2, 2, Math.PI / 2, { colorIdx: 2, roofIdx: 0, glassFront: false, awningColor: 0x8F3426 }],
+      [-36.5, 134.0, 11.6, 10.2, 3, Math.PI / 2, { colorIdx: 5, roofIdx: 1, glassFront: true, awningColor: 0x1E6A46 }],
+      [-36.5, 148.0, 11.2, 10.2, 2, Math.PI / 2, { colorIdx: 0, roofIdx: 0, glassFront: false, awningColor: 0x3A5878 }],
+      [-36.5, 162.0, 11.6, 10.2, 2, Math.PI / 2, { colorIdx: 1, roofIdx: 1, glassFront: true, awningColor: 0x22577A }],
+
+      // FAR SOUTH TP. MỸ THO URBAN FRONTAGE ACROSS ĐƯỜNG NGUYỄN TRUNG TRỰC (z = 221.5, facing North!)
+      [-18.0, 221.5, 12.0, 10.4, 3, Math.PI, { colorIdx: 2, roofIdx: 1 }],
+      [-4.0, 221.5, 12.0, 10.4, 2, Math.PI, { colorIdx: 0, roofIdx: 0 }],
+      [10.0, 221.5, 12.2, 10.4, 3, Math.PI, { colorIdx: 4, roofIdx: 1 }],
+      [24.0, 221.5, 12.0, 10.4, 2, Math.PI, { colorIdx: 1, roofIdx: 0, glassFront: true, sign: 'NHÀ HÀNG CHAY', signBg: '#1D5C3B' }],
+      [38.0, 221.5, 12.4, 10.4, 3, Math.PI, { colorIdx: 3, roofIdx: 1, glassFront: true, sign: 'SIÊU THỊ MINI · MỸ THO', signBg: '#155084' }],
+      [52.0, 221.5, 12.2, 10.4, 3, Math.PI, { colorIdx: 0, roofIdx: 0, glassFront: true, sign: 'CÀ PHÊ PHỐ', signBg: '#6B3E1C' }],
+      [66.0, 221.5, 12.0, 10.4, 2, Math.PI, { colorIdx: 5, roofIdx: 1 }],
+      [80.0, 221.5, 12.0, 10.4, 3, Math.PI, { colorIdx: 2, roofIdx: 0 }],
+      [94.0, 221.5, 12.0, 10.4, 2, Math.PI, { colorIdx: 1, roofIdx: 1 }],
+
+      // West urban residential houses flanking Chùa Vĩnh Tràng
+      [-77.5, 42.5, 9.4, 10.2, 2, 0, { colorIdx: 1, roofIdx: 0, glassFront: true, sign: 'VẬT PHẨM PHẬT GIÁO', signBg: '#6E241C' }],
+      [-88.5, 42.5, 9.6, 10.2, 3, 0, { colorIdx: 4, roofIdx: 1, glassFront: false, sign: 'CÀ PHÊ · ĐIỂM TÂM', signBg: '#22577A' }],
+      [-80.5, 22.0, 10.0, 9.2, 2, Math.PI / 2, { colorIdx: 0, roofIdx: 0 }],
+      [-80.5, -8.0, 10.6, 9.2, 2, Math.PI / 2, { colorIdx: 3, roofIdx: 1 }],
+      [-80.5, -38.0, 10.0, 9.2, 2, Math.PI / 2, { colorIdx: 2, roofIdx: 0 }],
+      // East urban neighborhood houses beyond the sanctuary fence
+      [81.0, 26.0, 10.0, 9.2, 2, -Math.PI / 2, { colorIdx: 1, roofIdx: 0 }],
+      [81.0, -8.0, 10.6, 9.2, 2, -Math.PI / 2, { colorIdx: 4, roofIdx: 1 }],
+      [81.0, -40.0, 10.0, 9.2, 2, -Math.PI / 2, { colorIdx: 0, roofIdx: 0 }],
+      // North rear urban houses behind the temple gardens
+      [-32.0, -85.0, 11.0, 9.6, 2, 0, { colorIdx: 2, roofIdx: 1 }],
+      [4.0, -87.0, 11.4, 9.6, 2, 0, { colorIdx: 0, roofIdx: 0 }],
+      [38.0, -85.0, 11.0, 9.6, 2, 0, { colorIdx: 3, roofIdx: 1 }]
+    ];
+    for (const args of urbanTownhouses) addUrbanTownhouse(...args);
+
+    // Urban Shade Trees neatly lining BOTH sides of the 170m straight approach road!
+    // West side (Công viên Vĩnh Tràng promenade, x = 32.2) — keeps park sign (z=61.5) & entrances (z=70,104,138) clear
+    for (const wz of [54.6, 66.8, 79, 93, 115, 129, 147, 161, 175, 189]) {
+      addUrbanShadeTree(32.2, wz, 0.92, true);
+    }
+    // East side (urban sidewalk, x = 48.6) — skips open parking driveway z = 102..138
+    for (const ez of [56, 68, 82, 96, 144, 158, 172, 186]) {
+      addUrbanShadeTree(48.6, ez, 0.88, true);
+    }
+
+    // Modern Urban Streetlight Poles + Overhead Service Lines neatly aligned down the East edge (x = 48.0) of the 170m straight road!
+    const wirePoleMat = new THREE.MeshStandardMaterial({ color: 0x8F9499, roughness: 0.72, metalness: 0.25 });
+    const wireMat = new THREE.LineBasicMaterial({ color: 0x3A3D42, transparent: true, opacity: 0.42 });
+    const poleZs = [52, 72, 92, 112, 132, 152, 172, 192];
+    for (let i = 0; i < poleZs.length; i++) {
+      const pz = poleZs[i];
+      const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.16, 8.2, 8), wirePoleMat);
+      pole.position.set(48.0, 4.1, pz);
       this.exteriorGroup.add(pole);
-      const bar = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.12, 1.5), wirePoleMat);
-      bar.position.set(px, 7.6, 61.8);
-      this.exteriorGroup.add(bar);
+      // Curved urban LED streetlamp arm extending West over the straight approach road
+      const lampArm = new THREE.Mesh(new THREE.BoxGeometry(1.85, 0.1, 0.1), wirePoleMat);
+      lampArm.position.set(47.1, 7.85, pz);
+      this.exteriorGroup.add(lampArm);
+      const lampHead = new THREE.Mesh(
+        new THREE.BoxGeometry(0.65, 0.1, 0.32),
+        new THREE.MeshStandardMaterial({ color: 0xECEEF0, emissive: 0xFFF3D1, emissiveIntensity: 0.35 })
+      );
+      lampHead.position.set(46.25, 7.78, pz);
+      this.exteriorGroup.add(lampHead);
       if (i > 0) {
-        const prevX = poleXs[i - 1];
-        for (const wz of [61.3, 62.3]) {
+        const prevZ = poleZs[i - 1];
+        for (const wx of [47.82, 48.18]) {
           const pts = [
-            new THREE.Vector3(prevX, 7.6, wz),
-            new THREE.Vector3((prevX + px) / 2, 7.05, wz),
-            new THREE.Vector3(px, 7.6, wz)
+            new THREE.Vector3(wx, 7.45, prevZ),
+            new THREE.Vector3(wx, 7.08, (prevZ + pz) * 0.5),
+            new THREE.Vector3(wx, 7.45, pz)
           ];
           this.exteriorGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), wireMat));
         }
@@ -817,7 +1360,7 @@ export const exteriorTownMethods = {
       return cg;
     };
 
-    // Shared vehicle factory: uses Meshy GLB cars/shuttles when loaded, falling back to procedural geometry.
+    // Shared vehicle factory: auto-aligns Meshy GLB long axis along local Z so vehicles NEVER turn sideways!
     const buildGLBRoadVehicle = (sceneObj, cx, cz, yaw, targetLength) => {
       const wrap = new THREE.Group();
       const inner = sceneObj.clone(true);
@@ -830,8 +1373,13 @@ export const exteriorTownMethods = {
           }
         }
       });
-      // Meshy vehicle GLBs face along +X; rotate +PI/2 around Y so vehicle length aligns along local Z
-      inner.rotation.y = Math.PI / 2;
+      // Detect natural forward/long axis before rotating: only rotate +PI/2 when model length lies along X
+      const rawBox = new THREE.Box3().setFromObject(inner);
+      const rawSz = new THREE.Vector3();
+      rawBox.getSize(rawSz);
+      if (rawSz.x > rawSz.z) {
+        inner.rotation.y = Math.PI / 2;
+      }
       const box = new THREE.Box3().setFromObject(inner);
       const sz = new THREE.Vector3();
       box.getSize(sz);
@@ -876,43 +1424,94 @@ export const exteriorTownMethods = {
       };
     };
 
-    // Small paved lay-by on the pagoda side of Nguyễn Trung Trực; keep both gates unobstructed.
-    const frontCarParkingPad = new THREE.Mesh(
-      new THREE.BoxGeometry(16.0, 0.07, 3.7),
-      new THREE.MeshStandardMaterial({ map: this.pavingTex, color: 0xC8BFAE, roughness: 0.9 })
+    // =========================================================================================
+    // 3. OUTER PARKING LOT ("BÃI GIỮ XE Ô TÔ · XE DU LỊCH") & PEAK-SEASON ROADSIDE PARKING
+    //    Located outside the temple along the East flank of the 170m straight road (z = 102..138)
+    //    so cars & tour buses park outside while pilgrims walk straight into Chùa Vĩnh Tràng!
+    // =========================================================================================
+    const parkingLineMat = new THREE.MeshBasicMaterial({ color: 0xF1EDE2 });
+    const outerParkingPad = new THREE.Mesh(
+      new THREE.BoxGeometry(28.0, 0.08, 36.0),
+      new THREE.MeshStandardMaterial({ map: this.pavingTex, color: 0xC6C2B8, roughness: 0.90 })
     );
-    frontCarParkingPad.position.set(-14.0, 0.026, 52.2);
-    frontCarParkingPad.receiveShadow = true;
-    this.exteriorGroup.add(frontCarParkingPad);
-    const parkingLineMat = new THREE.MeshBasicMaterial({ color: 0xE9E4D8 });
-    for (const lx of [-22.0, -14.0, -6.0]) {
-      const bayLine = new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.018, 3.2), parkingLineMat);
-      bayLine.position.set(lx, 0.068, 52.2);
-      this.exteriorGroup.add(bayLine);
+    outerParkingPad.position.set(62.5, 0.015, 120.0);
+    outerParkingPad.receiveShadow = true;
+    this.exteriorGroup.add(outerParkingPad);
+
+    // Tall Vietnamese blue-yellow parking lot signboard facing the straight approach road
+    const parkLotSignGroup = new THREE.Group();
+    parkLotSignGroup.position.set(49.2, 0, 102.6);
+    for (const px of [-1.45, 1.45]) {
+      const post = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.07, 3.6, 8), wirePoleMat);
+      post.position.set(px, 1.8, 0);
+      parkLotSignGroup.add(post);
     }
-    const parkedVan = buildRoadCar(-18.0, 52.2, -Math.PI / 2, 0xD2D8D9, 'van');
-    const parkedSedan = buildRoadCar(-10.0, 52.2, -Math.PI / 2, 0xAEB9C1, 'sedan');
-    this.parkedVehicleAnchors.push(
-      { kind: 'van', x: -18.0, z: 52.2, yaw: -Math.PI / 2, targetLength: 5.8, fallback: parkedVan },
-      { kind: 'sedan', x: -10.0, z: 52.2, yaw: -Math.PI / 2, targetLength: 4.45, fallback: parkedSedan }
+    const parkLotBoard = new THREE.Mesh(
+      new THREE.BoxGeometry(3.4, 1.15, 0.12),
+      new THREE.MeshStandardMaterial({
+        map: makeTextTex('BÃI GIỮ XE Ô TÔ · XE DU LỊCH', {
+          w: 960,
+          h: 320,
+          bg: '#155084',
+          border: '#F7D55C',
+          color: '#FFFFFF',
+          size: 46
+        }),
+        roughness: 0.4
+      })
     );
+    parkLotBoard.position.set(0, 3.1, 0);
+    parkLotSignGroup.add(parkLotBoard);
+    parkLotSignGroup.rotation.y = -0.22;
+    this.exteriorGroup.add(parkLotSignGroup);
 
-    // Occasional visitor-shuttle pull-in on the far east end of the frontage; does not block either gate.
-    const visitorDropoffPad = new THREE.Mesh(
-      new THREE.BoxGeometry(6.4, 0.07, 5.2),
-      new THREE.MeshStandardMaterial({ map: this.pavingTex, color: 0xC8BFAE, roughness: 0.9 })
+    // Corrugated metal motorbike shelter along the back of the outer parking yard (x = 70.5, z = 106..134)
+    const bikeCanopyRoof = new THREE.Mesh(
+      new THREE.BoxGeometry(5.6, 0.12, 26.0),
+      new THREE.MeshStandardMaterial({ map: this.tinRoofTex, color: 0x2F5E85, roughness: 0.58, metalness: 0.2 })
     );
-    visitorDropoffPad.position.set(63.0, 0.026, 50.6);
-    visitorDropoffPad.receiveShadow = true;
-    this.exteriorGroup.add(visitorDropoffPad);
-    const dropoffEdge = new THREE.Mesh(
-      new THREE.BoxGeometry(5.8, 0.025, 0.08),
-      new THREE.MeshBasicMaterial({ color: 0xE9E4D8 })
-    );
-    dropoffEdge.position.set(63.0, 0.07, 48.05);
-    this.exteriorGroup.add(dropoffEdge);
+    bikeCanopyRoof.position.set(71.2, 2.85, 120.0);
+    bikeCanopyRoof.rotation.z = -0.08;
+    bikeCanopyRoof.castShadow = true;
+    this.exteriorGroup.add(bikeCanopyRoof);
+    for (const pz of [107.8, 116.0, 124.0, 132.2]) {
+      for (const px of [68.8, 73.6]) {
+        const col = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.07, 2.85, 8), wirePoleMat);
+        col.position.set(px, 1.42, pz);
+        this.exteriorGroup.add(col);
+      }
+    }
+    for (let bi = 0; bi < 10; bi++) {
+      const bz = 108.4 + bi * 2.55;
+      const bColors = [0x9C2C26, 0x254E8A, 0x3D434A, 0xB89342, 0xE2DDD2];
+      buildParkedMotorbike(70.8, bz, -Math.PI / 2, bColors[bi % bColors.length]);
+    }
 
-    // Motorbike parking sits beyond the right-side entrance and grocery/souvenir frontage, inside the pagoda grounds.
+    // Parked Tour Vans & Family Sedans neatly angled inside Bãi Giữ Xe (x = 58.0, z = 107..132)
+    const lotVehicleSpecs = [
+      { kind: 'van', x: 58.2, z: 108.0, yaw: -Math.PI / 2, color: 0xE2E6E8, targetLength: 5.8 },
+      { kind: 'van', x: 58.2, z: 116.0, yaw: -Math.PI / 2, color: 0xD2D8D9, targetLength: 5.8 },
+      { kind: 'sedan', x: 58.2, z: 124.0, yaw: -Math.PI / 2, color: 0xAEB9C1, targetLength: 4.45 },
+      { kind: 'sedan', x: 58.2, z: 132.0, yaw: -Math.PI / 2, color: 0xF0EEE8, targetLength: 4.45 },
+      // Peak-season / Tết vehicles parked parallel along outer straight road edges (far from gate, z = 144..176)
+      { kind: 'van', x: 35.8, z: 146.0, yaw: Math.PI, color: 0xDCE1E4, targetLength: 5.8 },
+      { kind: 'sedan', x: 35.8, z: 156.5, yaw: Math.PI, color: 0x7A8A96, targetLength: 4.45 },
+      { kind: 'sedan', x: 45.2, z: 164.0, yaw: 0, color: 0xEFECE4, targetLength: 4.45 },
+      { kind: 'van', x: 35.8, z: 174.0, yaw: Math.PI, color: 0xCBD4DA, targetLength: 5.8 }
+    ];
+    for (const vs of lotVehicleSpecs) {
+      const fb = buildRoadCar(vs.x, vs.z, vs.yaw, vs.color, vs.kind);
+      this.parkedVehicleAnchors.push({
+        kind: vs.kind,
+        x: vs.x,
+        z: vs.z,
+        yaw: vs.yaw,
+        targetLength: vs.targetLength,
+        fallback: fb
+      });
+    }
+
+    // Motorbike parking inside the pagoda grounds (beyond Cổng Phụ)
     const motorbikeParkingPad = new THREE.Mesh(
       new THREE.BoxGeometry(7.6, 0.07, 4.0),
       new THREE.MeshStandardMaterial({ map: this.pavingTex, color: 0xC9C0B0, roughness: 0.9 })
@@ -1048,46 +1647,45 @@ export const exteriorTownMethods = {
       this.exteriorGroup.add(gg);
     };
 
-    // Place signature banana clumps & bamboo strictly OUTSIDE the expanded x=-68..68, z=-72..41.5 sanctuary wall
+    // Keep subtle tropical garden trees strictly behind rear/side boundaries (NEVER rural bamboo/hills in front street!)
     [
-      [-72, 48.5],
-      [-74, 30],
-      [-74, -12],
-      [73, 38],
-      [74, 6],
-      [-60, 74.5],
-      [72, 54]
+      [-76, -24],
+      [78, -26],
+      [-74, -56],
+      [76, -54]
     ].forEach(([bx, bz]) => addBananaClump(bx, bz));
-    [
-      [-73, 52],
-      [75, 64],
-      [-75, -24],
-      [76, -24]
-    ].forEach(([gx, gz]) => addBambooGrove(gx, gz));
 
-    for (let i = 0; i < 76; i++) {
-      const ang = (i / 76) * Math.PI * 2;
-      const dist = 84 + (i % 5) * 16;
-      const ox = Math.cos(ang) * dist;
-      const oz = Math.sin(ang) * dist - 10;
-      if (oz > 46 && oz < 76 && ox > -64 && ox < 84) continue;
-      if (i % 2 === 0) {
-        addBgCoconutPalm(ox, oz, 8.5 + (i % 4) * 1.6, ((i % 3) - 1) * 0.1);
+    // Distant TP. Mỹ Tho urban city tree-line + subtle low-rise neighborhood skyline on the far horizon (clear of 170m approach road!)
+    const skylinePalette = [0xD9D4C8, 0xCFD8DC, 0xE2D8C8, 0xC8D2CE];
+    for (let i = 0; i < 64; i++) {
+      const ang = (i / 64) * Math.PI * 2;
+      const dist = 148 + (i % 4) * 18;
+      const ox = Math.cos(ang) * dist + 15;
+      const oz = Math.sin(ang) * dist + 60;
+      if (oz > 38 && oz < 238 && ox > -52 && ox < 105) continue;
+      if (i % 3 === 0) {
+        addBgCoconutPalm(ox, oz, 8.2 + (i % 3) * 1.4, ((i % 3) - 1) * 0.08);
       } else {
-        const canopy = new THREE.Mesh(new THREE.DodecahedronGeometry(3.4 + (i % 3) * 0.9, 1), orchardMat);
-        canopy.scale.set(1.35, 0.62, 1.35);
-        canopy.position.set(ox, 2.3, oz);
+        const canopy = new THREE.Mesh(new THREE.DodecahedronGeometry(3.2 + (i % 3) * 0.8, 1), orchardMat);
+        canopy.scale.set(1.25, 0.72, 1.25);
+        canopy.position.set(ox, 2.4, oz);
         this.exteriorGroup.add(canopy);
       }
     }
-    for (let i = 0; i < 48; i++) {
-      const ang = (i / 48) * Math.PI * 2 + 0.06;
-      const ox = Math.cos(ang) * 136;
-      const oz = Math.sin(ang) * 136;
-      const mound = new THREE.Mesh(new THREE.DodecahedronGeometry(8.5 + (i % 3) * 2.2, 1), orchardMat);
-      mound.scale.set(1.6, 0.36, 1.6);
-      mound.position.set(ox, 1.15, oz);
-      this.exteriorGroup.add(mound);
+    for (let i = 0; i < 44; i++) {
+      const ang = (i / 44) * Math.PI * 2 + 0.04;
+      const ox = Math.cos(ang) * 238 + 15;
+      const oz = Math.sin(ang) * 238 + 60;
+      const bw = 11.0 + (i % 4) * 3.0;
+      const bh = 7.0 + (i % 3) * 3.4;
+      const bd = 9.0 + (i % 3) * 2.0;
+      const bldg = new THREE.Mesh(
+        new THREE.BoxGeometry(bw, bh, bd),
+        new THREE.MeshStandardMaterial({ color: skylinePalette[i % skylinePalette.length], roughness: 0.9 })
+      );
+      bldg.position.set(ox, bh * 0.5, oz);
+      bldg.rotation.y = -ang;
+      this.exteriorGroup.add(bldg);
     }
   }
 };

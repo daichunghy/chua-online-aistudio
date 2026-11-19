@@ -113,7 +113,37 @@ import {
   registerBlessingTowerPrayer,
   COURTYARD_NPC_DHARMA_QUOTES,
   getCourtyardNpcSpeaker,
-  pickNpcDharmaQuote
+  pickNpcDharmaQuote,
+  createVisitorClientId,
+  sanitizeVisitorPayload,
+  formatVisitorCountText,
+  buildVisitorPresenceSummary,
+  AMBIENT_SOUNDSCAPE_LAYERS,
+  DEFAULT_AMBIENT_SETTINGS,
+  createAmbientSettingsState,
+  toggleAmbientSettings,
+  toggleAmbientLayer,
+  shouldDuckAmbientChanting,
+  formatAmbientToggleDisplay,
+  DEFAULT_TEMPLE_ID,
+  TEMPLE_CATALOG,
+  PILGRIMAGE_GUIDED_ORDER,
+  PASSPORT_GARDEN_SPECIES,
+  DAILY_PEACE_ORACLES,
+  createPilgrimagePassportState,
+  getActiveTempleRecord,
+  stampTempleStation,
+  stampTempleHeritage,
+  stampTempleArhat,
+  getNextGuidedDestination,
+  getTodayPeaceOracle,
+  drawDailyPeaceOracle,
+  plantPassportGardenSlot,
+  waterRealDayGardenSlot,
+  harvestPassportGardenSlot,
+  addTempleJournalEntry,
+  addTempleMemoryPhoto,
+  mergeCloudPassportState
 } from '../../logic/chua-online-logic.mjs';
 import { createSutraStudyState } from '../../logic/sutra-study-logic.mjs';
 import { SutraStudyController } from '../sutra-study-ui.mjs';
@@ -164,7 +194,7 @@ export const AUDIO_LIBRARY = [
 ];
 
 // Re-export các binding đã import để các module con dùng chung một chỗ.
-export { CHARACTER_PROFILES, PILGRIMAGE_STATIONS, DISCOVERY_ZONES, CHU_QUOC_ZONES, CHANH_DIEN_HISTORICAL_NOTES, findAnyTempleDestination, SHOP_CATALOG, DHARMA_TEXTBOOKS, LECTURE_PATHS, LECTURE_LESSONS, UGC_BACKDROPS, UGC_POSES, INITIAL_UGC_GALLERY, stepPlayerMovement, findNearestStation, createSpiritualState, performSpiritualAction, recordSpiritualMilestone, checkUGCMilestoneUnlock, calculateJourneyImprint, filterShopCatalog, addToCart, updateCartQuantity, calculateCartSummary, validateOrderForm, getLessonsByPath, gradeLessonQuiz, createUGCPost, getLocalDateKey, shouldShowDailyDharmaToday, pickDailyDharmaQuote, fetchDailyDharmaService, STORE_CATEGORIES, STORE_ITEMS_CATALOG, createStoreProfileState, filterStoreItems, tryOnStoreItem, purchaseStoreItem, MARKETPLACE_STALL_CATEGORIES, MARKETPLACE_STALL_CATALOG, filterMarketplaceItems, purchaseMarketplaceItem, calculateMeritSummary, TIME_OF_DAY_PRESETS, DAILY_CHECKIN_REWARDS, DAILY_QUESTS_TEMPLATE, INITIAL_MAILBOX_MESSAGES, PILGRIMAGE_GUIDE_STEPS, DAILY_RESET_MISSIONS, EXPLORATION_CHAPTERS, createActivityHubState, ensureDailyMissionDate, recordDailyMissionMetric, getDailyMissionsWithProgress, claimDailyMissionReward, getExplorationChaptersStatus, claimExplorationChapterReward, claimDailyCheckin, incrementQuestProgress, getQuestsWithProgress, claimQuestReward, getMailboxWithStatus, claimMailboxReward, replyToMailboxMessage, buildPilgrimageShareText, recordPilgrimageShare, submitUserFeedback, unifyEquippedVisualPayload, encodeProfileBackupCode, decodeProfileBackupCode, PILGRIM_RANKS, getPilgrimRankInfo, grantPlayerXp, COURTYARD_LEAF_SPOTS, collectCourtyardTask, TEMPLE_GARDEN_SPECIES, TEMPLE_GARDEN_SLOTS, plantGardenTree, waterGardenSlot, harvestGardenSlot, scoreBellRhythmHit, completeBellRhythmSession, HERITAGE_RELICS, discoverHeritageRelic, NATIONALITY_PROFILES, getNationalityProfile, PILGRIMAGE_MODES, getPilgrimageMode, THIRTY_DAY_RETREATS, THIRTY_DAY_JOURNEY_PLAN, getThirtyDayTheme, LUNAR_FESTIVAL_CALENDAR, getTempleSeasonalContext, HOA_DANG_WISHES, createHoaDangLantern, DHARMA_JOURNAL_MOODS, DHARMA_JOURNAL, createDharmaJournalState, addJournalEntry, ACADEMY_COURSES, ACADEMY_ALL_IN_BUNDLE, ACADEMY_MODULES, getAcademyExamQuestions, gradeAcademyExam, createAcademyEntitlementState, unlockAcademyCourseWithCode, buildVietQRPayload, generateAcademyCertificate, BLESSING_TOWER_CATEGORIES, createBlessingTowerState, registerBlessingTowerPrayer, COURTYARD_NPC_DHARMA_QUOTES, getCourtyardNpcSpeaker, pickNpcDharmaQuote, createSutraStudyState, SutraStudyController, VinhTrang3DWorld, TempleAudioEngine, recolorGarmentOnScene, clearRiggedBoneProps, createBespokeRobeGroup, createStoreAccessoryGroup, createSculptedArhatShowcase };
+export { CHARACTER_PROFILES, PILGRIMAGE_STATIONS, DISCOVERY_ZONES, CHU_QUOC_ZONES, CHANH_DIEN_HISTORICAL_NOTES, findAnyTempleDestination, SHOP_CATALOG, DHARMA_TEXTBOOKS, LECTURE_PATHS, LECTURE_LESSONS, UGC_BACKDROPS, UGC_POSES, INITIAL_UGC_GALLERY, stepPlayerMovement, findNearestStation, createSpiritualState, performSpiritualAction, recordSpiritualMilestone, checkUGCMilestoneUnlock, calculateJourneyImprint, filterShopCatalog, addToCart, updateCartQuantity, calculateCartSummary, validateOrderForm, getLessonsByPath, gradeLessonQuiz, createUGCPost, getLocalDateKey, shouldShowDailyDharmaToday, pickDailyDharmaQuote, fetchDailyDharmaService, STORE_CATEGORIES, STORE_ITEMS_CATALOG, createStoreProfileState, filterStoreItems, tryOnStoreItem, purchaseStoreItem, MARKETPLACE_STALL_CATEGORIES, MARKETPLACE_STALL_CATALOG, filterMarketplaceItems, purchaseMarketplaceItem, calculateMeritSummary, TIME_OF_DAY_PRESETS, DAILY_CHECKIN_REWARDS, DAILY_QUESTS_TEMPLATE, INITIAL_MAILBOX_MESSAGES, PILGRIMAGE_GUIDE_STEPS, DAILY_RESET_MISSIONS, EXPLORATION_CHAPTERS, createActivityHubState, ensureDailyMissionDate, recordDailyMissionMetric, getDailyMissionsWithProgress, claimDailyMissionReward, getExplorationChaptersStatus, claimExplorationChapterReward, claimDailyCheckin, incrementQuestProgress, getQuestsWithProgress, claimQuestReward, getMailboxWithStatus, claimMailboxReward, replyToMailboxMessage, buildPilgrimageShareText, recordPilgrimageShare, submitUserFeedback, unifyEquippedVisualPayload, encodeProfileBackupCode, decodeProfileBackupCode, PILGRIM_RANKS, getPilgrimRankInfo, grantPlayerXp, COURTYARD_LEAF_SPOTS, collectCourtyardTask, TEMPLE_GARDEN_SPECIES, TEMPLE_GARDEN_SLOTS, plantGardenTree, waterGardenSlot, harvestGardenSlot, scoreBellRhythmHit, completeBellRhythmSession, HERITAGE_RELICS, discoverHeritageRelic, NATIONALITY_PROFILES, getNationalityProfile, PILGRIMAGE_MODES, getPilgrimageMode, THIRTY_DAY_RETREATS, THIRTY_DAY_JOURNEY_PLAN, getThirtyDayTheme, LUNAR_FESTIVAL_CALENDAR, getTempleSeasonalContext, HOA_DANG_WISHES, createHoaDangLantern, DHARMA_JOURNAL_MOODS, DHARMA_JOURNAL, createDharmaJournalState, addJournalEntry, ACADEMY_COURSES, ACADEMY_ALL_IN_BUNDLE, ACADEMY_MODULES, getAcademyExamQuestions, gradeAcademyExam, createAcademyEntitlementState, unlockAcademyCourseWithCode, buildVietQRPayload, generateAcademyCertificate, BLESSING_TOWER_CATEGORIES, createBlessingTowerState, registerBlessingTowerPrayer, COURTYARD_NPC_DHARMA_QUOTES, getCourtyardNpcSpeaker, pickNpcDharmaQuote, createVisitorClientId, sanitizeVisitorPayload, formatVisitorCountText, buildVisitorPresenceSummary, AMBIENT_SOUNDSCAPE_LAYERS, DEFAULT_AMBIENT_SETTINGS, createAmbientSettingsState, toggleAmbientSettings, toggleAmbientLayer, shouldDuckAmbientChanting, formatAmbientToggleDisplay, DEFAULT_TEMPLE_ID, TEMPLE_CATALOG, PILGRIMAGE_GUIDED_ORDER, PASSPORT_GARDEN_SPECIES, DAILY_PEACE_ORACLES, createPilgrimagePassportState, getActiveTempleRecord, stampTempleStation, stampTempleHeritage, stampTempleArhat, getNextGuidedDestination, getTodayPeaceOracle, drawDailyPeaceOracle, plantPassportGardenSlot, waterRealDayGardenSlot, harvestPassportGardenSlot, addTempleJournalEntry, addTempleMemoryPhoto, mergeCloudPassportState, createSutraStudyState, SutraStudyController, VinhTrang3DWorld, TempleAudioEngine, recolorGarmentOnScene, clearRiggedBoneProps, createBespokeRobeGroup, createStoreAccessoryGroup, createSculptedArhatShowcase };
 
 /** Gắn các nhóm method (mixin) vào class, giữ nguyên getter/setter. */
 export function applyMixins(target, ...mixins) {

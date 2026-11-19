@@ -134,18 +134,9 @@ export const PILGRIMAGE_MODES = [
   {
     id: 'explorer',
     name: 'Khách tham quan văn hóa — Khám phá kiến trúc Á-Âu',
-    desc: 'Hành trình du khảo tìm hiểu 13 vòm cửa Á – Âu, Thập Bát La Hán gỗ mít 1907 và 3 pho đại tượng.',
+    desc: 'Hành trình du khảo thong dong một mình tìm hiểu 13 vòm cửa Á – Âu, Thập Bát La Hán gỗ mít 1907 và 3 pho đại tượng.',
     arrivalVehicle: 'sedan',
-    companions: [
-      {
-        charKey: 'du_khach',
-        roleLabel: 'Bạn đồng hành văn hóa',
-        tint: '#4E86A8',
-        hat: null,
-        bag: 'tui_vai_theu_sen',
-        offset: { x: -1.6, z: 0.85 }
-      }
-    ]
+    companions: []
   }
 ];
 

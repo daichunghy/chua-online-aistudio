@@ -105,4 +105,140 @@ Dựa trên ảnh chụp thực tế tại Chùa Vĩnh Tràng và khảo cứu k
 - Di chuyển **Trống Bát Nhã** ra ngay **bên phải cửa chính Chánh Điện (`+2.95, 0, -11.55`)**, đối xứng với **Tháp Đèn Cầu An (`-2.95, 0, -11.65`)** và hướng thẳng mặt trống qua khoảng sân thiên tỉnh **Hồ Sen Bộ / Hòn Non Bộ**, gắn bảng tên **“🥁 TRỐNG BÁT NHÃ · ĐỐI DIỆN NON BỘ”** và lồng mặt trống procedural vào `placeholder` để khi nạp `trong-bat-nha.glb` không còn chồng mặt.
 - Kiểm chứng ảnh chụp thực tế 3D (5 góc ngoại/nội thất + góc cận Trống Bát Nhã & sân rẽ trái): **0 lỗi console, 0 lỗi HTTP 404, 20/20 unit tests PASS**.
 
+---
+
+## 6. Chuẩn Hóa Hướng Tượng Phật Chánh Điện (Quay Ra Cổng Tam Quan), Lối Đi Vòng & 18 Vị La Hán Xung Quanh
+
+- **Cửa vào đối diện Hòn Non Bộ (`x = -15.2`)**: Giữ nguyên cửa gỗ bức bàn, kệ để dép bên ngoài cửa (`👟 XIN BỎ GIÀY DÉP NGOÀI CỬA`), **Trống Bát Nhã** và **Tháp Đèn Cầu An** đối diện Hòn Non Bộ.
+- **Phật ở giữa quay ra ngoài hướng Cổng Tam Quan (`src/app/vinh-trang-square-interior.mjs`)**:
+  - Đặt **Ban Thờ Tam Bảo** tại trung tâm Chánh Điện (`x = -25.2, z = 0`) và xoay `rotation.y = -Math.PI / 2` để kim thân Đức Phật quay hướng ngược lại (`-X`), nhìn thẳng ra **Mặt Tiền 5 Vòm Pháp – Việt & Cổng Tam Quan (`x = -41.4`)** có ánh nắng sân trước chiếu vào.
+  - Sau lưng Ban Thờ Tam Bảo (phía cửa Hòn Non Bộ) dựng **Bình Phong Hậu Bệ sơn son thếp vàng** kèm biển chỉ dẫn *“← ĐI VÒNG HAI BÊN LÊN CHÁNH ĐIỆN · CHIÊM BÁI PHẬT (QUAY RA CỔNG TAM QUAN) →”* và thảm đỏ dẫn hai lối **đi vòng** rộng `>5m` bên Bắc & bên Nam.
+- **Không gian lễ Phật phía trước (`x = -27 .. -41`) & 18 Vị La Hán xung quanh**:
+  - Đặt **Bao Lam thếp vàng (`x = -29.8`)**, **Cặp Long Trụ (`x = -30.6`)**, **4 Nhang Khoanh Đồng**, **2 hàng Bồ đoàn quỳ lễ (`x = -31.8, -35.0`)**, **Đại Hồng Chung & Chuông Gia Trì (`x = -27.2, z = ±7.8`)** ngay phía trước mặt Phật.
+  - Dải **18 Vị La Hán (9 vị dãy Bắc + 9 vị dãy Nam)** trải đều từ `x = -18.8` đến `x = -38.0` bao quanh toàn bộ Chánh Điện quanh tôn tượng Phật ở giữa.
+- **Đồng bộ điều hướng, va chạm, camera, nghi lễ & NPC**:
+  - Mở rộng giới hạn di chuyển (`movement.mjs` `minX = -40.6`) và giới hạn camera (`player-and-interaction.mjs` `cx >= -40.8`).
+  - Cập nhật điểm nhìn mặc định `goToInteriorZone('chanh_dien')` đứng ở gian lễ chính (`-36.0, 0`, nhìn `+X` thẳng lên Phật ở giữa và 18 La Hán xung quanh), sửa góc `ho_sen_bo` (`7.4, 2.4`) không vướng cột, hỗ trợ lối ra `front_tam_quan`, cập nhật tọa độ lư hương/dâng sen Tam Bảo (`offering-ritual-fx.mjs`) và tuyến Sư Thầy đi vòng quanh Chánh Điện (`characters-npcs.mjs`).
+
+
+
+---
+
+## 7. Nâng Cấp Di Chuyển 3D Mượt, Giao Diện Tối Giản Cho Cô Bác, Sổ Hành Hương Liên Chùa & Đồng Bộ Firebase
+
+### A. Hệ Di Chuyển 3D, Camera Damping & Tìm Đường A* Tránh Vật Cản (Phase 1)
+- Tạo mới `src/logic/modules/pathfinding-and-collision.mjs` tích hợp vào `src/app/world/movement.mjs`, `player-and-interaction.mjs`, `render-loop-and-cutscene.mjs`:
+  - **Va chạm 3 lượt (`resolveMultiPassCollision`)**: Triệt tiêu rung giật và kẹt góc khi đi sát hồ sen, cột, bàn thờ.
+  - **Tìm đường lưới A* 8 hướng + làm mượt đường đi (`buildNavigationGrid`, `findGridPathAStar`, `smoothGridPath`)**: Click-to-walk và nút 1 chạm tự động đi vòng tránh vật cản ngoài sân lẫn trong Chánh Điện, có bộ phát hiện kẹt (`_stuckTracker`) tự động tính lại đường đi.
+  - **Camera gimbal mượt (`updateCameraDamped`)**: Nội suy hàm mũ (exponential damping) triệt tiêu nhảy góc nhìn 1-frame khi đi qua vùng tượng lớn; tự xoay nhẹ theo hướng bước đi và tạm dừng `2.2s` sau khi người dùng tự kéo xoay camera.
+  - **Cần gạt mềm (`#soft-joystick-zone`)**: Hỗ trợ kéo analog mượt trên điện thoại và máy tính bảng.
+
+### B. Giao Diện Thân Thiện Cho Cô Bác Lớn Tuổi & Màn Hình Tiêu Đề 3D Sống Động
+- Thay thế bộ HUD ~30 nút + thanh XP/cấp bậc rời rạc trên sân chùa bằng bố cục thanh tịnh (`src/app/ui/shell-dom.mjs`, `src/styles/12-elder-hud-passport.css`):
+  - **Live 3D Title Overlay (`#temple-title-overlay`)**: Camera xoay chậm quanh sân chùa với nút chính **"Bắt đầu đi chùa"** (`Enter`/`Space`), không dùng `backdrop-filter` trên WebGL và không có chấm nhấp nháy.
+  - **Thanh trên 3 vùng gọn nhẹ (`#main-top-hud`)**: `Chùa Vĩnh Tràng · [Ngày Âm lịch] · Dấu mộc X/10` bên trái; `Âm thanh · Đăng nhập · Tiện ích` bên phải.
+  - **Thanh đáy 4 nút lớn `>=54px` (`#elder-bottom-dock`, thu gọn được bằng phím `H`)**: `Đi tiếp: [Tên trạm]` (1 chạm A*), `Lễ / Dâng hương`, `Sổ Hành Hương`, `Nghe Kinh`.
+  - **Ngăn kéo Tiện ích (`#temple-utility-drawer`)**: Gom gọn Vào Chánh Điện, Bản đồ & 18 La Hán, Rút Quẻ Bình An, Thả Hoa Đăng, Tháp Đèn Cầu An, Chụp Ảnh Sạch HUD, Cửa Hàng Hợp Nhất (Trang phục 3D + Quà lưu niệm), Học Viện, Sáng/Trưa/Tối, Cỡ chữ `A-/A+` và đồng bộ Google Cloud.
+
+### C. Sổ Hành Hương Liên Chùa, Hoạt Động 30 Ngày & Firebase Auth / Firestore (Phase 2)
+- Tạo mới `src/logic/modules/pilgrimage-passport.mjs`, `src/app/firebase-sync.mjs`, `src/app/ui/passport-and-cloud.mjs`, `firestore.rules`, `firebase-blueprint.json`:
+  - **Sổ Hành Hương theo `templeId`**: Sẵn sàng cho `vinh_trang` (đang mở) cùng mục lục `thien_mu`, `truc_lam`, `chua_huong` (sắp mở), gồm 5 trang: Mục lục Chùa, Dấu Mộc đỏ (10 Di Sản & 18 La Hán 1907 có đọc chậm `0.85x`), Nhật Ký & Cầu Nguyện (có câu mẫu 1 chạm), Vườn Sen 30 Ngày (tưới 1 lần/ngày thật, 4 giai đoạn lớn, lưu tủ hoa mãn khai), và Quẻ Bình An 30 quẻ + Ảnh Kỷ Niệm Sạch HUD.
+  - **Đồng bộ Google & Hồ Hoa Đăng Cộng Đồng Real-time**: Đăng nhập Google (`signInWithPopup`) hợp nhất dữ liệu local + Firestore (`users/{uid}`, `users/{uid}/temples/{templeId}`, `users/{uid}/journalEntries/{entryId}`); hiển thị Hoa Đăng cộng đồng (`templeLanterns`) bấm trực tiếp trên mặt Hồ Sen 3D để đọc lời nguyện và bấm **“🙏 Tùy hỷ · Gửi chúc lành”** cập nhật thời gian thực.
+  - **Kiểm thử**: `npm run build` PASS và `26/26` unit tests PASS (`npm run lint`).
+
+---
+
+## 8. Thiết Kế Lại Khu Cuối Đường Bên Phải Đúng Thực Tế Chùa Vĩnh Tràng
+
+Dựa trên ảnh flycam thực tế Chùa Vĩnh Tràng (`public/assets/aistudio/image_97204806.png`), ảnh cổng phụ (`image_bb72a8b0.png`) và phản hồi thực tế của người dùng:
+- **Quầy Lưu Niệm dạng "căn nhà nhỏ dựng tạm có đồ đầy đủ" (`src/app/world/grocery-halls-statues.mjs`, vị trí `x = 42.2, z = -33.5`)**:
+  - Thay thế mái chòi hở 3 trụ cũ bằng **nhà ki-ốt dựng tạm kín 3 mặt** có nền gạch nâng cao, khung cột thép hộp sơn xanh + thanh giằng chéo, vách lamri gỗ + tấm kem, **2 cửa sổ hông chống lên bằng thanh sắt**, mái tôn xanh dốc kèm mái hiên vươn rộng, máng xối nhôm và đèn sợi đốt ấm bên trong.
+  - Bày biện đầy đủ hàng hóa thực tế: **kệ 4 tầng kín vách sau** (hộp nhang trầm, dãy kinh sách Phật học, hộp nhang vòng, tượng Phật thếp vàng & Quan Âm sứ trắng, đèn hoa sen, hộp quà Chùa Vĩnh Tràng), **tủ mát kính đứng nước giải khát** có 24 chai nước & két nước nhựa, **tủ kính trưng bày** có khay nhung đựng tràng hạt gỗ/đá, sổ tay hoa sen & bưu thiếp, ống nhang, giỏ dừa xiêm tươi, **2 dãy nón lá, túi vải hoa sen và dây khánh treo dưới mái hiên**, thùng đá giữ lạnh và bộ bàn ghế gỗ nhỏ nghỉ chân.
+  - Đặt 2 nhân viên đứng gọn trên mặt nền quầy (`yOffset: 0.18`) sau quầy bán (`src/app/world/characters-npcs.mjs`), biển hiệu tiếng Việt chuẩn chùa Việt: **`QUẦY LƯU NIỆM · VĂN HÓA PHẨM PHẬT GIÁO`**.
+- **Thiết kế lại toàn bộ bên phải sân rẽ trái đúng thực tế Chùa Vĩnh Tràng (bỏ tiệm tạp hóa trùng lặp gây hiểu nhầm quầy cúng dường)**:
+  - Thay dãy tạp hóa cũ bằng **2 bồn vườn cây kiểng viền đá kem** (bonsai, bụi hoa, đèn đá cổ), **3 băng ghế đá công viên chùa** dưới bóng mát và **Trạm `TRÀ ĐÁ MIỄN PHÍ · KÍNH MỜI PHẬT TỬ`** (mái ngói nhỏ, bình trà đá inox có vòi rót, khay ly sứ — nét đẹp đặc trưng chùa miền Tây).
+  - Mở lối lát đá rộng (`5.4m`) xuyên giữa 2 bồn cây dẫn thẳng vào dãy **`VĂN PHÒNG BAN TRỊ SỰ · GIẢNG ĐƯỜNG HUỆ ĐĂNG`** (`x = 64.5, z = -18.0`) được nâng cấp kiến trúc đầy đủ hành lang 7 cột, lan can, cửa sổ lá sách xanh Nam Bộ, mái dốc xám nâu và đầu hồi gắn Bánh xe Pháp luân vàng khớp ảnh flycam thực tế.
+  - Gỡ bỏ bảng xanh quá khổ chắn ngang lối đi (`pond-and-gardens.mjs`), thay bằng cột biển chỉ dẫn gỗ 3 hướng nhỏ gọn sát lề phải (`← LỐI VÀO CHÁNH ĐIỆN`, `↑ QUẦY LƯU NIỆM`, `→ GIẢNG ĐƯỜNG · NHÀ KHÁCH`); điều chỉnh trụ đèn/cột điện (`right-entrance-road.mjs`), đường đi NPC (`characters-npcs.mjs`) và tọa độ trạm (`world-data.mjs`).
+
+---
+
+## 9. Kéo Dài Hành Lang Bàn Thờ Nội Thất (~77m) & Chuyển Ngoại Cảnh Sang Đô Thị TP. Mỹ Tho + Công Viên Vĩnh Tràng (Theo OSM GeoJSON)
+
+Dựa trên 2 ảnh chụp màn hình thực tế (`image_e1273117.png`, `image_c73a4f25.png`) và file bản đồ OpenStreetMap GeoJSON chính xác của Chùa Vĩnh Tràng (Phường 8, TP. Mỹ Tho, Tiền Giang):
+- **Hành lang bên phải trong chùa (`Lối Phải · Dãy Bàn Thờ Phật`, `src/app/vinh-trang-square-interior.mjs`)**:
+  - Kéo dài toàn bộ hành lang Đông từ `58.8m` lên **`77.2m`** (`z = +20.8 .. -56.4`, khớp kích thước thực của cụm kiến trúc Chùa Vĩnh Tràng `way/695981299` ~77.2m trong GeoJSON).
+  - Kéo dài thảm đỏ hoa sen (`74m`), mở rộng giãn cách 8 khám thờ tượng Phật GLB thành `8.8m`/khám (`z = +13.0 .. -48.6`), bổ sung hệ cột sơn son, cửa sổ vòm lấy sáng (12 cửa Đông + 6 cửa Tây), ghế gỗ, tủ kinh sách, bộ tiếp khách và đèn hành lang dọc suốt chiều sâu.
+  - **Bịt kín khe hở bầu trời** trên đỉnh và bên trái vòm cổng Bắc (`z = -56.0`) bằng vách đầu hồi (`northWestWingCap`), dải cổ trần (`spandrelBand`) và tường đỉnh kịch trần (`exitHeaderWall`) nối khớp với hệ vì kèo gỗ.
+  - Đồng bộ giới hạn di chuyển/cổng chuyển cảnh (`movement.mjs`: `minZ = -55.6`), camera & điểm tương tác (`player-and-interaction.mjs`), điểm nhảy khu vực (`time-and-interior.mjs`) và lộ trình NPC nội thất (`characters-npcs.mjs`).
+- **Ngoại cảnh đô thị TP. Mỹ Tho & `Công Viên Vĩnh Tràng` (`exterior-town.mjs`, `temple-grounds.mjs`, `residential-lane.mjs`, `render-loop-and-cutscene.mjs`)**:
+  - **Xóa toàn bộ cảnh nông thôn sai thực tế**: bỏ lề đường đất đỏ bùn (`dirtShoulderNorth/South`, `dirtLaneWest/East`), bỏ mương lục bình trước mặt tiền, bỏ nhà cấp 4 mái tôn xanh có lu nước giữa bãi cỏ trống, bỏ bụi tre ven đường và dãy gò đồi xanh nông thôn ở chân trời.
+  - **Đường Nguyễn Trung Trực chuẩn đô thị TP. Mỹ Tho**: cắt gọn mép bê tông cổng không tràn đè lên lòng đường nhựa, bổ sung **vỉa hè lát gạch đô thị hai bên**, **bó vỉa đá**, **vạch kẻ đường vàng/trắng**, **2 vạch sang đường cho người đi bộ** nối thẳng từ Cổng Tam Quan (`x = 23`) và Cổng Phụ (`x = 40.5`) sang công viên, biển tên đường xanh **`ĐƯỜNG NGUYỄN TRUNG TRỰC`**, cây xanh vỉa hè trồng trong bồn vuông và trụ đèn đường đô thị hiện đại.
+  - **Dựng `Công Viên Vĩnh Tràng` chuẩn OSM GeoJSON (`way/266761436`)** đối diện chùa qua đường: bãi cỏ công viên xanh sạch viền bó vỉa & hàng rào cây cắt tỉa, bảng đá **`CÔNG VIÊN VĨNH TRÀNG · TP. MỸ THO`**, **quảng trường lối đi hình tròn (`way/1147384259`)** ở trung tâm có đảo hoa & đài phun nước đá 2 tầng, trục lối đi lát gạch Bắc–Nam (`way/1147384277`, `way/1147384260`), 10 ghế đá công viên, 10 trụ đèn cầu đôi và bóng cây cổ thụ.
+  - **Dãy nhà phố đô thị 2–3 tầng TP. Mỹ Tho** dọc 2 bên Công viên Vĩnh Tràng (mặt tiền cửa kính/cửa cuốn, mái hiên, ban công lan can sắt, cục nóng điều hòa, biển hiệu thực tế: `CÀ PHÊ · GIẢI KHÁT`, `HOA TƯƠI · TRÁI CÂY`, `HỦ TIẾU MỸ THO`, `NHÀ THUỐC TÂY`, `CỬA HÀNG TẠP HÓA`, `TIỆM BÁNH · NƯỚC MÁT`, `VẬT PHẨM PHẬT GIÁO`) cùng đường chân trời nhà phố thấp tầng.
+  - **Sửa lỗi xe ô tô trắng bị xoay chéo leo vỉa hè**: tự động phát hiện trục dài của mô hình GLB trong `buildGLBRoadVehicle`, sửa góc xoay cutscene (`-Math.PI / 2`) và đặt bãi đỗ xe song song gọn gàng sát lề đường.
+
+
+
+---
+
+## 10. Xây Lại Toàn Chỉnh Đường Thẳng Ngoài Cổng Chùa Vĩnh Tràng Theo Google Earth / OSM GeoJSON & Ảnh Thực Tế
+
+Dựa trên phản hồi thực tế từ ảnh chụp góc nhìn từ Cổng Phụ (`image_a818687c.png`), ảnh cổng thực tế (`image_bb72a8b0.png`) và dữ liệu bản đồ Google Earth / OSM GeoJSON (`way/266761436`, `way/1147384259`):
+- **Con đường thẳng dài `170m` không vạch phân giao thông (`src/app/world/temple-grounds.mjs`)**:
+  - Gỡ bỏ hoàn toàn trục đường cắt ngang ngay sát cổng, vạch kẻ vàng giữa đường, vạch trắng biên và vạch ngựa vằn sang đường.
+  - Xây trục **đường nhựa xám trơn thẳng tắp dài `170.5m` (`x = 33.7 .. 47.3`, rộng `13.6m`, từ `z = 41.5` tại Cổng Phụ kéo thẳng về Nam tới `z = 212.0`)**, nối thông ra đại lộ **Đường Nguyễn Trung Trực** ở cuối tầm nhìn (`z = 205`), kèm bó vỉa & vỉa hè đô thị 2 bên và biển xanh **`ĐƯỜNG VÀO CHÙA VĨNH TRÀNG`** / **`ĐƯỜNG NGUYỄN TRUNG TRỰC`**.
+- **Bên phải nhìn từ cổng ra (phía Tây trục đường thẳng) — `Công Viên Vĩnh Tràng` (`src/app/world/exterior-town.mjs`)**:
+  - Dựng lại toàn bộ **Công Viên Vĩnh Tràng** trải dài `114m` theo hướng Bắc–Nam (`x = -26.0 .. +31.2, z = 54.0 .. 168.0`, đúng hình học GeoJSON `way/266761436`), có 3 lối mở lát gạch nối thẳng ra đường lớn (`z = 70, 104, 138`), bia đá **`CÔNG VIÊN VĨNH TRÀNG · TP. MỸ THO`** quay thẳng ra đường, quảng trường tròn lát gạch + đài phun nước hoa sen 2 tầng, 12 ghế đá, 12 trụ đèn công viên và hàng cây xanh bóng mát.
+- **Bên trái nhìn từ cổng ra (phía Đông trục đường thẳng) — Phố Mỹ Tho & `Bãi Giữ Xe Ô Tô · Xe Du Lịch`**:
+  - Dựng dãy phố đô thị TP. Mỹ Tho liên tục dọc 150m vỉa hè Đông (`CÀ PHÊ · GIẢI KHÁT`, `HOA TƯƠI · NHANG ĐÈN`, 2 quán gia đình tương tác `Nhà Cô Ba · Hủ tiếu Mỹ Tho` tại `z = 75` & `Bếp Dì Sáu · Bánh bèo & chè` tại `z = 89` trong `residential-lane.mjs`, tiếp nối `NƯỚC DỪA XIÊM`, `CỬA HÀNG TẠP HÓA`, `TIỆM BÁNH`, `NHÀ THUỐC TÂY`, `VẬT PHẨM PHẬT GIÁO`) cùng hàng cây đô thị và trụ đèn đường chạy thẳng suốt 170m.
+  - Bố trí **`BÃI GIỮ XE Ô TÔ · XE DU LỊCH`** rộng rãi ngoài chùa (`x = 48.5 .. 78.0, z = 102 .. 138`) có biển chỉ dẫn lớn, nhà mái tôn để 10 xe máy, xe khách & ô tô đỗ gọn bên trong cùng dãy xe du lịch/ô tô gia đình đỗ dọc lề xa (`z = 146 .. 174`) đúng cảnh mùa cao điểm / mùa Tết xe đỗ bên ngoài để du khách đi bộ vào chùa.
+- **Dòng người đi bộ nhộn nhịp mùa Tết / cao điểm & điều chỉnh giao thông (`characters-npcs.mjs`, `road-traffic.mjs`, `render-loop-and-cutscene.mjs`, `world-data.mjs`)**:
+  - Bổ sung **15 lộ trình Phật tử, gia đình, trẻ em, khách tham quan đi bộ hai chiều** tấp nập dọc con đường thẳng dài từ bãi xe ngoài (`z = 148`) đi thẳng vào Cổng Phụ và tản bộ trong Công viên Vĩnh Tràng.
+  - Chuyển xe qua lại về đại lộ **Đường Nguyễn Trung Trực** phía xa (`z = 202..208`), xe đưa đón chạy thẳng dọc trục đường ngoài vào `Bãi Giữ Xe` trả khách đi bộ vào chùa; đồng bộ cutscene đến chùa chạy thẳng từ Nam lên Bắc hướng thẳng vào Cổng Phụ và mở rộng `WORLD_BOUNDS.maxZ = 158.0`.
+
+---
+
+## 11. Cải Thiện Toàn Diện Đường Đất Bụi Mỹ Tho, Sắp Xếp Tượng Chuẩn Flycam, Vào Cửa Trước Chánh Điện, Chống Out Nội Thất, Cử Chỉ Tự Nhiên & Cửa Hàng Màn Hình Chính
+
+Dựa trên phản hồi thực tế từ ảnh chụp lỗi (`image_eeb3bc31.png`) và đối chiếu trực tiếp ảnh flycam thực tế Chùa Vĩnh Tràng (`image_97204806.png`):
+- **Đường cũ Mỹ Tho gồ ghề, đất bụi đúng thực tế (`src/app/world/temple-grounds.mjs`)**:
+  - Thay mặt đường nhựa hộp phẳng bằng lưới chia mịn (`PlaneGeometry(13.6, 170.5, 18, 96)`) có độ gồ ghề lượn sóng tự nhiên (`±0.035m..0.056m`), rãnh vết bánh xe mờ, mảng vá nhựa cũ, vết nứt rạn chân chim và sắc nâu vàng đất bụi tràn từ hai mép lề; bổ sung **2 dải lề đất bụi nâu đỏ miền Tây** gồ ghề, sỏi vụn, bụi cỏ dại và bó vỉa bê tông cũ từng đoạn hơi lệch cao độ.
+- **Sắp xếp lại toàn bộ Tượng Phật ngoài trời chuẩn ảnh flycam thực tế (`world-data.mjs`, `grocery-halls-statues.mjs`, `temple-grounds.mjs`, `gates-and-discovery.mjs`, `characters-npcs.mjs`)**:
+  - **Tượng Phật Di Lặc ngồi (20m)**: tọa lạc bên Tây sân trước tại `(-26.5, 4.0)` quay mặt ra Nam (`+Z`).
+  - **Tượng Phật A Di Đà đứng (18m)**: dời khỏi khoảng trước mặt Chánh Điện sang đúng trục trung tâm–Tây Bắc `(-9.5, -23.5)` ngay phía trước **Bảo Tháp 7 tầng** `(-9.5, -44.5)`.
+  - **Tượng Phật Thích Ca Nhập Niết Bàn (32m)**: đặt ngay phía sau mái ngói Chánh Điện tại `(14.5, -49.0)`, kế bên Bảo Tháp 7 tầng (rút gọn khối ngoại thất Chánh Điện kết thúc tại `rearZ = -34.5` để lộ rõ pho tượng nằm từ sân trước; dời `Hồ Phóng Sinh` về `(-28.0, -58.5)` và `Nhà Tổ` về `(14.5, -72.0)`).
+  - **Gỡ `pond2` chắn giữa sân trước Chánh Điện**: mở rộng đại lộ đá lát sạch sẽ giữa Di Lặc và Chánh Điện đúng ảnh thực tế, đồng thời xóa triệt để lỗi NPC đi đứng ngập trong hồ sen.
+- **Mở lối vào Chánh Điện từ ngay Cửa Trước & Chống tự out khi đi trong Chánh Điện (`chanh-dien-exterior.mjs`, `time-and-interior.mjs`, `movement.mjs`, `player-and-interaction.mjs`, `render-loop-and-cutscene.mjs`, `world3d-bridge.mjs`)**:
+  - Bổ sung thảm đỏ bậc thềm, ánh đèn đón khách, vùng bấm `frontDoorClickTargets` và nút tương tác **`🚪 [E] Vào Chánh Điện (Cửa Trước)`** ở bậc thềm trước (`x = 18..28, z = 7.2..14.5`), bước vào thẳng chính gian thờ Tam Bảo & 18 Vị La Hán (`x = -35.5, z = 0.0`).
+  - Xóa cơ chế tự động đá người chơi ra ngoài trong `checkInteriorDoorTransition()` khi đi sát mép tường nội thất; thay bằng 3 điểm hỏi chủ động bấm `[E]` (`Ra ngoài sân chùa (Cửa hông)`, `Ra vườn Phật Nằm & Bảo Tháp`, `Ra sân trước Chánh Điện`).
+- **Sửa góc nhìn Camera & Di chuyển mượt mà (`player-and-interaction.mjs`, `movement.mjs`)**:
+  - Nâng cao tầm camera góc nhìn thứ ba (`camHeight = 2.72m` ngoài sân, `2.28m` trong điện), hạ góc ngước `lookY` (`1.88m` thông thường, `4.2–4.6m` gần tượng lớn) giúp nhân vật luôn hiển thị rõ ràng phía trên thanh nút đáy; camera chỉ tự xoay theo lưng khi đi thẳng (`normZ < -0.55 && Math.abs(normX) < 0.45`), không còn giật ngược khi đi ngang `A`/`D`.
+- **Cải thiện toàn diện cử chỉ nhân vật, bạn đồng hành & NPC có mục đích (`render-loop-and-cutscene.mjs`, `characters-npcs.mjs`, `passport-and-cloud.mjs`)**:
+  - Bổ sung đạo cụ điện thoại 3D cầm tay & hệ thống hoạt ảnh khung xương tự nhiên: **`📸 Chụp ảnh`**, **`🤳 Selfie`** (tự chuyển góc camera trước Selfie chụp lưu vào Sổ Hành Hương), **`💬 Nói chuyện bố mẹ`** (mời bố mẹ đi cùng nếu đang đi một mình, quay mặt gật đầu trò chuyện ấm áp), **`🙏 Vái lễ`**, **`👋 Vẫy tay`**, **`🪷 Ngắm cảnh`**, cùng nhịp thở & đảo mắt nhẹ khi đứng yên.
+  - Bạn đồng hành có ngưỡng dừng mượt tránh bám gót vô nghĩa, tự quay ngắm tượng Phật khi dừng hoặc quay lại gật đầu/vẫy tay khi trò chuyện & chụp Selfie; NPC quanh sân chủ động dừng chụp ảnh, selfie, trò chuyện theo cặp và quạt mát.
+- **Đưa `🛍️ Cửa hàng` & `✨ Cử chỉ` trực tiếp ra màn hình chính (`shell-dom.mjs`, `12-elder-hud-passport.css`, `modal-and-events.mjs`)**:
+  - Thêm nút **`🛍️ Cửa hàng`** và **`✨ Cử chỉ`** (bật/tắt dải 6 cử chỉ gọn gàng ngay trên thanh đáy) trực tiếp lên thanh công cụ chính `#elder-bottom-dock`.
+
+## 12. Cải Tạo Công Viên Vĩnh Tràng, Sửa Tượng Quan Âm Bay, Xóa Gã Đàn Ông Theo Đuôi, Nhà Lưu Niệm Đi Vào Trong, Nhà Vệ Sinh Sân Sau, Sửa Lỗi Cửa Hông & Cân Bằng Tải Chánh Điện
+
+Dựa trên phản hồi thực tế và đối chiếu ảnh thực địa Chùa Vĩnh Tràng – Mỹ Tho:
+- **Thiết kế lại Công Viên Vĩnh Tràng đậm chất Mỹ Tho (`src/app/world/exterior-town.mjs`)**:
+  - Thay thảm cỏ đơn điệu bằng quảng trường lát đá mài/gạch vỉa hè đan xen, bồn hoa xây gạch trồng hoa giấy & cúc vạn thọ, đài phun nước đài sen có tia nước, nhà lục giác mái ngói đỏ, cụm **máy tập thể dục công viên sơn vàng–xanh** đặc trưng công viên Việt Nam, hàng cau cao, ghế đá công viên và bảng **`CÔNG VIÊN VĨNH TRÀNG`**.
+- **Sửa triệt để Tượng Phật Quan Âm bay lơ lửng (`src/app/world/glb-loading.mjs`, `src/app/world/grocery-halls-statues.mjs`)**:
+  - Hạ cao độ đặt tượng GLB từ `2.68 - box2.min.y` về đúng mặt đài sen `1.82 - box2.min.y` (khớp đỉnh bệ `1.825m`) và đưa vòng hào quang `qaHalo` vào danh sách `quanAmPlaceholderParts` để gỡ hoàn toàn khi tượng 3D tải xong.
+- **Xóa gã đàn ông áo xanh bám theo người chơi (`src/logic/modules/pilgrim-profiles.mjs`, `src/app/world/render-loop-and-cutscene.mjs`, `src/app/ui/passport-and-cloud.mjs`)**:
+  - Xóa `du_khach` khỏi `PILGRIMAGE_MODES.explorer.companions` (để mặc định đi lễ thanh tịnh một mình), lọc bỏ `du_khach` trong `setPilgrimageCompanions` và sửa lỗi khóa `'gia_dinh'` -> `'family_3gen'` khi gọi bố mẹ đi cùng.
+- **Giảm độ chói trắng của lối đi & sân lát (`src/app/world/temple-grounds.mjs`, `src/app/world/exterior-town.mjs`)**:
+  - Chuyển màu vật liệu `mainRoad`, `rightArrivalRoad`, `sideWalkway`, `endTurnPlaza`, `giangDuongWalkway`, `urbanConcreteMat`, `parkPathMat` sang tông đá/bê tông ấm cũ tự nhiên (`0xB8AE9B`–`0xC6BBA6`, `roughness: 0.88–0.90`).
+- **Xây lại Nhà Lưu Niệm · Đặc Sản Chay đi thẳng vào trong mua đồ (`src/app/world/grocery-halls-statues.mjs`, `src/logic/modules/marketplace.mjs`, `src/logic/modules/world-data.mjs`, `src/app/world/characters-npcs.mjs`)**:
+  - Mở rộng mặt tiền hoàn toàn không còn quầy chắn ngang, lót nền gạch bông đi dạo vào tận bên trong (`x = 38.05..46.0, z = -35.85..-29.8`) với kệ gỗ áp tường + bàn trưng bày trung tâm đi vòng quanh được; bổ sung đúng các mặt hàng đặc sản ở chùa: **Hũ Kho Quẹt Chay**, **Hũ Chao Môn Chay**, **Muối Mè & Tương Hột Chay**, **Tràng Hạt Bồ Đề**, **Mỹ Nghệ Gỗ Dừa Mỹ Tho**, **Tượng Phật Di Lặc Mini**, **Sách Kinh Nhật Tụng**.
+- **Thiết kế Khu Nhà Vệ Sinh Nam — Nữ đông đúc tại sân sau (`src/app/world/gates-and-discovery.mjs`, `src/app/world/characters-npcs.mjs`)**:
+  - Dựng dãy nhà vệ sinh sân sau tại `(35.5, 0, -66.5)` mái ngói đỏ, tường ốp gạch men, hai lối riêng **`NHÀ VỆ SINH NAM`** / **`NHÀ VỆ SINH NỮ`** có vách ngăn che tầm nhìn, dãy **4 bồn rửa tay có gương** ngoài hiên, bình **`NƯỚC UỐNG MIỄN PHÍ`**, ghế đá chờ và **7 NPC khách hành hương** xếp hàng, rửa tay, trò chuyện sinh động.
+- **Sửa lỗi bấm cuối hành lang/cổng bên trong bị thoát ngay ra ngoài (`src/app/vinh-trang-square-interior.mjs`, `src/app/world/player-and-interaction.mjs`)**:
+  - Gỡ các tấm nền phong cảnh xa (`outerGardenBackdrop`, `skyVistaBackdrop`, `frontSkyVista`) khỏi `interiorDoorClickTargets`; chỉ kích hoạt `exitInteriorGradual` khi người chơi đứng sát cửa (`dist <= 4.2m`), nếu bấm từ xa sẽ tự đi bộ tới gần cửa bên trong Chánh Điện thay vì văng ra ngoài; siết ngưỡng gợi ý thoát cửa hông lên `pz >= 18.2`.
+- **Sửa lỗi tự động di chuyển & quay góc khó hiểu (`src/app/world/movement.mjs`, `src/app/world/render-loop-and-cutscene.mjs`)**:
+  - Sửa `lerpAngle` theo góc ngắn nhất `Math.atan2(Math.sin(b-a), Math.cos(b-a))`, loại bỏ điểm đầu A* giật lùi, chặn `checkInteriorDoorTransition()` không cắt ngang tuyến tự động đi ngoài sân, sửa lỗi xoay vòng ngẫu nhiên khi tới đích gần `lookAt` và thêm lookahead cua góc mượt hơn.
+- **Cân bằng tải & xóa giật lag khi bước vào Chánh Điện (`src/app/vinh-trang-square-interior.mjs`, `src/app/world/time-and-interior.mjs`, `src/app/world/glb-loading.mjs`)**:
+  - Giảm số đèn `THREE.PointLight` nội thất từ **~43 đèn xuống còn 5 đèn** phạm vi rộng kết hợp tăng cường ánh sáng `hemiLight` / `sunLight` vàng ấm (giảm ~8.5 lần chi phí fragment shader); tắt `castShadow` trên tượng/kiến trúc nội thất; nạp nền từng GLB nội thất (`_preloadInteriorAssetsIdle`) khi đang dạo ngoài sân và chia nhỏ các đợt gắn mô hình (`yieldBatch`) để không bao giờ đứng khung hình khi vào điện.
+
 

@@ -4,7 +4,7 @@
  * Mixin của ChuaOnlineApp: 18 method (initLive3DWorld … updateUGCMilestoneHUD).
  * Được gắn vào class trong chua-online-app.mjs qua applyMixins().
  */
-import { PILGRIMAGE_STATIONS, findAnyTempleDestination, performSpiritualAction, recordSpiritualMilestone, checkUGCMilestoneUnlock, getLocalDateKey, ensureDailyMissionDate, grantPlayerXp, collectCourtyardTask, HERITAGE_RELICS, discoverHeritageRelic, BLESSING_TOWER_CATEGORIES, COURTYARD_NPC_DHARMA_QUOTES, pickNpcDharmaQuote, VinhTrang3DWorld } from './shared.mjs';
+import { PILGRIMAGE_STATIONS, findAnyTempleDestination, performSpiritualAction, recordSpiritualMilestone, checkUGCMilestoneUnlock, getLocalDateKey, ensureDailyMissionDate, grantPlayerXp, collectCourtyardTask, HERITAGE_RELICS, discoverHeritageRelic, BLESSING_TOWER_CATEGORIES, COURTYARD_NPC_DHARMA_QUOTES, pickNpcDharmaQuote, VinhTrang3DWorld, DEFAULT_TEMPLE_ID, stampTempleStation, stampTempleHeritage, stampTempleArhat } from './shared.mjs';
 
 export const world3dBridgeMethods = {
   /* ========================================================================
@@ -67,9 +67,15 @@ export const world3dBridgeMethods = {
           this.spiritual,
           `Ghé thăm ${station.name}`
         );
+        if (this.passport) {
+          stampTempleStation(this.passport, station.key, this.passport.activeTempleId || DEFAULT_TEMPLE_ID);
+        }
         this.tryAutoDiscoverHeritageByStation(station.key, { silent: false });
         this.saveState();
+        this.scheduleCloudSync?.({ temple: true });
         this.updateActionBadges();
+        this.refreshGuidedNextButton?.();
+        this.refreshTopStampSummary?.();
         this.highlightActiveWalkChip(station.key);
         this.playVoiceAudio(station.audio);
         if (station.key === 'chanh_dien') {
@@ -95,7 +101,7 @@ export const world3dBridgeMethods = {
         this.syncStoreVisualsTo3D();
         this.syncTempleWorldGameplayState();
         this.syncPilgrimageCompanionsTo3D();
-        this.syncHoaDangLanternsTo3D();
+        this.syncCombinedLanternsTo3D?.();
         this.syncBlessingTowerTo3D();
       },
       onTransitionFade: (active) => {
@@ -123,8 +129,8 @@ export const world3dBridgeMethods = {
             this._shownShoeEtiquetteToast = true;
             this.showToast(
               'Cửa Gỗ Bức Bàn · Đã Bỏ Dép Bên Ngoài',
-              'Bước qua kệ để dép và ngưỡng cửa gỗ bức bàn phía trước để tiến vào Đại Hùng Bửu Điện lễ Phật.',
-              3800,
+              'Đi vòng qua hai bên hành lang 18 Vị La Hán lên mặt trước Đại Hùng Bửu Điện để chiêm bái Tượng Phật quay mặt hướng ra Cổng Tam Quan.',
+              4200,
               false
             );
           }
@@ -138,10 +144,15 @@ export const world3dBridgeMethods = {
         const btn = document.getElementById('btn-toggle-interior-hall');
         const zoneBar = document.getElementById('interior-zone-bar');
         const goalsTracker = document.getElementById('daily-goals-tracker');
+        const topRightCluster = document.getElementById('hud-topright-cluster');
+        const visitorPopover = document.getElementById('visitor-community-popover');
         this.audio?.setAmbientZone?.(inside ? 'interior' : 'exterior');
         if (pinsLayer) pinsLayer.style.display = inside ? 'none' : 'block';
         if (zoneBar) zoneBar.style.display = inside ? 'flex' : 'none';
         if (goalsTracker) goalsTracker.style.display = inside ? 'none' : 'block';
+        if (topRightCluster) topRightCluster.classList.toggle('interior-mode', Boolean(inside));
+        if (visitorPopover) visitorPopover.classList.toggle('interior-mode', Boolean(inside));
+        this.syncVisitorPresence?.();
         if (inside) {
           this.nearbyStallTrigger = null;
           this.syncBlessingTowerTo3D();
@@ -154,14 +165,20 @@ export const world3dBridgeMethods = {
           const cutBtn = document.getElementById('btn-interior-cutaway');
           if (cutBtn) cutBtn.classList.toggle('active', Boolean(this.world3d?.interiorCutaway));
           this.spiritual = recordSpiritualMilestone(this.spiritual, 'Vào bên trong Chùa Chính');
+          if (this.passport) {
+            stampTempleStation(this.passport, 'chanh_dien', this.passport.activeTempleId || DEFAULT_TEMPLE_ID);
+          }
           this.tryAutoDiscoverHeritageById('relic_long_tru', { silent: true });
           this.saveState();
+          this.scheduleCloudSync?.({ temple: true });
           this.updateActionBadges();
+          this.refreshGuidedNextButton?.();
+          this.refreshTopStampSummary?.();
           this.playBellTone(216, 2.6);
           this.showToast(
-            'Cửa Gỗ & Hiên Bỏ Dép · Hành Trình Hình Vuông',
-            'Đã cất giày dép trên kệ ngoài hiên! Đi qua Tượng Phật Nghìn Mắt Nghìn Tay & Chỗ Ngủ Của Phật, dạo quanh Hồ Sen Bộ rồi qua cửa gỗ bức bàn vào Chính Điện.',
-            5600,
+            'Chánh Điện Đại Hùng Bửu Điện',
+            'Mời cô bác thong thả lễ Phật, chiêm bái 18 Vị La Hán gỗ mít 1907 và ngắm Hồ Sen Bộ giữa chùa.',
+            4800,
             false
           );
         } else {
@@ -172,10 +189,11 @@ export const world3dBridgeMethods = {
             btn.innerHTML = '🚪 Vào Chánh Điện';
           }
           this.refreshProximityPrompt();
+          this.refreshGuidedNextButton?.();
           this.showToast(
-            'Ra Hiên Bỏ Dép · Lối Mát Cuối Đường',
-            'Bạn đã mang lại giày dép và bước ra sân mát cạnh Tiệm Tạp Hóa · Lưu Niệm cuối đường Tịnh Độ Huyền Môn.',
-            3200
+            'Trở ra sân Chùa Vĩnh Tràng',
+            'Mời cô bác tiếp tục dạo quanh vườn tượng Phật và Hồ Sen.',
+            3000
           );
         }
       },
@@ -193,14 +211,21 @@ export const world3dBridgeMethods = {
         } else if (action === 'STRIKE_TRONG_BAT_NHA') {
           this.strikeTrongBatNhaInApp();
         } else if (action === 'OPEN_ARHAT') {
+          const idx = Number.isFinite(payload?.arhatIndex) ? payload.arhatIndex : 0;
+          if (this.passport) {
+            stampTempleArhat(this.passport, `arhat_${idx + 1}`, this.passport.activeTempleId || DEFAULT_TEMPLE_ID);
+            this.scheduleCloudSync?.({ temple: true });
+          }
           this.tryAutoDiscoverHeritageById('relic_bat_bo_la_han', { silent: true });
-          this.openExploreModal('arhats', Number.isFinite(payload?.arhatIndex) ? payload.arhatIndex : 0);
+          this.openExploreModal('arhats', idx);
         } else if (action === 'COLLECT_LEAF') {
           this.collectCourtyardLeafInApp(payload?.leafId);
         } else if (action === 'OPEN_GARDEN_PLOT') {
-          this.openTempleGardenModal(Number.isFinite(payload?.slotIndex) ? payload.slotIndex : 0);
+          this.openPilgrimagePassportModal?.('garden');
+        } else if (action === 'OPEN_LANTERN_WISH') {
+          this.openCommunityLanternModal?.(payload?.wish || null);
         } else if (action === 'OPEN_HOA_DANG') {
-          this.openHoaDangModal();
+          this.openCommunityLanternModal?.(null);
         } else if (action === 'LE_PHAT') {
           this.triggerLePhat();
         } else if (action === 'DANG_HUONG') {
@@ -208,7 +233,7 @@ export const world3dBridgeMethods = {
         } else if (action === 'DANG_HOA') {
           this.triggerDangHoa();
         } else if (action === 'OPEN_SHOP') {
-          this.openNineTabStoreModal(payload?.category || 'le_vat');
+          this.openConsolidatedShopModal?.();
         } else if (action === 'OPEN_MARKET_STALL') {
           this.openMarketplaceStallModal(payload?.category || 'huong_hoa', payload?.title);
         } else if (action === 'OPEN_LOCAL_EATERY') {
@@ -375,7 +400,9 @@ export const world3dBridgeMethods = {
         chanh_dien_bell: '🔔',
         trong_bat_nha: '🥁',
         nghin_mat_nghin_tay: '🙏',
-        cho_ngu_cua_phat: '🪷'
+        cho_ngu_cua_phat: '🪷',
+        enter_chanh_dien_front: '🚪',
+        exit_interior: '🚪'
       };
       if (iconEl) iconEl.textContent = iconMap[p.kind] || '✨';
       labelEl.textContent = cleanLabel || 'Tương tác';
@@ -397,6 +424,15 @@ export const world3dBridgeMethods = {
   handleProximityInteract() {
     if (this.nearbyInteractPrompt) {
       const p = this.nearbyInteractPrompt;
+      if (p.kind === 'enter_chanh_dien_front') {
+        this.world3d?.enterInteriorGradual?.('front_tam_quan');
+        this.playChanhDienBellCadence?.({ force: true });
+        return true;
+      }
+      if (p.kind === 'exit_interior') {
+        this.world3d?.exitInteriorGradual?.(p.exitSide || 'right');
+        return true;
+      }
       if (p.kind === 'nghin_mat_nghin_tay' || p.kind === 'cho_ngu_cua_phat') {
         this.prayAtRightGalleryShrine(p.kind);
         return true;
@@ -460,10 +496,10 @@ export const world3dBridgeMethods = {
       this.saveState();
       this.updateActionBadges();
       this.showToast(
-        '🪷 Chỗ Ngủ Của Phật · Đức Phật Nhập Niết Bàn (+12 🪷 · +10 XP)',
+        '🪷 Chỗ Ngủ Của Phật · Đức Phật Nhập Niết Bàn',
         'Khám thờ gỗ chạm thếp vàng tôn trí kim thân Đức Phật an nhiên thị hiện Cát Tường Ngoạ tại dải bàn thờ lối vào bên phải.',
-        4800,
-        true
+        4600,
+        false
       );
     } else {
       this.tryAutoDiscoverHeritageById('relic_quan_am', { silent: true });
@@ -475,10 +511,10 @@ export const world3dBridgeMethods = {
       this.saveState();
       this.updateActionBadges();
       this.showToast(
-        '🙏 Đức Phật Nghìn Mắt Nghìn Tay · Thiên Thủ Thiên Nhãn (+12 🪷 · +10 XP)',
+        '🙏 Đức Phật Nghìn Mắt Nghìn Tay',
         'Ngàn mắt soi thấu nỗi khổ thế gian, ngàn tay từ bi cứu độ chúng sinh ngay lối bước vào góc dưới bên phải chùa.',
-        4800,
-        true
+        4600,
+        false
       );
     }
   },
@@ -502,7 +538,7 @@ export const world3dBridgeMethods = {
     this.saveState();
     this.updateActionBadges();
     this.showToast(
-      '🔔 Tiếng Chuông Chánh Điện Ngân Vang (+12 🪷 · +10 XP)',
+      '🔔 Tiếng Chuông Chánh Điện Ngân Vang',
       '“Nghe chuông phiền não tan mây khói, trí tuệ sinh sôi Bồ-đề lớn.” — Pháp Bảo Chuông Chùa Vĩnh Tràng (1854).',
       4200,
       false
@@ -520,30 +556,28 @@ export const world3dBridgeMethods = {
     this.saveState();
     this.updateActionBadges();
     this.showToast(
-      '🥁 Khởi Hồi Trống Bát Nhã · Mõ Đại Tự (+12 🪷 · +10 XP)',
+      '🥁 Khởi Hồi Trống Bát Nhã · Mõ Đại Tự',
       'Hồi trống Bát Nhã đối xứng cùng Đại Hồng Chung khai mở trí tuệ và chánh niệm nơi Đại Hùng Bửu Điện.',
       4200,
       false
     );
   },
 
-  grantPilgrimXp(amount, reasonLabel = '') {
+  grantPilgrimXp(amount, _reasonLabel = '') {
     const res = grantPlayerXp(this.activityHub, amount);
     this.activityHub = res.activity;
-    if (res.leveledUp) {
-      this.playBellTone(360, 2.8);
-      this.showToast(
-        `${res.rankInfo.badge} Thăng bậc: ${res.rankInfo.title} (Cấp ${res.rankInfo.level})`,
-        reasonLabel ? `Từ hoạt động "${reasonLabel}", cô bác đã đạt bậc hành hương mới!` : 'Chúc mừng cô bác tinh tấn tu học mỗi ngày!',
-        4800,
-        false
-      );
-    }
     return res;
   },
 
   tryAutoDiscoverHeritageById(relicId, { silent = false } = {}) {
     const res = discoverHeritageRelic(this.activityHub, this.storeProfile, relicId, getLocalDateKey());
+    if (this.passport) {
+      const stampRes = stampTempleHeritage(this.passport, relicId, this.passport.activeTempleId || DEFAULT_TEMPLE_ID);
+      if (stampRes.changed) {
+        this.refreshTopStampSummary?.();
+        this.scheduleCloudSync?.({ temple: true });
+      }
+    }
     if (!res.ok || res.alreadyDiscovered) return res;
     this.activityHub = res.activity;
     this.storeProfile = res.storeProfile;
@@ -551,7 +585,7 @@ export const world3dBridgeMethods = {
     this.updateActionBadges();
     if (!silent) {
       this.playBellTone(324, 2.0);
-      this.showToast('📜 Đóng dấu Sổ Di Sản Vĩnh Tràng', res.message, 4200, false);
+      this.showToast('🧧 Đã đóng dấu vào Sổ Hành Hương', res.message, 4200, false);
     }
     return res;
   },
@@ -602,10 +636,10 @@ export const world3dBridgeMethods = {
     this.updateActionBadges();
     this.playBellTone(324, 2.2);
     this.showToast(
-      '🐟 Đã rải thức ăn cho đàn cá Koi (+12 🪷 · +10 XP)',
+      '🐟 Rải thức ăn cho đàn cá Koi Hồ Sen',
       `Cô bác đã gieo duyên phóng sinh ${this.activityHub.koiFedCount} lần tại Hồ Sen Vĩnh Tràng.`,
-      4200,
-      true
+      3800,
+      false
     );
   },
 

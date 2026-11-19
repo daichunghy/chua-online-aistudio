@@ -3,7 +3,7 @@
  * File này giữ constructor/state/init; các nhóm method nằm trong src/app/ui/*.mjs (xem docs/ARCHITECTURE.md).
  */
 
-import { CHARACTER_PROFILES, INITIAL_UGC_GALLERY, createSpiritualState, checkUGCMilestoneUnlock, calculateJourneyImprint, calculateCartSummary, getLocalDateKey, shouldShowDailyDharmaToday, fetchDailyDharmaService, COURTYARD_NPC_DHARMA_QUOTES, createStoreProfileState, TIME_OF_DAY_PRESETS, createActivityHubState, ensureDailyMissionDate, NATIONALITY_PROFILES, PILGRIMAGE_MODES, HOA_DANG_WISHES, createDharmaJournalState, ACADEMY_COURSES, createAcademyEntitlementState, createBlessingTowerState, createSutraStudyState, SutraStudyController, TempleAudioEngine, STORAGE_KEY, applyMixins } from './ui/shared.mjs';
+import { CHARACTER_PROFILES, INITIAL_UGC_GALLERY, createSpiritualState, checkUGCMilestoneUnlock, calculateJourneyImprint, calculateCartSummary, getLocalDateKey, fetchDailyDharmaService, COURTYARD_NPC_DHARMA_QUOTES, createStoreProfileState, TIME_OF_DAY_PRESETS, createActivityHubState, ensureDailyMissionDate, NATIONALITY_PROFILES, PILGRIMAGE_MODES, HOA_DANG_WISHES, createDharmaJournalState, ACADEMY_COURSES, createAcademyEntitlementState, createBlessingTowerState, createSutraStudyState, SutraStudyController, TempleAudioEngine, STORAGE_KEY, applyMixins, createVisitorClientId, createAmbientSettingsState, DEFAULT_TEMPLE_ID, createPilgrimagePassportState, getActiveTempleRecord } from './ui/shared.mjs';
 import { shellDomMethods } from './ui/shell-dom.mjs';
 import { world3dBridgeMethods } from './ui/world3d-bridge.mjs';
 import { effectsAudioMethods } from './ui/effects-audio.mjs';
@@ -17,6 +17,7 @@ import { exploreAccountMethods } from './ui/explore-account.mjs';
 import { activityHubMethods } from './ui/activity-hub.mjs';
 import { stagesAndStoreMethods } from './ui/stages-and-store.mjs';
 import { modalAndEventsMethods } from './ui/modal-and-events.mjs';
+import { passportAndCloudMethods } from './ui/passport-and-cloud.mjs';
 
 export class ChuaOnlineApp {
   constructor() {
@@ -88,6 +89,18 @@ export class ChuaOnlineApp {
     this.practicedDays = Array.isArray(this.saved.practicedDays) ? [...this.saved.practicedDays] : [1];
     this.studentName = String(this.saved.studentName || 'Phật tử Tâm An').trim() || 'Phật tử Tâm An';
 
+    // Multi-temple Sổ Hành Hương & Cloud Sync state
+    this.passport = createPilgrimagePassportState(this.saved.passport, {
+      visitedHeritageIds: this.activityHub?.heritageBook?.discoveredIds || [],
+      visitedArhatIds: [],
+      practicedDays: [],
+      journalEntries: this.dharmaJournal?.entries || []
+    });
+    this.cloudUser = null;
+    this.communityLanterns = [];
+    this.zenHudCollapsed = false;
+    this.titleOverlayDismissed = false;
+
     this.uploadedUserPhotoDataUrl = this.saved.uploadedUserPhotoDataUrl || null;
     this.lastDailyDharmaDate = this.saved.lastDailyDharmaDate || null;
     this.lastDailyDharmaQuoteId = this.saved.lastDailyDharmaQuoteId || null;
@@ -108,14 +121,22 @@ export class ChuaOnlineApp {
     this.quizNotice = null;
     this.autoWalkObjective = null;
 
-    // Unified TempleAudioEngine (replaces raw Audio + AudioContext)
+    // Unified TempleAudioEngine + Ambient Audio Manager (distant chanting + temple bells)
     const savedMixer = this.saved.audioMixer && typeof this.saved.audioMixer === 'object' ? this.saved.audioMixer : {};
+    this.ambientSettings = createAmbientSettingsState(
+      this.saved.ambientSettings ||
+        (typeof savedMixer.ambientEnabled === 'boolean'
+          ? { enabled: savedMixer.ambientEnabled, ...(savedMixer.ambientLayers || {}) }
+          : null)
+    );
     this.audio = new TempleAudioEngine({
       masterVolume: savedMixer.masterVolume ?? 1.0,
       ambientVolume: savedMixer.ambientVolume ?? 0.45,
       sfxVolume: savedMixer.sfxVolume ?? 0.85,
       voiceVolume: savedMixer.voiceVolume ?? 0.9,
       muted: Boolean(savedMixer.muted),
+      ambientEnabled: this.ambientSettings.enabled,
+      ambientLayers: this.ambientSettings,
       onVoiceStateChange: ({ playing, fileName }) => {
         this.audioPlaying = Boolean(playing);
         if (fileName) this.currentAudioFile = fileName;
@@ -124,6 +145,9 @@ export class ChuaOnlineApp {
       onSpeechStateChange: ({ speaking }) => {
         this.ttsSpeaking = Boolean(speaking);
         if (this.activeScreen === 'lecture') this.renderLectureStage();
+      },
+      onAmbientStateChange: () => {
+        this.updateAudioMixerUI?.();
       }
     });
     this.audioPlaying = false;
@@ -142,6 +166,36 @@ export class ChuaOnlineApp {
     this._arhatStageDispose = null;
     this._interactiveStageDispose = null;
     this.audio?.setVoicePlaybackRate?.(this.readAlongRate || 1.0);
+
+    // Live temple visitor presence state (server-authoritative)
+    this.visitorClientId = this.getOrCreateVisitorClientId();
+    this.visitorPresenceState = {
+      onlineCount: 1,
+      todayVisits: 1,
+      visitors: [
+        {
+          clientId: this.visitorClientId,
+          nationalityId: this.nationalityId,
+          characterModelKey: this.characterModelKey,
+          zone: 'Sân chùa'
+        }
+      ]
+    };
+    this._visitorEventSource = null;
+    this._visitorHeartbeatTimer = null;
+  }
+
+  getOrCreateVisitorClientId() {
+    try {
+      const key = 'chua_online_visitor_tab_id';
+      const existing = sessionStorage.getItem(key);
+      if (existing && /^[a-zA-Z0-9_-]{4,64}$/.test(existing)) return existing;
+      const fresh = createVisitorClientId();
+      sessionStorage.setItem(key, fresh);
+      return fresh;
+    } catch {
+      return createVisitorClientId();
+    }
   }
 
   loadState() {
@@ -182,7 +236,9 @@ export class ChuaOnlineApp {
           activeModuleId: this.activeModuleId,
           practicedDays: this.practicedDays.slice(0, 30),
           studentName: this.studentName,
+          passport: this.passport,
           audioMixer: this.audio ? this.audio.getMixerState() : undefined,
+          ambientSettings: this.ambientSettings,
           uploadedUserPhotoDataUrl: this.uploadedUserPhotoDataUrl,
           lastDailyDharmaDate: this.lastDailyDharmaDate,
           lastDailyDharmaQuoteId: this.lastDailyDharmaQuoteId
@@ -198,21 +254,23 @@ export class ChuaOnlineApp {
     this.applyElderFontScale(this.elderFontScale, false);
     this.updateAudioMixerUI();
     this.bindEvents();
+    this.bindSoftJoystick();
     this.renderShopProducts();
     this.renderLectureStage();
     this.updateActionBadges();
+    this.refreshTopStampSummary();
+    this.refreshGuidedNextButton();
+    this.initVisitorPresence();
+    this.initFirebaseAndCloudSync();
 
     const params = new URLSearchParams(window.location.search);
     if (params.get('autostart') === '1') {
       this.world3d?.skipArrivalCutscene?.(true);
-      this.syncPilgrimageCompanionsTo3D();
-    } else if (!this.arrivalCompleted || params.get('arrival') === '1') {
-      this.openArrivalPilgrimageModal();
+      this.enterTempleFromTitleOverlay();
     } else {
-      const todayKey = getLocalDateKey();
-      if (shouldShowDailyDharmaToday(this.lastDailyDharmaDate, todayKey)) {
-        this.showDailyDharmaModal({ markSeenToday: true });
-      }
+      document.body.classList.add('title-overlay-active');
+      this.world3d?.setTitlePanMode?.(true);
+      this.syncPilgrimageCompanionsTo3D();
     }
 
     fetchDailyDharmaService({ url: '/data/daily-dharma.json' })
@@ -251,6 +309,8 @@ export class ChuaOnlineApp {
         characterModelKey: this.characterModelKey,
         audioMuted: this.audioMuted,
         audioMixer: this.audio?.getMixerState?.() || null,
+        ambientSettings: this.ambientSettings,
+        ambientRunning: Boolean(this.audio?.isAmbientRunning),
         hoaDangCount: this.hoaDangWishes.length,
         blessingTowerCount: this.blessingTower?.entries?.length || 0,
         journalCount: this.dharmaJournal?.entries?.length || 0,
@@ -282,6 +342,19 @@ export class ChuaOnlineApp {
               quoteId: this.activeNpcSpeech.quote?.id || null
             }
           : null,
+        visitorOnlineCount: this.visitorPresenceState?.onlineCount || 1,
+        cloudSignedIn: Boolean(this.cloudUser?.uid),
+        titleOverlayVisible: !this.titleOverlayDismissed,
+        passportSummary: (() => {
+          const rec = getActiveTempleRecord(this.passport, this.passport?.activeTempleId || DEFAULT_TEMPLE_ID);
+          return {
+            activeTempleId: this.passport?.activeTempleId || DEFAULT_TEMPLE_ID,
+            heritageStamps: rec.heritageStamps.length,
+            arhatStamps: rec.arhatStamps.length,
+            journalEntries: this.passport?.journalEntries?.length || 0,
+            memoryPhotos: this.passport?.memoryPhotos?.length || 0
+          };
+        })(),
         cartSummary: calculateCartSummary(this.cart)
       });
   }
@@ -300,7 +373,8 @@ applyMixins(ChuaOnlineApp,
   exploreAccountMethods,
   activityHubMethods,
   stagesAndStoreMethods,
-  modalAndEventsMethods
+  modalAndEventsMethods,
+  passportAndCloudMethods
 );
 
 document.addEventListener('DOMContentLoaded', () => {

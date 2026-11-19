@@ -10,5 +10,9 @@
     "build": "node scripts/check.mjs",
     "lint": "node --test src/logic/*.test.mjs"
   },
-  "dependencies": {}
+  "dependencies": {
+    "@firebase/eslint-plugin-security-rules": "^0.0.2",
+    "eslint": "^10.15.0",
+    "firebase": "^13.4.0"
+  }
 }

@@ -4,12 +4,107 @@ import fs from 'node:fs';
 import path from 'node:path';
 import zlib from 'node:zlib';
 import { fileURLToPath } from 'node:url';
+import { sanitizeVisitorPayload } from './src/logic/modules/visitor-presence.mjs';
+import { getLocalDateKey } from './src/logic/modules/daily-dharma.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.PORT || 3000);
 
 const TTS_CACHE = new Map();
 const TTS_CACHE_MAX = 180;
+
+// Real-time server-authoritative visitor presence state
+const ACTIVE_VISITORS = new Map();
+const VISITOR_TTL_MS = 65000;
+let visitorDayKey = getLocalDateKey();
+let seenTodayVisitorIds = new Set();
+
+function ensureVisitorDay() {
+  const today = getLocalDateKey();
+  if (today !== visitorDayKey) {
+    visitorDayKey = today;
+    seenTodayVisitorIds = new Set(ACTIVE_VISITORS.keys());
+  }
+}
+
+function getVisitorSnapshot() {
+  ensureVisitorDay();
+  const visitors = [];
+  for (const v of ACTIVE_VISITORS.values()) {
+    visitors.push({
+      clientId: v.clientId,
+      nationalityId: v.nationalityId,
+      characterModelKey: v.characterModelKey,
+      zone: v.zone
+    });
+  }
+  const onlineCount = visitors.length;
+  const todayVisits = Math.max(onlineCount, seenTodayVisitorIds.size);
+  return {
+    ok: true,
+    onlineCount,
+    todayVisits,
+    visitors: visitors.slice(0, 40)
+  };
+}
+
+function broadcastVisitorSnapshot() {
+  const payload = `event: presence\ndata: ${JSON.stringify(getVisitorSnapshot())}\n\n`;
+  for (const [id, entry] of ACTIVE_VISITORS.entries()) {
+    if (!entry.res || entry.res.writableEnded) continue;
+    try {
+      entry.res.write(payload);
+    } catch {
+      ACTIVE_VISITORS.delete(id);
+    }
+  }
+}
+
+function readJsonBody(req, maxBytes = 4096) {
+  return new Promise((resolve) => {
+    const chunks = [];
+    let total = 0;
+    req.on('data', (chunk) => {
+      total += chunk.length;
+      if (total <= maxBytes) chunks.push(chunk);
+    });
+    req.on('end', () => {
+      try {
+        const raw = Buffer.concat(chunks).toString('utf8').trim();
+        resolve(raw ? JSON.parse(raw) : {});
+      } catch {
+        resolve({});
+      }
+    });
+    req.on('error', () => resolve({}));
+  });
+}
+
+const visitorSweepTimer = setInterval(() => {
+  const now = Date.now();
+  let removed = false;
+  for (const [id, entry] of ACTIVE_VISITORS.entries()) {
+    if (now - entry.lastSeen > VISITOR_TTL_MS) {
+      try {
+        if (entry.res && !entry.res.writableEnded) entry.res.end();
+      } catch {}
+      ACTIVE_VISITORS.delete(id);
+      removed = true;
+      continue;
+    }
+    if (entry.res && !entry.res.writableEnded) {
+      try {
+        entry.res.write(': ping\n\n');
+        entry.lastSeen = now;
+      } catch {
+        ACTIVE_VISITORS.delete(id);
+        removed = true;
+      }
+    }
+  }
+  if (removed) broadcastVisitorSnapshot();
+}, 25000);
+visitorSweepTimer.unref?.();
 
 function splitTtsChunks(text, maxLen = 175) {
   const clean = String(text || '').replace(/\s+/g, ' ').trim();
@@ -179,6 +274,107 @@ const server = http.createServer(async (req, res) => {
     const parsedUrl = new URL(req.url || '/', `http://localhost:${PORT}`);
     if (parsedUrl.pathname === '/api/tts') {
       await handleTtsRequest(req, res, parsedUrl);
+      return;
+    }
+
+    if (parsedUrl.pathname === '/api/visitors/stream' && req.method === 'GET') {
+      const clean = sanitizeVisitorPayload({
+        clientId: parsedUrl.searchParams.get('clientId'),
+        nationalityId: parsedUrl.searchParams.get('nationalityId'),
+        characterModelKey: parsedUrl.searchParams.get('charKey'),
+        zone: parsedUrl.searchParams.get('zone')
+      });
+      ensureVisitorDay();
+      seenTodayVisitorIds.add(clean.clientId);
+
+      const prev = ACTIVE_VISITORS.get(clean.clientId);
+      if (prev?.res && prev.res !== res && !prev.res.writableEnded) {
+        try {
+          prev.res.end();
+        } catch {}
+      }
+
+      res.writeHead(200, {
+        'Content-Type': 'text/event-stream; charset=utf-8',
+        'Cache-Control': 'no-cache, no-transform',
+        Connection: 'keep-alive',
+        'Access-Control-Allow-Origin': '*'
+      });
+      res.flushHeaders?.();
+
+      ACTIVE_VISITORS.set(clean.clientId, {
+        ...clean,
+        res,
+        lastSeen: Date.now(),
+        joinedAt: prev?.joinedAt || Date.now()
+      });
+
+      broadcastVisitorSnapshot();
+
+      req.on('close', () => {
+        const current = ACTIVE_VISITORS.get(clean.clientId);
+        if (current && current.res === res) {
+          ACTIVE_VISITORS.delete(clean.clientId);
+          broadcastVisitorSnapshot();
+        }
+      });
+      return;
+    }
+
+    if (parsedUrl.pathname === '/api/visitors' && req.method === 'GET') {
+      res.writeHead(200, {
+        'Content-Type': 'application/json; charset=utf-8',
+        'Cache-Control': 'no-store',
+        'Access-Control-Allow-Origin': '*'
+      });
+      res.end(JSON.stringify(getVisitorSnapshot()));
+      return;
+    }
+
+    if (parsedUrl.pathname === '/api/visitors/presence' && req.method === 'POST') {
+      const body = await readJsonBody(req);
+      const clean = sanitizeVisitorPayload(body);
+      ensureVisitorDay();
+      seenTodayVisitorIds.add(clean.clientId);
+      const prev = ACTIVE_VISITORS.get(clean.clientId);
+      const changed =
+        !prev ||
+        prev.nationalityId !== clean.nationalityId ||
+        prev.characterModelKey !== clean.characterModelKey ||
+        prev.zone !== clean.zone;
+      ACTIVE_VISITORS.set(clean.clientId, {
+        ...clean,
+        res: prev?.res || null,
+        lastSeen: Date.now(),
+        joinedAt: prev?.joinedAt || Date.now()
+      });
+      if (changed) {
+        broadcastVisitorSnapshot();
+      }
+      res.writeHead(200, {
+        'Content-Type': 'application/json; charset=utf-8',
+        'Cache-Control': 'no-store',
+        'Access-Control-Allow-Origin': '*'
+      });
+      res.end(JSON.stringify(getVisitorSnapshot()));
+      return;
+    }
+
+    if (parsedUrl.pathname === '/api/visitors/leave' && req.method === 'POST') {
+      const body = await readJsonBody(req);
+      const clientId = String(body?.clientId || parsedUrl.searchParams.get('clientId') || '').trim();
+      if (clientId && ACTIVE_VISITORS.has(clientId)) {
+        const prev = ACTIVE_VISITORS.get(clientId);
+        if (prev?.res && !prev.res.writableEnded) {
+          try {
+            prev.res.end();
+          } catch {}
+        }
+        ACTIVE_VISITORS.delete(clientId);
+        broadcastVisitorSnapshot();
+      }
+      res.writeHead(204, { 'Access-Control-Allow-Origin': '*' });
+      res.end();
       return;
     }
 

@@ -1,0 +1,93 @@
+{
+  "entities": {
+    "PilgrimProfile": {
+      "title": "PilgrimProfile",
+      "description": "Private pilgrimage profile and accessibility preferences for a signed-in user across all temples.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Firebase Auth UID of the owner." },
+        "displayName": { "type": "string", "description": "Preferred pilgrim display name." },
+        "characterModelKey": { "type": "string", "description": "Selected 3D pilgrim avatar key." },
+        "nationalityId": { "type": "string", "description": "Selected pilgrim nationality/origin code." },
+        "elderFontScale": { "type": "number", "description": "Accessible font scale (0.95 to 1.35)." },
+        "readAlongRate": { "type": "number", "description": "Preferred voice narration rate (0.7 to 1.15)." },
+        "activeTempleId": { "type": "string", "description": "Currently active temple identifier (e.g. vinh_trang)." },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "displayName", "activeTempleId", "createdAt", "updatedAt"]
+    },
+    "TempleProgress": {
+      "title": "TempleProgress",
+      "description": "Per-temple pilgrimage passport progress keyed by templeId (stamps, 18 Arhats, daily oracle, real-day lotus garden).",
+      "type": "object",
+      "properties": {
+        "ownerUid": { "type": "string", "description": "Owner Firebase Auth UID." },
+        "templeId": { "type": "string", "description": "Temple slug identifier (e.g. vinh_trang, thien_mu)." },
+        "visitedStations": { "type": "array", "items": { "type": "string" } },
+        "heritageStamps": { "type": "array", "items": { "type": "string" } },
+        "arhatStamps": { "type": "array", "items": { "type": "string" } },
+        "practicedDays": { "type": "array", "items": { "type": "string" } },
+        "dailyOracleDateKey": { "type": "string" },
+        "dailyOracleId": { "type": "string" },
+        "gardenStateJson": { "type": "string", "description": "Serialized real-day lotus garden slots and bloomed keepsakes." },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["ownerUid", "templeId", "visitedStations", "heritageStamps", "arhatStamps", "practicedDays", "createdAt", "updatedAt"]
+    },
+    "JournalEntry": {
+      "title": "JournalEntry",
+      "description": "Private pilgrimage diary entry and prayer reflection linked to a specific templeId.",
+      "type": "object",
+      "properties": {
+        "ownerUid": { "type": "string", "description": "Owner Firebase Auth UID." },
+        "templeId": { "type": "string", "description": "Temple slug identifier." },
+        "text": { "type": "string", "description": "Prayer or journal reflection text." },
+        "mood": { "type": "string", "description": "Mood identifier." },
+        "moodLabel": { "type": "string", "description": "Vietnamese mood label." },
+        "stationLabel": { "type": "string", "description": "Station visited when writing." },
+        "dateKey": { "type": "string", "description": "Calendar day key YYYY-MM-DD." },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["ownerUid", "templeId", "text", "mood", "dateKey", "createdAt"]
+    },
+    "CommunityLantern": {
+      "title": "CommunityLantern",
+      "description": "Public floating lantern wish released onto the temple lotus pond that visitors can view and bless.",
+      "type": "object",
+      "properties": {
+        "templeId": { "type": "string", "description": "Temple slug identifier (e.g. vinh_trang)." },
+        "authorUid": { "type": "string", "description": "Creator Firebase Auth UID." },
+        "authorName": { "type": "string", "description": "Display name shown on the lantern." },
+        "nationalityId": { "type": "string", "description": "Optional origin identifier." },
+        "wishText": { "type": "string", "description": "Peaceful prayer wish displayed on the lotus pond." },
+        "colorHex": { "type": "string", "description": "Warm lantern paper hex color." },
+        "pondX": { "type": "number", "description": "Local X coordinate on the lotus pond." },
+        "pondZ": { "type": "number", "description": "Local Z coordinate on the lotus pond." },
+        "blessCount": { "type": "integer", "description": "Number of community blessings received." },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["templeId", "authorUid", "authorName", "wishText", "colorHex", "pondX", "pondZ", "blessCount", "createdAt", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/users/{uid}": {
+      "schema": { "$ref": "#/entities/PilgrimProfile" },
+      "description": "Private pilgrim profile document owned by uid."
+    },
+    "/users/{uid}/temples/{templeId}": {
+      "schema": { "$ref": "#/entities/TempleProgress" },
+      "description": "Private per-temple pilgrimage passport progress keyed by templeId."
+    },
+    "/users/{uid}/journalEntries/{entryId}": {
+      "schema": { "$ref": "#/entities/JournalEntry" },
+      "description": "Private pilgrimage journal and prayer records."
+    },
+    "/templeLanterns/{lanternId}": {
+      "schema": { "$ref": "#/entities/CommunityLantern" },
+      "description": "Publicly readable community floating lanterns on each temple lotus pond."
+    }
+  }
+}

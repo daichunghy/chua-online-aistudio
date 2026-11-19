@@ -1,0 +1,1310 @@
+/* ============================================================================
+   12. ELDERLY-FRIENDLY MINIMAL HUD, LIVE 3D TITLE OVERLAY, SOFT JOYSTICK,
+       UTILITY DRAWER & MULTI-TEMPLE SỔ HÀNH HƯƠNG
+   Strict craft rules:
+   - NO backdrop-filter over active WebGL canvas
+   - NO pulsing dots or pulse keyframes
+   - Zero-pill top bar metadata
+   - Lora (headings/passport) + Be Vietnam Pro (body/controls)
+   - Touch targets >= 48px for elderly usability
+   ============================================================================ */
+
+:root {
+  --elder-wood-bg: rgba(44, 27, 16, 0.94);
+  --elder-wood-strong: rgba(34, 20, 12, 0.97);
+  --elder-gold-border: rgba(217, 173, 96, 0.42);
+  --elder-gold-text: #f5dfb2;
+  --elder-cream: #fff9ef;
+  --elder-parchment: #fbf4e4;
+  --elder-parchment-deep: #f2e5cb;
+  --elder-ink: #362112;
+  --elder-ink-muted: #694b33;
+  --elder-terracotta: #b84a1e;
+  --elder-terracotta-dark: #8f3310;
+  --elder-vermilion: #a8281c;
+}
+
+body {
+  font-family: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* Hide chrome cleanly during photo capture or while Title Overlay is visible */
+body.clean-photo-capturing #main-top-hud,
+body.clean-photo-capturing #elder-bottom-dock,
+body.clean-photo-capturing #gesture-action-bar,
+body.clean-photo-capturing #soft-joystick-zone,
+body.clean-photo-capturing #scene-pins-layer,
+body.clean-photo-capturing #interior-zone-bar,
+body.clean-photo-capturing #stall-proximity-btn,
+body.clean-photo-capturing #ritual-toast,
+body.clean-photo-capturing #auto-walk-objective-banner {
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+body.title-overlay-active #main-top-hud,
+body.title-overlay-active #elder-bottom-dock,
+body.title-overlay-active #gesture-action-bar,
+body.title-overlay-active #soft-joystick-zone,
+body.title-overlay-active #scene-pins-layer {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ============================================================================
+   LIVE 3D TITLE OVERLAY
+   ============================================================================ */
+.temple-title-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 420;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  padding: 28px 20px 40px;
+  background: linear-gradient(
+    180deg,
+    rgba(24, 14, 8, 0.14) 0%,
+    rgba(24, 14, 8, 0.08) 42%,
+    rgba(24, 14, 8, 0.72) 82%,
+    rgba(24, 14, 8, 0.88) 100%
+  );
+  transition: opacity 0.4s ease;
+}
+
+.temple-title-overlay.is-dismissed {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.title-overlay-inner {
+  width: min(560px, 100%);
+  text-align: center;
+  color: var(--elder-cream);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.title-lotus-emblem {
+  width: 68px;
+  height: 48px;
+  color: #f4d38d;
+}
+
+.title-eyebrow {
+  font-size: 14px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #f3d79e;
+  font-weight: 600;
+}
+
+.title-main-heading {
+  font-family: 'Lora', Georgia, serif;
+  font-size: clamp(32px, 5.2vw, 48px);
+  font-weight: 700;
+  line-height: 1.15;
+  margin: 0;
+  color: #fffaf0;
+  text-shadow: 0 3px 16px rgba(18, 10, 4, 0.65);
+}
+
+.title-subtitle {
+  font-size: 16.5px;
+  line-height: 1.5;
+  margin: 0;
+  color: #f5e7ce;
+  max-width: 460px;
+}
+
+.title-cta-primary {
+  margin-top: 8px;
+  min-height: 58px;
+  min-width: 268px;
+  padding: 0 32px;
+  border-radius: 14px;
+  border: 1.5px solid #f5cf86;
+  background: linear-gradient(180deg, #c95826 0%, #993711 100%);
+  color: #fffaf0;
+  font-family: 'Be Vietnam Pro', sans-serif;
+  font-size: 19px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 10px 28px rgba(16, 8, 2, 0.45);
+  transition: transform 0.18s ease, filter 0.18s ease;
+}
+
+.title-cta-primary:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.06);
+}
+
+.title-secondary-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.title-cta-secondary {
+  min-height: 48px;
+  padding: 0 18px;
+  border-radius: 12px;
+  border: 1px solid var(--elder-gold-border);
+  background: var(--elder-wood-bg);
+  color: var(--elder-cream);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.title-cta-secondary:hover {
+  border-color: #f4d38d;
+  background: rgba(62, 38, 22, 0.96);
+}
+
+.title-control-hint {
+  margin-top: 4px;
+  font-size: 14px;
+  color: #e9d7b8;
+  opacity: 0.92;
+}
+
+/* ============================================================================
+   MINIMAL 3-ZONE TOP BAR (NO PILLS ON METADATA, NO BACKDROP-FILTER)
+   ============================================================================ */
+.elder-top-hud {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 120;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 18px;
+  background: linear-gradient(180deg, rgba(30, 17, 9, 0.88) 0%, rgba(30, 17, 9, 0.48) 72%, rgba(30, 17, 9, 0) 100%);
+  color: var(--elder-cream);
+  transition: opacity 0.3s ease;
+}
+
+.elder-top-left {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  min-width: 0;
+}
+
+.elder-temple-title-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: none;
+  background: transparent;
+  padding: 4px 2px;
+  color: #fffaf0;
+  cursor: pointer;
+  font-family: 'Lora', Georgia, serif;
+  font-size: 20px;
+  font-weight: 700;
+  text-shadow: 0 2px 8px rgba(15, 8, 3, 0.65);
+}
+
+.elder-temple-meta {
+  font-size: 14.5px;
+  color: #f3dfbc;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 1px 6px rgba(15, 8, 3, 0.7);
+}
+
+.elder-top-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.elder-top-btn {
+  min-height: 46px;
+  padding: 0 14px;
+  border-radius: 10px;
+  border: 1px solid var(--elder-gold-border);
+  background: var(--elder-wood-bg);
+  color: var(--elder-cream);
+  font-family: 'Be Vietnam Pro', sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  cursor: pointer;
+}
+
+.elder-top-btn:hover {
+  border-color: #f4d38d;
+  background: rgba(65, 39, 22, 0.96);
+}
+
+.elder-top-btn.is-signed-in {
+  border-color: #e9c272;
+  color: #ffefc8;
+}
+
+/* ============================================================================
+   SOFT ANALOG TOUCH JOYSTICK (BOTTOM-LEFT)
+   ============================================================================ */
+.soft-joystick-zone {
+  position: fixed;
+  left: 20px;
+  bottom: 24px;
+  z-index: 115;
+  width: 116px;
+  height: 116px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: none;
+  user-select: none;
+  transition: opacity 0.25s ease;
+}
+
+body.zen-hud-collapsed .soft-joystick-zone {
+  opacity: 0.45;
+}
+
+.soft-joystick-base {
+  width: 104px;
+  height: 104px;
+  border-radius: 50%;
+  background: rgba(44, 27, 16, 0.72);
+  border: 1.5px solid rgba(217, 173, 96, 0.52);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  box-shadow: 0 8px 22px rgba(16, 8, 3, 0.36);
+}
+
+.soft-joystick-arrows {
+  position: absolute;
+  inset: 7px;
+  pointer-events: none;
+  color: rgba(245, 223, 178, 0.55);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.soft-joystick-arrows .joy-n { position: absolute; top: 0; left: 50%; transform: translateX(-50%); }
+.soft-joystick-arrows .joy-s { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); }
+.soft-joystick-arrows .joy-w { position: absolute; left: 2px; top: 50%; transform: translateY(-50%); }
+.soft-joystick-arrows .joy-e { position: absolute; right: 2px; top: 50%; transform: translateY(-50%); }
+
+.soft-joystick-knob {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #e0a54e 0%, #b56822 100%);
+  border: 2px solid #fff3d6;
+  box-shadow: 0 4px 12px rgba(15, 7, 2, 0.45);
+  transition: transform 0.06s linear;
+}
+
+.soft-joystick-zone.active .soft-joystick-base {
+  background: rgba(44, 27, 16, 0.9);
+  border-color: #f5cf86;
+}
+
+/* ============================================================================
+   COLLAPSIBLE ELDERLY BOTTOM DOCK & EXPRESSIVE GESTURE BAR (CENTER-BOTTOM)
+   ============================================================================ */
+.elder-bottom-dock {
+  position: fixed;
+  left: 50%;
+  bottom: 16px;
+  transform: translateX(-50%);
+  z-index: 120;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  max-width: calc(100vw - 156px);
+  transition: opacity 0.25s ease;
+}
+
+.gesture-action-bar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  padding: 7px 9px;
+  border-radius: 14px;
+  background: var(--elder-wood-strong);
+  border: 1.5px solid var(--elder-gold-border);
+  box-shadow: 0 10px 26px rgba(14, 7, 2, 0.5);
+}
+
+.gesture-chip-btn {
+  min-height: 44px;
+  padding: 6px 13px;
+  border-radius: 10px;
+  border: 1px solid rgba(217, 173, 96, 0.36);
+  background: rgba(84, 52, 28, 0.94);
+  color: var(--elder-cream);
+  font-family: 'Be Vietnam Pro', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: transform 0.14s ease, background 0.14s ease, border-color 0.14s ease;
+}
+
+.gesture-chip-btn:hover {
+  background: rgba(116, 70, 36, 0.98);
+  border-color: #f4d38d;
+  transform: translateY(-1px);
+}
+
+.dock-zen-toggle-btn {
+  min-height: 30px;
+  padding: 0 14px;
+  border-radius: 8px;
+  border: 1px solid var(--elder-gold-border);
+  background: var(--elder-wood-bg);
+  color: var(--elder-gold-text);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.elder-dock-row {
+  display: flex;
+  align-items: stretch;
+  flex-wrap: nowrap;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 7px;
+  border-radius: 16px;
+  background: var(--elder-wood-bg);
+  border: 1.5px solid var(--elder-gold-border);
+  box-shadow: 0 12px 30px rgba(14, 7, 2, 0.46);
+}
+
+@media (max-width: 1024px) {
+  .elder-dock-row {
+    flex-wrap: wrap;
+  }
+}
+
+body.zen-hud-collapsed .elder-dock-row,
+body.zen-hud-collapsed .gesture-action-bar {
+  display: none !important;
+}
+
+.elder-dock-btn {
+  min-height: 48px;
+  padding: 6px 11px;
+  border-radius: 11px;
+  border: 1px solid rgba(217, 173, 96, 0.35);
+  background: rgba(74, 46, 26, 0.92);
+  color: var(--elder-cream);
+  font-family: 'Be Vietnam Pro', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: transform 0.14s ease, background 0.14s ease;
+}
+
+.elder-dock-btn:hover,
+.elder-dock-btn.is-active {
+  background: rgba(98, 61, 34, 0.98);
+  border-color: #f4d38d;
+  transform: translateY(-1px);
+}
+
+.elder-dock-btn.primary {
+  background: linear-gradient(180deg, #c95826 0%, #993711 100%);
+  border-color: #f5cf86;
+  color: #fffaf0;
+  font-weight: 700;
+}
+
+/* ============================================================================
+   SLIDE-OUT UTILITY DRAWER
+   ============================================================================ */
+.utility-drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 240;
+  background: rgba(15, 8, 4, 0.55);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.22s ease;
+}
+
+.utility-drawer-backdrop.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.temple-utility-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 250;
+  width: min(370px, 92vw);
+  background: var(--elder-parchment);
+  color: var(--elder-ink);
+  border-left: 2px solid #c9962e;
+  box-shadow: -12px 0 36px rgba(18, 9, 3, 0.45);
+  transform: translateX(100%);
+  transition: transform 0.25s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+.temple-utility-drawer.open {
+  transform: translateX(0);
+}
+
+.drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 18px;
+  background: #3d2414;
+  color: #fff8eb;
+  border-bottom: 1.5px solid #c9962e;
+}
+
+.drawer-header h2 {
+  margin: 0;
+  font-family: 'Lora', Georgia, serif;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.drawer-close-btn {
+  min-width: 44px;
+  min-height: 44px;
+  border-radius: 10px;
+  border: 1px solid var(--elder-gold-border);
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff8eb;
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.drawer-body {
+  padding: 16px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.drawer-group-title {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--elder-ink-muted);
+  margin: 0 0 8px;
+}
+
+.drawer-btn-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.drawer-action-btn {
+  min-height: 50px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(139, 94, 43, 0.32);
+  background: #fffdf8;
+  color: var(--elder-ink);
+  font-family: 'Be Vietnam Pro', sans-serif;
+  font-size: 15.5px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.drawer-action-btn:hover {
+  border-color: var(--elder-terracotta);
+  background: #fff6e6;
+}
+
+.drawer-segment-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+
+.drawer-segment-btn {
+  min-height: 46px;
+  border-radius: 10px;
+  border: 1px solid rgba(139, 94, 43, 0.35);
+  background: #fffdf8;
+  color: var(--elder-ink);
+  font-size: 14.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.drawer-segment-btn.active {
+  background: #5c3419;
+  color: #fffaf0;
+  border-color: #c9962e;
+}
+
+.drawer-cloud-box {
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #f3e6cc;
+  border: 1px solid rgba(168, 120, 48, 0.42);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.drawer-cloud-box p {
+  margin: 0;
+  font-size: 14px;
+  color: var(--elder-ink);
+  line-height: 1.45;
+}
+
+/* ============================================================================
+   ELDER RITUAL SHEET & MULTI-TEMPLE SỔ HÀNH HƯƠNG MODAL
+   ============================================================================ */
+.elder-ritual-sheet {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.elder-sheet-subtitle {
+  margin: 0;
+  font-size: 16px;
+  color: var(--elder-ink);
+  line-height: 1.5;
+}
+
+.elder-ritual-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.elder-ritual-card {
+  min-height: 112px;
+  padding: 14px;
+  border-radius: 14px;
+  border: 1.5px solid #d2aa65;
+  background: #fffdf8;
+  color: var(--elder-ink);
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.elder-ritual-card:hover {
+  border-color: var(--elder-terracotta);
+  background: #fff6e4;
+}
+
+.elder-ritual-icon {
+  font-size: 26px;
+}
+
+.elder-ritual-title {
+  font-family: 'Lora', Georgia, serif;
+  font-size: 17px;
+  font-weight: 700;
+  color: #6b2517;
+}
+
+.elder-ritual-desc {
+  font-size: 14px;
+  color: var(--elder-ink-muted);
+  line-height: 1.4;
+}
+
+.elder-sheet-footer-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.elder-soft-btn {
+  flex: 1 1 200px;
+  min-height: 48px;
+  padding: 0 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(139, 94, 43, 0.38);
+  background: #f5e8ce;
+  color: var(--elder-ink);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* Sổ Hành Hương Parchment Book */
+.passport-book-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  color: var(--elder-ink);
+}
+
+.passport-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  border-bottom: 1.5px solid rgba(168, 120, 48, 0.35);
+  padding-bottom: 10px;
+}
+
+.passport-tab-btn {
+  min-height: 46px;
+  padding: 0 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(139, 94, 43, 0.35);
+  background: #fffdf8;
+  color: var(--elder-ink);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.passport-tab-btn.active {
+  background: #6b2517;
+  color: #fff9ef;
+  border-color: #c9962e;
+}
+
+.passport-cloud-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: #f3e6cc;
+  border: 1px solid #c9962e;
+}
+
+.passport-cloud-banner p {
+  margin: 4px 0 0;
+  font-size: 14.5px;
+  color: var(--elder-ink-muted);
+  max-width: 460px;
+}
+
+.passport-summary-strip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.passport-stat {
+  padding: 12px 10px;
+  border-radius: 12px;
+  background: #fffdf8;
+  border: 1px solid rgba(168, 120, 48, 0.35);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.passport-stat-num {
+  font-family: 'Lora', Georgia, serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: #8c2d19;
+  font-variant-numeric: tabular-nums;
+}
+
+.passport-stat-lbl {
+  font-size: 13px;
+  color: var(--elder-ink-muted);
+}
+
+.passport-section-heading {
+  font-family: 'Lora', Georgia, serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: #5c2a15;
+  margin: 0 0 10px;
+}
+
+.passport-temple-grid,
+.passport-stamps-grid,
+.passport-garden-grid,
+.passport-photos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+}
+
+.passport-temple-card,
+.passport-stamp-card,
+.passport-garden-card {
+  padding: 14px;
+  border-radius: 14px;
+  background: #fffdf8;
+  border: 1.5px solid rgba(168, 120, 48, 0.35);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.passport-temple-card.selected {
+  border-color: #b84a1e;
+  background: #fff9ee;
+}
+
+.passport-temple-card.coming-soon {
+  opacity: 0.8;
+}
+
+.passport-temple-head,
+.passport-stamp-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.passport-temple-name,
+.passport-stamp-title {
+  font-family: 'Lora', Georgia, serif;
+  font-size: 16.5px;
+  font-weight: 700;
+  color: var(--elder-ink);
+}
+
+.passport-temple-region,
+.passport-stamp-desc,
+.passport-temple-desc,
+.passport-intro-note {
+  font-size: 14.5px;
+  color: var(--elder-ink-muted);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.passport-temple-foot,
+.passport-stamp-actions,
+.passport-composer-foot,
+.oracle-actions-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: auto;
+}
+
+.passport-seal-mini,
+.passport-vermilion-seal {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  border: 1.5px dashed rgba(139, 94, 43, 0.45);
+  color: var(--elder-ink-muted);
+  flex-shrink: 0;
+}
+
+.passport-seal-mini.stamped,
+.passport-seal-stamped {
+  border: 2px solid var(--elder-vermilion);
+  color: var(--elder-vermilion);
+  background: rgba(168, 40, 28, 0.07);
+  transform: rotate(-3deg);
+}
+
+.passport-primary-btn {
+  min-height: 48px;
+  padding: 0 18px;
+  border-radius: 10px;
+  border: 1px solid #e6b763;
+  background: linear-gradient(180deg, #c25122 0%, #943410 100%);
+  color: #fffaf0;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.passport-primary-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.passport-outline-btn,
+.passport-soft-inline-btn {
+  min-height: 44px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(139, 94, 43, 0.42);
+  background: #fffdf8;
+  color: var(--elder-ink);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+
+.passport-arhats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
+  gap: 8px;
+}
+
+.passport-arhat-chip {
+  min-height: 78px;
+  padding: 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(168, 120, 48, 0.35);
+  background: #fffdf8;
+  color: var(--elder-ink);
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.passport-arhat-chip.stamped {
+  border-color: var(--elder-vermilion);
+  background: #fff4ef;
+}
+
+.arhat-chip-num {
+  font-size: 12px;
+  color: var(--elder-ink-muted);
+}
+
+.arhat-chip-title {
+  font-size: 14.5px;
+  font-weight: 700;
+}
+
+.arhat-chip-status {
+  font-size: 12.5px;
+  color: #8c2d19;
+}
+
+/* Journal */
+.passport-journal-composer {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 14px;
+  background: #f5ebd6;
+  border: 1px solid rgba(168, 120, 48, 0.4);
+}
+
+.passport-journal-moods,
+.passport-prayer-templates,
+.lantern-color-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.passport-mood-btn,
+.passport-tpl-btn,
+.lantern-color-chip {
+  min-height: 40px;
+  padding: 6px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(139, 94, 43, 0.35);
+  background: #fffdf8;
+  color: var(--elder-ink);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.passport-mood-btn.active,
+.lantern-color-chip.active {
+  background: #6b2517;
+  color: #fff9ef;
+  border-color: #c9962e;
+}
+
+.passport-journal-textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1.5px solid rgba(139, 94, 43, 0.42);
+  background: #fffdf9;
+  color: var(--elder-ink);
+  font-family: 'Be Vietnam Pro', sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.passport-sync-hint {
+  font-size: 13.5px;
+  color: var(--elder-ink-muted);
+}
+
+.passport-journal-list,
+.lantern-community-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.passport-journal-item {
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #fffdf8;
+  border: 1px solid rgba(168, 120, 48, 0.32);
+}
+
+.passport-journal-meta {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 13.5px;
+  color: var(--elder-ink-muted);
+  margin-bottom: 6px;
+}
+
+.passport-journal-text {
+  margin: 0;
+  font-size: 15.5px;
+  line-height: 1.55;
+  color: var(--elder-ink);
+}
+
+/* Garden */
+.garden-card-visual {
+  font-size: 38px;
+  text-align: center;
+}
+
+.garden-card-name {
+  font-family: 'Lora', Georgia, serif;
+  font-size: 16.5px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.garden-card-stage {
+  font-size: 14px;
+  font-weight: 700;
+  color: #2f6b3e;
+  text-align: center;
+}
+
+.garden-card-hint {
+  font-size: 13.5px;
+  color: var(--elder-ink-muted);
+  text-align: center;
+}
+
+.garden-species-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+}
+
+.passport-keepsake-shelf {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 8px;
+}
+
+.passport-keepsake-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #fffdf8;
+  border: 1px solid rgba(168, 120, 48, 0.35);
+}
+
+.keepsake-icon {
+  font-size: 26px;
+}
+
+.passport-keepsake-item div {
+  display: flex;
+  flex-direction: column;
+  font-size: 13.5px;
+}
+
+/* Oracle & Photos */
+.passport-oracle-box,
+.daily-oracle-modal,
+.lantern-featured-card {
+  padding: 16px;
+  border-radius: 14px;
+  background: #fff9ec;
+  border: 1.5px solid #c9962e;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.passport-oracle-head,
+.passport-photo-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.oracle-title {
+  font-family: 'Lora', Georgia, serif;
+  font-size: 22px;
+  margin: 0;
+  color: #7c2416;
+}
+
+.oracle-verse-text,
+.oracle-verse-large {
+  font-family: 'Lora', Georgia, serif;
+  white-space: pre-wrap;
+  margin: 6px 0;
+  font-size: 17.5px;
+  line-height: 1.7;
+  color: #3a2010;
+  background: #fbf2dc;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border-left: 3.5px solid #b84a1e;
+}
+
+.oracle-advice-box {
+  font-size: 15.5px;
+  line-height: 1.55;
+  color: var(--elder-ink);
+}
+
+.oracle-advice-box p {
+  margin: 4px 0 0;
+}
+
+.passport-photo-card {
+  margin: 0;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #fffdf8;
+  border: 1px solid rgba(168, 120, 48, 0.38);
+}
+
+.passport-photo-card img,
+.clean-photo-preview img {
+  width: 100%;
+  display: block;
+  border-radius: 10px;
+}
+
+.passport-photo-card figcaption {
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 13.5px;
+}
+
+.passport-empty-note {
+  padding: 16px;
+  border-radius: 12px;
+  background: #f5ebd6;
+  color: var(--elder-ink-muted);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+/* Community Lantern Modal */
+.lantern-featured-quote {
+  font-family: 'Lora', Georgia, serif;
+  font-size: 19px;
+  line-height: 1.55;
+  margin: 0;
+  color: #5c2214;
+}
+
+.lantern-featured-meta {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 14.5px;
+  color: var(--elder-ink-muted);
+}
+
+.lantern-release-box {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 14px;
+  background: #f5ebd6;
+  border: 1px solid rgba(168, 120, 48, 0.38);
+}
+
+.lantern-release-box h4 {
+  margin: 0;
+  font-family: 'Lora', Georgia, serif;
+  font-size: 17px;
+}
+
+.lantern-list-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 11px 12px;
+  border-radius: 12px;
+  background: #fffdf8;
+  border: 1px solid rgba(168, 120, 48, 0.3);
+}
+
+.lantern-list-main {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.lantern-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  margin-top: 5px;
+  flex-shrink: 0;
+}
+
+.lantern-list-text {
+  font-size: 15px;
+  color: var(--elder-ink);
+  line-height: 1.45;
+}
+
+.lantern-list-author {
+  font-size: 13px;
+  color: var(--elder-ink-muted);
+  margin-top: 3px;
+}
+
+/* ============================================================================
+   RESPONSIVE MOBILE RULES (<= 768px)
+   ============================================================================ */
+@media (max-width: 768px) {
+  .elder-top-hud {
+    padding: 8px 10px;
+  }
+
+  .elder-temple-title-btn {
+    font-size: 17px;
+  }
+
+  .elder-temple-meta {
+    font-size: 12.5px;
+  }
+
+  .elder-top-btn {
+    min-height: 44px;
+    padding: 0 10px;
+    font-size: 13.5px;
+  }
+
+  .elder-top-btn .top-btn-label {
+    display: none;
+  }
+
+  .soft-joystick-zone {
+    left: 12px;
+    bottom: 92px;
+    width: 96px;
+    height: 96px;
+  }
+
+  .soft-joystick-base {
+    width: 88px;
+    height: 88px;
+  }
+
+  .soft-joystick-knob {
+    width: 40px;
+    height: 40px;
+  }
+
+  .elder-bottom-dock {
+    bottom: 10px;
+    max-width: calc(100vw - 16px);
+    width: calc(100vw - 16px);
+  }
+
+  .elder-dock-row {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+    padding: 6px;
+  }
+
+  .elder-dock-btn {
+    min-height: 48px;
+    padding: 6px 8px;
+    font-size: 14px;
+    white-space: normal;
+    line-height: 1.25;
+  }
+
+  .elder-ritual-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .passport-summary-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

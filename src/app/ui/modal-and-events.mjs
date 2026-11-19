@@ -91,6 +91,119 @@ export const modalAndEventsMethods = {
       this.walkToStationIn3D('chanh_dien');
     });
 
+    // Live 3D Title Overlay CTA & secondary buttons
+    document.getElementById('btn-title-enter-temple')?.addEventListener('click', () => {
+      this.enterTempleFromTitleOverlay();
+    });
+    document.getElementById('btn-title-change-char')?.addEventListener('click', () => {
+      this.enterTempleFromTitleOverlay();
+      this.openAccountModal();
+    });
+    document.getElementById('btn-title-google-signin')?.addEventListener('click', () => {
+      if (this.cloudUser) this.openPilgrimagePassportModal('overview');
+      else this.handleGoogleSignIn();
+    });
+
+    // Minimal 3-Zone Top Bar actions
+    document.getElementById('nav-btn-auth')?.addEventListener('click', () => {
+      if (this.cloudUser) {
+        this.openPilgrimagePassportModal('overview');
+      } else {
+        this.handleGoogleSignIn();
+      }
+    });
+    document.getElementById('nav-btn-utility-drawer')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.toggleUtilityDrawer();
+    });
+    document.getElementById('btn-close-utility-drawer')?.addEventListener('click', () => {
+      this.toggleUtilityDrawer(false);
+    });
+    document.getElementById('utility-drawer-backdrop')?.addEventListener('click', () => {
+      this.toggleUtilityDrawer(false);
+    });
+
+    // Bottom-Center Collapsible Elderly Dock (includes Cửa hàng & Cử chỉ directly on main screen)
+    document.getElementById('btn-dock-zen-toggle')?.addEventListener('click', () => {
+      this.toggleZenHudMode();
+    });
+    document.getElementById('btn-guided-next')?.addEventListener('click', () => {
+      this.executeGuidedNextStep();
+    });
+    document.getElementById('btn-dock-ritual')?.addEventListener('click', () => {
+      this.openRitualQuickSheet();
+    });
+    document.getElementById('btn-dock-shop')?.addEventListener('click', () => {
+      this.openConsolidatedShopModal();
+    });
+    document.getElementById('btn-dock-gestures')?.addEventListener('click', () => {
+      const bar = document.getElementById('gesture-action-bar');
+      const btn = document.getElementById('btn-dock-gestures');
+      if (!bar) return;
+      const open = bar.style.display === 'none' || !bar.style.display;
+      bar.style.display = open ? 'flex' : 'none';
+      document.body.classList.toggle('gesture-bar-open', open);
+      btn?.classList.toggle('is-active', open);
+      btn?.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+    document.querySelectorAll('[data-gesture]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const key = btn.getAttribute('data-gesture');
+        if (key) this.triggerPlayerGestureAction?.(key);
+      });
+    });
+    document.getElementById('btn-dock-passport')?.addEventListener('click', () => {
+      this.openPilgrimagePassportModal('overview');
+    });
+    document.getElementById('btn-dock-sutra')?.addEventListener('click', () => {
+      this.lectureTab = 'sutra';
+      this.switchScreen('lecture');
+    });
+
+    // Slide-Out Utility Drawer actions
+    document.getElementById('btn-drawer-interior')?.addEventListener('click', () => {
+      this.toggleUtilityDrawer(false);
+      this.toggleInteriorHallIn3D();
+    });
+    document.getElementById('btn-drawer-explore')?.addEventListener('click', () => {
+      this.toggleUtilityDrawer(false);
+      this.openExploreModal('stations');
+    });
+    document.getElementById('btn-drawer-oracle')?.addEventListener('click', () => {
+      this.openDailyPeaceOracleModal();
+    });
+    document.getElementById('btn-drawer-lanterns')?.addEventListener('click', () => {
+      this.openCommunityLanternModal(null);
+    });
+    document.getElementById('btn-drawer-blessing-tower')?.addEventListener('click', () => {
+      this.toggleUtilityDrawer(false);
+      this.openBlessingTowerModal();
+    });
+    document.getElementById('btn-drawer-photo')?.addEventListener('click', () => {
+      this.captureCleanMemoryPhoto();
+    });
+    document.getElementById('btn-drawer-shop')?.addEventListener('click', () => {
+      this.openConsolidatedShopModal();
+    });
+    document.getElementById('btn-drawer-lecture')?.addEventListener('click', () => {
+      this.toggleUtilityDrawer(false);
+      this.switchScreen('lecture');
+    });
+    document.getElementById('btn-drawer-character')?.addEventListener('click', () => {
+      this.toggleUtilityDrawer(false);
+      this.openAccountModal();
+    });
+    document.getElementById('btn-drawer-font-dec')?.addEventListener('click', () => {
+      this.stepElderFontScale(-1);
+    });
+    document.getElementById('btn-drawer-font-inc')?.addEventListener('click', () => {
+      this.stepElderFontScale(1);
+    });
+    document.getElementById('btn-drawer-cloud-auth')?.addEventListener('click', () => {
+      if (this.cloudUser) this.handleGoogleSignOut();
+      else this.handleGoogleSignIn();
+    });
+
     document.querySelectorAll('[data-time-of-day]').forEach((btn) => {
       btn.addEventListener('click', () => {
         const key = btn.getAttribute('data-time-of-day');
@@ -121,14 +234,25 @@ export const modalAndEventsMethods = {
 
     const audioBtn = document.getElementById('nav-btn-audio');
     const audioPopover = document.getElementById('audio-mixer-popover');
+    const visitorBtn = document.getElementById('hud-visitor-counter');
+    const visitorPopover = document.getElementById('visitor-community-popover');
+
     const setAudioPopoverOpen = (open) => {
       if (!audioPopover || !audioBtn) return;
       audioPopover.style.display = open ? 'block' : 'none';
       audioBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
     };
+    const setVisitorPopoverOpen = (open) => {
+      if (!visitorPopover || !visitorBtn) return;
+      visitorPopover.style.display = open ? 'block' : 'none';
+      visitorBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      if (open) this.renderVisitorCounterHUD?.();
+    };
+
     audioBtn?.addEventListener('click', (e) => {
       e.stopPropagation();
       this.ensureAudioContext();
+      setVisitorPopoverOpen(false);
       const isOpen = audioPopover?.style.display === 'block';
       setAudioPopoverOpen(!isOpen);
       this.updateAudioMixerUI();
@@ -136,10 +260,44 @@ export const modalAndEventsMethods = {
     document.getElementById('btn-close-audio-mixer')?.addEventListener('click', () => {
       setAudioPopoverOpen(false);
     });
-    document.addEventListener('click', (e) => {
-      if (!audioPopover || audioPopover.style.display !== 'block') return;
-      if (audioPopover.contains(e.target) || audioBtn?.contains(e.target)) return;
+
+    visitorBtn?.addEventListener('click', (e) => {
+      e.stopPropagation();
       setAudioPopoverOpen(false);
+      const isOpen = visitorPopover?.style.display === 'block';
+      setVisitorPopoverOpen(!isOpen);
+    });
+    document.getElementById('btn-close-visitor-popover')?.addEventListener('click', () => {
+      setVisitorPopoverOpen(false);
+    });
+
+    document.addEventListener('click', (e) => {
+      if (audioPopover && audioPopover.style.display === 'block') {
+        if (!audioPopover.contains(e.target) && !audioBtn?.contains(e.target)) {
+          setAudioPopoverOpen(false);
+        }
+      }
+      if (visitorPopover && visitorPopover.style.display === 'block') {
+        if (!visitorPopover.contains(e.target) && !visitorBtn?.contains(e.target)) {
+          setVisitorPopoverOpen(false);
+        }
+      }
+    });
+    document.getElementById('hud-ambient-toggle')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.toggleAmbientAudio();
+    });
+    document.getElementById('btn-mixer-ambient-toggle')?.addEventListener('click', () => {
+      this.toggleAmbientAudio();
+    });
+    document.getElementById('chk-ambient-chanting')?.addEventListener('change', (e) => {
+      this.toggleAmbientAudioLayer('chanting', Boolean(e.target?.checked));
+    });
+    document.getElementById('chk-ambient-bells')?.addEventListener('change', (e) => {
+      this.toggleAmbientAudioLayer('bells', Boolean(e.target?.checked));
+    });
+    document.getElementById('chk-ambient-atmosphere')?.addEventListener('change', (e) => {
+      this.toggleAmbientAudioLayer('atmosphere', Boolean(e.target?.checked));
     });
     document.getElementById('btn-audio-global-mute')?.addEventListener('click', () => {
       this.setAudioMuted(!this.audioMuted);
@@ -181,12 +339,12 @@ export const modalAndEventsMethods = {
             'Khám thờ long sàng chạm trổ thếp vàng tôn trí Đức Phật an nhiên Cát Tường Ngoạ.'
           ],
           chanh_dien: [
-            '2. Cạnh Trái Qua Hồ Sen Bộ · Chính Điện Đại Hùng Bửu Điện',
-            'Cửa gỗ bức bàn vào Chánh Điện với kệ bỏ dép, Trống Bát Nhã & Tháp Đèn Cầu An bên ngoài; bên trong là khung Chánh Điện vì kèo gỗ lớn, Bao Lam, Long Trụ, Ban Thờ Tam Bảo và 18 Vị La Hán hai bên vách.'
+            '2. Chính Điện Đại Hùng Bửu Điện · Phật Ở Giữa & 18 La Hán Xung Quanh',
+            'Tôn tượng Tam Bảo an vị chính giữa Chánh Điện quay mặt hướng ra Cổng Tam Quan; từ cửa đối diện Hòn Non Bộ bỏ dép bên ngoài rồi đi vòng hai bên qua 18 Vị La Hán lên phía trước lễ Phật.'
           ],
           ho_sen_bo: [
             '3. Giữa Hình Vuông · Hồ Sen Bộ & Hòn Non Bộ',
-            'Khoảng sân thiên tỉnh mở chính giữa bốn dãy vòm vàng Pháp–Việt nhìn thẳng sang cửa gỗ vào Chánh Điện, kệ bỏ dép và Trống Bát Nhã.'
+            'Khoảng sân thiên tỉnh mở chính giữa bốn dãy vòm vàng Pháp–Việt nhìn thẳng sang cửa gỗ vào Chánh Điện, kệ bỏ dép và Trống Bát Nhã — bước vào và đi vòng hai bên để chiêm bái Phật quay ra Cổng Tam Quan.'
           ],
           hanh_lang_trai: [
             '4. Cạnh Trên Hình Vuông · Tổ Đường Rộng Thoáng',
@@ -450,6 +608,19 @@ export const modalAndEventsMethods = {
 
     window.addEventListener('keydown', (e) => {
       if (['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName || '')) return;
+      if (!this.titleOverlayDismissed && (e.code === 'Enter' || e.code === 'Space')) {
+        e.preventDefault();
+        this.enterTempleFromTitleOverlay();
+        return;
+      }
+      if (e.code === 'KeyH' && this.activeScreen === 'courtyard' && this.titleOverlayDismissed) {
+        const modalOpen = document.getElementById('universal-modal')?.classList.contains('open');
+        if (!modalOpen) {
+          e.preventDefault();
+          this.toggleZenHudMode();
+          return;
+        }
+      }
       if (e.code === 'Space' && this.sutraCtrl?.isVisibleAndActive?.() && this.sutraCtrl.mode === 'chant') {
         e.preventDefault();
         this.sutraCtrl.tapWoodenMo();
@@ -461,17 +632,18 @@ export const modalAndEventsMethods = {
         return;
       }
       const dir = keyMap[e.code];
-      if (dir && this.activeScreen === 'courtyard') {
+      if (dir && this.activeScreen === 'courtyard' && this.titleOverlayDismissed) {
         e.preventDefault();
         this.world3d?.setHeldDirection(dir, true);
         if (!e.repeat && !this.world3d) {
           this.handleMoveDirection(dir);
         }
-      } else if (e.code === 'KeyE' && this.activeScreen === 'courtyard') {
+      } else if (e.code === 'KeyE' && this.activeScreen === 'courtyard' && this.titleOverlayDismissed) {
         if (this.handleProximityInteract()) {
           e.preventDefault();
         }
       } else if (e.code === 'Escape') {
+        this.toggleUtilityDrawer(false);
         this.closeModal();
       }
     });

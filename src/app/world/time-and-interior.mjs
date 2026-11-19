@@ -140,21 +140,21 @@ export const timeAndInteriorMethods = {
       this.scene.fog.density = 0.0028;
     }
     if (this.hemiLight) {
-      this.hemiLight.color.setHex(0xFFE0B8);
-      this.hemiLight.groundColor.setHex(0x6B462B);
-      this.hemiLight.intensity = 1.05;
+      this.hemiLight.color.setHex(0xFFE7C2);
+      this.hemiLight.groundColor.setHex(0x825735);
+      this.hemiLight.intensity = 1.52;
     }
     if (this.sunLight) {
-      this.sunLight.color.setHex(0xFFE6BD);
-      this.sunLight.intensity = 0.62;
+      this.sunLight.color.setHex(0xFFE8BF);
+      this.sunLight.intensity = 0.88;
       this.sunLight.position.set(2, 46, 2);
     }
     if (this.frontFillLight) {
-      this.frontFillLight.color.setHex(0xFFC98B);
-      this.frontFillLight.intensity = 0.32;
+      this.frontFillLight.color.setHex(0xFFD094);
+      this.frontFillLight.intensity = 0.48;
     }
     if (this.renderer) {
-      this.renderer.toneMappingExposure = 1.04;
+      this.renderer.toneMappingExposure = 1.08;
     }
   },
 
@@ -248,8 +248,8 @@ export const timeAndInteriorMethods = {
     const idx = Math.max(0, Math.min(17, Number(arhatIdx) || 0));
     const isNorth = idx < 9;
     const colIdx = idx % 9;
-    const ax = -17.6 - colIdx * 1.8;
-    const az = isNorth ? -10.55 : 10.55;
+    const ax = -18.8 - colIdx * 2.4;
+    const az = isNorth ? -10.65 : 10.65;
     if (!this.inInterior) {
       this.toggleInterior(true, 'right');
     }
@@ -279,7 +279,53 @@ export const timeAndInteriorMethods = {
       if (typeof onEntered === 'function') onEntered();
       return true;
     }
-    this.lastDoorSide = 'right';
+    const useFront = side === 'front_tam_quan';
+    this.lastDoorSide = useFront ? 'front_tam_quan' : 'right';
+
+    if (useFront) {
+      const frontApproachX = 23.0;
+      const frontApproachZ = 11.4;
+      const distFront = Math.hypot(this.playerState.x - frontApproachX, this.playerState.z - frontApproachZ);
+      const startFrontClimb = () => {
+        this.cancelAutoWalk();
+        this.interiorTransition = {
+          phase: 'climb_side_door',
+          side: 'front_tam_quan',
+          timer: 0,
+          duration: 0.65,
+          startX: this.playerState.x,
+          startZ: this.playerState.z,
+          targetX: 23.0,
+          targetZ: 8.2,
+          onEntered
+        };
+        this.playerState.moving = true;
+        this.playerState.yaw = Math.PI;
+      };
+      if (distFront > 3.6) {
+        const pts = this.buildPerimeterSafeWaypoints(
+          this.playerState.x,
+          this.playerState.z,
+          frontApproachX,
+          frontApproachZ,
+          [[23.0, 14.2]],
+          { x: 23.0, y: 2.4, z: 7.5 }
+        );
+        this.autoWalkWaypoints = pts;
+        this.autoWalkCallback = () => startFrontClimb();
+        this.autoWalkStation = { name: 'Cửa trước Chánh Điện · Bậc thềm Tam Bảo', key: 'chanh_dien' };
+        if (this.walkTargetRing) {
+          this.walkTargetRing.position.set(frontApproachX, 0.06, frontApproachZ);
+          this.walkTargetRing.visible = true;
+        }
+        this.updateWalkPathLine();
+        this.onAutoWalkTargetChange(this.autoWalkStation);
+      } else {
+        startFrontClimb();
+      }
+      return true;
+    }
+
     const verandaApproachX = 38.6;
     const verandaZ = -14.5;
     const dist = Math.hypot(this.playerState.x - verandaApproachX, this.playerState.z - verandaZ);
@@ -332,7 +378,7 @@ export const timeAndInteriorMethods = {
   exitInteriorGradual(side = null) {
     if (!this.inInterior) return false;
     this.cancelAutoWalk();
-    if (side === 'left' || side === 'right' || side === 'north_buddha') {
+    if (side === 'left' || side === 'right' || side === 'north_buddha' || side === 'front_tam_quan') {
       this.lastDoorSide = side;
     }
     this._doorCooldownUntil = performance.now() + 2400;
@@ -371,7 +417,7 @@ export const timeAndInteriorMethods = {
     this.cancelAutoWalk();
     this.interiorTransition = null;
     this.onTransitionFade(false);
-    if (side === 'left' || side === 'right' || side === 'north_buddha') {
+    if (side === 'left' || side === 'right' || side === 'north_buddha' || side === 'front_tam_quan') {
       this.lastDoorSide = side;
     }
     this._doorCooldownUntil = performance.now() + 2200;
@@ -387,18 +433,30 @@ export const timeAndInteriorMethods = {
     }
     if (this.inInterior) {
       this.applyInteriorAtmosphere();
-      this.playerState.x = 15.2;
-      this.playerState.z = 16.5;
-      const startYaw = Math.PI - 0.18;
-      this.playerState.yaw = startYaw;
-      this.cameraBaseYaw = startYaw;
+      if (this.lastDoorSide === 'front_tam_quan') {
+        this.playerState.x = -35.5;
+        this.playerState.z = 0.0;
+        this.playerState.yaw = Math.PI * 0.5;
+        this.cameraBaseYaw = Math.PI * 0.5;
+      } else {
+        this.playerState.x = 15.2;
+        this.playerState.z = 16.5;
+        const startYaw = Math.PI - 0.18;
+        this.playerState.yaw = startYaw;
+        this.cameraBaseYaw = startYaw;
+      }
     } else {
       this.setTimeOfDay(this.timeOfDay, false);
       if (this.lastDoorSide === 'north_buddha') {
-        this.playerState.x = -24.5;
-        this.playerState.z = -10.5;
+        this.playerState.x = 14.5;
+        this.playerState.z = -37.2;
         this.playerState.yaw = Math.PI;
         this.cameraBaseYaw = Math.PI;
+      } else if (this.lastDoorSide === 'front_tam_quan') {
+        this.playerState.x = 23.0;
+        this.playerState.z = 14.5;
+        this.playerState.yaw = 0;
+        this.cameraBaseYaw = 0;
       } else {
         this.playerState.x = 38.8;
         this.playerState.z = -14.5;
@@ -459,19 +517,19 @@ export const timeAndInteriorMethods = {
       this.cameraBaseYaw = yaw;
     } else if (zoneKey === 'nghin_mat_nghin_tay') {
       this.playerState.x = 17.6;
-      this.playerState.z = 6.2;
+      this.playerState.z = 4.2;
       this.playerState.yaw = Math.PI / 2;
       this.cameraBaseYaw = Math.PI / 2;
     } else if (zoneKey === 'cho_ngu_cua_phat') {
       this.playerState.x = 17.6;
-      this.playerState.z = -6.6;
+      this.playerState.z = -13.4;
       this.playerState.yaw = Math.PI / 2;
       this.cameraBaseYaw = Math.PI / 2;
     } else if (zoneKey === 'ho_sen_bo') {
-      // Looking West across Hồ Sen Bộ & Hòn Non Bộ straight at the Chánh Điện wooden doorway, shoe racks & Trống Bát Nhã!
-      this.playerState.x = 5.4;
-      this.playerState.z = 0.0;
-      const lookYaw = -Math.PI / 2;
+      // Unobstructed view across Hồ Sen Bộ & Hòn Non Bộ straight toward the Chánh Điện doorway, shoe racks & Trống Bát Nhã
+      this.playerState.x = 7.4;
+      this.playerState.z = 2.4;
+      const lookYaw = Math.atan2(-15.2 - 7.4, 0.0 - 2.4);
       this.playerState.yaw = lookYaw;
       this.cameraBaseYaw = lookYaw;
     } else if (zoneKey === 'hanh_lang_trai') {
@@ -494,11 +552,12 @@ export const timeAndInteriorMethods = {
       this.playerState.yaw = Math.PI * 0.44;
       this.cameraBaseYaw = Math.PI * 0.44;
     } else {
-      // Inside Grand West Chánh Điện Hall facing Ban Thờ Tam Bảo, Bao Lam, Long Trụ & 18 La Hán
-      this.playerState.x = -19.2;
+      // Grand Front Worship Nave of Chánh Điện (after walking around from Hòn Non Bộ):
+      // Facing East (+X) directly at the outward-facing Buddha in the center, framed by Bao Lam, Long Trụ & 18 La Hán surrounding!
+      this.playerState.x = -36.0;
       this.playerState.z = 0.0;
-      this.playerState.yaw = -Math.PI / 2;
-      this.cameraBaseYaw = -Math.PI / 2;
+      this.playerState.yaw = Math.PI / 2;
+      this.cameraBaseYaw = Math.PI / 2;
     }
     this.playerState.moving = false;
     this.cameraAzimuthOffset = 0;

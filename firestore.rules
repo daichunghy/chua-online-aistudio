@@ -1,0 +1,235 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    function isVerifiedOwner(uid) {
+      return isVerified() && request.auth.uid == uid;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isValidTempleId(templeId) {
+      return templeId is string && templeId.size() >= 2 && templeId.size() <= 48 && templeId.matches('^[a-z0-9_]+$');
+    }
+
+    function isValidDateKey(dateKey) {
+      return dateKey is string && (dateKey.size() == 0 || (dateKey.size() == 10 && dateKey.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')));
+    }
+
+    function isValidHexColor(hex) {
+      return hex is string && hex.size() == 7 && hex.matches('^#[0-9a-fA-F]{6}$');
+    }
+
+    function isValidStringList(val, maxItems) {
+      return val is list && val.size() <= maxItems;
+    }
+
+    function isValidPilgrimProfile(data, uid) {
+      return data.keys().hasAll(['uid', 'displayName', 'activeTempleId', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly([
+          'uid',
+          'displayName',
+          'characterModelKey',
+          'nationalityId',
+          'elderFontScale',
+          'readAlongRate',
+          'activeTempleId',
+          'createdAt',
+          'updatedAt'
+        ])
+        && data.uid == uid
+        && data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 64
+        && isValidTempleId(data.activeTempleId)
+        && (!('characterModelKey' in data) || (data.characterModelKey is string && data.characterModelKey.size() <= 40))
+        && (!('nationalityId' in data) || (data.nationalityId is string && data.nationalityId.size() <= 32))
+        && (!('elderFontScale' in data) || (data.elderFontScale is number && data.elderFontScale >= 0.85 && data.elderFontScale <= 1.5))
+        && (!('readAlongRate' in data) || (data.readAlongRate is number && data.readAlongRate >= 0.6 && data.readAlongRate <= 1.4))
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidTempleProgress(data, uid, templeId) {
+      return data.keys().hasAll([
+          'ownerUid',
+          'templeId',
+          'visitedStations',
+          'heritageStamps',
+          'arhatStamps',
+          'practicedDays',
+          'createdAt',
+          'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'ownerUid',
+          'templeId',
+          'visitedStations',
+          'heritageStamps',
+          'arhatStamps',
+          'practicedDays',
+          'dailyOracleDateKey',
+          'dailyOracleId',
+          'gardenStateJson',
+          'createdAt',
+          'updatedAt'
+        ])
+        && data.ownerUid == uid
+        && data.templeId == templeId
+        && isValidTempleId(data.templeId)
+        && isValidStringList(data.visitedStations, 40)
+        && isValidStringList(data.heritageStamps, 30)
+        && isValidStringList(data.arhatStamps, 30)
+        && isValidStringList(data.practicedDays, 400)
+        && (!('dailyOracleDateKey' in data) || isValidDateKey(data.dailyOracleDateKey))
+        && (!('dailyOracleId' in data) || (data.dailyOracleId is string && data.dailyOracleId.size() <= 48))
+        && (!('gardenStateJson' in data) || (data.gardenStateJson is string && data.gardenStateJson.size() <= 8192))
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidJournalEntry(data, uid) {
+      return data.keys().hasAll(['ownerUid', 'templeId', 'text', 'mood', 'dateKey', 'createdAt'])
+        && data.keys().hasOnly([
+          'ownerUid',
+          'templeId',
+          'text',
+          'mood',
+          'moodLabel',
+          'stationLabel',
+          'dateKey',
+          'createdAt'
+        ])
+        && data.ownerUid == uid
+        && isValidTempleId(data.templeId)
+        && data.text is string && data.text.size() >= 1 && data.text.size() <= 600
+        && data.mood is string && data.mood.size() >= 1 && data.mood.size() <= 32
+        && (!('moodLabel' in data) || (data.moodLabel is string && data.moodLabel.size() <= 48))
+        && (!('stationLabel' in data) || (data.stationLabel is string && data.stationLabel.size() <= 80))
+        && isValidDateKey(data.dateKey)
+        && data.createdAt is timestamp;
+    }
+
+    function isValidCommunityLanternCreate(data) {
+      return data.keys().hasAll([
+          'templeId',
+          'authorUid',
+          'authorName',
+          'wishText',
+          'colorHex',
+          'pondX',
+          'pondZ',
+          'blessCount',
+          'createdAt',
+          'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'templeId',
+          'authorUid',
+          'authorName',
+          'nationalityId',
+          'wishText',
+          'colorHex',
+          'pondX',
+          'pondZ',
+          'blessCount',
+          'createdAt',
+          'updatedAt'
+        ])
+        && isValidTempleId(data.templeId)
+        && data.authorUid == request.auth.uid
+        && data.authorName is string && data.authorName.size() >= 1 && data.authorName.size() <= 60
+        && (!('nationalityId' in data) || (data.nationalityId is string && data.nationalityId.size() <= 32))
+        && data.wishText is string && data.wishText.size() >= 1 && data.wishText.size() <= 240
+        && isValidHexColor(data.colorHex)
+        && data.pondX is number && data.pondX >= -25 && data.pondX <= 25
+        && data.pondZ is number && data.pondZ >= -25 && data.pondZ <= 25
+        && data.blessCount is int && data.blessCount == 0
+        && data.createdAt == request.time
+        && data.updatedAt == request.time;
+    }
+
+    // ===============================================================
+    // Collections
+    // ===============================================================
+
+    match /users/{uid} {
+      allow get: if isOwner(uid);
+      allow list: if false;
+      allow create: if isVerifiedOwner(uid)
+        && isValidId(uid)
+        && isValidPilgrimProfile(request.resource.data, uid)
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time;
+      allow update: if isVerifiedOwner(uid)
+        && isValidPilgrimProfile(request.resource.data, uid)
+        && request.resource.data.uid == resource.data.uid
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.updatedAt == request.time;
+      allow delete: if isVerifiedOwner(uid);
+
+      match /temples/{templeId} {
+        allow get, list: if isOwner(uid);
+        allow create: if isVerifiedOwner(uid)
+          && isValidTempleId(templeId)
+          && isValidTempleProgress(request.resource.data, uid, templeId)
+          && request.resource.data.createdAt == request.time
+          && request.resource.data.updatedAt == request.time;
+        allow update: if isVerifiedOwner(uid)
+          && isValidTempleProgress(request.resource.data, uid, templeId)
+          && request.resource.data.ownerUid == resource.data.ownerUid
+          && request.resource.data.templeId == resource.data.templeId
+          && request.resource.data.createdAt == resource.data.createdAt
+          && request.resource.data.updatedAt == request.time;
+        allow delete: if isVerifiedOwner(uid);
+      }
+
+      match /journalEntries/{entryId} {
+        allow get, list: if isOwner(uid);
+        allow create: if isVerifiedOwner(uid)
+          && isValidId(entryId)
+          && isValidJournalEntry(request.resource.data, uid)
+          && request.resource.data.createdAt == request.time;
+        allow update: if false;
+        allow delete: if isVerifiedOwner(uid);
+      }
+    }
+
+    match /templeLanterns/{lanternId} {
+      allow get, list: if resource.data.templeId is string;
+      allow create: if isVerified()
+        && isValidId(lanternId)
+        && isValidCommunityLanternCreate(request.resource.data);
+      allow update: if isVerified()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['blessCount', 'updatedAt'])
+        && request.resource.data.blessCount is int
+        && resource.data.blessCount is int
+        && request.resource.data.blessCount == resource.data.blessCount + 1
+        && request.resource.data.blessCount <= 100000
+        && request.resource.data.updatedAt == request.time;
+      allow delete: if isVerified() && resource.data.authorUid == request.auth.uid;
+    }
+
+    // Default deny for everything else
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
