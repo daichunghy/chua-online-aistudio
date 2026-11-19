@@ -13,9 +13,9 @@ export const movementMethods = {
     let bounds;
     if (this.inInterior) {
       bounds = {
-        minX: -20.1,
-        maxX: 24.3,
-        minZ: -20.1,
+        minX: -35.8,
+        maxX: 31.3,
+        minZ: -37.6,
         maxZ: 20.35
       };
     } else {
@@ -270,6 +270,8 @@ export const movementMethods = {
     if (this.inInterior) {
       if (px >= 13.5 && px <= 17.5 && pz >= 19.65) {
         this.exitInteriorGradual('right');
+      } else if (px >= 12.6 && px <= 22.0 && pz <= -36.8) {
+        this.exitInteriorGradual('north_buddha');
       }
     } else {
       // Stepping onto the widened End-of-Road Left-Turn Shoe-Removal Veranda & Wooden Door (x = 34.0..38.0, z = -18.4..-10.6)

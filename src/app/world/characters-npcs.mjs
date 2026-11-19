@@ -1033,15 +1033,15 @@ export const charactersNpcsMethods = {
   },
 
   spawnInteriorWorshippersV8() {
-    // Rigged GLB worshippers inside Top-Edge Chính Điện, spacious East Wing & Hồ Sen Bộ + active walking pilgrims
+    // Rigged GLB worshippers inside West Grand Chánh Điện, North Tổ Đường, Extended 8-Shrine East Corridor & Hồ Sen Bộ
     this.interiorWalkingRecords = [];
 
     const kneelingSpots = [
-      { charKey: 'nu', x: -1.95, z: -14.6, yaw: Math.PI, tint: [0.84, 0.60, 0.70] },
-      { charKey: 'nam', x: 1.95, z: -14.6, yaw: Math.PI, monkTone: 0 },
-      { charKey: 'nu', x: 20.2, z: 2.0, yaw: Math.PI / 2, tint: [0.76, 0.78, 0.86] },
-      { charKey: 'tre_em', x: 20.1, z: -6.5, yaw: Math.PI / 2, tint: [0.62, 0.74, 0.84] },
-      { charKey: 'nam', x: -13.6, z: -15.6, yaw: Math.PI, monkTone: 1 }
+      { charKey: 'nu', x: -23.0, z: -2.2, yaw: -Math.PI / 2, tint: [0.84, 0.60, 0.70] },
+      { charKey: 'nam', x: -23.0, z: 2.2, yaw: -Math.PI / 2, monkTone: 0 },
+      { charKey: 'nu', x: 20.4, z: 6.2, yaw: Math.PI / 2, tint: [0.76, 0.78, 0.86] },
+      { charKey: 'tre_em', x: 20.4, z: -6.6, yaw: Math.PI / 2, tint: [0.62, 0.74, 0.84] },
+      { charKey: 'nam', x: -2.0, z: -16.8, yaw: Math.PI, monkTone: 1 }
     ];
     for (const sp of kneelingSpots) {
       if (this.propMeshCache.bo_doan) {
@@ -1076,8 +1076,8 @@ export const charactersNpcsMethods = {
     const standingInterior = [
       { charKey: 'nu', x: -6.8, z: 2.2, yaw: Math.PI / 2, pose: 'Chắp tay', tint: [0.9, 0.84, 0.72], elev: 0 },
       { charKey: 'nam', x: 6.8, z: -2.0, yaw: -Math.PI / 2, pose: 'Dung', monkTone: 0, elev: 0 },
-      { charKey: 'nu', x: 18.5, z: 13.8, yaw: Math.PI * 0.45, pose: 'Dung', tint: [0.88, 0.66, 0.74], elev: 0 },
-      { charKey: 'nam', x: 20.8, z: 13.9, yaw: -Math.PI * 0.55, pose: 'Dung', monkTone: 1, elev: 0 }
+      { charKey: 'nu', x: 25.8, z: 14.2, yaw: Math.PI * 0.45, pose: 'Dung', tint: [0.88, 0.66, 0.74], elev: 0 },
+      { charKey: 'nam', x: 26.6, z: -13.0, yaw: -Math.PI * 0.5, pose: 'Chắp tay', monkTone: 1, elev: 0 }
     ];
     for (const sp of standingInterior) {
       const h = CHAR_HEIGHTS[sp.charKey] || 1.64;
@@ -1103,12 +1103,12 @@ export const charactersNpcsMethods = {
         hand: 'hoa_sen',
         speed: 0.92,
         pts: [
-          wp(15.4, 18.8, 'pass'),
-          wp(15.4, 9.0, 'pass'),
-          wp(19.6, 2.0, 'chap_tay', 3.2, 22.8, 2.0),
-          wp(19.6, -6.5, 'chap_tay', 3.0, 22.8, -6.5),
-          wp(15.4, -10.5, 'pass'),
-          wp(15.4, 9.0, 'pass')
+          wp(16.0, 18.0, 'pass'),
+          wp(18.6, 6.2, 'chap_tay', 3.2, 22.8, 6.2),
+          wp(18.6, -6.6, 'chap_tay', 3.0, 22.8, -6.6),
+          wp(18.6, -19.4, 'chap_tay', 2.8, 22.8, -19.4),
+          wp(16.0, -33.0, 'pass'),
+          wp(16.0, 4.0, 'pass')
         ]
       },
       {
@@ -1118,12 +1118,13 @@ export const charactersNpcsMethods = {
         hand: 'beads',
         speed: 0.88,
         pts: [
-          wp(14.2, 15.0, 'pass'),
-          wp(14.2, -14.2, 'pass'),
-          wp(2.0, -13.8, 'chap_tay', 3.4, 0.0, -18.3),
-          wp(-14.2, -13.5, 'pass'),
-          wp(-14.2, 14.2, 'pass'),
-          wp(0.0, 14.5, 'pass')
+          wp(13.8, 14.0, 'pass'),
+          wp(13.8, -14.0, 'pass'),
+          wp(-12.2, -14.0, 'pass'),
+          wp(-12.2, 0.0, 'pass'),
+          wp(-21.0, 0.0, 'chap_tay', 3.6, -33.2, 0.0),
+          wp(-12.2, 0.0, 'pass'),
+          wp(-12.2, 14.5, 'pass')
         ]
       },
       {
@@ -1144,10 +1145,11 @@ export const charactersNpcsMethods = {
         hand: 'nhang',
         speed: 0.94,
         pts: [
-          wp(16.8, 17.0, 'pass'),
-          wp(18.4, 14.5, 'dung', 3.0, 24.0, 15.8),
-          wp(16.4, 2.5, 'pass'),
-          wp(16.2, -11.0, 'pass')
+          wp(17.4, 16.5, 'pass'),
+          wp(18.8, -0.2, 'chap_tay', 3.0, 22.8, -0.2),
+          wp(18.8, -13.0, 'chap_tay', 3.0, 22.8, -13.0),
+          wp(18.8, -25.8, 'chap_tay', 3.0, 22.8, -25.8),
+          wp(17.4, -5.0, 'pass')
         ]
       },
       {

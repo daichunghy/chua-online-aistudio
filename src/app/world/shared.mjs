@@ -108,7 +108,7 @@ export const STATUE_GLB_PATHS = {
   hoPhap: '/Mô hình 3D Vĩnh Tràng/Tượng/ho-phap-vi-da.glb',
   tieuDien: '/Mô hình 3D Vĩnh Tràng/Tượng/tieu-dien-dai-si.glb',
   toDatMa: '/Mô hình 3D Vĩnh Tràng/Tượng/to-dat-ma.glb',
-  nghinMatNghinTay: null,
+  nghinMatNghinTay: '/Thiết kế giao diện/Vật phẩm 3D/meshy_assets/tuong-phat-nghin-mat-nghin-tay.glb',
   choNguCuaPhat: '/Thiết kế giao diện/Vật phẩm 3D/meshy_assets/cho-ngu-cua-phat.glb'
 };
 

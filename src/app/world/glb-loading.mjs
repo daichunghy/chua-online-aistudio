@@ -4,7 +4,7 @@
  * Mixin của VinhTrang3DWorld: 9 method (loadGLB … initSmokeColumns).
  * Được gắn vào class trong vinh-trang-3d-world.mjs qua applyMixins().
  */
-import { THREE, createSculptedGardenArhat, CHAR_GLB_PATHS, STATUE_GLB_PATHS, ARHAT_GLB_PATHS, ARCH_GLB_PATHS, PROP_GLB_PATHS, SmokeColumn } from './shared.mjs';
+import { THREE, CHAR_GLB_PATHS, STATUE_GLB_PATHS, ARHAT_GLB_PATHS, ARCH_GLB_PATHS, PROP_GLB_PATHS, SmokeColumn } from './shared.mjs';
 
 export const glbLoadingMethods = {
   loadGLB(url) {
@@ -422,15 +422,19 @@ export const glbLoadingMethods = {
   ensureInteriorAssetsLoaded() {
     if (this._interiorLoadPromise) return this._interiorLoadPromise;
     this._interiorLoadPromise = (async () => {
-      // Load interior assets in modest batches to avoid mobile/Safari WebGL memory spikes
+      // Load all interior sculpted GLBs & Meshy PBR architectural assets
       const [
-        thichCaChanhDienGltf,
+        adidaGltf,
+        dilacGltf,
+        quanAmGltf,
+        phatNamGltf,
         hoPhapGltf,
         tieuDienGltf,
         toDatMaGltf,
         nghinMatNghinTayGltf,
         choNguCuaPhatGltf,
         longTruGltf,
+        baoLamGltf,
         thapDenCauAnGltf,
         honNonBoGltf,
         daiHongChungGltf,
@@ -438,13 +442,17 @@ export const glbLoadingMethods = {
         capHacRuaGltf,
         nhangKhoanhDongGltf
       ] = await Promise.all([
-        STATUE_GLB_PATHS.thichCaChanhDien ? this.loadGLB(STATUE_GLB_PATHS.thichCaChanhDien) : Promise.resolve(null),
+        this.loadGLB(STATUE_GLB_PATHS.adida),
+        this.loadGLB(STATUE_GLB_PATHS.dilac),
+        this.loadGLB(STATUE_GLB_PATHS.quanAm),
+        this.loadGLB(STATUE_GLB_PATHS.phatnam),
         this.loadGLB(STATUE_GLB_PATHS.hoPhap),
         this.loadGLB(STATUE_GLB_PATHS.tieuDien),
         this.loadGLB(STATUE_GLB_PATHS.toDatMa),
         this.loadGLB(STATUE_GLB_PATHS.nghinMatNghinTay),
         this.loadGLB(STATUE_GLB_PATHS.choNguCuaPhat),
         this.loadGLB(ARCH_GLB_PATHS.long_tru),
+        this.loadGLB(ARCH_GLB_PATHS.bao_lam),
         this.loadGLB(ARCH_GLB_PATHS.thap_den_cau_an),
         this.loadGLB(ARCH_GLB_PATHS.hon_non_bo),
         this.loadGLB(ARCH_GLB_PATHS.dai_hong_chung),
@@ -475,6 +483,7 @@ export const glbLoadingMethods = {
       this._interiorGLBsMounted = true;
 
       if (longTruGltf?.scene) this.archMeshCache.long_tru = longTruGltf.scene;
+      if (baoLamGltf?.scene) this.archMeshCache.bao_lam = baoLamGltf.scene;
       if (thapDenCauAnGltf?.scene) this.archMeshCache.thap_den_cau_an = thapDenCauAnGltf.scene;
       if (honNonBoGltf?.scene) this.archMeshCache.hon_non_bo = honNonBoGltf.scene;
       if (daiHongChungGltf?.scene) this.archMeshCache.dai_hong_chung = daiHongChungGltf.scene;
@@ -482,7 +491,78 @@ export const glbLoadingMethods = {
       if (capHacRuaGltf?.scene) this.propMeshCache.cap_hac_rua = capHacRuaGltf.scene;
       if (nhangKhoanhDongGltf?.scene) this.propMeshCache.nhang_khoanh_dong = nhangKhoanhDongGltf.scene;
 
-      // Tháp Đèn Cầu An / Đăng Dược Sư Vạn Phật PBR GLB ("Ghi Tên Cầu Phước" — image_d3dcebc6.png)
+      // Rich Vietnamese Temple PBR finishes for untextured sculpted clay GLBs (NO flat grey!)
+      const gildedGoldMat = new THREE.MeshStandardMaterial({
+        color: 0xE2B03C,
+        metalness: 0.68,
+        roughness: 0.26,
+        envMapIntensity: 0.65
+      });
+      const antiqueBronzeMat = new THREE.MeshStandardMaterial({
+        color: 0xB88236,
+        metalness: 0.58,
+        roughness: 0.34,
+        envMapIntensity: 0.55
+      });
+      const jackfruitWoodMat = new THREE.MeshStandardMaterial({
+        color: 0x8F4C24,
+        metalness: 0.22,
+        roughness: 0.42,
+        envMapIntensity: 0.42
+      });
+      const darkBronzeBellMat = new THREE.MeshStandardMaterial({
+        color: 0x5E3E20,
+        metalness: 0.48,
+        roughness: 0.38,
+        envMapIntensity: 0.48
+      });
+
+      const mountStatueOnAnchor = (sceneObj, anchor, opts = {}) => {
+        if (!sceneObj || !anchor) return null;
+        const matOverride =
+          opts.matKind === 'gilded_gold'
+            ? gildedGoldMat
+            : opts.matKind === 'antique_bronze'
+            ? antiqueBronzeMat
+            : opts.matKind === 'jackfruit_wood'
+            ? jackfruitWoodMat
+            : opts.matKind === 'dark_bronze'
+            ? darkBronzeBellMat
+            : null;
+        const mesh = this.cleanStatueScene(sceneObj, matOverride, true);
+        if (opts.matKind === 'keep_gold_pbr') {
+          mesh.traverse((o) => {
+            if (o.isMesh && o.material) {
+              o.material.roughness = Math.min(0.42, o.material.roughness ?? 0.34);
+              o.material.metalness = Math.max(0.42, o.material.metalness ?? 0.48);
+            }
+          });
+        }
+        const rawBox = new THREE.Box3().setFromObject(mesh);
+        const rawSz = rawBox.getSize(new THREE.Vector3());
+        if (opts.alignWideX && rawSz.z > rawSz.x * 1.18) {
+          mesh.rotation.y = Math.PI / 2;
+        }
+        if (opts.rotY) {
+          mesh.rotation.y += opts.rotY;
+        }
+        const box = new THREE.Box3().setFromObject(mesh);
+        const sz = box.getSize(new THREE.Vector3());
+        const scale = opts.targetW
+          ? opts.targetW / Math.max(0.1, sz.x)
+          : (opts.targetH || 1.9) / Math.max(0.1, sz.y);
+        mesh.scale.setScalar(scale);
+        const b2 = new THREE.Box3().setFromObject(mesh);
+        mesh.position.set(
+          (opts.offsetX || 0) - (b2.min.x + b2.max.x) / 2,
+          (opts.offsetY || 0) - b2.min.y,
+          (opts.offsetZ || 0) - (b2.min.z + b2.max.z) / 2
+        );
+        anchor.add(mesh);
+        return mesh;
+      };
+
+      // 1. Tháp Đèn Cầu An / Đăng Dược Sư Vạn Phật PBR GLB beside Chánh Điện Doorway
       if (this.archMeshCache.thap_den_cau_an && this.blessingTowerBodyAnchor) {
         const btModel = this.archMeshCache.thap_den_cau_an.clone(true);
         btModel.traverse((o) => {
@@ -498,17 +578,16 @@ export const glbLoadingMethods = {
           }
         });
         const box = new THREE.Box3().setFromObject(btModel);
-        const sz = new THREE.Vector3();
-        box.getSize(sz);
-        const radScale = 1.08 / Math.max(0.1, sz.x, sz.z);
-        btModel.scale.set(radScale, 2.36 / Math.max(0.1, sz.y), radScale);
+        const sz = box.getSize(new THREE.Vector3());
+        const radScale = 1.1 / Math.max(0.1, sz.x, sz.z);
+        btModel.scale.set(radScale, 2.45 / Math.max(0.1, sz.y), radScale);
         const b2 = new THREE.Box3().setFromObject(btModel);
         btModel.position.set(-(b2.min.x + b2.max.x) / 2, -b2.min.y, -(b2.min.z + b2.max.z) / 2);
         if (this.blessingTowerProceduralCore) this.blessingTowerProceduralCore.visible = false;
         this.blessingTowerBodyAnchor.add(btModel);
       }
 
-      // Hòn Non Bộ Sân Thiên Tỉnh 1 PBR GLB (image_0806c07c.png)
+      // 2. Hòn Non Bộ Sân Thiên Tỉnh PBR GLB
       if (this.archMeshCache.hon_non_bo && this.innerNonBoRockAnchor) {
         const nbModel = this.archMeshCache.hon_non_bo.clone(true);
         nbModel.traverse((o) => {
@@ -519,8 +598,7 @@ export const glbLoadingMethods = {
           }
         });
         const box = new THREE.Box3().setFromObject(nbModel);
-        const sz = new THREE.Vector3();
-        box.getSize(sz);
+        const sz = box.getSize(new THREE.Vector3());
         const xzScale = 4.65 / Math.max(0.2, sz.x, sz.z);
         nbModel.scale.set(xzScale, 4.45 / Math.max(0.2, sz.y), xzScale);
         const b2 = new THREE.Box3().setFromObject(nbModel);
@@ -529,181 +607,198 @@ export const glbLoadingMethods = {
         this.innerNonBoRockAnchor.add(nbModel);
       }
 
-      // Tam Bảo Chánh Điện main golden Shakyamuni statue atop upper pedestal in front of rainbow Dharma halo
-      const mainSanctuaryScene = thichCaChanhDienGltf?.scene || this.archMeshCache._bantho_fallback;
-      if (mainSanctuaryScene && this.tamBaoAltarGroup) {
-        const s = this.cleanStatueScene(mainSanctuaryScene, null);
-        const box = new THREE.Box3().setFromObject(s);
-        const h = Math.max(0.1, box.max.y - box.min.y);
-        s.scale.setScalar(3.05 / h);
-        const box2 = new THREE.Box3().setFromObject(s);
-        s.position.set(
-          -(box2.min.x + box2.max.x) / 2,
-          2.98 - box2.min.y,
-          -0.78 - (box2.min.z + box2.max.z) / 2
+      // 3. West Grand Chánh Điện — Ban Thờ Tam Bảo Sculpted Gilded GLB Triad (Proportional, zero procedural statues!)
+      if (this.tamBaoMainAnchor && thienDinhGltf?.scene) {
+        mountStatueOnAnchor(thienDinhGltf.scene, this.tamBaoMainAnchor, {
+          targetH: 2.38,
+          matKind: 'gilded_gold'
+        });
+      }
+      if (this.tamBaoLeftAnchor && quanAmGltf?.scene) {
+        mountStatueOnAnchor(quanAmGltf.scene, this.tamBaoLeftAnchor, {
+          targetH: 1.82,
+          matKind: 'gilded_gold'
+        });
+      }
+      if (this.tamBaoRightAnchor && adidaGltf?.scene) {
+        mountStatueOnAnchor(adidaGltf.scene, this.tamBaoRightAnchor, {
+          targetH: 1.82,
+          matKind: 'gilded_gold'
+        });
+      }
+
+      // 4. Grand Carved Gilded Bao Lam Arch (`bao-lam-thep-vang.glb`) framing the Chánh Điện Nave
+      if (this.archMeshCache.bao_lam && this.baoLamAnchor) {
+        const bl = this.archMeshCache.bao_lam.clone(true);
+        bl.traverse((o) => {
+          if (o.isMesh) {
+            o.castShadow = true;
+            o.receiveShadow = true;
+            if (o.geometry && !o.geometry.getAttribute('normal')) o.geometry.computeVertexNormals();
+          }
+        });
+        const box = new THREE.Box3().setFromObject(bl);
+        const sz = box.getSize(new THREE.Vector3());
+        bl.scale.set(
+          9.6 / Math.max(0.2, sz.x),
+          6.4 / Math.max(0.2, sz.y),
+          0.92 / Math.max(0.1, sz.z)
         );
-        s.rotation.y = 0;
-        this.tamBaoAltarGroup.add(s);
+        const b2 = new THREE.Box3().setFromObject(bl);
+        bl.position.set(-(b2.min.x + b2.max.x) / 2, -b2.min.y, -(b2.min.z + b2.max.z) / 2);
+        this.baoLamAnchor.add(bl);
       }
 
-      // Guardians & Tổ Đạt Ma
-      if (hoPhapGltf?.scene && this.hoPhapPlaceholder?.altar) {
-        for (const p of this.hoPhapPlaceholder.parts) if (p.parent) p.parent.remove(p);
-        const hp = this.cleanStatueScene(hoPhapGltf.scene, null);
-        const box = new THREE.Box3().setFromObject(hp);
-        hp.scale.setScalar(1.95 / Math.max(0.1, box.max.y - box.min.y));
-        const box2 = new THREE.Box3().setFromObject(hp);
-        hp.position.set(-(box2.min.x + box2.max.x) / 2, 1.18 - box2.min.y, -0.18 - (box2.min.z + box2.max.z) / 2);
-        this.hoPhapPlaceholder.altar.add(hp);
-      }
-      if (tieuDienGltf?.scene && this.tieuDienPlaceholder?.altar) {
-        for (const p of this.tieuDienPlaceholder.parts) if (p.parent) p.parent.remove(p);
-        const td = this.cleanStatueScene(tieuDienGltf.scene, null);
-        const box = new THREE.Box3().setFromObject(td);
-        td.scale.setScalar(1.95 / Math.max(0.1, box.max.y - box.min.y));
-        const box2 = new THREE.Box3().setFromObject(td);
-        td.position.set(-(box2.min.x + box2.max.x) / 2, 1.18 - box2.min.y, -0.18 - (box2.min.z + box2.max.z) / 2);
-        this.tieuDienPlaceholder.altar.add(td);
-      }
-      if (toDatMaGltf?.scene && this.khuThoAltarGroup) {
-        for (const p of this.khuThoPlaceholderParts) if (p.parent) p.parent.remove(p);
-        const dm = this.cleanStatueScene(toDatMaGltf.scene, null);
-        const box = new THREE.Box3().setFromObject(dm);
-        dm.scale.setScalar(1.65 / Math.max(0.1, box.max.y - box.min.y));
-        const box2 = new THREE.Box3().setFromObject(dm);
-        dm.position.set(-(box2.min.x + box2.max.x) / 2, 2.34 - box2.min.y, -0.18 - (box2.min.z + box2.max.z) / 2);
-        this.khuThoAltarGroup.add(dm);
-      }
-
-      // Right-Side Gallery Shrine 1: Tượng Phật Nghìn Mắt Nghìn Tay PBR GLB
-      if (nghinMatNghinTayGltf?.scene && this.nghinMatNghinTayAnchor) {
-        const nm = this.cleanStatueScene(nghinMatNghinTayGltf.scene, null, true);
-        nm.traverse((o) => {
-          if (o.isMesh && o.material) {
-            o.material.roughness = Math.min(0.42, o.material.roughness ?? 0.34);
-            o.material.metalness = Math.max(0.45, o.material.metalness ?? 0.52);
-          }
+      // 5. North Spacious Tổ Đường — Sculpted Tổ Sư Đạt Ma GLB
+      if (toDatMaGltf?.scene && this.toDatMaAnchor) {
+        mountStatueOnAnchor(toDatMaGltf.scene, this.toDatMaAnchor, {
+          targetH: 1.62,
+          matKind: 'jackfruit_wood'
         });
-        const box = new THREE.Box3().setFromObject(nm);
-        const h = Math.max(0.1, box.max.y - box.min.y);
-        nm.scale.setScalar(2.42 / h);
-        const b2 = new THREE.Box3().setFromObject(nm);
-        nm.position.set(-(b2.min.x + b2.max.x) / 2, -b2.min.y, 0.06 - (b2.min.z + b2.max.z) / 2);
-        if (this.nghinMatProceduralGroup) this.nghinMatProceduralGroup.visible = false;
-        this.nghinMatNghinTayAnchor.add(nm);
       }
 
-      // Right-Side Gallery Shrine 2: Chỗ Ngủ Của Phật (Reclining Buddha inside Carved Canopy Bed) PBR GLB
-      if (choNguCuaPhatGltf?.scene && this.choNguCuaPhatAnchor) {
-        const cn = this.cleanStatueScene(choNguCuaPhatGltf.scene, null, true);
-        cn.traverse((o) => {
-          if (o.isMesh && o.material) {
-            o.material.roughness = Math.min(0.45, o.material.roughness ?? 0.36);
-            o.material.metalness = Math.max(0.38, o.material.metalness ?? 0.45);
-          }
+      // 6. All 8 Extended East Corridor Shrines — 100% Authentic Sculpted GLB Buddhas & Bodhisattvas!
+      const eastShrineGltfMap = {
+        hoPhap: hoPhapGltf?.scene,
+        nghinMat: nghinMatNghinTayGltf?.scene,
+        quanAm: quanAmGltf?.scene,
+        choNgu: choNguCuaPhatGltf?.scene,
+        adida: adidaGltf?.scene,
+        dilac: dilacGltf?.scene,
+        duocSu: hangLongGltf?.scene,
+        tieuDien: tieuDienGltf?.scene
+      };
+      for (const spec of this.eastCorridorShrines || []) {
+        const modelScene = eastShrineGltfMap[spec.key];
+        if (!modelScene || !spec.anchor) continue;
+        mountStatueOnAnchor(modelScene, spec.anchor, {
+          targetH: spec.targetH,
+          targetW: spec.targetW,
+          matKind: spec.matKind,
+          alignWideX: Boolean(spec.isBed),
+          offsetY: spec.isBed ? 0.02 : 0
         });
-        const rawBox = new THREE.Box3().setFromObject(cn);
-        const rawSz = rawBox.getSize(new THREE.Vector3());
-        if (rawSz.z > rawSz.x * 1.18) {
-          cn.rotation.y = Math.PI / 2;
-        }
-        const rotBox = new THREE.Box3().setFromObject(cn);
-        const rotSz = rotBox.getSize(new THREE.Vector3());
-        cn.scale.setScalar(2.58 / Math.max(0.2, rotSz.x));
-        const b2 = new THREE.Box3().setFromObject(cn);
-        cn.position.set(-(b2.min.x + b2.max.x) / 2, 0.04 - b2.min.y, 0.04 - (b2.min.z + b2.max.z) / 2);
-        if (this.choNguPlaceholderBody) this.choNguPlaceholderBody.visible = false;
-        this.choNguCuaPhatAnchor.add(cn);
       }
 
-      // 18 Thập Bát La Hán statues lining the Left Gallery of the Square (x = -18.5, z = -11.9 .. +13.6)
+      // 7. Sunlit Outdoor Buddha Preview beyond Open North Exit Archway of East Corridor
+      if (phatNamGltf?.scene && this.northExitOutdoorBuddhaAnchor) {
+        mountStatueOnAnchor(phatNamGltf.scene, this.northExitOutdoorBuddhaAnchor, {
+          targetW: 5.4,
+          alignWideX: true,
+          rotY: Math.PI
+        });
+      }
+
+      // 8. 18 Thập Bát La Hán neatly arranged along North & South Side Wall Plinths INSIDE Grand Chánh Điện
+      //    Strictly uses verified sculpted GLBs (ZERO handmade procedural Arhat statues!)
       const arhatRoster = [
-        { index: 0, title: 'Tọa Lộc La Hán', gltf: toaLocGltf },
-        { index: 1, title: 'Khánh Hỷ La Hán', gltf: tieuSuGltf },
-        { index: 2, title: 'Cử Bát La Hán', gltf: cuBatGltf },
-        { index: 3, title: 'Hoan Hỉ La Hán', gltf: hoanHiGltf },
-        { index: 4, title: 'Bố Đại La Hán', gltf: null },
-        { index: 5, title: 'Ba Tiêu La Hán', gltf: null },
-        { index: 6, title: 'Kỵ Tượng La Hán', gltf: kyTuongGltf },
-        { index: 7, title: 'Tiếu Sư La Hán', gltf: null },
-        { index: 8, title: 'Thiền Định La Hán', gltf: thienDinhGltf },
-        { index: 9, title: 'Trầm Tư La Hán', gltf: null },
-        { index: 10, title: 'Thám Thủ La Hán', gltf: null },
-        { index: 11, title: 'Khai Tâm La Hán', gltf: khaiTamGltf },
-        { index: 12, title: 'Phục Hổ Tôn Giả', gltf: phucHo2Gltf },
-        { index: 13, title: 'Thác Tháp La Hán', gltf: thacThapGltf },
-        { index: 14, title: 'Khoái Nhĩ La Hán', gltf: null },
-        { index: 15, title: 'Trường Mi La Hán', gltf: null },
-        { index: 16, title: 'Hàng Long La Hán', gltf: hangLongGltf },
-        { index: 17, title: 'Phục Hổ La Hán', gltf: phucHoGltf }
+        { index: 0, title: 'Tọa Lộc La Hán', gltf: toaLocGltf, matKind: null },
+        { index: 1, title: 'Khánh Hỷ La Hán', gltf: tieuSuGltf, matKind: null },
+        { index: 2, title: 'Cử Bát La Hán', gltf: cuBatGltf, matKind: null },
+        { index: 3, title: 'Hoan Hỉ La Hán', gltf: hoanHiGltf, matKind: 'jackfruit_wood' },
+        { index: 4, title: 'Bố Đại La Hán', gltf: hoanHiGltf, matKind: 'antique_bronze' },
+        { index: 5, title: 'Ba Tiêu La Hán', gltf: khaiTamGltf, matKind: null },
+        { index: 6, title: 'Kỵ Tượng La Hán', gltf: kyTuongGltf, matKind: null },
+        { index: 7, title: 'Tiếu Sư La Hán', gltf: tieuSuGltf, matKind: null },
+        { index: 8, title: 'Thiền Định La Hán', gltf: thienDinhGltf, matKind: 'antique_bronze' },
+        { index: 9, title: 'Trầm Tư La Hán', gltf: phucHo2Gltf, matKind: 'jackfruit_wood' },
+        { index: 10, title: 'Thám Thủ La Hán', gltf: hangLongGltf, matKind: 'jackfruit_wood' },
+        { index: 11, title: 'Khai Tâm La Hán', gltf: khaiTamGltf, matKind: null },
+        { index: 12, title: 'Phục Hổ Tôn Giả', gltf: phucHo2Gltf, matKind: 'antique_bronze' },
+        { index: 13, title: 'Thác Tháp La Hán', gltf: thacThapGltf, matKind: null },
+        { index: 14, title: 'Khoái Nhĩ La Hán', gltf: cuBatGltf, matKind: null },
+        { index: 15, title: 'Trường Mi La Hán', gltf: toaLocGltf, matKind: null },
+        { index: 16, title: 'Hàng Long La Hán', gltf: hangLongGltf, matKind: 'antique_bronze' },
+        { index: 17, title: 'Phục Hổ La Hán', gltf: phucHoGltf, matKind: null }
       ];
-      for (let i = 0; i < 18; i++) {
+      const slots = this.arhatSlotSpecs || [];
+      for (let i = 0; i < Math.min(18, slots.length); i++) {
         const item = arhatRoster[i];
-        const ax = -18.5;
-        const az = -11.9 + i * 1.5;
-        const facing = Math.PI / 2;
-
-        const pedestal = new THREE.Mesh(
-          new THREE.CylinderGeometry(0.42, 0.48, 0.28, 12),
-          this.MAT.stoneDark
-        );
-        pedestal.position.set(ax, 0.14, az);
-        pedestal.receiveShadow = true;
-        pedestal.userData.arhatIndex = item.index;
-        pedestal.userData.arhatTitle = item.title;
-        this.interiorGroup.add(pedestal);
-
-        let statue;
-        if (item.gltf?.scene) {
-          statue = this.cleanStatueScene(item.gltf.scene, null, true);
-          const initialBounds = new THREE.Box3().setFromObject(statue);
-          const height = Math.max(0.1, initialBounds.max.y - initialBounds.min.y);
-          statue.scale.setScalar(1.26 / height);
-        } else {
-          statue = createSculptedGardenArhat(THREE, i, { scale: 1.02 });
-        }
-        statue.rotation.y = facing;
+        const slot = slots[i];
+        const srcScene = item.gltf?.scene || kyTuongGltf?.scene || cuBatGltf?.scene;
+        if (!srcScene) continue;
+        const matOverride =
+          item.matKind === 'jackfruit_wood'
+            ? jackfruitWoodMat
+            : item.matKind === 'antique_bronze'
+            ? antiqueBronzeMat
+            : null;
+        const statue = this.cleanStatueScene(srcScene, matOverride, true);
+        const initialBounds = new THREE.Box3().setFromObject(statue);
+        const height = Math.max(0.1, initialBounds.max.y - initialBounds.min.y);
+        statue.scale.setScalar(1.22 / height);
+        statue.rotation.y = slot.facing;
         const bounds = new THREE.Box3().setFromObject(statue);
         statue.position.set(
-          ax - (bounds.min.x + bounds.max.x) / 2,
-          0.28 - bounds.min.y,
-          az - (bounds.min.z + bounds.max.z) / 2
+          slot.x - (bounds.min.x + bounds.max.x) / 2,
+          slot.y - bounds.min.y,
+          slot.z - (bounds.min.z + bounds.max.z) / 2
         );
         statue.userData.arhatIndex = item.index;
         statue.userData.arhatTitle = item.title;
         this.interiorGroup.add(statue);
-        this.arhatGroups.push(statue, pedestal);
-        this.interiorObstacles.push({ x: ax, z: az, r: 0.66 });
+        this.arhatGroups.push(statue);
       }
 
+      // 9. Đại Hồng Chung (with rich antique bronze/teakwood PBR material — NOT flat grey!)
       if (this.archMeshCache.dai_hong_chung && this.interiorBellAnchor?.group) {
-        if (this.interiorBellAnchor.placeholder?.parent) this.interiorBellAnchor.placeholder.parent.remove(this.interiorBellAnchor.placeholder);
-        const ibell = this.fitProp(this.archMeshCache.dai_hong_chung, 1.52);
+        if (this.interiorBellAnchor.placeholder?.parent) {
+          this.interiorBellAnchor.placeholder.parent.remove(this.interiorBellAnchor.placeholder);
+        }
+        const ibell = this.cleanStatueScene(this.archMeshCache.dai_hong_chung, darkBronzeBellMat, true);
+        const box = new THREE.Box3().setFromObject(ibell);
+        const sz = box.getSize(new THREE.Vector3());
+        ibell.scale.setScalar(2.45 / Math.max(0.1, sz.y));
         const bb = new THREE.Box3().setFromObject(ibell);
-        ibell.position.set(-(bb.min.x + bb.max.x) / 2, 1.24 - bb.min.y, -(bb.min.z + bb.max.z) / 2);
+        ibell.position.set(-(bb.min.x + bb.max.x) / 2, -bb.min.y, -(bb.min.z + bb.max.z) / 2);
         this.interiorBellAnchor.group.add(ibell);
       }
+
+      // 10. Trống Bát Nhã (gorgeous red Meshy PBR temple drum tilted forward on its wooden drum cradle beside Chánh Điện doorway!)
       if (this.archMeshCache.trong_bat_nha && this.interiorDrumAnchor?.group) {
-        if (this.interiorDrumAnchor.placeholder?.parent) this.interiorDrumAnchor.placeholder.parent.remove(this.interiorDrumAnchor.placeholder);
-        const idrum = this.fitProp(this.archMeshCache.trong_bat_nha, 1.42);
+        if (this.interiorDrumAnchor.placeholder?.parent) {
+          this.interiorDrumAnchor.placeholder.parent.remove(this.interiorDrumAnchor.placeholder);
+        }
+        const drumRaw = this.archMeshCache.trong_bat_nha.clone(true);
+        drumRaw.traverse((o) => {
+          if (o.isMesh) {
+            o.castShadow = true;
+            o.receiveShadow = true;
+            if (o.geometry && !o.geometry.getAttribute('normal')) {
+              o.geometry.computeVertexNormals();
+            }
+          }
+        });
+        // Rotate drum cylinder forward (+X axis in drumGroup local space) so the white leather drumhead faces East (+X) across Hồ Sen Bộ!
+        drumRaw.rotation.x = Math.PI * 0.42;
+        const idrum = new THREE.Group();
+        idrum.add(drumRaw);
+        const rawBox = new THREE.Box3().setFromObject(idrum);
+        const rawSz = rawBox.getSize(new THREE.Vector3());
+        const scale = 1.48 / Math.max(0.05, rawSz.x, rawSz.y, rawSz.z);
+        idrum.scale.setScalar(scale);
         const db = new THREE.Box3().setFromObject(idrum);
-        idrum.position.set(-(db.min.x + db.max.x) / 2, 1.12 - db.min.y, -(db.min.z + db.max.z) / 2);
+        idrum.position.set(-(db.min.x + db.max.x) / 2, 0.72 - db.min.y, -(db.min.z + db.max.z) / 2);
         this.interiorDrumAnchor.group.add(idrum);
       }
+
+      // 11. Carved Gilded Long Trụ framing the wide Grand Chánh Điện Nave
       if (this.archMeshCache.long_tru) {
         for (const ph of this.longTruPlaceholders) {
           for (const p of ph.replaceParts) if (p.parent) p.parent.remove(p);
-          const ltModel = this.fitProp(this.archMeshCache.long_tru, 7.45);
+          const ltModel = this.fitProp(this.archMeshCache.long_tru, 6.15);
           ltModel.rotation.y = ph.sideSign < 0 ? 0.35 : -0.35;
           const lb = new THREE.Box3().setFromObject(ltModel);
-          ltModel.position.set(-(lb.min.x + lb.max.x) / 2, 0.65 - lb.min.y, -(lb.min.z + lb.max.z) / 2);
+          ltModel.position.set(-(lb.min.x + lb.max.x) / 2, 0.44 - lb.min.y, -(lb.min.z + lb.max.z) / 2);
           ph.group.add(ltModel);
         }
       }
+
+      // 12. Hanging Spiral Incense Coils & Cặp Hạc Rùa Đồng on Tam Bảo
       if (this.propMeshCache.nhang_khoanh_dong && this.spiralIncenseAnchors?.length) {
         for (const anc of this.spiralIncenseAnchors) {
           while (anc.children.length > 0) anc.remove(anc.children[0]);
-          const coil = this.fitProp(this.propMeshCache.nhang_khoanh_dong, 1.05);
+          const coil = this.fitProp(this.propMeshCache.nhang_khoanh_dong, 1.02);
           const cb = new THREE.Box3().setFromObject(coil);
           coil.position.set(-(cb.min.x + cb.max.x) / 2, -cb.max.y, -(cb.min.z + cb.max.z) / 2);
           anc.add(coil);
@@ -713,8 +808,8 @@ export const glbLoadingMethods = {
         while (this.craneTortoiseAnchor.children.length > 0) {
           this.craneTortoiseAnchor.remove(this.craneTortoiseAnchor.children[0]);
         }
-        for (const cx of [-2.8, 2.8]) {
-          const crane = this.fitProp(this.propMeshCache.cap_hac_rua, 1.75);
+        for (const cx of [-2.85, 2.85]) {
+          const crane = this.fitProp(this.propMeshCache.cap_hac_rua, 1.65);
           const cb = new THREE.Box3().setFromObject(crane);
           crane.position.set(cx - (cb.min.x + cb.max.x) / 2, -cb.min.y, -(cb.min.z + cb.max.z) / 2);
           crane.rotation.y = cx < 0 ? 0.16 : -0.16;
@@ -925,18 +1020,18 @@ export const glbLoadingMethods = {
 
     // Place five-fruit tray (mam_ngu_qua), wooden fish (mo_go), and incense bowl (ban_tho) on Tam Bảo Altar
     if (this.propMeshCache.mam_ngu_qua && this.tamBaoAltarGroup) {
-      const tray = fitProp(this.propMeshCache.mam_ngu_qua, 0.78);
-      tray.position.set(-1.4, 1.4, 1.2);
+      const tray = fitProp(this.propMeshCache.mam_ngu_qua, 0.72);
+      tray.position.set(-1.35, 1.26, 0.88);
       this.tamBaoAltarGroup.add(tray);
     }
     if (this.propMeshCache.mo_go && this.tamBaoAltarGroup) {
-      const mogo = fitProp(this.propMeshCache.mo_go, 0.62);
-      mogo.position.set(1.4, 1.4, 1.2);
+      const mogo = fitProp(this.propMeshCache.mo_go, 0.56);
+      mogo.position.set(1.35, 1.26, 0.88);
       this.tamBaoAltarGroup.add(mogo);
     }
     if (this.propMeshCache.ban_tho && this.tamBaoAltarGroup) {
-      const bowl = fitProp(this.propMeshCache.ban_tho, 0.75);
-      bowl.position.set(0, 1.4, 1.35);
+      const bowl = fitProp(this.propMeshCache.ban_tho, 0.7);
+      bowl.position.set(0, 1.26, 0.96);
       this.tamBaoAltarGroup.add(bowl);
     }
   },

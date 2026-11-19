@@ -128,14 +128,14 @@ export const shellDomMethods = {
         </div>
 
         <nav id="interior-zone-bar" class="interior-zone-bar" style="display:none;" aria-label="Khám phá Chùa Chính Hình Vuông">
-          <button type="button" class="walk-chip-btn active" data-interior-zone="day_ban_tho_phai">1. Lối Phải · Dải Bàn Thờ</button>
+          <button type="button" class="walk-chip-btn active" data-interior-zone="day_ban_tho_phai">1. Lối Phải · 8 Bàn Thờ Phật</button>
           <button type="button" class="walk-chip-btn" data-interior-zone="nghin_mat_nghin_tay">🙏 Nghìn Mắt Nghìn Tay</button>
           <button type="button" class="walk-chip-btn" data-interior-zone="cho_ngu_cua_phat">🪷 Chỗ Ngủ Của Phật</button>
-          <button type="button" class="walk-chip-btn" data-interior-zone="chanh_dien">2. Cạnh Trên · Chính Điện</button>
+          <button type="button" class="walk-chip-btn" data-interior-zone="chanh_dien">2. Cạnh Trái · Chính Điện &amp; 18 La Hán</button>
           <button type="button" class="walk-chip-btn" id="btn-interior-blessing-tower" title="Tháp Đèn Dược Sư Vạn Phật · Ghi Tên Cầu Phước">🏮 Tháp Cầu Phước</button>
           <button type="button" class="walk-chip-btn" data-interior-zone="ho_sen_bo">3. Giữa Chùa · Hồ Sen Bộ</button>
-          <button type="button" class="walk-chip-btn" data-interior-zone="hanh_lang_trai">4. Cạnh Trái · 18 La Hán &amp; Tổ</button>
-          <button type="button" class="walk-chip-btn" data-interior-zone="hanh_lang_duoi">5. Cạnh Dưới · Hộ Pháp</button>
+          <button type="button" class="walk-chip-btn" data-interior-zone="hanh_lang_trai">4. Cạnh Trên · Tổ Đường</button>
+          <button type="button" class="walk-chip-btn" data-interior-zone="hanh_lang_duoi">5. Cạnh Dưới · Hành Lang</button>
           <button type="button" class="walk-chip-btn" data-interior-zone="trai_duong">🪑 Phòng Khách · Kinh Sách</button>
           <button type="button" class="walk-chip-btn" id="btn-interior-cutaway" title="Mặt cắt 3D toàn cảnh mặt bằng Hình Vuông &amp; Hồ Sen Bộ">✂️ Mặt cắt 3D</button>
           <button type="button" class="walk-chip-btn" id="btn-interior-history" title="Đối chiếu tư liệu Tôn tượng Tam Bảo">📜 Tư liệu</button>

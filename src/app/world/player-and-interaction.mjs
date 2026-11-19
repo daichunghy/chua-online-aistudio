@@ -185,21 +185,17 @@ export const playerAndInteractionMethods = {
     if (this.inInterior) {
       const px = this.playerState.x;
       const pz = this.playerState.z;
-      const maxCamX = 24.1;
-      cx = Math.max(-20.05, Math.min(maxCamX, cx));
-      cz = Math.max(-20.05, Math.min(20.05, cz));
-      // Keep camera inside the active gallery corridor so courtyard balustrades (±10.6) & lattice doors (-12.45) never occlude altars
-      if (px > 10.9 && px <= 24.1 && Math.abs(pz) < 10.4 && cx < 11.15) {
+      const maxCamX = 31.1;
+      cx = Math.max(-35.6, Math.min(maxCamX, cx));
+      cz = Math.max(-37.2, Math.min(20.05, cz));
+      // Keep camera inside the active gallery corridor or Grand Chánh Điện Hall so walls/doors never occlude altars
+      if (px > 10.9 && px <= 31.1 && cx < 11.15 && Math.sin(lookAngle) > 0.25) {
         cx = 11.15;
-      } else if (px > 10.9 && px <= 24.1 && pz >= 10.4 && cx < 11.15 && Math.sin(lookAngle) > 0.35) {
-        cx = 11.15;
-      } else if (px < -10.9 && cx > -11.15 && Math.sin(lookAngle) < -0.35) {
-        cx = -11.15;
+      } else if (px < -15.4 && cx > -15.65 && Math.sin(lookAngle) < -0.25) {
+        cx = -15.65;
       }
-      if (pz < -12.65 && Math.abs(px) < 10.2 && cz > -12.78) {
-        cz = -12.78;
-      } else if (pz > 10.9 && Math.abs(px) < 10.2 && cz < 11.15 && Math.cos(lookAngle) > 0.35) {
-        cz = 11.15;
+      if (px >= -15.2 && px <= 10.6 && cz < -20.15) {
+        cz = -20.15;
       }
     }
     this.camera.position.set(cx, camHeight, cz);
@@ -226,36 +222,33 @@ export const playerAndInteractionMethods = {
       const px = this.playerState.x;
       const pz = this.playerState.z;
       let intPrompt = null;
-      if (Math.hypot(px - 20.2, pz - 2.0) <= 3.2) {
+      if (Math.hypot(px - 20.4, pz - 6.2) <= 3.4) {
         intPrompt = {
           kind: 'nghin_mat_nghin_tay',
           label: '🙏 [E] Chiêm Bái Tượng Phật Nghìn Mắt Nghìn Tay'
         };
-      } else if (Math.hypot(px - 20.1, pz - -6.5) <= 3.2) {
+      } else if (Math.hypot(px - 20.4, pz - -6.6) <= 3.4) {
         intPrompt = {
           kind: 'cho_ngu_cua_phat',
           label: '🪷 [E] Chiêm Bái Chỗ Ngủ Của Phật · Phật Nhập Niết Bàn'
         };
-      } else if (Math.hypot(px - -2.95, pz - -11.65) <= 3.6) {
+      } else if (Math.hypot(px - -13.6, pz - -4.8) <= 3.6) {
         intPrompt = {
           kind: 'blessing_tower',
           label: '🏮 [E] Tháp Đèn Cầu An · Ghi Tên Cầu Phước'
         };
+      } else if (Math.hypot(px - -13.6, pz - 4.8) <= 3.6) {
+        intPrompt = {
+          kind: 'trong_bat_nha',
+          label: '🥁 [E] Khởi Hồi Trống Bát Nhã Ngoài Cửa Chánh Điện'
+        };
       } else if (
-        Math.hypot(px - 6.8, pz - -14.4) <= 2.85 ||
-        Math.hypot(px - 2.65, pz - -15.2) <= 2.45
+        Math.hypot(px - -29.8, pz - -7.2) <= 3.4 ||
+        Math.hypot(px - -29.8, pz - 7.2) <= 3.2
       ) {
         intPrompt = {
           kind: 'chanh_dien_bell',
-          label: '🔔 [E] Thỉnh Đại Hồng Chung · Chuông Gia Trì'
-        };
-      } else if (
-        Math.hypot(px - 2.95, pz - -11.55) <= 3.1 ||
-        Math.hypot(px - -2.65, pz - -15.2) <= 2.45
-      ) {
-        intPrompt = {
-          kind: 'trong_bat_nha',
-          label: '🥁 [E] Khởi Hồi Trống Bát Nhã · Gõ Mõ'
+          label: '🔔 [E] Thỉnh Đại Hồng Chung · Chuông Gia Trì Chánh Điện'
         };
       }
       const prevKey = this.nearestInteractPrompt ? this.nearestInteractPrompt.kind : '';

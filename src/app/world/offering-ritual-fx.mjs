@@ -21,9 +21,16 @@ const EXTERIOR_BURNERS = [
 ];
 
 const INTERIOR_BURNERS = [
-  { x: 0.0, y: 1.44, z: -17.05 }, // Bàn thờ Tam Bảo
-  { x: -14.8, y: 1.24, z: -17.45 }, // Bàn thờ Tổ Đạt Ma
-  { x: 14.8, y: 1.24, z: -17.45 } // Bàn thờ Quán Âm Đông Bắc
+  { x: -32.24, y: 1.38, z: 0.0 }, // Bàn thờ Tam Bảo (Chánh Điện chính cạnh Tây)
+  { x: -2.0, y: 1.36, z: -18.83 }, // Bàn thờ Tổ Đạt Ma (Tổ Đường cạnh Bắc)
+  { x: 22.42, y: 1.24, z: 12.6 }, // Hộ Pháp Vi Đà
+  { x: 22.42, y: 1.24, z: 6.2 }, // Phật Bà Nghìn Mắt Nghìn Tay
+  { x: 22.42, y: 1.24, z: -0.2 }, // Quán Thế Âm Nam Hải
+  { x: 22.36, y: 1.18, z: -6.6 }, // Chỗ Ngủ Của Phật
+  { x: 22.42, y: 1.24, z: -13.0 }, // Phật A Di Đà
+  { x: 22.42, y: 1.24, z: -19.4 }, // Phật Di Lặc
+  { x: 22.42, y: 1.24, z: -25.8 }, // Phật Dược Sư
+  { x: 22.42, y: 1.24, z: -32.2 } // Tiêu Diện Đại Sĩ
 ];
 
 function findNearestPoint(px, pz, list, maxDist = Infinity) {

@@ -246,16 +246,18 @@ export const timeAndInteriorMethods = {
 
   focusInteriorArhat(arhatIdx = 0) {
     const idx = Math.max(0, Math.min(17, Number(arhatIdx) || 0));
-    const ax = -18.5;
-    const az = -11.9 + idx * 1.5;
+    const isNorth = idx < 9;
+    const colIdx = idx % 9;
+    const ax = -17.6 - colIdx * 1.8;
+    const az = isNorth ? -10.55 : 10.55;
     if (!this.inInterior) {
       this.toggleInterior(true, 'right');
     }
     this.ensureInteriorAssetsLoaded().catch(() => {});
     this.cancelAutoWalk();
     this.playerElevationY = 0;
-    const px = -15.0;
-    const pz = az;
+    const px = ax;
+    const pz = isNorth ? -7.2 : 7.2;
     const yaw = Math.atan2(ax - px, az - pz);
     this.playerState.x = px;
     this.playerState.z = pz;
@@ -278,8 +280,6 @@ export const timeAndInteriorMethods = {
       return true;
     }
     this.lastDoorSide = 'right';
-    // Walk straight down the widened tree-shaded lane (x = 41.8) to the end of the road (z = -14.5),
-    // then turn LEFT (-X) onto the widened Shoe-Removal Veranda (x = 38.6 -> 35.6) and step through the wooden door!
     const verandaApproachX = 38.6;
     const verandaZ = -14.5;
     const dist = Math.hypot(this.playerState.x - verandaApproachX, this.playerState.z - verandaZ);
@@ -332,7 +332,7 @@ export const timeAndInteriorMethods = {
   exitInteriorGradual(side = null) {
     if (!this.inInterior) return false;
     this.cancelAutoWalk();
-    if (side === 'left' || side === 'right') {
+    if (side === 'left' || side === 'right' || side === 'north_buddha') {
       this.lastDoorSide = side;
     }
     this._doorCooldownUntil = performance.now() + 2400;
@@ -371,7 +371,7 @@ export const timeAndInteriorMethods = {
     this.cancelAutoWalk();
     this.interiorTransition = null;
     this.onTransitionFade(false);
-    if (side === 'left' || side === 'right') {
+    if (side === 'left' || side === 'right' || side === 'north_buddha') {
       this.lastDoorSide = side;
     }
     this._doorCooldownUntil = performance.now() + 2200;
@@ -387,17 +387,24 @@ export const timeAndInteriorMethods = {
     }
     if (this.inInterior) {
       this.applyInteriorAtmosphere();
-      this.playerState.x = 14.5;
-      this.playerState.z = 16.0;
-      const startYaw = Math.PI - 0.34;
+      this.playerState.x = 15.2;
+      this.playerState.z = 16.5;
+      const startYaw = Math.PI - 0.18;
       this.playerState.yaw = startYaw;
       this.cameraBaseYaw = startYaw;
     } else {
       this.setTimeOfDay(this.timeOfDay, false);
-      this.playerState.x = 38.8;
-      this.playerState.z = -14.5;
-      this.playerState.yaw = Math.PI * 0.5;
-      this.cameraBaseYaw = Math.PI * 0.5;
+      if (this.lastDoorSide === 'north_buddha') {
+        this.playerState.x = -24.5;
+        this.playerState.z = -10.5;
+        this.playerState.yaw = Math.PI;
+        this.cameraBaseYaw = Math.PI;
+      } else {
+        this.playerState.x = 38.8;
+        this.playerState.z = -14.5;
+        this.playerState.yaw = Math.PI * 0.5;
+        this.cameraBaseYaw = Math.PI * 0.5;
+      }
     }
     this.cameraAzimuthOffset = 0;
     this.syncPlayerTransform();
@@ -428,11 +435,11 @@ export const timeAndInteriorMethods = {
     if (!this.inInterior) return 'exterior';
     const px = this.playerState.x;
     const pz = this.playerState.z;
-    if (px > 18.8) return 'trai_duong';
+    if (px > 24.4) return 'trai_duong';
     if (Math.abs(px) < 10.6 && Math.abs(pz) < 10.6) return 'ho_sen_bo';
-    if (pz <= -12.0 && px > -11.5 && px < 12.2) return 'chanh_dien';
+    if (px <= -10.6 && Math.abs(pz) <= 12.2) return 'chanh_dien';
     if (px >= 10.6) return 'day_ban_tho_phai';
-    if (px <= -10.6 && pz < 14.5) return 'hanh_lang_trai';
+    if (pz <= -10.6 && px > -15.5 && px < 10.6) return 'hanh_lang_trai';
     return 'hanh_lang_duoi';
   },
 
@@ -445,51 +452,53 @@ export const timeAndInteriorMethods = {
     this.cancelAutoWalk();
     this.playerElevationY = 0;
     if (zoneKey === 'day_ban_tho_phai') {
-      this.playerState.x = 15.2;
-      this.playerState.z = 16.0;
-      const yaw = Math.PI - 0.34;
+      this.playerState.x = 15.8;
+      this.playerState.z = 16.5;
+      const yaw = Math.PI - 0.16;
       this.playerState.yaw = yaw;
       this.cameraBaseYaw = yaw;
     } else if (zoneKey === 'nghin_mat_nghin_tay') {
       this.playerState.x = 17.6;
-      this.playerState.z = 2.0;
+      this.playerState.z = 6.2;
       this.playerState.yaw = Math.PI / 2;
       this.cameraBaseYaw = Math.PI / 2;
     } else if (zoneKey === 'cho_ngu_cua_phat') {
-      this.playerState.x = 17.5;
-      this.playerState.z = -6.5;
+      this.playerState.x = 17.6;
+      this.playerState.z = -6.6;
       this.playerState.yaw = Math.PI / 2;
       this.cameraBaseYaw = Math.PI / 2;
     } else if (zoneKey === 'ho_sen_bo') {
-      this.playerState.x = -5.4;
-      this.playerState.z = 6.8;
-      const lookYaw = Math.atan2(0 - -5.4, 0 - 6.8);
+      // Looking West across Hồ Sen Bộ & Hòn Non Bộ straight at the Chánh Điện wooden doorway, shoe racks & Trống Bát Nhã!
+      this.playerState.x = 5.4;
+      this.playerState.z = 0.0;
+      const lookYaw = -Math.PI / 2;
       this.playerState.yaw = lookYaw;
       this.cameraBaseYaw = lookYaw;
     } else if (zoneKey === 'hanh_lang_trai') {
-      this.playerState.x = -14.8;
-      this.playerState.z = -14.2;
+      // Wide, uncluttered North Gallery facing Ban Thờ Tổ Sư Đạt Ma
+      this.playerState.x = -2.0;
+      this.playerState.z = -14.8;
       const yaw = Math.PI;
       this.playerState.yaw = yaw;
       this.cameraBaseYaw = yaw;
     } else if (zoneKey === 'hanh_lang_duoi') {
-      this.playerState.x = -4.2;
-      this.playerState.z = 14.8;
-      const yaw = -0.22;
+      this.playerState.x = -3.2;
+      this.playerState.z = 15.0;
+      const yaw = 0.0;
       this.playerState.yaw = yaw;
       this.cameraBaseYaw = yaw;
     } else if (zoneKey === 'trai_duong') {
-      this.playerState.x = 17.6;
-      this.playerState.z = 13.5;
+      this.playerState.x = 25.8;
+      this.playerState.z = 12.5;
       this.playerElevationY = 0;
-      this.playerState.yaw = Math.PI * 0.45;
-      this.cameraBaseYaw = Math.PI * 0.45;
+      this.playerState.yaw = Math.PI * 0.44;
+      this.cameraBaseYaw = Math.PI * 0.44;
     } else {
-      // Top Edge of Square = Chính Điện Lễ Phật
-      this.playerState.x = 0.0;
-      this.playerState.z = -14.6;
-      this.playerState.yaw = Math.PI;
-      this.cameraBaseYaw = Math.PI;
+      // Inside Grand West Chánh Điện Hall facing Ban Thờ Tam Bảo, Bao Lam, Long Trụ & 18 La Hán
+      this.playerState.x = -19.2;
+      this.playerState.z = 0.0;
+      this.playerState.yaw = -Math.PI / 2;
+      this.cameraBaseYaw = -Math.PI / 2;
     }
     this.playerState.moving = false;
     this.cameraAzimuthOffset = 0;

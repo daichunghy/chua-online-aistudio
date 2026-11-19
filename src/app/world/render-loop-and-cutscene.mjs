@@ -140,11 +140,18 @@ export const renderLoopAndCutsceneMethods = {
         this.setTimeOfDay(this.timeOfDay, false);
         this.playerElevationY = 0;
         this._doorCooldownUntil = performance.now() + 2400;
-        this.playerState.x = 38.8;
-        this.playerState.z = -14.5;
-        this.playerState.yaw = Math.PI * 0.5;
+        if (tr.side === 'north_buddha') {
+          this.playerState.x = -24.5;
+          this.playerState.z = -10.5;
+          this.playerState.yaw = Math.PI;
+          this.cameraBaseYaw = Math.PI;
+        } else {
+          this.playerState.x = 38.8;
+          this.playerState.z = -14.5;
+          this.playerState.yaw = Math.PI * 0.5;
+          this.cameraBaseYaw = Math.PI * 0.5;
+        }
         this.playerState.moving = false;
-        this.cameraBaseYaw = Math.PI * 0.5;
         this.cameraAzimuthOffset = 0;
         this.onInteriorStateChange(false);
         this.onTransitionFade(false);

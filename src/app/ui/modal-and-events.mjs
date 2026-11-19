@@ -169,36 +169,36 @@ export const modalAndEventsMethods = {
         this.highlightInteriorZoneChip(zone);
         const zoneNotes = {
           day_ban_tho_phai: [
-            '1. Sảnh Tiếp Khách · Hành Lang Phải Rộng Thoáng',
-            'Lối vào góc phải rộng mở với Tủ Kinh Sách Vĩnh Tràng, bộ bàn ghế Trường Kỷ tiếp khách, băng ghế nghỉ chân và 2 ban thờ thanh tịnh dọc tường Đông.'
+            '1. Hành Lang Phải Mở Rộng · 8 Ban Thờ Phật & Lối Thông Ra Vườn Tượng',
+            'Lối đi dài rộng thoáng với 8 ban thờ Phật & Bồ Tát thếp vàng bên tay phải, phòng khách – tủ kinh sách mở rộng và cổng vòm cuối đường thông thẳng ra vườn tượng Phật ngoài trời.'
           ],
           nghin_mat_nghin_tay: [
             '🙏 Ban Tượng Phật Nghìn Mắt Nghìn Tay',
-            'Tôn tượng Đức Thiên Thủ Thiên Nhãn Quán Thế Âm thếp vàng uy nghiêm bên vách Đông.'
+            'Tôn tượng Đức Thiên Thủ Thiên Nhãn Quán Thế Âm thếp vàng uy nghiêm tại dải bàn thờ hành lang Đông.'
           ],
           cho_ngu_cua_phat: [
             '🪷 Chỗ Ngủ Của Phật · Đức Phật Nhập Niết Bàn',
-            'Khám thờ gỗ căm xe chạm trổ cùng rèm gấm đỏ tôn trí Đức Phật an nhiên Cát Tường Ngoạ.'
+            'Khám thờ long sàng chạm trổ thếp vàng tôn trí Đức Phật an nhiên Cát Tường Ngoạ.'
           ],
           chanh_dien: [
-            '2. Cạnh Trên Hình Vuông · Chính Điện Lễ Phật',
-            'Đại Hùng Bửu Điện với Bàn Thờ Tam Bảo, 3 bồ đoàn quỳ lạy Phật, Tháp Đèn Cầu An và Trống Bát Nhã đặt bên cửa vào đối diện Hòn Non Bộ.'
+            '2. Cạnh Trái Qua Hồ Sen Bộ · Chính Điện Đại Hùng Bửu Điện',
+            'Cửa gỗ bức bàn vào Chánh Điện với kệ bỏ dép, Trống Bát Nhã & Tháp Đèn Cầu An bên ngoài; bên trong là khung Chánh Điện vì kèo gỗ lớn, Bao Lam, Long Trụ, Ban Thờ Tam Bảo và 18 Vị La Hán hai bên vách.'
           ],
           ho_sen_bo: [
             '3. Giữa Hình Vuông · Hồ Sen Bộ & Hòn Non Bộ',
-            'Khoảng sân mở chính giữa bốn dãy vòm vàng Pháp–Việt với Hồ Sen nở rộ, cá Koi bơi lội, cầu đá và Hòn Non Bộ cổ kính.'
+            'Khoảng sân thiên tỉnh mở chính giữa bốn dãy vòm vàng Pháp–Việt nhìn thẳng sang cửa gỗ vào Chánh Điện, kệ bỏ dép và Trống Bát Nhã.'
           ],
           hanh_lang_trai: [
-            '4. Cạnh Trái Hình Vuông · Tổ Đường & 18 Vị La Hán',
-            'Tổ Đường Sơ Tổ Bồ Đề Đạt Ma và dãy 18 vị La Hán sơn son thếp vàng dọc hành lang phía Tây.'
+            '4. Cạnh Trên Hình Vuông · Tổ Đường Rộng Thoáng',
+            'Hành lang phía Bắc thông thoáng với Ban Thờ Sơ Tổ Bồ Đề Đạt Ma và Chư Tổ Khai Sơn.'
           ],
           hanh_lang_duoi: [
-            '5. Cạnh Dưới Hình Vuông · Vi Đà Hộ Pháp & Bia Cổ Tự',
-            'Hành lang phía Nam khép kín vòng dạo hình vuông với Ban Hộ Pháp Vi Đà, Tiêu Diện Đại Sĩ và Bia Cổ Tự Vĩnh Tràng (1849).'
+            '5. Cạnh Dưới Hình Vuông · Hành Lang Nam',
+            'Hành lang phía Nam rộng rãi kết nối lối vào góc phải sang Hồ Sen Bộ và cửa vào Chánh Điện.'
           ],
           trai_duong: [
-            '🪑 Phòng Tiếp Khách · Tủ Kinh Sách Vĩnh Tràng',
-            'Không gian sảnh rộng bên vách Đông với cửa sổ vòm lá sách xanh, tủ kinh sách, bộ trường kỷ và ghế gỗ nghỉ chân.'
+            '🪑 Phòng Tiếp Khách · Tủ Kinh Sách Mở Rộng Bên Phải',
+            'Không gian mở rộng thoáng đãng bên tay phải dải bàn thờ với cửa sổ vòm lá sách xanh, tủ kinh sách, bộ trường kỷ và ghế nghỉ chân.'
           ]
         };
         const msg = zoneNotes[zone];
