@@ -102,8 +102,6 @@ export function buildSquareChanhDienInterior(world, THREE) {
   world.interiorTraiDuongClickTargets = [];
   world.interiorBellClickTargets = [];
   world.interiorDrumClickTargets = [];
-  world.blessingTowerClickTargets = [];
-  world.blessingTowerLampMeshes = [];
   world.longTruClickTargets = [];
   world.nghinMatClickTargets = [];
   world.choNguClickTargets = [];
@@ -1063,7 +1061,7 @@ export function buildSquareChanhDienInterior(world, THREE) {
       z: 13.0,
       title: 'HỘ PHÁP VI ĐÀ TÔN THIÊN',
       desc: 'Tôn tượng Đức Hộ Pháp Vi Đà trấn giữ cửa thiền môn, hộ trì Chánh Pháp ngay đầu dải bàn thờ lối vào.',
-      targetH: 2.05,
+      targetH: 2.45,
       matKind: 'antique_bronze'
     },
     {
@@ -1071,7 +1069,7 @@ export function buildSquareChanhDienInterior(world, THREE) {
       z: 4.2,
       title: 'PHẬT BÀ NGHÌN MẮT NGHÌN TAY · THIÊN THỦ THIÊN NHÃN',
       desc: 'Ngàn mắt soi thấu nỗi khổ thế gian, ngàn tay từ bi cứu độ chúng sinh — tôn tượng thếp vàng rực rỡ.',
-      targetH: 2.38,
+      targetH: 2.68,
       matKind: 'keep_gold_pbr'
     },
     {
@@ -1079,7 +1077,7 @@ export function buildSquareChanhDienInterior(world, THREE) {
       z: -4.6,
       title: 'QUÁN THẾ ÂM NAM HẢI BỒ TÁT',
       desc: 'Đức Quán Thế Âm Bồ Tát tay cầm tịnh bình cam lồ rưới mát tâm tư khách hành hương.',
-      targetH: 2.08,
+      targetH: 2.45,
       matKind: 'gilded_gold'
     },
     {
@@ -1087,7 +1085,7 @@ export function buildSquareChanhDienInterior(world, THREE) {
       z: -13.4,
       title: 'CHỖ NGỦ CỦA PHẬT · ĐỨC PHẬT NHẬP NIẾT BÀN',
       desc: 'Khám thờ long sàng sơn son thếp vàng tôn trí kim thân Đức Phật an nhiên thị hiện Cát Tường Ngoạ.',
-      targetW: 2.62,
+      targetW: 2.95,
       matKind: 'keep_gold_pbr',
       isBed: true
     },
@@ -1096,7 +1094,7 @@ export function buildSquareChanhDienInterior(world, THREE) {
       z: -22.2,
       title: 'ĐỨC PHẬT A DI ĐÀ TIẾP DẪN',
       desc: 'Tôn tượng Đức Phật A Di Đà phóng quang tiếp dẫn chúng sinh về miền Cực Lạc thanh tịnh.',
-      targetH: 2.12,
+      targetH: 2.52,
       matKind: 'gilded_gold'
     },
     {
@@ -1104,7 +1102,7 @@ export function buildSquareChanhDienInterior(world, THREE) {
       z: -31.0,
       title: 'ĐỨC PHẬT DI LẶC HOAN HỶ',
       desc: 'Đức Phật Di Lặc nụ cười hoan hỷ bao dung, mang lại bình an và phước lành cho muôn nhà.',
-      targetH: 1.88,
+      targetH: 2.28,
       matKind: 'gilded_gold'
     },
     {
@@ -1112,7 +1110,7 @@ export function buildSquareChanhDienInterior(world, THREE) {
       z: -39.8,
       title: 'ĐỨC PHẬT DƯỢC SƯ LƯU LY QUANG',
       desc: 'Đức Phật Dược Sư phát mười hai đại nguyện tiêu trừ bệnh khổ, ban phúc thọ an khang.',
-      targetH: 1.92,
+      targetH: 2.35,
       matKind: 'gilded_gold'
     },
     {
@@ -1120,7 +1118,7 @@ export function buildSquareChanhDienInterior(world, THREE) {
       z: -48.6,
       title: 'TIÊU DIỆN ĐẠI SĨ · HỘ TRÌ CỬA BẮC',
       desc: 'Tôn tượng Tiêu Diện Đại Sĩ uy nghiêm hàng phục ma chướng ngay trước lối mở ra vườn tượng Phật ngoài trời.',
-      targetH: 2.02,
+      targetH: 2.45,
       matKind: 'antique_bronze'
     }
   ];
@@ -1140,12 +1138,12 @@ export function buildSquareChanhDienInterior(world, THREE) {
     sGrp.add(altarBase);
 
     for (const fx of [-altarW / 2 + 0.1, altarW / 2 - 0.1]) {
-      const post = new THREE.Mesh(new THREE.CylinderGeometry(0.068, 0.082, 3.65, 10), baoLamMat);
-      post.position.set(fx, 2.85, -altarD * 0.44);
+      const post = new THREE.Mesh(new THREE.CylinderGeometry(0.068, 0.082, 3.85, 10), baoLamMat);
+      post.position.set(fx, 2.95, -altarD * 0.44);
       sGrp.add(post);
     }
     const topArch = new THREE.Mesh(new THREE.BoxGeometry(altarW + 0.16, 0.22, 0.18), goldLeafMat);
-    topArch.position.set(0, 4.65, -altarD * 0.44);
+    topArch.position.set(0, 4.82, -altarD * 0.44);
     sGrp.add(topArch);
 
     const sign = new THREE.Mesh(
@@ -1162,7 +1160,7 @@ export function buildSquareChanhDienInterior(world, THREE) {
         side: THREE.DoubleSide
       })
     );
-    sign.position.set(0, 4.46, 0.18);
+    sign.position.set(0, 4.62, 0.18);
     sGrp.add(sign);
 
     // GLB Statue Anchor (strictly populated with real sculpted GLB in glb-loading.mjs — ZERO procedural body!)
@@ -1744,74 +1742,8 @@ function buildWestGrandChanhDienAndNorthToDuong(world, THREE, ctx) {
   world.interiorDrumClickTargets.push(drumGroup);
   world.interiorObstacles.push({ x: -13.6, z: 4.8, r: 0.92 });
 
-  // A2. THÁP ĐÈN CẦU AN SYMMETRICALLY ON THE OTHER SIDE OF THE CHÁNH ĐIỆN DOORWAY (x = -13.6, z = -4.8)
-  //     Matches real Chùa Vĩnh Tràng photo image_d3dcebc6.png!
-  const btGroup = new THREE.Group();
-  btGroup.position.set(-13.6, 0, -4.8);
-  btGroup.rotation.y = Math.PI / 2;
-  world.blessingTowerGroup = btGroup;
-
-  const btBase = new THREE.Mesh(new THREE.CylinderGeometry(0.86, 0.96, 0.62, 8), crimsonWoodMat);
-  btBase.position.y = 0.31;
-  btGroup.add(btBase);
-  const btRim = new THREE.Mesh(new THREE.CylinderGeometry(0.92, 0.92, 0.08, 8), goldLeafMat);
-  btRim.position.y = 0.64;
-  btGroup.add(btRim);
-
-  const btBodyAnchor = new THREE.Group();
-  btBodyAnchor.position.set(0, 0.68, 0);
-  btGroup.add(btBodyAnchor);
-  world.blessingTowerBodyAnchor = btBodyAnchor;
-
-  const btCore = new THREE.Group();
-  const btCoreMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.56, 0.64, 2.2, 12), crimsonWoodMat);
-  btCoreMesh.position.y = 1.1;
-  btCore.add(btCoreMesh);
-  btBodyAnchor.add(btCore);
-  world.blessingTowerProceduralCore = btCore;
-
-  // 108 Glowing Dược Sư blessing lamp slots synced with user offerings
-  let slotIdx = 1;
-  for (let tier = 0; tier < 9; tier++) {
-    const ty = 0.88 + tier * 0.22;
-    const rad = 0.62 - tier * 0.012;
-    for (let k = 0; k < 12; k++) {
-      const ang = (k / 12) * Math.PI * 2;
-      const niche = new THREE.Mesh(
-        new THREE.BoxGeometry(0.08, 0.12, 0.04),
-        new THREE.MeshStandardMaterial({
-          color: 0xD89E5C,
-          emissive: 0x7A3212,
-          emissiveIntensity: 0.36,
-          roughness: 0.35
-        })
-      );
-      niche.position.set(Math.cos(ang) * rad, ty, Math.sin(ang) * rad);
-      niche.rotation.y = -ang + Math.PI / 2;
-      niche.userData.slotNumber = slotIdx++;
-      btGroup.add(niche);
-      world.blessingTowerLampMeshes.push(niche);
-    }
-  }
-  const btSign = new THREE.Mesh(
-    new THREE.PlaneGeometry(1.75, 0.36),
-    new THREE.MeshBasicMaterial({
-      map: world.makeSignTexture('🏮 THÁP ĐÈN CẦU AN · GHI TÊN CẦU PHƯỚC', {
-        w: 840,
-        h: 140,
-        bg: '#5B140E',
-        border: '#F5C954',
-        color: '#FFF5D6',
-        size: 29
-      }),
-      side: THREE.DoubleSide
-    })
-  );
-  btSign.position.set(0, 3.45, 0.55);
-  btGroup.add(btSign);
-  g.add(btGroup);
-  world.blessingTowerClickTargets.push(btGroup);
-  world.interiorObstacles.push({ x: -13.6, z: -4.8, r: 0.92 });
+  // Note: Tháp Đèn Cầu An has been relocated outside the front gate of Chánh Điện (exterior plaza at 28.2, 0, 15.2)
+  // along the Buddha's outward facing direction for sunlit clarity and stability.
 
   // =========================================================================================
   // B. INSIDE THE GRAND MAIN CHÁNH ĐIỆN HALL — MỞ RỘNG ĐẠI HÙNG BỬU ĐIỆN 100+ PHẬT TỬ
@@ -1893,11 +1825,11 @@ function buildWestGrandChanhDienAndNorthToDuong(world, THREE, ctx) {
   }
 
   const frontTamQuanSign = new THREE.Mesh(
-    new THREE.PlaneGeometry(8.6, 0.72),
+    new THREE.PlaneGeometry(7.2, 0.64),
     new THREE.MeshBasicMaterial({
-      map: world.makeSignTexture('☀ ĐẠI HÙNG BỬU ĐIỆN · CỬA CHÍNH HƯỚNG RA SÂN TRƯỚC & CỔNG TAM QUAN', {
-        w: 1280,
-        h: 130,
+      map: world.makeSignTexture('☀ CỔNG CHÍNH CHÁNH ĐIỆN · RA SÂN TRƯỚC & THÁP ĐÈN', {
+        w: 1120,
+        h: 120,
         bg: '#4A120E',
         border: '#F3C85A',
         color: '#FFF6DC',
@@ -1906,7 +1838,7 @@ function buildWestGrandChanhDienAndNorthToDuong(world, THREE, ctx) {
       side: THREE.DoubleSide
     })
   );
-  frontTamQuanSign.position.set(0, 6.0, 0.32);
+  frontTamQuanSign.position.set(0, 5.95, 0.32);
   frontTamQuanSign.userData.exitSide = 'front_tam_quan';
   frontTamQuanFacade.add(frontTamQuanSign);
   world.interiorDoorClickTargets.push(frontTamQuanSign);
@@ -1918,6 +1850,20 @@ function buildWestGrandChanhDienAndNorthToDuong(world, THREE, ctx) {
   frontPorchFloor.rotation.x = -Math.PI / 2;
   frontPorchFloor.position.set(0, -0.02, -8.2);
   frontTamQuanFacade.add(frontPorchFloor);
+
+  // Sunlit exterior vista preview of Tháp Đèn Cầu An standing outside the front gate along the Buddha's gaze
+  const vistaTower = new THREE.Group();
+  vistaTower.position.set(4.8, 0, -5.2);
+  const vtBase = new THREE.Mesh(new THREE.CylinderGeometry(0.95, 1.08, 0.72, 8), crimsonWoodMat);
+  vtBase.position.y = 0.36;
+  vistaTower.add(vtBase);
+  const vtBody = new THREE.Mesh(new THREE.CylinderGeometry(0.46, 0.56, 2.35, 10), crimsonWoodMat);
+  vtBody.position.y = 1.9;
+  vistaTower.add(vtBody);
+  const vtRoof = new THREE.Mesh(new THREE.ConeGeometry(0.88, 0.68, 8), goldLeafMat);
+  vtRoof.position.y = 3.35;
+  vistaTower.add(vtRoof);
+  frontTamQuanFacade.add(vistaTower);
 
   const frontSkyVista = new THREE.Mesh(
     new THREE.PlaneGeometry(46.0, 16.0),
@@ -2152,15 +2098,15 @@ function buildWestGrandChanhDienAndNorthToDuong(world, THREE, ctx) {
   rearSubSign.position.set(0, 2.25, -1.72);
   tamBaoGroup.add(rearSubSign);
 
-  // Subtle multi-ring radiant Dharma halo behind the center Buddha (on the front -X facing side)
+  // Subtle multi-ring radiant Dharma halo behind the center Buddha (proportioned for grand 3.35m statue)
   const haloColors = [0xFFD54F, 0xFF9800, 0xE53935, 0x42A5F5, 0x66BB6A];
   haloColors.forEach((col, idx) => {
-    const rOuter = 1.68 - idx * 0.18;
+    const rOuter = 1.98 - idx * 0.2;
     const ring = new THREE.Mesh(
-      new THREE.RingGeometry(rOuter - 0.14, rOuter, 36),
+      new THREE.RingGeometry(rOuter - 0.15, rOuter, 36),
       new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.42, side: THREE.DoubleSide })
     );
-    ring.position.set(0, 3.72, -1.24 + idx * 0.01);
+    ring.position.set(0, 4.25, -1.24 + idx * 0.01);
     tamBaoGroup.add(ring);
   });
 
@@ -2209,19 +2155,19 @@ function buildWestGrandChanhDienAndNorthToDuong(world, THREE, ctx) {
 
   const tamBaoMainAnchor = new THREE.Group();
   tamBaoMainAnchor.position.set(0, 2.52, -0.58);
-  tamBaoMainAnchor.add(makeTamBaoPlaceholder(1.08));
+  tamBaoMainAnchor.add(makeTamBaoPlaceholder(1.48));
   tamBaoGroup.add(tamBaoMainAnchor);
   world.tamBaoMainAnchor = tamBaoMainAnchor;
 
   const tamBaoLeftAnchor = new THREE.Group();
-  tamBaoLeftAnchor.position.set(-2.35, 1.98, -0.35);
-  tamBaoLeftAnchor.add(makeTamBaoPlaceholder(0.82));
+  tamBaoLeftAnchor.position.set(-2.55, 1.98, -0.35);
+  tamBaoLeftAnchor.add(makeTamBaoPlaceholder(1.18));
   tamBaoGroup.add(tamBaoLeftAnchor);
   world.tamBaoLeftAnchor = tamBaoLeftAnchor;
 
   const tamBaoRightAnchor = new THREE.Group();
-  tamBaoRightAnchor.position.set(2.35, 1.98, -0.35);
-  tamBaoRightAnchor.add(makeTamBaoPlaceholder(0.82));
+  tamBaoRightAnchor.position.set(2.55, 1.98, -0.35);
+  tamBaoRightAnchor.add(makeTamBaoPlaceholder(1.18));
   tamBaoGroup.add(tamBaoRightAnchor);
   world.tamBaoRightAnchor = tamBaoRightAnchor;
 

@@ -446,41 +446,36 @@ export const playerAndInteractionMethods = {
           kind: 'cho_ngu_cua_phat',
           label: '🪷 [E] Chiêm Bái Chỗ Ngủ Của Phật · Phật Nhập Niết Bàn'
         };
-      } else if (Math.hypot(px - -13.6, pz - -4.8) <= 3.6) {
-        intPrompt = {
-          kind: 'blessing_tower',
-          label: '🏮 [E] Tháp Đèn Cầu An · Ghi Tên Cầu Phước'
-        };
       } else if (Math.hypot(px - -13.6, pz - 4.8) <= 3.6) {
         intPrompt = {
           kind: 'trong_bat_nha',
           label: '🥁 [E] Khởi Hồi Trống Bát Nhã Ngoài Cửa Chánh Điện'
         };
       } else if (
-        Math.hypot(px - -27.2, pz - -7.8) <= 3.4 ||
+        Math.hypot(px - -27.8, pz - -7.6) <= 3.8 ||
         Math.hypot(px - -27.2, pz - 7.8) <= 3.2
       ) {
         intPrompt = {
           kind: 'chanh_dien_bell',
-          label: '🔔 [E] Thỉnh Đại Hồng Chung · Chuông Gia Trì Chánh Điện'
+          label: '🔔 [E] Nhờ Sư Thầy thỉnh Đại Hồng Chung'
         };
       } else if (px >= 12.2 && px <= 19.0 && pz >= 18.2) {
         intPrompt = {
           kind: 'exit_interior',
           exitSide: 'right',
-          label: '🚪 [E] Ra ngoài sân chùa (Cửa hông)'
+          label: '🚪 [E] Ra Hiên bỏ dép & Sân chùa'
         };
       } else if (px >= 12.2 && px <= 22.0 && pz <= -51.5) {
         intPrompt = {
           kind: 'exit_interior',
           exitSide: 'north_buddha',
-          label: '🚪 [E] Ra vườn Phật Nằm & Bảo Tháp'
+          label: '🚪 [E] Ra Vườn Phật Niết Bàn & Bảo Tháp'
         };
       } else if (px <= -58.2 && Math.abs(pz) <= 6.0) {
         intPrompt = {
           kind: 'exit_interior',
           exitSide: 'front_tam_quan',
-          label: '🚪 [E] Ra sân trước Chánh Điện'
+          label: '🚪 [E] Ra Sân trước Chánh Điện & Tháp Đèn'
         };
       }
       const prevKey = this.nearestInteractPrompt
@@ -584,15 +579,24 @@ export const playerAndInteractionMethods = {
       }
     }
     if (!interactPrompt) {
+      const towerDist = Math.hypot(this.playerState.x - 28.2, this.playerState.z - 15.2);
+      if (towerDist <= 4.6) {
+        interactPrompt = {
+          kind: 'blessing_tower',
+          label: '🏮 [E] Tháp Đèn Cầu An · Ghi Tên Cầu Phước'
+        };
+      }
+    }
+    if (!interactPrompt) {
       if (
         this.playerState.x >= 18.0 &&
-        this.playerState.x <= 28.0 &&
+        this.playerState.x <= 26.8 &&
         this.playerState.z >= 7.2 &&
-        this.playerState.z <= 14.5
+        this.playerState.z <= 13.8
       ) {
         interactPrompt = {
           kind: 'enter_chanh_dien_front',
-          label: '🚪 [E] Vào Chánh Điện (Cửa Trước)'
+          label: '🚪 [E] Vào Chánh Điện (Cổng chính)'
         };
       }
     }
@@ -852,6 +856,13 @@ export const playerAndInteractionMethods = {
         }
       }
     } else {
+      if (this.blessingTowerClickTargets?.length) {
+        const hits = raycaster.intersectObjects(this.blessingTowerClickTargets, true);
+        if (hits.length > 0) {
+          this.onObjectClick('OPEN_BLESSING_TOWER');
+          return;
+        }
+      }
       if (this.streetEncounterClickTargets?.length) {
         const hits = raycaster.intersectObjects(this.streetEncounterClickTargets, false);
         if (hits.length > 0) {

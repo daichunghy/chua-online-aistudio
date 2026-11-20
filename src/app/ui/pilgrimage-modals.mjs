@@ -4,87 +4,100 @@
  * Mixin của ChuaOnlineApp: 4 method (openArrivalPilgrimageModal … highlightInteriorZoneChip).
  * Được gắn vào class trong chua-online-app.mjs qua applyMixins().
  */
-import { CHARACTER_PROFILES, recordSpiritualMilestone, getLocalDateKey, shouldShowDailyDharmaToday, NATIONALITY_PROFILES, getNationalityProfile, PILGRIMAGE_MODES, getPilgrimageMode, getTempleSeasonalContext, createHoaDangLantern, BLESSING_TOWER_CATEGORIES, registerBlessingTowerPrayer } from './shared.mjs';
+import { CHARACTER_PROFILES, recordSpiritualMilestone, getLocalDateKey, shouldShowDailyDharmaToday, getNationalityProfile, getPilgrimageMode, getTempleSeasonalContext, createHoaDangLantern, BLESSING_TOWER_CATEGORIES, registerBlessingTowerPrayer, filterBlessingTowerEntries } from './shared.mjs';
+
+const BLESSING_TOWER_BACKUP_KEY = 'chua_online_blessing_tower_v2';
+
+function charRoleIcon(key) {
+  const icons = {
+    nu: '🪷',
+    nam: '🙏',
+    tre_em: '🌱',
+    co_tu: '🌸',
+    chu_sau: '☕',
+    su_thay: '🔔',
+    du_khach: '🧭'
+  };
+  return icons[key] || '🪷';
+}
 
 export const pilgrimageModalsMethods = {
   openArrivalPilgrimageModal() {
     let draftChar = this.characterModelKey || 'nu';
-    let draftNat = this.nationalityId || 'vn';
-    let draftMode = this.pilgrimageModeId || 'solo';
+    let draftName = this.studentName || 'Phật tử Tâm An';
+    let draftMode = ['solo', 'family', 'group'].includes(this.pilgrimageModeId) ? this.pilgrimageModeId : 'solo';
+    let previewPose = 'Dung';
+
+    const companionOptions = [
+      { id: 'solo', label: '🧘 Một mình' },
+      { id: 'family', label: '👨‍👩‍👧 Gia đình' },
+      { id: 'group', label: '🤝 Nhóm đạo hữu' }
+    ];
 
     const renderArrival = () => {
-      const natObj = getNationalityProfile(draftNat);
-      const modeObj = getPilgrimageMode(draftMode);
-      const seasonal = getTempleSeasonalContext();
-      const vehLabel =
-        modeObj.arrivalVehicle === 'bus'
-          ? '🚌 Xe khách đoàn 45 chỗ'
-          : modeObj.arrivalVehicle === 'van'
-          ? '🚐 Xe gia đình 7 chỗ'
-          : '🚗 Xe ô tô đưa đón';
+      const activeProf = CHARACTER_PROFILES.find((c) => c.key === draftChar) || CHARACTER_PROFILES[0];
 
       this.openModal(
-        '🙏 Kính Chào Quý Khách Đến Chùa Vĩnh Tràng (1849)',
+        'Chọn Nhân Vật Vào Chùa Vĩnh Tràng',
         `
-        <div class="arrival-modal-wrap">
-          <div class="seasonal-festival-banner">
-            <div>
-              <div style="font-size:15px;font-weight:800;color:#FFD875;">${seasonal.isFestivalDay ? '🏮 ' : '🪷 '}${seasonal.activeFestival ? seasonal.activeFestival.name : seasonal.lunarLabel}</div>
-              <div style="font-size:13px;color:#FFF6E5;margin-top:2px;">${seasonal.greeting}</div>
+        <div class="char-select-shell">
+          <div class="char-select-stage">
+            <div class="profile-3d-viewport">
+              <canvas id="arrival-char-3d-canvas"></canvas>
+              <div class="profile-stage-hint">Kéo để xoay 360°</div>
+              <div class="profile-pose-pills">
+                <button type="button" class="profile-pose-btn ${previewPose === 'Dung' ? 'active' : ''}" data-arr-pose="Dung">Đứng</button>
+                <button type="button" class="profile-pose-btn ${previewPose === 'Chắp tay' ? 'active' : ''}" data-arr-pose="Chắp tay">Chắp tay</button>
+                <button type="button" class="profile-pose-btn ${previewPose === 'Quỳ' ? 'active' : ''}" data-arr-pose="Quỳ">Quỳ</button>
+              </div>
             </div>
-            <span class="store-wallet-pill">Cộng hưởng ${seasonal.xpMultiplier}x XP</span>
-          </div>
-
-          <div class="arrival-section-block">
-            <div class="arrival-step-heading">1. Chọn Quốc tịch &amp; Truyền thống Hành hương (6 vùng)</div>
-            <div class="arrival-nat-grid">
-              ${NATIONALITY_PROFILES.map(
-                (n) => `
-                <button type="button" class="arrival-choice-card ${draftNat === n.id ? 'active' : ''}" data-arr-nat="${n.id}">
-                  <div class="arrival-choice-top"><span>${n.flag} ${n.name.split('—')[0].trim()}</span></div>
-                  <div class="arrival-choice-sub">${n.badgeLabel}</div>
-                </button>`
-              ).join('')}
-            </div>
-            <div class="arrival-greeting-box">${natObj.flag} <em>${natObj.greeting}</em></div>
-          </div>
-
-          <div class="arrival-section-block">
-            <div class="arrival-step-heading">2. Chọn Nhân vật 3D của bạn (7 dáng người)</div>
-            <div class="arrival-char-grid">
-              ${CHARACTER_PROFILES.map(
-                (c) => `
-                <button type="button" class="arrival-char-pill ${draftChar === c.key ? 'active' : ''}" data-arr-char="${c.key}">
-                  <strong>${c.name.split('(')[0].trim()}</strong>
-                  <span>${c.heightLabel} · ${c.outfitName.split('(')[0].trim()}</span>
-                </button>`
-              ).join('')}
+            <div class="char-spotlight-info">
+              <div class="char-spotlight-name">${activeProf.name.split('(')[0].trim()}</div>
+              <div class="char-spotlight-meta">${activeProf.heightLabel} · ${activeProf.outfitName.split('(')[0].trim()}</div>
             </div>
           </div>
 
-          <div class="arrival-section-block">
-            <div class="arrival-step-heading">3. Chọn Mục đích &amp; Bạn đồng hành tới chùa (4 chế độ)</div>
-            <div class="arrival-mode-grid">
-              ${PILGRIMAGE_MODES.map(
-                (m) => `
-                <button type="button" class="arrival-mode-card ${draftMode === m.id ? 'active' : ''}" data-arr-mode="${m.id}">
-                  <div class="arrival-mode-title">${m.name}</div>
-                  <div class="arrival-mode-desc">${m.desc}</div>
-                  <div class="arrival-mode-meta">
-                    <span>${m.arrivalVehicle === 'bus' ? '🚌 Xe đoàn' : m.arrivalVehicle === 'van' ? '🚐 Xe gia đình' : '🚗 Xe riêng'}</span>
-                    <span>· ${m.companions.length > 0 ? `${m.companions.length} bạn đồng hành 3D` : 'Đi một mình tĩnh tâm'}</span>
-                  </div>
-                </button>`
-              ).join('')}
+          <div class="char-select-controls">
+            <div class="char-field-group">
+              <label for="arr-player-name" class="char-field-label">Tên hoặc Pháp danh</label>
+              <input id="arr-player-name" type="text" class="char-name-input" maxlength="40" value="${String(draftName).replace(/"/g, '&quot;')}" placeholder="Ví dụ: Phật tử Tâm An" />
             </div>
-          </div>
 
-          <div class="arrival-footer-actions">
-            <button type="button" id="btn-arrival-start-car" class="arrival-primary-btn">
-              ${vehLabel} · Khởi hành tới Chùa Vĩnh Tràng →
+            <div class="char-field-group">
+              <span class="char-field-label">Chọn dáng nhân vật</span>
+              <div class="char-roster-grid">
+                ${CHARACTER_PROFILES.map(
+                  (c) => `
+                  <button type="button" class="char-roster-card ${draftChar === c.key ? 'active' : ''}" data-arr-char="${c.key}">
+                    <span class="char-roster-avatar">${charRoleIcon(c.key)}</span>
+                    <span class="char-roster-text">
+                      <strong>${c.name.split('(')[0].trim()}</strong>
+                      <span>${c.outfitName.split('(')[0].trim()}</span>
+                    </span>
+                  </button>`
+                ).join('')}
+              </div>
+            </div>
+
+            <div class="char-field-group">
+              <span class="char-field-label">Đồng hành</span>
+              <div class="char-companion-row">
+                ${companionOptions
+                  .map(
+                    (opt) => `
+                  <button type="button" class="char-companion-btn ${draftMode === opt.id ? 'active' : ''}" data-arr-mode="${opt.id}">
+                    ${opt.label}
+                  </button>`
+                  )
+                  .join('')}
+              </div>
+            </div>
+
+            <button type="button" id="btn-arrival-enter-direct" class="char-primary-cta">
+              🪷 Vào Chùa Vĩnh Tràng
             </button>
-            <button type="button" id="btn-arrival-skip-direct" class="arrival-secondary-btn">
-              Vào thẳng sân chùa (Bỏ qua xe)
+            <button type="button" id="btn-arrival-start-car" class="char-subtle-link-btn">
+              Xem hoạt cảnh xe đưa tới cổng chùa
             </button>
           </div>
         </div>
@@ -92,49 +105,74 @@ export const pilgrimageModalsMethods = {
         { variant: 'scroll' }
       );
 
-      document.querySelectorAll('[data-arr-nat]').forEach((btn) => {
+      this.mountProfileCharacterStage?.('arrival-char-3d-canvas', {
+        charKey: draftChar,
+        pose: previewPose
+      });
+
+      document.querySelectorAll('[data-arr-pose]').forEach((btn) => {
         btn.addEventListener('click', () => {
-          draftNat = btn.getAttribute('data-arr-nat') || 'vn';
-          const prof = getNationalityProfile(draftNat);
-          if (prof?.preferredCharKey) draftChar = prof.preferredCharKey;
-          this.playMokugyoTap();
-          renderArrival();
+          draftName = document.getElementById('arr-player-name')?.value ?? draftName;
+          previewPose = btn.getAttribute('data-arr-pose') || 'Dung';
+          this.mountProfileCharacterStage?.('arrival-char-3d-canvas', {
+            charKey: draftChar,
+            pose: previewPose
+          });
+          document.querySelectorAll('[data-arr-pose]').forEach((b) => b.classList.toggle('active', b === btn));
         });
       });
 
       document.querySelectorAll('[data-arr-char]').forEach((btn) => {
         btn.addEventListener('click', () => {
+          draftName = document.getElementById('arr-player-name')?.value ?? draftName;
           draftChar = btn.getAttribute('data-arr-char') || 'nu';
-          this.playMokugyoTap();
+          this.playMokugyoTap?.();
           renderArrival();
         });
       });
 
       document.querySelectorAll('[data-arr-mode]').forEach((btn) => {
         btn.addEventListener('click', () => {
+          draftName = document.getElementById('arr-player-name')?.value ?? draftName;
           draftMode = btn.getAttribute('data-arr-mode') || 'solo';
-          this.playMokugyoTap();
+          this.playMokugyoTap?.();
           renderArrival();
         });
       });
 
       const commitSelection = () => {
+        const cleanName = String(document.getElementById('arr-player-name')?.value || draftName || '').trim();
+        this.studentName = cleanName || 'Phật tử Tâm An';
         this.characterModelKey = draftChar;
-        this.nationalityId = draftNat;
         this.pilgrimageModeId = draftMode;
         this.arrivalCompleted = true;
         this.world3d?.switchCharacter?.(draftChar);
-        this.syncStoreVisualsTo3D();
-        this.syncPilgrimageCompanionsTo3D();
+        this.syncStoreVisualsTo3D?.();
+        this.syncPilgrimageCompanionsTo3D?.();
         this.saveState();
-        this.updateEquippedTags();
+        this.updateEquippedTags?.();
         this.syncVisitorPresence?.();
       };
+
+      document.getElementById('btn-arrival-enter-direct')?.addEventListener('click', () => {
+        commitSelection();
+        this.closeModal();
+        this.ensureAudioContext?.();
+        this.world3d?.skipArrivalCutscene?.(true);
+        const b = document.getElementById('arrival-cutscene-banner');
+        if (b) b.style.display = 'none';
+        this.audio?.playBlessingChime?.();
+        this.showToast(`🪷 Hoan hỷ chào đón ${this.studentName}`, 'Mời bạn thong thả dạo bước chiêm bái sân Chùa Vĩnh Tràng.', 3800, false);
+        const todayKey = getLocalDateKey();
+        if (shouldShowDailyDharmaToday(this.lastDailyDharmaDate, todayKey)) {
+          this.showDailyDharmaModal({ markSeenToday: true });
+        }
+      });
 
       document.getElementById('btn-arrival-start-car')?.addEventListener('click', () => {
         commitSelection();
         this.closeModal();
-        this.ensureAudioContext();
+        this.ensureAudioContext?.();
 
         const mode = getPilgrimageMode(this.pilgrimageModeId);
         const nat = getNationalityProfile(this.nationalityId);
@@ -142,7 +180,7 @@ export const pilgrimageModalsMethods = {
         const bannerLbl = document.getElementById('arrival-cutscene-label');
         if (banner) banner.style.display = 'inline-flex';
         if (bannerLbl) {
-          bannerLbl.textContent = `${mode.arrivalVehicle === 'bus' ? '🚌 Xe đoàn hành hương' : mode.arrivalVehicle === 'van' ? '🚐 Xe gia đình' : '🚗 Xe ô tô'} đang đưa ${nat.flag} quý khách tới cổng Chùa Vĩnh Tràng...`;
+          bannerLbl.textContent = `${mode.arrivalVehicle === 'bus' ? '🚌 Xe đoàn hành hương' : mode.arrivalVehicle === 'van' ? '🚐 Xe gia đình' : '🚗 Xe ô tô'} đang đưa ${this.studentName} tới cổng Chùa Vĩnh Tràng...`;
         }
 
         const vehicleKind = mode.arrivalVehicle === 'bus' ? 'van' : mode.arrivalVehicle;
@@ -154,7 +192,7 @@ export const pilgrimageModalsMethods = {
             } else if (phase === 'step_out') {
               this.audio?.playCarArrivalSfx?.('door_open');
               if (bannerLbl) {
-                bannerLbl.textContent = '🚶 Quý khách xuống xe, theo Cổng Phụ Tịnh Độ bước vào sân Chùa Vĩnh Tràng...';
+                bannerLbl.textContent = '🚶 Xuống xe, theo Cổng Phụ Tịnh Độ bước vào sân Chùa Vĩnh Tràng...';
               }
             } else if (phase === 'enter_gate') {
               this.audio?.playBlessingChime?.();
@@ -166,32 +204,9 @@ export const pilgrimageModalsMethods = {
             if (b) b.style.display = 'none';
             this.syncPilgrimageCompanionsTo3D();
             this.updateActionBadges();
-            this.showToast(`${nat.flag} Chào mừng tới Chùa Vĩnh Tràng`, nat.greeting, 4600, false);
-            const todayKey = getLocalDateKey();
-            if (shouldShowDailyDharmaToday(this.lastDailyDharmaDate, todayKey)) {
-              setTimeout(() => {
-                if (document.getElementById('universal-modal')?.classList.contains('open')) return;
-                this.showDailyDharmaModal({ markSeenToday: true });
-              }, 1100);
-            }
+            this.showToast(`${nat.flag} Chào mừng tới Chùa Vĩnh Tràng`, nat.greeting, 4200, false);
           }
         });
-      });
-
-      document.getElementById('btn-arrival-skip-direct')?.addEventListener('click', () => {
-        commitSelection();
-        this.closeModal();
-        this.ensureAudioContext();
-        this.world3d?.skipArrivalCutscene?.(true);
-        const b = document.getElementById('arrival-cutscene-banner');
-        if (b) b.style.display = 'none';
-        this.audio?.playBlessingChime?.();
-        const nat = getNationalityProfile(this.nationalityId);
-        this.showToast(`${nat.flag} Hoan hỷ vào sân Chùa Vĩnh Tràng`, nat.greeting, 4000, false);
-        const todayKey = getLocalDateKey();
-        if (shouldShowDailyDharmaToday(this.lastDailyDharmaDate, todayKey)) {
-          this.showDailyDharmaModal({ markSeenToday: true });
-        }
       });
     };
 
@@ -204,6 +219,7 @@ export const pilgrimageModalsMethods = {
     let draftBirthYear = '';
     let draftFamily = '';
     let draftWish = BLESSING_TOWER_CATEGORIES[0].blessingVerse;
+    let searchQuery = '';
     let feedbackMsg = '';
     let feedbackOk = false;
 
@@ -211,42 +227,43 @@ export const pilgrimageModalsMethods = {
       this.closeModal();
       this.switchScreen('courtyard');
       if (!this.world3d) return;
-      if (!this.world3d.insideInterior) {
-        this.world3d.toggleInterior(true, 'right');
+      if (this.world3d.insideInterior) {
+        this.world3d.exitInteriorHall?.(true, 'front_tam_quan');
       }
       this.world3d.cancelAutoWalk?.();
       this.world3d.playerElevationY = 0;
-      this.world3d.playerState.x = -1.1;
-      this.world3d.playerState.z = -12.95;
-      const yaw = Math.atan2(-3.35 - -1.1, -11.95 - -12.95);
+      this.world3d.playerState.x = 28.2;
+      this.world3d.playerState.z = 19.2;
+      const yaw = Math.atan2(28.2 - 28.2, 15.2 - 19.2);
       this.world3d.playerState.yaw = yaw;
       this.world3d.cameraBaseYaw = yaw;
       this.world3d.cameraAzimuthOffset = 0;
-      this.world3d.syncPlayerTransform();
-      this.world3d.checkStationProximity();
-      this.world3d.renderFrame();
+      this.world3d.syncPlayerTransform?.(true);
+      this.world3d.checkStationProximity?.();
+      this.world3d.renderFrame?.();
       this.showToast(
-        '🏮 Tháp Đèn Cầu An · Cạnh Trên Chính Điện Đại Hùng Bửu Điện',
-        '108 ô đèn Dược Sư 13 tầng bên cửa gỗ chấn song thắp sáng lời nguyện cầu bình an của Phật tử thập phương.',
-        4200,
+        '🏮 Tháp Đèn Cầu An · Sân Trước Chánh Điện',
+        'Đặt trang nghiêm bên ngoài cổng trước Chánh Điện theo hướng Phật nhìn ra Cổng Tam Quan, có bảng ghi tên cầu an trực tiếp.',
+        4400,
         false
       );
     };
 
     const renderTowerModal = () => {
-      const entries = this.blessingTower?.entries || [];
+      const allEntries = this.blessingTower?.entries || [];
+      const entries = filterBlessingTowerEntries(allEntries, searchQuery);
       const activeCat =
         BLESSING_TOWER_CATEGORIES.find((c) => c.id === selectedCategoryId) || BLESSING_TOWER_CATEGORIES[0];
 
       this.openModal(
-        '🏮 Tháp Đèn Dược Sư · Ghi Tên Cầu Phước Chánh Điện',
+        '🏮 Tháp Đèn Cầu An · Sân Trước Chánh Điện',
         `
         <div class="blessing-tower-modal-wrap">
           <div class="blessing-tower-hero">
             <div>
-              <div class="blessing-tower-kicker">Đại Hùng Bửu Điện · Chùa Vĩnh Tràng</div>
-              <div class="blessing-tower-headline">Đang thắp sáng <strong class="tabular-nums">${entries.length}/108</strong> ngọn đèn cầu phước trên 13 tầng bảo tháp</div>
-              <div class="blessing-tower-sub">Mỗi danh vị đăng ký sẽ thắp sáng một ô đèn riêng biệt trên Tháp Đèn Cầu An bên cửa gỗ chấn song vào Chánh Điện.</div>
+              <div class="blessing-tower-kicker">Sân Trước Chánh Điện · Hướng Phật Nhìn Ra Tam Quan</div>
+              <div class="blessing-tower-headline">Đang thắp sáng <strong class="tabular-nums">${allEntries.length}/108</strong> ngọn đèn cầu an &amp; lưu danh vị vĩnh viễn</div>
+              <div class="blessing-tower-sub">Mỗi tên cầu an bạn ghi sẽ thắp sáng ô đèn trên Tháp Đèn 3D ngoài sân Chánh Điện, cập nhật lên Bảng Ghi Tên và lưu giữ an toàn.</div>
             </div>
             <button type="button" id="btn-bt-focus-3d" class="blessing-tower-view3d-btn">🚶 Đứng trước Tháp Đèn 3D</button>
           </div>
@@ -296,27 +313,34 @@ export const pilgrimageModalsMethods = {
             }
 
             <button type="button" id="btn-submit-blessing-tower" class="arrival-primary-btn" style="width:100%;min-height:50px;">
-              🏮 Thắp Đèn &amp; Ghi Tên Cầu Phước (+25 🪷 · +20 XP)
+              🏮 Thắp Đèn &amp; Ghi Tên Cầu An (+25 🪷 · +20 XP)
             </button>
           </div>
 
-          <div class="hub-section-heading">📜 Danh sách Sớ Đèn Cầu An đang sáng trên Tháp (${entries.length}/108)</div>
+          <div class="blessing-tower-search-row">
+            <div class="hub-section-heading" style="margin:0;">📜 Danh sách Sớ Đèn Cầu An (${allEntries.length}/108)</div>
+            <input id="bt-search-input" type="search" class="blessing-tower-search-input" value="${searchQuery.replace(/"/g, '&quot;')}" placeholder="Tìm tên hoặc số ô đèn đã ghi..." />
+          </div>
           <div class="blessing-tower-entries-list" id="blessing-tower-entries-list">
-            ${entries
-              .slice(0, 24)
-              .map((item) => {
-                const cat = BLESSING_TOWER_CATEGORIES.find((c) => c.id === item.categoryId) || activeCat;
-                return `
-                <div class="blessing-tower-entry-row ${item.id === this.blessingTower?.lastRegisteredId ? 'highlight' : ''}">
-                  <div class="blessing-tower-entry-head">
-                    <strong class="blessing-tower-entry-name">${cat.icon} ${item.devoteeName}${item.birthYear ? ` (${item.birthYear})` : ''}</strong>
-                    <span class="blessing-tower-entry-meta">Ô đèn #${item.slotNumber} · Tầng ${item.tier}/13 · ${cat.label} · ${item.dateKey}</span>
-                  </div>
-                  ${item.familyNote ? `<div class="blessing-tower-entry-family">${item.familyNote}</div>` : ''}
-                  <div class="blessing-tower-entry-wish">“${item.wishText}”</div>
-                </div>`;
-              })
-              .join('')}
+            ${
+              entries.length === 0
+                ? `<div class="social-empty-box">Không tìm thấy danh vị phù hợp với “${searchQuery.replace(/</g, '&lt;')}”.</div>`
+                : entries
+                    .slice(0, 32)
+                    .map((item) => {
+                      const cat = BLESSING_TOWER_CATEGORIES.find((c) => c.id === item.categoryId) || activeCat;
+                      return `
+                      <div class="blessing-tower-entry-row ${item.id === this.blessingTower?.lastRegisteredId ? 'highlight' : ''}">
+                        <div class="blessing-tower-entry-head">
+                          <strong class="blessing-tower-entry-name">${cat.icon} ${item.devoteeName}${item.birthYear ? ` (${item.birthYear})` : ''}</strong>
+                          <span class="blessing-tower-entry-meta tabular-nums">Ô đèn #${item.slotNumber} · Tầng ${item.tier}/13 · ${cat.label} · ${item.dateKey}</span>
+                        </div>
+                        ${item.familyNote ? `<div class="blessing-tower-entry-family">${item.familyNote}</div>` : ''}
+                        <div class="blessing-tower-entry-wish">“${item.wishText}”</div>
+                      </div>`;
+                    })
+                    .join('')
+            }
           </div>
         </div>
         `,
@@ -324,6 +348,35 @@ export const pilgrimageModalsMethods = {
       );
 
       document.getElementById('btn-bt-focus-3d')?.addEventListener('click', focusTowerIn3D);
+
+      document.getElementById('bt-search-input')?.addEventListener('input', (e) => {
+        draftName = document.getElementById('bt-devotee-name')?.value ?? draftName;
+        draftBirthYear = document.getElementById('bt-birth-year')?.value ?? draftBirthYear;
+        draftFamily = document.getElementById('bt-family-note')?.value ?? draftFamily;
+        draftWish = document.getElementById('bt-wish-text')?.value ?? draftWish;
+        searchQuery = e.target?.value || '';
+        const listEl = document.getElementById('blessing-tower-entries-list');
+        if (!listEl) return;
+        const filtered = filterBlessingTowerEntries(this.blessingTower?.entries || [], searchQuery);
+        listEl.innerHTML =
+          filtered.length === 0
+            ? `<div class="social-empty-box">Không tìm thấy danh vị phù hợp.</div>`
+            : filtered
+                .slice(0, 32)
+                .map((item) => {
+                  const cat = BLESSING_TOWER_CATEGORIES.find((c) => c.id === item.categoryId) || activeCat;
+                  return `
+                  <div class="blessing-tower-entry-row ${item.id === this.blessingTower?.lastRegisteredId ? 'highlight' : ''}">
+                    <div class="blessing-tower-entry-head">
+                      <strong class="blessing-tower-entry-name">${cat.icon} ${item.devoteeName}${item.birthYear ? ` (${item.birthYear})` : ''}</strong>
+                      <span class="blessing-tower-entry-meta tabular-nums">Ô đèn #${item.slotNumber} · Tầng ${item.tier}/13 · ${cat.label} · ${item.dateKey}</span>
+                    </div>
+                    ${item.familyNote ? `<div class="blessing-tower-entry-family">${item.familyNote}</div>` : ''}
+                    <div class="blessing-tower-entry-wish">“${item.wishText}”</div>
+                  </div>`;
+                })
+                .join('');
+      });
 
       document.querySelectorAll('[data-bt-cat]').forEach((btn) => {
         btn.addEventListener('click', () => {
@@ -384,15 +437,20 @@ export const pilgrimageModalsMethods = {
         this.storeProfile.lotusPoints += res.rewardLotus;
         this.spiritual = recordSpiritualMilestone(
           this.spiritual,
-          `Thắp đèn cầu an tại Tháp Đèn Chánh Điện (Ô #${res.entry.slotNumber})`
+          `Thắp đèn cầu an tại Tháp Đèn Sân Chánh Điện (Ô #${res.entry.slotNumber})`
         );
         this.grantPilgrimXp(res.rewardXp, 'Ghi tên Tháp Đèn Cầu An');
-        this.syncBlessingTowerTo3D();
+
+        try {
+          localStorage.setItem(BLESSING_TOWER_BACKUP_KEY, JSON.stringify(this.blessingTower));
+        } catch {}
         this.saveState();
+        this.syncBlessingTowerTo3D();
+        this.syncBlessingTowerEntryToCloud?.(res.entry);
         this.updateActionBadges();
         this.playBellTone(243, 3.0);
         feedbackOk = true;
-        feedbackMsg = `✨ ${res.message} (+${res.rewardLotus} 🪷 · +${res.rewardXp} XP)`;
+        feedbackMsg = `✨ ${res.message} — Đã ghi nhận vào Bảng Tên & lưu an toàn (+${res.rewardLotus} 🪷 · +${res.rewardXp} XP)`;
         renderTowerModal();
       });
     };

@@ -19,6 +19,12 @@ export const world3dBridgeMethods = {
       onStepSound: (surface) => {
         this.audio?.playFootstep?.(surface === 'interior' ? 'wood' : surface);
       },
+      onBellMonkStrike: (dist) => {
+        if (!this.audioMuted && this.world3d?.insideInterior) {
+          const strength = Math.max(0.18, Math.min(0.68, 0.72 - (Number(dist) || 0) * 0.022));
+          this.audio?.playBronzeBell?.(1.04, strength);
+        }
+      },
       onSpatialAudioUpdate: ({ zone, rainIntensity }) => {
         if (this.activeScreen === 'courtyard') {
           this.audio?.setAmbientZone?.(zone);
@@ -192,12 +198,14 @@ export const world3dBridgeMethods = {
         const pinsLayer = document.getElementById('scene-pins-layer');
         const btn = document.getElementById('btn-toggle-interior-hall');
         const zoneBar = document.getElementById('interior-zone-bar');
+        const exitPop = document.getElementById('interior-exit-popover');
         const goalsTracker = document.getElementById('daily-goals-tracker');
         const topRightCluster = document.getElementById('hud-topright-cluster');
         const visitorPopover = document.getElementById('visitor-community-popover');
         this.audio?.setAmbientZone?.(inside ? 'interior' : 'exterior');
         if (pinsLayer) pinsLayer.style.display = inside ? 'none' : 'block';
         if (zoneBar) zoneBar.style.display = inside ? 'flex' : 'none';
+        if (exitPop) exitPop.style.display = 'none';
         if (goalsTracker) goalsTracker.style.display = inside ? 'none' : 'block';
         if (topRightCluster) topRightCluster.classList.toggle('interior-mode', Boolean(inside));
         if (visitorPopover) visitorPopover.classList.toggle('interior-mode', Boolean(inside));
@@ -466,6 +474,8 @@ export const world3dBridgeMethods = {
         scenic_bench: '🪑',
         stand_up_bench: '🚶'
       };
+      const isGate = p.kind === 'exit_interior' || p.kind === 'enter_chanh_dien_front';
+      btn.classList.toggle('is-gate', isGate);
       if (iconEl) iconEl.textContent = iconMap[p.kind] || '✨';
       labelEl.textContent = cleanLabel || 'Tương tác';
       btn.style.display = 'inline-flex';
@@ -474,12 +484,14 @@ export const world3dBridgeMethods = {
 
     if (!this.world3d?.insideInterior && this.nearbyStallTrigger) {
       const shortTitle = String(this.nearbyStallTrigger.title || 'Nhà Tạp Hóa').split('·')[0].trim();
+      btn.classList.remove('is-gate');
       if (iconEl) iconEl.textContent = '🛒';
       labelEl.textContent = `Ghé ${shortTitle}`;
       btn.style.display = 'inline-flex';
       return;
     }
 
+    btn.classList.remove('is-gate');
     btn.style.display = 'none';
   },
 
@@ -612,15 +624,16 @@ export const world3dBridgeMethods = {
 
   ringChanhDienBellInApp() {
     this.tryAutoDiscoverHeritageById('relic_dai_hong_chung', { silent: true });
+    this.world3d?.triggerInteriorBellMonkStrike?.(true);
     this.playBellTone(196, 3.6);
     setTimeout(() => this.playBellTone(243, 2.8), 680);
     this.storeProfile.lotusPoints += 12;
-    this.spiritual = recordSpiritualMilestone(this.spiritual, 'Thỉnh Đại Hồng Chung & Chuông Gia Trì tại Chánh Điện');
+    this.spiritual = recordSpiritualMilestone(this.spiritual, 'Nhờ Sư Thầy thỉnh Đại Hồng Chung tại Chánh Điện');
     this.grantPilgrimXp(10, 'Thỉnh Chuông Chánh Điện');
     this.saveState();
     this.updateActionBadges();
     this.showToast(
-      '🔔 Tiếng Chuông Chánh Điện Ngân Vang',
+      '🔔 Sư Thầy Thỉnh Đại Hồng Chung',
       '“Nghe chuông phiền não tan mây khói, trí tuệ sinh sôi Bồ-đề lớn.” — Pháp Bảo Chuông Chùa Vĩnh Tràng (1854).',
       4200,
       false

@@ -83,9 +83,6 @@ export const occlusionCullingMethods = {
     }
     if (this.khuThoAltarGroup) explicitZoneMap.set(this.khuThoAltarGroup, 'north_gallery');
     if (this.interiorDrumAnchor?.group) explicitZoneMap.set(this.interiorDrumAnchor.group, 'center_courtyard');
-    if (this.blessingTowerBodyAnchor?.parent) {
-      explicitZoneMap.set(this.blessingTowerBodyAnchor.parent, 'center_courtyard');
-    }
 
     this.interiorGroup.updateMatrixWorld(true);
 

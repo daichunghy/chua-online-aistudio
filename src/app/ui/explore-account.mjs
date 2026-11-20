@@ -709,9 +709,25 @@ export const exploreAccountMethods = {
   },
 
   /* ========================================================================
-     TÀI KHOẢN, QUỐC TỊCH, ĐOÀN HÀNH HƯƠNG & TỦ ĐỒ 7 NHÂN VẬT 3D
+     CHỌN NHÂN VẬT KIỂU GAME, TRANG PHỤC & SAO LƯU HỒ SƠ
      ======================================================================== */
-  openAccountModal() {
+  openAccountModal(initialTab = 'character') {
+    const activeTab = ['character', 'wardrobe', 'backup'].includes(initialTab) ? initialTab : 'character';
+    const roleIconMap = {
+      nu: '🪷',
+      nam: '🙏',
+      tre_em: '🌱',
+      co_tu: '🌸',
+      chu_sau: '☕',
+      su_thay: '🔔',
+      du_khach: '🧭'
+    };
+    const companionOptions = [
+      { id: 'solo', label: '🧘 Một mình' },
+      { id: 'family', label: '👨‍👩‍👧 Gia đình' },
+      { id: 'group', label: '🤝 Nhóm bạn' }
+    ];
+
     const wearableItems = SHOP_CATALOG.filter((item) =>
       [
         'ao_trang_phat_tu',
@@ -735,83 +751,94 @@ export const exploreAccountMethods = {
 
     const activeProf =
       CHARACTER_PROFILES.find((c) => c.key === this.characterModelKey) || CHARACTER_PROFILES[0];
-    const activeNat = getNationalityProfile(this.nationalityId);
-    const activeMode = getPilgrimageMode(this.pilgrimageModeId);
     this.profilePreviewPose = this.profilePreviewPose || 'Dung';
     const activeVisual = this.buildStoreVisualPayload();
     const activeOutfitText = activeVisual.robeName
       ? `${activeVisual.robeName}${activeVisual.bag ? ' & Túi vải sen' : ''}`
-      : activeProf.outfitName;
+      : activeProf.outfitName.split('(')[0].trim();
 
-    this.openModal(
-      'Hồ sơ · Quốc tịch · Đoàn hành hương',
-      `
-      <div class="profile-modal-layout">
-        <div class="profile-stage-card">
-          <div class="profile-3d-viewport" id="profile-3d-viewport">
-            <canvas id="character-3d-canvas"></canvas>
-            <div class="profile-stage-hint">Kéo để xoay 360°</div>
-            <div class="profile-pose-pills">
-              <button type="button" class="profile-pose-btn ${this.profilePreviewPose === 'Dung' ? 'active' : ''}" data-profile-pose="Dung">Đứng</button>
-              <button type="button" class="profile-pose-btn ${this.profilePreviewPose === 'Chắp tay' ? 'active' : ''}" data-profile-pose="Chắp tay">Chắp tay</button>
-              <button type="button" class="profile-pose-btn ${this.profilePreviewPose === 'Quỳ' ? 'active' : ''}" data-profile-pose="Quỳ">Quỳ</button>
+    const tabsHtml = `
+      <div class="char-select-tabs" role="tablist">
+        <button type="button" class="char-select-tab-btn ${activeTab === 'character' ? 'active' : ''}" data-acc-tab="character">👤 Chọn Nhân Vật</button>
+        <button type="button" class="char-select-tab-btn ${activeTab === 'wardrobe' ? 'active' : ''}" data-acc-tab="wardrobe">👘 Trang Phục &amp; Vật Phẩm</button>
+        <button type="button" class="char-select-tab-btn ${activeTab === 'backup' ? 'active' : ''}" data-acc-tab="backup">🔐 Hồ Sơ &amp; Sao Lưu</button>
+      </div>
+    `;
+
+    let bodyHtml = '';
+
+    if (activeTab === 'character') {
+      const currentCompanion = ['solo', 'family', 'group'].includes(this.pilgrimageModeId) ? this.pilgrimageModeId : 'solo';
+      bodyHtml = `
+        <div class="char-select-shell">
+          <div class="char-select-stage">
+            <div class="profile-3d-viewport" id="profile-3d-viewport">
+              <canvas id="character-3d-canvas"></canvas>
+              <div class="profile-stage-hint">Kéo để xoay 360°</div>
+              <div class="profile-pose-pills">
+                <button type="button" class="profile-pose-btn ${this.profilePreviewPose === 'Dung' ? 'active' : ''}" data-profile-pose="Dung">Đứng</button>
+                <button type="button" class="profile-pose-btn ${this.profilePreviewPose === 'Chắp tay' ? 'active' : ''}" data-profile-pose="Chắp tay">Chắp tay</button>
+                <button type="button" class="profile-pose-btn ${this.profilePreviewPose === 'Quỳ' ? 'active' : ''}" data-profile-pose="Quỳ">Quỳ</button>
+              </div>
+            </div>
+            <div class="char-spotlight-info">
+              <div class="char-spotlight-name">${activeProf.name.split('(')[0].trim()}</div>
+              <div class="char-spotlight-meta">${activeProf.heightLabel} · ${activeOutfitText}</div>
             </div>
           </div>
-          <div class="profile-char-name">${activeNat.flag} ${activeProf.name} (${activeProf.heightLabel})</div>
-          <div class="profile-char-sub">${activeOutfitText} · ${activeMode.name}</div>
-          <div class="profile-char-switch-row">
-            ${CHARACTER_PROFILES.map(
-              (c) => `
-              <button type="button" class="char-switch-btn ${this.characterModelKey === c.key ? 'active' : ''}" data-char="${c.key}">
-                ${c.name.split('(')[0].trim()}
-              </button>
-            `
-            ).join('')}
+
+          <div class="char-select-controls">
+            <div class="char-field-group">
+              <label for="acc-student-name" class="char-field-label">Tên hoặc Pháp danh</label>
+              <input id="acc-student-name" type="text" class="char-name-input" maxlength="40" value="${String(this.studentName || 'Phật tử Tâm An').replace(/"/g, '&quot;')}" placeholder="Ví dụ: Phật tử Tâm An" />
+            </div>
+
+            <div class="char-field-group">
+              <span class="char-field-label">Chọn nhân vật 3D</span>
+              <div class="char-roster-grid">
+                ${CHARACTER_PROFILES.map(
+                  (c) => `
+                  <button type="button" class="char-roster-card ${this.characterModelKey === c.key ? 'active' : ''}" data-char="${c.key}">
+                    <span class="char-roster-avatar">${roleIconMap[c.key] || '🪷'}</span>
+                    <span class="char-roster-text">
+                      <strong>${c.name.split('(')[0].trim()}</strong>
+                      <span>${c.outfitName.split('(')[0].trim()}</span>
+                    </span>
+                  </button>`
+                ).join('')}
+              </div>
+            </div>
+
+            <div class="char-field-group">
+              <span class="char-field-label">Bạn đồng hành</span>
+              <div class="char-companion-row">
+                ${companionOptions
+                  .map(
+                    (opt) => `
+                  <button type="button" class="char-companion-btn ${currentCompanion === opt.id ? 'active' : ''}" data-acc-mode="${opt.id}">
+                    ${opt.label}
+                  </button>`
+                  )
+                  .join('')}
+              </div>
+            </div>
+
+            <button type="button" id="btn-acc-save-enter" class="char-primary-cta">
+              ✓ Lưu Nhân Vật &amp; Tiếp Tục Vãn Cảnh
+            </button>
           </div>
-          <button type="button" id="btn-account-replay-arrival" class="quest-go-btn" style="width:100%;min-height:44px;margin-top:8px;">
-            🚗 Xem lại xe đưa tới chùa
-          </button>
         </div>
-
-        <div class="profile-right-col">
-          <div class="profile-stats-banner">
-            <div><div class="profile-stat-val">${this.spiritual.bowCount}</div><div class="profile-stat-lbl">Lạy Phật</div></div>
-            <div><div class="profile-stat-val">${this.spiritual.incenseOfferings}</div><div class="profile-stat-lbl">Lần dâng hương</div></div>
-            <div><div class="profile-stat-val">${this.spiritual.malaCycles * 108 + this.spiritual.malaBeads}</div><div class="profile-stat-lbl">Biến niệm Phật</div></div>
-            <div><div class="profile-stat-val">${this.completedLessons.size}/24</div><div class="profile-stat-lbl">Bài đã học</div></div>
-          </div>
-
-          <div>
-            <div class="profile-wardrobe-heading">Quốc tịch &amp; Truyền thống hành hương (${activeNat.flag} ${activeNat.name.split('—')[0].trim()}):</div>
-            <div class="profile-nat-pills">
-              ${NATIONALITY_PROFILES.map(
-                (n) => `
-                <button type="button" class="profile-chip-btn ${this.nationalityId === n.id ? 'active' : ''}" data-acc-nat="${n.id}">
-                  ${n.flag} ${n.name.split('—')[0].trim()}
-                </button>`
-              ).join('')}
-            </div>
-          </div>
-
-          <div>
-            <div class="profile-wardrobe-heading">Chế độ &amp; Bạn đồng hành 3D (${activeMode.companions.length} người đi cùng):</div>
-            <div class="profile-mode-pills">
-              ${PILGRIMAGE_MODES.map(
-                (m) => `
-                <button type="button" class="profile-chip-btn ${this.pilgrimageModeId === m.id ? 'active' : ''}" data-acc-mode="${m.id}">
-                  ${m.name} (${m.companions.length > 0 ? `${m.companions.length} bạn 3D` : 'Tĩnh tâm'})
-                </button>`
-              ).join('')}
-            </div>
-          </div>
-
+      `;
+    } else if (activeTab === 'wardrobe') {
+      bodyHtml = `
+        <div style="display:flex;flex-direction:column;gap:14px;">
           ${
             storeWearables.length > 0
               ? `
               <div>
                 <div class="profile-wardrobe-heading" style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
-                  <span>Áo tràng &amp; Pháp khí đã thỉnh từ Cửa hàng:</span>
-                  <button type="button" id="btn-wardrobe-open-9tab" class="quest-go-btn" style="min-height:32px;font-size:12px;">🛍️ Thỉnh thêm Áo tràng</button>
+                  <span>Áo tràng &amp; Pháp khí đã thỉnh:</span>
+                  <button type="button" id="btn-wardrobe-open-9tab" class="quest-go-btn" style="min-height:34px;font-size:12.5px;">🛍️ Thỉnh thêm Áo tràng</button>
                 </div>
                 <div class="profile-wardrobe-grid">
                   ${storeWearables
@@ -833,14 +860,14 @@ export const exploreAccountMethods = {
               `
               : `
               <div class="store-quest-cta-strip">
-                <span>👕 Cô bác chưa thỉnh thêm Áo tràng mới? Hãy ghé Cửa hàng để xem thử 12 mẫu Áo tràng &amp; Pháp phục 3D!</span>
-                <button type="button" id="btn-wardrobe-open-9tab" class="quest-claim-btn">🛍️ Xem 12 mẫu Áo tràng</button>
+                <span>👘 Khám phá 12 mẫu Áo tràng &amp; Pháp phục 3D tại Cửa hàng lưu niệm.</span>
+                <button type="button" id="btn-wardrobe-open-9tab" class="quest-claim-btn">🛍️ Mở Cửa hàng</button>
               </div>
               `
           }
 
           <div>
-            <div class="profile-wardrobe-heading">Hành trang &amp; đồ mang theo mặc định:</div>
+            <div class="profile-wardrobe-heading">Đồ mang theo mặc định:</div>
             <div class="profile-wardrobe-grid">
               ${wearableItems
                 .map((item) => {
@@ -858,17 +885,22 @@ export const exploreAccountMethods = {
                 .join('')}
             </div>
           </div>
-
-          <div class="profile-cta-row">
-            <button type="button" id="btn-account-open-dharma" class="product-detail-btn" style="width:100%;background:#5C381F;">Lời dạy hôm nay</button>
-            <button type="button" id="btn-account-open-ugc" class="product-detail-btn" style="width:100%;background:#9c4119;">Lưu ảnh kỷ niệm</button>
-            <button type="button" id="btn-account-open-shop" class="product-detail-btn" style="width:100%;">Quà lưu niệm</button>
+        </div>
+      `;
+    } else {
+      bodyHtml = `
+        <div style="display:flex;flex-direction:column;gap:14px;">
+          <div class="profile-stats-banner tabular-nums">
+            <div><div class="profile-stat-val">${this.spiritual.bowCount}</div><div class="profile-stat-lbl">Lạy Phật</div></div>
+            <div><div class="profile-stat-val">${this.spiritual.incenseOfferings}</div><div class="profile-stat-lbl">Lần dâng hương</div></div>
+            <div><div class="profile-stat-val">${this.spiritual.malaCycles * 108 + this.spiritual.malaBeads}</div><div class="profile-stat-lbl">Biến niệm Phật</div></div>
+            <div><div class="profile-stat-val">${this.completedLessons.size}/24</div><div class="profile-stat-lbl">Bài đã học</div></div>
           </div>
 
           <div class="backup-code-box">
-            <div class="backup-code-title">🔐 Sao lưu &amp; Khôi phục Hồ sơ (Mã khôi phục)</div>
+            <div class="backup-code-title">🔐 Mã sao lưu &amp; khôi phục hồ sơ (VT1)</div>
             <p class="backup-code-desc">
-              Tạo và lưu lại mã <code>VT1-...</code> để khi chuyển sang điện thoại khác cô bác vẫn giữ nguyên số lạy, công đức, áo tràng và bài đã học.
+              Lưu mã <code>VT1-...</code> để chuyển toàn bộ công đức, áo tràng và bài học sang thiết bị khác.
             </p>
             <div class="backup-code-row">
               <button type="button" id="btn-generate-backup-code" class="product-detail-btn" style="width:auto;padding:0 16px;height:38px;font-size:13px;background:#5C381F;">
@@ -890,161 +922,174 @@ export const exploreAccountMethods = {
             </div>
           </div>
         </div>
-      </div>
+      `;
+    }
+
+    this.openModal(
+      'Nhân Vật & Hồ Sơ Hành Hương',
       `
+      <div>
+        ${tabsHtml}
+        ${bodyHtml}
+      </div>
+      `,
+      { variant: 'scroll' }
     );
 
-    const mountStage = (pose) => {
-      this.mountProfileCharacterStage('character-3d-canvas', {
-        charKey: this.characterModelKey,
-        pose
-      });
-    };
-    mountStage(this.profilePreviewPose);
-
-    document.querySelectorAll('[data-profile-pose]').forEach((btn) => {
+    document.querySelectorAll('[data-acc-tab]').forEach((btn) => {
       btn.addEventListener('click', () => {
-        this.profilePreviewPose = btn.getAttribute('data-profile-pose') || 'Dung';
-        document.querySelectorAll('[data-profile-pose]').forEach((b) => {
-          b.classList.toggle('active', b === btn);
+        const nextTab = btn.getAttribute('data-acc-tab') || 'character';
+        const nameInp = document.getElementById('acc-student-name');
+        if (nameInp && nameInp.value.trim()) {
+          this.studentName = nameInp.value.trim();
+          this.saveState();
+        }
+        this.playMokugyoTap?.();
+        this.openAccountModal(nextTab);
+      });
+    });
+
+    if (activeTab === 'character') {
+      const mountStage = (pose) => {
+        this.mountProfileCharacterStage('character-3d-canvas', {
+          charKey: this.characterModelKey,
+          pose
         });
-        mountStage(this.profilePreviewPose);
-      });
-    });
+      };
+      mountStage(this.profilePreviewPose);
 
-    document.querySelectorAll('.char-switch-btn').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const key = btn.getAttribute('data-char') || 'nu';
-        this.characterModelKey = key;
-        this.world3d?.switchCharacter(key);
-        this.syncStoreVisualsTo3D();
+      document.querySelectorAll('[data-profile-pose]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          this.profilePreviewPose = btn.getAttribute('data-profile-pose') || 'Dung';
+          document.querySelectorAll('[data-profile-pose]').forEach((b) => {
+            b.classList.toggle('active', b === btn);
+          });
+          mountStage(this.profilePreviewPose);
+        });
+      });
+
+      document.querySelectorAll('[data-char]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const nameInp = document.getElementById('acc-student-name');
+          if (nameInp && nameInp.value.trim()) this.studentName = nameInp.value.trim();
+          const key = btn.getAttribute('data-char') || 'nu';
+          this.characterModelKey = key;
+          this.world3d?.switchCharacter(key);
+          this.syncStoreVisualsTo3D();
+          this.saveState();
+          this.updateEquippedTags();
+          this.syncVisitorPresence?.();
+          this.playMokugyoTap?.();
+          this.openAccountModal('character');
+        });
+      });
+
+      document.querySelectorAll('[data-acc-mode]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const nameInp = document.getElementById('acc-student-name');
+          if (nameInp && nameInp.value.trim()) this.studentName = nameInp.value.trim();
+          this.pilgrimageModeId = btn.getAttribute('data-acc-mode') || 'solo';
+          this.syncPilgrimageCompanionsTo3D();
+          this.saveState();
+          this.playMokugyoTap?.();
+          this.openAccountModal('character');
+        });
+      });
+
+      document.getElementById('btn-acc-save-enter')?.addEventListener('click', () => {
+        const nameInp = document.getElementById('acc-student-name');
+        const cleanName = String(nameInp?.value || '').trim();
+        if (cleanName) this.studentName = cleanName;
         this.saveState();
-        this.updateEquippedTags();
-        this.syncVisitorPresence?.();
-        this.openAccountModal();
+        this.syncSocialCloudRecord?.('profile', this.getSelfSocialMetrics?.());
+        this.closeModal();
+        this.playBellTone?.(288, 1.5);
+        this.showToast(`🪷 Đã cập nhật nhân vật: ${this.studentName}`, `${activeProf.name.split('(')[0].trim()} đã sẵn sàng vãn cảnh Chùa Vĩnh Tràng.`, 3000, false);
       });
-    });
-
-    document.querySelectorAll('[data-acc-nat]').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        this.nationalityId = btn.getAttribute('data-acc-nat') || 'vn';
-        this.syncPilgrimageCompanionsTo3D();
-        this.saveState();
-        this.syncVisitorPresence?.();
-        this.playMokugyoTap();
-        this.openAccountModal();
-      });
-    });
-
-    document.querySelectorAll('[data-acc-mode]').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        this.pilgrimageModeId = btn.getAttribute('data-acc-mode') || 'solo';
-        this.syncPilgrimageCompanionsTo3D();
-        this.saveState();
-        this.playMokugyoTap();
-        this.openAccountModal();
-      });
-    });
-
-    document.getElementById('btn-account-replay-arrival')?.addEventListener('click', () => {
-      this.openArrivalPilgrimageModal();
-    });
-
-    document.querySelectorAll('.store-wardrobe-toggle-btn').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const slot = btn.getAttribute('data-store-slot');
-        const itemId = btn.getAttribute('data-store-id');
-        if (!slot || !itemId) return;
-        const currentlyEquipped = this.storeProfile.equipped[slot] === itemId;
-        this.storeProfile.equipped[slot] = currentlyEquipped ? null : itemId;
-        this.storeProfile.tryingItemId = null;
-        if (slot === 'robe' && !currentlyEquipped) {
-          this.spiritual.equippedItems.outfit = null;
-        }
-        if (itemId === 'non_la_theu_sen_store') {
-          this.spiritual.equippedItems.hat = currentlyEquipped ? null : 'non_la_theu_sen';
-        }
-        this.saveState();
-        this.syncStoreVisualsTo3D();
-        this.updateEquippedTags();
-        this.playMokugyoTap();
-        this.openAccountModal();
-      });
-    });
-
-    document.querySelectorAll('.wardrobe-toggle-btn').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const slot = btn.getAttribute('data-slot') || 'hand';
-        const itemKey = btn.getAttribute('data-id');
-        if (itemKey === 'ao_trang_phat_tu') {
-          this.storeProfile.equipped.robe = null;
+    } else if (activeTab === 'wardrobe') {
+      document.querySelectorAll('.store-wardrobe-toggle-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const slot = btn.getAttribute('data-store-slot');
+          const itemId = btn.getAttribute('data-store-id');
+          if (!slot || !itemId) return;
+          const currentlyEquipped = this.storeProfile.equipped[slot] === itemId;
+          this.storeProfile.equipped[slot] = currentlyEquipped ? null : itemId;
           this.storeProfile.tryingItemId = null;
+          if (slot === 'robe' && !currentlyEquipped) {
+            this.spiritual.equippedItems.outfit = null;
+          }
+          if (itemId === 'non_la_theu_sen_store') {
+            this.spiritual.equippedItems.hat = currentlyEquipped ? null : 'non_la_theu_sen';
+          }
+          this.saveState();
+          this.syncStoreVisualsTo3D();
+          this.updateEquippedTags();
+          this.playMokugyoTap();
+          this.openAccountModal('wardrobe');
+        });
+      });
+
+      document.querySelectorAll('.wardrobe-toggle-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const slot = btn.getAttribute('data-slot') || 'hand';
+          const itemKey = btn.getAttribute('data-id');
+          if (itemKey === 'ao_trang_phat_tu') {
+            this.storeProfile.equipped.robe = null;
+            this.storeProfile.tryingItemId = null;
+          }
+          const r = performSpiritualAction(this.spiritual, 'EQUIP_ITEM', { slot, itemKey });
+          this.spiritual = r.state;
+          this.saveState();
+          this.syncStoreVisualsTo3D();
+          this.updateEquippedTags();
+          this.playMokugyoTap();
+          this.openAccountModal('wardrobe');
+        });
+      });
+
+      document.getElementById('btn-wardrobe-open-9tab')?.addEventListener('click', () => {
+        this.openNineTabStoreModal('ao_trang');
+      });
+    } else {
+      document.getElementById('btn-generate-backup-code')?.addEventListener('click', async () => {
+        const code = encodeProfileBackupCode({
+          characterModelKey: this.characterModelKey,
+          spiritual: this.spiritual,
+          storeProfile: this.storeProfile,
+          activityHub: this.activityHub,
+          completedLessons: Array.from(this.completedLessons)
+        });
+        const disp = document.getElementById('backup-code-display');
+        if (disp) disp.value = code;
+        try {
+          await navigator.clipboard?.writeText(code);
+          this.showToast('📋 Đã sao chép mã khôi phục', 'Cô bác hãy dán và lưu giữ mã VT1 này vào ghi chú hoặc Zalo.', 3800, false);
+        } catch {
+          this.showToast('🔐 Đã tạo mã khôi phục', 'Cô bác hãy chọn toàn bộ ô mã bên cạnh để sao chép nhé.', 3800, false);
         }
-        const r = performSpiritualAction(this.spiritual, 'EQUIP_ITEM', { slot, itemKey });
-        this.spiritual = r.state;
-        this.saveState();
+      });
+
+      document.getElementById('btn-restore-backup-code')?.addEventListener('click', () => {
+        const inp = document.getElementById('restore-code-input');
+        const res = decodeProfileBackupCode(inp?.value || '');
+        if (!res.ok || !res.data) {
+          this.showToast('Chưa khôi phục được', res.message || 'Mã khôi phục không hợp lệ.', 3800, false);
+          return;
+        }
+        this.characterModelKey = res.data.characterModelKey;
+        this.spiritual = res.data.spiritual;
+        this.storeProfile = res.data.storeProfile;
+        this.activityHub = res.data.activityHub;
+        this.completedLessons = new Set(res.data.completedLessons);
+        this.world3d?.switchCharacter?.(this.characterModelKey);
         this.syncStoreVisualsTo3D();
+        this.saveState();
+        this.updateActionBadges();
         this.updateEquippedTags();
-        this.playMokugyoTap();
-        this.openAccountModal();
+        this.playBellTone(324, 2.2);
+        this.showToast('✅ Đã khôi phục hồ sơ thành công!', 'Toàn bộ công đức, vật phẩm và bài học của cô bác đã trở lại.', 4200, false);
+        this.openAccountModal('backup');
       });
-    });
-
-    document.getElementById('btn-wardrobe-open-9tab')?.addEventListener('click', () => {
-      this.openNineTabStoreModal('ao_trang');
-    });
-
-    document.getElementById('btn-account-open-dharma')?.addEventListener('click', () => {
-      this.showDailyDharmaModal({ markSeenToday: false });
-    });
-
-    document.getElementById('btn-account-open-ugc')?.addEventListener('click', () => {
-      this.openUGCStudioModal();
-    });
-
-    document.getElementById('btn-account-open-shop')?.addEventListener('click', () => {
-      this.closeModal();
-      this.switchScreen('shop');
-    });
-
-    document.getElementById('btn-generate-backup-code')?.addEventListener('click', async () => {
-      const code = encodeProfileBackupCode({
-        characterModelKey: this.characterModelKey,
-        spiritual: this.spiritual,
-        storeProfile: this.storeProfile,
-        activityHub: this.activityHub,
-        completedLessons: Array.from(this.completedLessons)
-      });
-      const disp = document.getElementById('backup-code-display');
-      if (disp) disp.value = code;
-      try {
-        await navigator.clipboard?.writeText(code);
-        this.showToast('📋 Đã sao chép mã khôi phục', 'Cô bác hãy dán và lưu giữ mã VT1 này vào ghi chú hoặc Zalo.', 3800, false);
-      } catch {
-        this.showToast('🔐 Đã tạo mã khôi phục', 'Cô bác hãy chọn toàn bộ ô mã bên cạnh để sao chép nhé.', 3800, false);
-      }
-    });
-
-    document.getElementById('btn-restore-backup-code')?.addEventListener('click', () => {
-      const inp = document.getElementById('restore-code-input');
-      const res = decodeProfileBackupCode(inp?.value || '');
-      if (!res.ok || !res.data) {
-        this.showToast('Chưa khôi phục được', res.message || 'Mã khôi phục không hợp lệ.', 3800, false);
-        return;
-      }
-      this.characterModelKey = res.data.characterModelKey;
-      this.spiritual = res.data.spiritual;
-      this.storeProfile = res.data.storeProfile;
-      this.activityHub = res.data.activityHub;
-      this.completedLessons = new Set(res.data.completedLessons);
-      this.world3d?.switchCharacter?.(this.characterModelKey);
-      this.syncStoreVisualsTo3D();
-      this.saveState();
-      this.updateActionBadges();
-      this.updateEquippedTags();
-      this.playBellTone(324, 2.2);
-      this.showToast('✅ Đã khôi phục hồ sơ thành công!', 'Toàn bộ công đức, vật phẩm và bài học của cô bác đã trở lại.', 4200, false);
-      this.openAccountModal();
-    });
+    }
   }
 };

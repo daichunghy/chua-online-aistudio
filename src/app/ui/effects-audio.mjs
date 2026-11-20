@@ -14,18 +14,15 @@ import {
 
 export const effectsAudioMethods = {
   /* ========================================================================
-     AMBIENT INCENSE SMOKE & LOTUS PETAL PARTICLE FX
+     2D FLOATING PARTICLES DISABLED (Outdoor air stays crisp; footsteps use 3D FX)
      ======================================================================== */
   initParticleFX() {
-    this.resizeFXCanvas();
-    for (let i = 0; i < 28; i++) {
-      this.particles.push(this.createParticle(i));
+    this.particles = [];
+    const fx = document.getElementById('fx-canvas');
+    if (fx) {
+      const ctx = fx.getContext('2d');
+      ctx?.clearRect(0, 0, fx.width, fx.height);
     }
-    const loop = () => {
-      this.stepParticles(0.016);
-      setTimeout(loop, 95);
-    };
-    setTimeout(loop, 95);
   },
 
   resizeFXCanvas() {
@@ -35,68 +32,11 @@ export const effectsAudioMethods = {
     fx.height = window.innerHeight;
   },
 
-  createParticle(idx = 0) {
-    const isSmoke = idx < 16;
-    return {
-      type: isSmoke ? 'smoke' : 'petal',
-      x: isSmoke ? 0.5 + (Math.random() - 0.5) * 0.03 : Math.random(),
-      y: isSmoke ? 0.52 - Math.random() * 0.14 : Math.random() * 0.6,
-      vx: isSmoke ? (Math.random() - 0.5) * 0.004 : (Math.random() - 0.3) * 0.015,
-      vy: isSmoke ? -0.015 - Math.random() * 0.012 : 0.012 + Math.random() * 0.015,
-      size: isSmoke ? 8 + Math.random() * 14 : 4 + Math.random() * 5,
-      alpha: isSmoke ? 0.18 + Math.random() * 0.22 : 0.45 + Math.random() * 0.35,
-      phase: Math.random() * Math.PI * 2
-    };
+  createParticle() {
+    return null;
   },
 
-  stepParticles(dt) {
-    if (this.activeScreen !== 'courtyard') return;
-    const fx = document.getElementById('fx-canvas');
-    if (!fx) return;
-    const ctx = fx.getContext('2d');
-    const w = fx.width;
-    const h = fx.height;
-    ctx.clearRect(0, 0, w, h);
-
-    const smokeMultiplier = this.spiritual.incenseOfferings > 0 ? 1.65 : 1.0;
-
-    for (const p of this.particles) {
-      p.phase += dt * 2.2;
-      p.x += (p.vx + Math.sin(p.phase) * 0.003) * dt;
-      p.y += p.vy * dt;
-
-      if (p.type === 'smoke') {
-        if (p.y < 0.34) {
-          p.y = 0.53;
-          p.x = 0.5 + (Math.random() - 0.5) * 0.02;
-        }
-        const px = p.x * w;
-        const py = p.y * h;
-        const grad = ctx.createRadialGradient(px, py, 1, px, py, p.size * smokeMultiplier);
-        grad.addColorStop(0, `rgba(255, 248, 235, ${p.alpha * smokeMultiplier})`);
-        grad.addColorStop(1, 'rgba(255, 248, 235, 0)');
-        ctx.fillStyle = grad;
-        ctx.beginPath();
-        ctx.arc(px, py, p.size * smokeMultiplier, 0, Math.PI * 2);
-        ctx.fill();
-      } else {
-        if (p.y > 0.95 || p.x < 0 || p.x > 1) {
-          p.y = 0.05;
-          p.x = Math.random();
-        }
-        const px = p.x * w;
-        const py = p.y * h;
-        ctx.save();
-        ctx.translate(px, py);
-        ctx.rotate(p.phase);
-        ctx.fillStyle = `rgba(247, 143, 179, ${p.alpha})`;
-        ctx.beginPath();
-        ctx.ellipse(0, 0, p.size, p.size * 0.55, 0, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.restore();
-      }
-    }
-  },
+  stepParticles() {},
 
   /* ========================================================================
      SOUND, SOUNDSCAPE & VOICEOVER ENGINE (Unified TempleAudioEngine)
@@ -202,28 +142,11 @@ export const effectsAudioMethods = {
           : 'Âm thanh nền đang tắt';
     }
 
-    const layerChecks = [
-      ['chk-ambient-chanting', this.ambientSettings?.chanting !== false],
-      ['chk-ambient-bells', this.ambientSettings?.bells !== false],
-      ['chk-ambient-atmosphere', this.ambientSettings?.atmosphere !== false]
-    ];
-    for (const [id, checked] of layerChecks) {
-      const el = document.getElementById(id);
-      if (el) el.checked = Boolean(checked);
-    }
-
-    const pairs = [
-      ['slider-ambient-vol', 'val-ambient-vol', st.ambientVolume],
-      ['slider-sfx-vol', 'val-sfx-vol', st.sfxVolume],
-      ['slider-voice-vol', 'val-voice-vol', st.voiceVolume]
-    ];
-    for (const [sId, vId, val] of pairs) {
-      const pct = Math.round((Number(val) || 0) * 100);
-      const sEl = document.getElementById(sId);
-      const vEl = document.getElementById(vId);
-      if (sEl && Number(sEl.value) !== pct) sEl.value = String(pct);
-      if (vEl) vEl.textContent = `${pct}%`;
-    }
+    const masterPct = Math.round((Number(st.masterVolume ?? 1)) * 100);
+    const masterSlider = document.getElementById('slider-master-vol');
+    const masterVal = document.getElementById('val-master-vol');
+    if (masterSlider && Number(masterSlider.value) !== masterPct) masterSlider.value = String(masterPct);
+    if (masterVal) masterVal.textContent = `${masterPct}%`;
   },
 
   toggleAmbientAudio(forceEnabled = null) {

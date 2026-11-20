@@ -4,7 +4,7 @@
  * Mixin của VinhTrang3DWorld: 9 method (loadGLB … initSmokeColumns).
  * Được gắn vào class trong vinh-trang-3d-world.mjs qua applyMixins().
  */
-import { THREE, CHAR_GLB_PATHS, STATUE_GLB_PATHS, ARHAT_GLB_PATHS, ARCH_GLB_PATHS, PROP_GLB_PATHS, SmokeColumn } from './shared.mjs';
+import { THREE, CHAR_GLB_PATHS, CHAR_HEIGHTS, STATUE_GLB_PATHS, ARHAT_GLB_PATHS, ARCH_GLB_PATHS, PROP_GLB_PATHS, SmokeColumn } from './shared.mjs';
 
 export const glbLoadingMethods = {
   loadGLB(url) {
@@ -82,7 +82,9 @@ export const glbLoadingMethods = {
 
   async loadAllGLBAssets() {
     const initialKey = this.playerState.charKey || 'nu';
-    const coreCharKeys = Array.from(new Set(['nu', 'nam', 'tre_em', initialKey]));
+    const coreCharKeys = this.isSoftwareGl
+      ? Array.from(new Set(['nu', initialKey]))
+      : Array.from(new Set(['nu', 'nam', 'tre_em', initialKey]));
 
     // Phase 1: Critical Courtyard Statues, Architecture, Core Characters & Exterior Props
     const [
@@ -94,6 +96,7 @@ export const glbLoadingMethods = {
       matTienGltf,
       tamQuanGltf,
       baoThapGltf,
+      thapDenGltf,
       denLongGltf,
       chumSenGltf,
       mamNguQuaGltf,
@@ -127,6 +130,7 @@ export const glbLoadingMethods = {
       this.loadGLB(ARCH_GLB_PATHS.mat_tien),
       this.loadGLB(ARCH_GLB_PATHS.tam_quan),
       this.loadGLB(ARCH_GLB_PATHS.bao_thap),
+      this.loadGLB(ARCH_GLB_PATHS.thap_den_cau_an),
       this.loadGLB(PROP_GLB_PATHS.den_long),
       this.loadGLB(PROP_GLB_PATHS.chum_sen),
       this.loadGLB(PROP_GLB_PATHS.mam_ngu_qua),
@@ -158,6 +162,34 @@ export const glbLoadingMethods = {
     });
     if (tamQuanGltf?.scene) this.archMeshCache.tam_quan = tamQuanGltf.scene;
     if (baoThapGltf?.scene) this.archMeshCache.bao_thap = baoThapGltf.scene;
+    if (thapDenGltf?.scene) {
+      this.archMeshCache.thap_den_cau_an = thapDenGltf.scene;
+      if (this.blessingTowerBodyAnchor && !this.blessingTowerBodyAnchor.userData._glbMounted) {
+        this.blessingTowerBodyAnchor.userData._glbMounted = true;
+        const btModel = thapDenGltf.scene.clone(true);
+        btModel.traverse((o) => {
+          if (o.isMesh) {
+            o.castShadow = true;
+            o.receiveShadow = true;
+            if (o.geometry && !o.geometry.getAttribute('normal')) o.geometry.computeVertexNormals();
+            if (o.material) {
+              o.material = o.material.clone();
+              o.material.emissive = new THREE.Color(0x5A1C08);
+              o.material.emissiveIntensity = 0.22;
+            }
+          }
+        });
+        const box = new THREE.Box3().setFromObject(btModel);
+        const sz = box.getSize(new THREE.Vector3());
+        const radScale = 1.12 / Math.max(0.1, sz.x, sz.z);
+        btModel.scale.set(radScale, 2.62 / Math.max(0.1, sz.y), radScale);
+        const b2 = new THREE.Box3().setFromObject(btModel);
+        btModel.position.set(-(b2.min.x + b2.max.x) / 2, -b2.min.y, -(b2.min.z + b2.max.z) / 2);
+        if (this.blessingTowerProceduralCore) this.blessingTowerProceduralCore.visible = false;
+        this.blessingTowerBodyAnchor.add(btModel);
+        this.freezeStaticSubtree?.(btModel);
+      }
+    }
     if (banThoGltf?.scene) this.archMeshCache._bantho_fallback = banThoGltf.scene;
 
     // 0A. Mount custom sculpted Tam Quan Vĩnh Tràng GLB onto main entrance gate while retaining plaque + iron gates
@@ -355,16 +387,16 @@ export const glbLoadingMethods = {
     this.loaded = true;
     this.onLoaded();
 
-    // Phase 2: Stagger bell/drum/vehicle exterior props; alternate characters & interior GLBs load on demand
+    // Phase 2: Stagger bell/drum/vehicle exterior props & diverse NPC characters without stalling boot
     window.setTimeout(() => {
       this._loadPhase2ExteriorExtras().catch(() => {});
-    }, this.isSoftwareGl ? 800 : 300);
+    }, this.isSoftwareGl ? 6500 : 400);
   },
 
   async _loadPhase2ExteriorExtras() {
     if (this._phase2Started) return;
     this._phase2Started = true;
-    const yieldFrame = () => new Promise((r) => window.setTimeout(r, this.isSoftwareGl ? 120 : 25));
+    const yieldFrame = () => new Promise((r) => window.setTimeout(r, this.isSoftwareGl ? 420 : 25));
     let daiHongChungGltf = null;
     let trongBatNhaGltf = null;
     let xeKhachGltf = null;
@@ -417,6 +449,93 @@ export const glbLoadingMethods = {
       }
     }
     this.renderFrame();
+
+    // Phase 2B: Stagger-load diverse NPC character GLBs (Nữ áo lam, Nam áo nâu, Sư thầy, Du khách quốc tế)
+    // without blocking initial boot, then refresh diverse courtyard visitors
+    const extraCharKeys = ['nam', 'tre_em', 'nu_ao_lam', 'nam_ao_nau', 'su_thay', 'du_khach'];
+    let loadedAnyExtraChar = false;
+    for (const ck of extraCharKeys) {
+      if (this.charDataCache[ck]?.scene) continue;
+      await yieldFrame();
+      const loaded = await this.loadCharacterGLB(ck);
+      if (loaded?.scene) loadedAnyExtraChar = true;
+    }
+    if (loadedAnyExtraChar && typeof this.spawnMonksAndPilgrimsV8 === 'function' && !this._diverseNpcsRefreshed) {
+      this._diverseNpcsRefreshed = true;
+      // Add 4 diverse NPCs showcasing newly loaded Meshy character models around Tháp Đèn & Sân Chánh Điện
+      const bonusSpecs = [
+        {
+          charKey: 'su_thay',
+          name: 'Sư Thầy Thiện Tâm',
+          scaleVar: 1.03,
+          speed: 0.72,
+          pts: [
+            { x: 24.5, z: 16.5, wait: 3.5, action: 'chap_tay', lookX: 28.2, lookZ: 15.2 },
+            { x: 18.0, z: 19.0, wait: 2.5, action: 'dung', lookX: 14.0, lookZ: 15.0 }
+          ]
+        },
+        {
+          charKey: 'nu_ao_lam',
+          name: 'Phật tử Diệu Hoa',
+          scaleVar: 0.98,
+          speed: 0.85,
+          pts: [
+            { x: 31.2, z: 16.8, wait: 4.0, action: 'chap_tay', lookX: 28.2, lookZ: 15.2 },
+            { x: 26.8, z: 22.5, wait: 2.8, action: 'dung', lookX: 28.2, lookZ: 15.2 }
+          ]
+        },
+        {
+          charKey: 'nam_ao_nau',
+          name: 'Đạo hữu Minh Đức',
+          scaleVar: 1.05,
+          speed: 0.9,
+          pts: [
+            { x: 25.2, z: 12.2, wait: 3.2, action: 'chap_tay', lookX: 28.2, lookZ: 15.2 },
+            { x: 20.5, z: 14.5, wait: 2.4, action: 'dung', lookX: 28.2, lookZ: 15.2 }
+          ]
+        },
+        {
+          charKey: 'du_khach',
+          name: 'Du khách quốc tế',
+          scaleVar: 1.06,
+          speed: 0.82,
+          pts: [
+            { x: 32.5, z: 20.2, wait: 3.8, action: 'dung', lookX: 28.2, lookZ: 15.2 },
+            { x: 28.5, z: 25.5, wait: 3.0, action: 'dung', lookX: 16.0, lookZ: 16.0 }
+          ]
+        }
+      ];
+      for (const sp of bonusSpecs) {
+        if (!this.charDataCache[sp.charKey]?.scene) continue;
+        const targetH = (CHAR_HEIGHTS[sp.charKey] || 1.66) * (sp.scaleVar || 1);
+        const rec = this.cloneAnimatedCharacter?.(sp.charKey, targetH);
+        if (!rec?.root) continue;
+        rec.root.position.set(sp.pts[0].x, rec.baseY || 0, sp.pts[0].z);
+        rec.npcMeta = {
+          id: `courtyard_diverse_${sp.charKey}`,
+          role: sp.charKey === 'su_thay' ? 'monk' : 'pilgrim',
+          charKey: sp.charKey,
+          label: sp.name,
+          headHeight: targetH
+        };
+        this.exteriorGroup?.add(rec.root);
+        this.playClipCrossfade?.(rec, 'Di bo', 0.15, false);
+        this.riggedNpcRecords?.push({
+          rec,
+          pts: sp.pts,
+          idx: 0,
+          speed: sp.speed,
+          yaw: 0,
+          state: 'walk',
+          pauseTimer: 1.2,
+          pauseClip: 'Dung',
+          pauseGesture: '',
+          lookX: sp.pts[0].lookX,
+          lookZ: sp.pts[0].lookZ
+        });
+      }
+      this.renderFrame();
+    }
 
     // Phase 3 (Gentle Idle Cache Warmup): Only pre-fetch light priority interior assets when player is idle
     window.setTimeout(() => {
@@ -715,7 +834,7 @@ export const glbLoadingMethods = {
         if (toDatMaGltf?.scene && this.toDatMaAnchor && !this.toDatMaAnchor.userData._glbMounted) {
           this.toDatMaAnchor.userData._glbMounted = true;
           this._mountInteriorStatue(toDatMaGltf.scene, this.toDatMaAnchor, {
-            targetH: 1.62,
+            targetH: 2.15,
             matKind: 'jackfruit_wood'
           });
         }
@@ -758,17 +877,17 @@ export const glbLoadingMethods = {
         if (this.tamBaoMainAnchor && thienDinhGltf?.scene && !this.tamBaoMainAnchor.userData._glbMounted) {
           this.tamBaoMainAnchor.userData._glbMounted = true;
           clearPlaceholders(this.tamBaoMainAnchor);
-          this._mountInteriorStatue(thienDinhGltf.scene, this.tamBaoMainAnchor, { targetH: 2.38, matKind: 'gilded_gold' });
+          this._mountInteriorStatue(thienDinhGltf.scene, this.tamBaoMainAnchor, { targetH: 3.35, matKind: 'gilded_gold' });
         }
         if (this.tamBaoLeftAnchor && quanAmGltf?.scene && !this.tamBaoLeftAnchor.userData._glbMounted) {
           this.tamBaoLeftAnchor.userData._glbMounted = true;
           clearPlaceholders(this.tamBaoLeftAnchor);
-          this._mountInteriorStatue(quanAmGltf.scene, this.tamBaoLeftAnchor, { targetH: 1.82, matKind: 'gilded_gold' });
+          this._mountInteriorStatue(quanAmGltf.scene, this.tamBaoLeftAnchor, { targetH: 2.75, matKind: 'gilded_gold' });
         }
         if (this.tamBaoRightAnchor && adidaGltf?.scene && !this.tamBaoRightAnchor.userData._glbMounted) {
           this.tamBaoRightAnchor.userData._glbMounted = true;
           clearPlaceholders(this.tamBaoRightAnchor);
-          this._mountInteriorStatue(adidaGltf.scene, this.tamBaoRightAnchor, { targetH: 1.82, matKind: 'gilded_gold' });
+          this._mountInteriorStatue(adidaGltf.scene, this.tamBaoRightAnchor, { targetH: 2.75, matKind: 'gilded_gold' });
         }
         await this._yieldInteriorFrame(delayMs);
 
@@ -933,7 +1052,7 @@ export const glbLoadingMethods = {
             const statue = this.cleanStatueScene(srcScene, matOverride, true);
             const initialBounds = new THREE.Box3().setFromObject(statue);
             const height = Math.max(0.1, initialBounds.max.y - initialBounds.min.y);
-            statue.scale.setScalar(1.22 / height);
+            statue.scale.setScalar(1.78 / height);
             statue.rotation.y = slot.facing;
             const bounds = new THREE.Box3().setFromObject(statue);
             statue.position.set(

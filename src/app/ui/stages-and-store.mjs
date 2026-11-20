@@ -230,20 +230,22 @@ export const stagesAndStoreMethods = {
       stageGroup.rotation.y = 0.18;
       safeRender();
 
-      const tickDelay = this.world3d?.isSoftwareGl ? 240 : 33;
+      const tickDelay = this.world3d?.isSoftwareGl ? 900 : 33;
       const tick = () => {
         if (disposed || !document.body.contains(canvas)) {
           if (!disposed) this._profileStageDispose?.();
           return;
         }
-        if (mixer) mixer.update(tickDelay / 1000);
+        if (mixer) mixer.update(Math.min(0.12, tickDelay / 1000));
         if (!dragging) stageGroup.rotation.y += 0.006;
         safeRender();
         profileTimer = setTimeout(() => {
           if (!disposed) requestAnimationFrame(tick);
         }, tickDelay);
       };
-      tick();
+      profileTimer = setTimeout(() => {
+        if (!disposed) requestAnimationFrame(tick);
+      }, tickDelay);
     } catch {}
   },
 

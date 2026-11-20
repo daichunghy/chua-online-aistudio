@@ -241,6 +241,7 @@ export const roadTrafficMethods = {
 
   renderFrame() {
     this.updateProjectedPins();
+    if (this.isSoftwareGl && document.querySelector('.modal-backdrop.open')) return;
     const gl = this.renderer?.getContext?.();
     if (this.contextLost || !gl || gl.isContextLost?.()) return;
     try {

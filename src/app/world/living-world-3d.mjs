@@ -72,7 +72,7 @@ export const livingWorld3dMethods = {
     this._benchCamOrbitAngle = 0;
 
     this._buildVolumetricSunshafts();
-    this._buildSunlitDustAndFireflies();
+    // Outdoor floating tiny dust/mote specks intentionally disabled per visual clarity requirement
     this._buildDriftingCourtyardLeaves();
     this._buildLotusPondRipples();
     this._buildEveningMonumentLights();
@@ -114,40 +114,9 @@ export const livingWorld3dMethods = {
   },
 
   _buildSunlitDustAndFireflies() {
-    const count = 140;
-    const positions = new Float32Array(count * 3);
-    const seeds = new Float32Array(count * 4); // xOff, y, zOff, phase
-    for (let i = 0; i < count; i++) {
-      const xo = (Math.random() - 0.5) * 34;
-      const yo = 0.7 + Math.random() * 5.2;
-      const zo = (Math.random() - 0.5) * 34;
-      seeds[i * 4] = xo;
-      seeds[i * 4 + 1] = yo;
-      seeds[i * 4 + 2] = zo;
-      seeds[i * 4 + 3] = Math.random() * Math.PI * 2;
-      positions[i * 3] = 40.5 + xo;
-      positions[i * 3 + 1] = yo;
-      positions[i * 3 + 2] = 43.8 + zo;
-    }
-    const geo = new THREE.BufferGeometry();
-    geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    const mat = new THREE.PointsMaterial({
-      map: makeGlowParticleTex(),
-      color: 0xFFF0B8,
-      size: 0.24,
-      transparent: true,
-      opacity: 0.42,
-      blending: THREE.AdditiveBlending,
-      depthWrite: false,
-      sizeAttenuation: true
-    });
-    const pts = new THREE.Points(geo, mat);
-    pts.frustumCulled = false;
-    pts.renderOrder = 4;
-    this.exteriorGroup.add(pts);
-    this._livingWorldState.dustPoints = pts;
-    this._livingWorldState.dustSeeds = seeds;
-    this._livingWorldState.dustMat = mat;
+    this._livingWorldState.dustPoints = null;
+    this._livingWorldState.dustSeeds = null;
+    this._livingWorldState.dustMat = null;
   },
 
   _buildDriftingCourtyardLeaves() {

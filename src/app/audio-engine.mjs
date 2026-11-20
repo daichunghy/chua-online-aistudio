@@ -1922,11 +1922,11 @@ export class TempleAudioEngine {
      ======================================================================== */
 
   /**
-   * Soft rhythmic shoe tap synced to walking cadence without clipping.
-   * @param {'stone' | 'wood' | 'gravel'} [surface='stone']
+   * Soft rhythmic shoe tap synced to walking cadence across temple surfaces.
+   * @param {'grass' | 'tile' | 'wood' | 'gravel' | 'stone' | 'interior'} [surface='tile']
    * @returns {boolean}
    */
-  playFootstep(surface = 'stone') {
+  playFootstep(surface = 'tile') {
     const nowMs = Date.now();
     if (nowMs - this._lastFootstepAt < 130) return false;
     this._lastFootstepAt = nowMs;
@@ -1936,36 +1936,69 @@ export class TempleAudioEngine {
 
     const now = ctx.currentTime;
     const pitchVar = 0.94 + Math.random() * 0.12;
-    const gainVar = 0.9 + Math.random() * 0.18;
-    const kind = String(surface || 'stone').trim().toLowerCase();
+    const gainVar = 0.88 + Math.random() * 0.2;
+    const rawKind = String(surface || 'tile').trim().toLowerCase();
+    const kind = rawKind === 'interior' ? 'wood' : rawKind === 'stone' ? 'tile' : rawKind;
 
     try {
       const noiseBuf = this._getPinkNoiseBuffer(ctx, 1.0);
 
+      if (kind === 'grass') {
+        // Soft organic muffled earth thud + gentle grass blade rustle
+        const thud = ctx.createOscillator();
+        thud.type = 'sine';
+        thud.frequency.setValueAtTime(102 * pitchVar, now);
+        thud.frequency.exponentialRampToValueAtTime(52 * pitchVar, now + 0.065);
+        const thudGain = ctx.createGain();
+        thudGain.gain.setValueAtTime(0.08 * gainVar, now);
+        thudGain.gain.exponentialRampToValueAtTime(0.0005, now + 0.075);
+        thud.connect(thudGain);
+        thudGain.connect(this._sfxGain);
+        thud.start(now);
+        thud.stop(now + 0.085);
+
+        const swish = ctx.createBufferSource();
+        swish.buffer = noiseBuf;
+        const bp = ctx.createBiquadFilter();
+        bp.type = 'bandpass';
+        bp.frequency.setValueAtTime(1750 * pitchVar, now);
+        bp.Q.setValueAtTime(1.15, now);
+        const swishGain = ctx.createGain();
+        swishGain.gain.setValueAtTime(0.001, now);
+        swishGain.gain.linearRampToValueAtTime(0.095 * gainVar, now + 0.025);
+        swishGain.gain.exponentialRampToValueAtTime(0.0005, now + 0.11);
+        swish.connect(bp);
+        bp.connect(swishGain);
+        swishGain.connect(this._sfxGain);
+        swish.start(now, Math.random() * 0.35, 0.12);
+        return true;
+      }
+
       if (kind === 'wood') {
+        // Warm hollow timber floor resonance inside Chánh Điện
         const osc = ctx.createOscillator();
         osc.type = 'triangle';
-        osc.frequency.setValueAtTime(148 * pitchVar, now);
-        osc.frequency.exponentialRampToValueAtTime(82 * pitchVar, now + 0.075);
+        osc.frequency.setValueAtTime(152 * pitchVar, now);
+        osc.frequency.exponentialRampToValueAtTime(78 * pitchVar, now + 0.082);
 
         const oscGain = ctx.createGain();
         oscGain.gain.setValueAtTime(0.14 * gainVar, now);
-        oscGain.gain.exponentialRampToValueAtTime(0.0005, now + 0.09);
+        oscGain.gain.exponentialRampToValueAtTime(0.0005, now + 0.095);
 
         osc.connect(oscGain);
         oscGain.connect(this._sfxGain);
         osc.start(now);
-        osc.stop(now + 0.1);
+        osc.stop(now + 0.11);
 
         const tapSrc = ctx.createBufferSource();
         tapSrc.buffer = noiseBuf;
         const bp = ctx.createBiquadFilter();
         bp.type = 'bandpass';
-        bp.frequency.setValueAtTime(420 * pitchVar, now);
-        bp.Q.setValueAtTime(3.2, now);
+        bp.frequency.setValueAtTime(410 * pitchVar, now);
+        bp.Q.setValueAtTime(3.4, now);
         const tapGain = ctx.createGain();
         tapGain.gain.setValueAtTime(0.09 * gainVar, now);
-        tapGain.gain.exponentialRampToValueAtTime(0.0005, now + 0.055);
+        tapGain.gain.exponentialRampToValueAtTime(0.0005, now + 0.058);
         tapSrc.connect(bp);
         bp.connect(tapGain);
         tapGain.connect(this._sfxGain);
@@ -1974,10 +2007,11 @@ export class TempleAudioEngine {
       }
 
       if (kind === 'gravel') {
+        // Crisp multi-grain dusty approach gravel crunch
         const grains = [
-          { offset: 0.0, freq: 1350 * pitchVar, dur: 0.045, amp: 0.09 },
-          { offset: 0.022, freq: 2150 * pitchVar, dur: 0.055, amp: 0.075 },
-          { offset: 0.045, freq: 980 * pitchVar, dur: 0.045, amp: 0.065 }
+          { offset: 0.0, freq: 1420 * pitchVar, dur: 0.045, amp: 0.095 },
+          { offset: 0.022, freq: 2250 * pitchVar, dur: 0.055, amp: 0.08 },
+          { offset: 0.045, freq: 1020 * pitchVar, dur: 0.045, amp: 0.068 }
         ];
         for (const g of grains) {
           const t = now + g.offset;
@@ -1998,33 +2032,33 @@ export class TempleAudioEngine {
         return true;
       }
 
-      // Default: 'stone'
+      // Default: 'tile' (terracotta / granite temple courtyard paving)
       const thudOsc = ctx.createOscillator();
       thudOsc.type = 'sine';
-      thudOsc.frequency.setValueAtTime(185 * pitchVar, now);
-      thudOsc.frequency.exponentialRampToValueAtTime(92 * pitchVar, now + 0.055);
+      thudOsc.frequency.setValueAtTime(192 * pitchVar, now);
+      thudOsc.frequency.exponentialRampToValueAtTime(96 * pitchVar, now + 0.052);
 
       const thudGain = ctx.createGain();
-      thudGain.gain.setValueAtTime(0.11 * gainVar, now);
-      thudGain.gain.exponentialRampToValueAtTime(0.0005, now + 0.065);
+      thudGain.gain.setValueAtTime(0.105 * gainVar, now);
+      thudGain.gain.exponentialRampToValueAtTime(0.0005, now + 0.062);
       thudOsc.connect(thudGain);
       thudGain.connect(this._sfxGain);
       thudOsc.start(now);
-      thudOsc.stop(now + 0.075);
+      thudOsc.stop(now + 0.072);
 
       const tapSrc = ctx.createBufferSource();
       tapSrc.buffer = noiseBuf;
       const tapBP = ctx.createBiquadFilter();
       tapBP.type = 'bandpass';
-      tapBP.frequency.setValueAtTime(920 * pitchVar, now);
-      tapBP.Q.setValueAtTime(2.2, now);
+      tapBP.frequency.setValueAtTime(1080 * pitchVar, now);
+      tapBP.Q.setValueAtTime(2.6, now);
       const tapGain = ctx.createGain();
-      tapGain.gain.setValueAtTime(0.085 * gainVar, now);
-      tapGain.gain.exponentialRampToValueAtTime(0.0005, now + 0.042);
+      tapGain.gain.setValueAtTime(0.088 * gainVar, now);
+      tapGain.gain.exponentialRampToValueAtTime(0.0005, now + 0.038);
       tapSrc.connect(tapBP);
       tapBP.connect(tapGain);
       tapGain.connect(this._sfxGain);
-      tapSrc.start(now, Math.random() * 0.3, 0.055);
+      tapSrc.start(now, Math.random() * 0.3, 0.052);
       return true;
     } catch {
       return false;

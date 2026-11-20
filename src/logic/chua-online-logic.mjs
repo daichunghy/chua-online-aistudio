@@ -35,5 +35,8 @@ export * from './modules/world-atmosphere.mjs'; // Thời tiết miền Tây, g�
 export * from './modules/living-world.mjs'; // Đợt 2: Thời khóa công phu 4 buổi, ghế đá ngắm cảnh, bồ câu & khí quyển siêu thực
 export * from './modules/shopee-affiliate.mjs'; // Liên kết Shopee Affiliate cho Nhà Lưu Niệm & Tiệm Tạp Hóa
 export * from './modules/pilgrimage-depth.mjs'; // Đợt 3: Gặp gỡ hữu duyên, Công quả & 12 Góc Ảnh Di Sản
+export * from './modules/surface-footsteps.mjs'; // Phát hiện bề mặt bước chân (cỏ, gạch, gỗ, đá sỏi)
+export * from './modules/social-community.mjs'; // Cộng đồng đạo hữu: kết bạn, bảng xếp hạng, tặng quà, giao lưu
+
 
 

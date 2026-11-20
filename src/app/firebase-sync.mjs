@@ -389,3 +389,157 @@ export async function blessCommunityLantern(lanternId) {
     throw err;
   }
 }
+
+export async function subscribeCloudBlessingTower(templeId, onUpdate) {
+  const { db, ready } = await initFirebaseClient();
+  if (!ready || !db) return () => {};
+  const cleanTempleId = String(templeId || 'vinh_trang').replace(/[^a-z0-9_]/g, '') || 'vinh_trang';
+  const q = query(
+    collection(db, 'blessingTowerEntries'),
+    where('templeId', '==', cleanTempleId),
+    limit(108)
+  );
+  return onSnapshot(
+    q,
+    (snap) => {
+      const entries = [];
+      snap.forEach((docSnap) => {
+        const d = docSnap.data();
+        entries.push({
+          id: docSnap.id,
+          devoteeName: d.devoteeName || 'Phật tử hữu duyên',
+          birthYear: d.birthYear || '',
+          familyNote: d.familyNote || '',
+          categoryId: d.categoryId || 'binh_an',
+          wishText: d.wishText || '',
+          slotNumber: Number(d.slotNumber) || 1,
+          tier: Number(d.tier) || 1,
+          dateKey: d.dateKey || '',
+          createdAt: toTimestampMs(d.createdAt) || Date.now(),
+          isCloud: true
+        });
+      });
+      entries.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+      onUpdate(entries);
+    },
+    (err) => {
+      const code = err?.code || '';
+      if (code === 'permission-denied' || String(err?.message || '').includes('Missing or insufficient permissions')) {
+        console.info('[firebase-sync] blessingTowerEntries cloud feed using local storage fallback until rules are deployed.');
+        return;
+      }
+      handleFirestoreError(err, OperationType.LIST, 'blessingTowerEntries');
+    }
+  );
+}
+
+export async function postCloudBlessingTowerEntry(uid, entry = {}) {
+  const { db, ready } = await initFirebaseClient();
+  if (!ready || !db || !uid) return false;
+  const safeId = String(entry.id || `bt_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`)
+    .replace(/[^a-zA-Z0-9_-]/g, '')
+    .slice(0, 96);
+  const path = `blessingTowerEntries/${safeId}`;
+  try {
+    await setDoc(doc(db, 'blessingTowerEntries', safeId), {
+      templeId: String(entry.templeId || 'vinh_trang').replace(/[^a-z0-9_]/g, '').slice(0, 48) || 'vinh_trang',
+      authorUid: uid,
+      devoteeName: String(entry.devoteeName || 'Phật tử hữu duyên').trim().slice(0, 80),
+      birthYear: String(entry.birthYear || '').trim().slice(0, 8),
+      familyNote: String(entry.familyNote || '').trim().slice(0, 120),
+      categoryId: String(entry.categoryId || 'binh_an').slice(0, 32),
+      wishText: String(entry.wishText || 'Cầu nguyện thân tâm an lạc.').trim().slice(0, 260),
+      slotNumber: Math.max(1, Math.min(108, Math.round(Number(entry.slotNumber) || 1))),
+      tier: Math.max(1, Math.min(13, Math.round(Number(entry.tier) || 1))),
+      dateKey: String(entry.dateKey || '').slice(0, 10),
+      createdAt: serverTimestamp()
+    });
+    return true;
+  } catch (err) {
+    handleFirestoreError(err, OperationType.CREATE, path);
+    return false;
+  }
+}
+
+export async function saveCloudPublicProfile(uid, profile = {}) {
+  const { db, ready } = await initFirebaseClient();
+  if (!ready || !db || !uid) return false;
+  const path = `publicProfiles/${uid}`;
+  const ref = doc(db, 'publicProfiles', uid);
+  try {
+    const existing = await getDoc(ref);
+    const payload = {
+      uid,
+      displayName: String(profile.name || profile.displayName || 'Phật tử Tâm An').trim().slice(0, 64) || 'Phật tử Tâm An',
+      friendCode: String(profile.friendCode || 'VT-1849').slice(0, 16),
+      charKey: String(profile.charKey || 'nu').slice(0, 32),
+      merit: Math.max(0, Math.min(1000000, Math.round(Number(profile.merit) || 0))),
+      streakDays: Math.max(0, Math.min(3650, Math.round(Number(profile.streakDays) || 1))),
+      giftsSent: Math.max(0, Math.min(10000, Math.round(Number(profile.giftsSent) || 0))),
+      currentArea: String(profile.currentArea || 'Sân Chùa Vĩnh Tràng').slice(0, 80),
+      updatedAt: serverTimestamp()
+    };
+    if (existing.exists() && existing.data()?.createdAt) {
+      payload.createdAt = existing.data().createdAt;
+    } else {
+      payload.createdAt = serverTimestamp();
+    }
+    await setDoc(ref, payload);
+    return true;
+  } catch (err) {
+    handleFirestoreError(err, OperationType.WRITE, path);
+    return false;
+  }
+}
+
+export async function postCloudGiftTransaction(uid, tx = {}) {
+  const { db, ready } = await initFirebaseClient();
+  if (!ready || !db || !uid) return false;
+  const safeId = String(tx.id || `gift_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`)
+    .replace(/[^a-zA-Z0-9_-]/g, '')
+    .slice(0, 96);
+  const path = `giftTransactions/${safeId}`;
+  try {
+    await setDoc(doc(db, 'giftTransactions', safeId), {
+      fromUid: uid,
+      fromName: String(tx.fromName || 'Phật tử Tâm An').trim().slice(0, 64),
+      toId: String(tx.toId || 'friend').slice(0, 128),
+      toName: String(tx.toName || 'Đạo hữu').trim().slice(0, 64),
+      giftId: String(tx.giftId || 'gift_sen').slice(0, 48),
+      giftName: String(tx.giftName || 'Đóa Sen Tươi').trim().slice(0, 80),
+      message: String(tx.message || 'Kính chúc đạo hữu an lạc.').trim().slice(0, 240),
+      lotusCost: Math.max(0, Math.min(5000, Math.round(Number(tx.lotusCost) || 0))),
+      createdAt: serverTimestamp()
+    });
+    return true;
+  } catch (err) {
+    handleFirestoreError(err, OperationType.CREATE, path);
+    return false;
+  }
+}
+
+export async function postCloudCommunityPost(uid, post = {}) {
+  const { db, ready } = await initFirebaseClient();
+  if (!ready || !db || !uid) return false;
+  const safeId = String(post.id || `post_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`)
+    .replace(/[^a-zA-Z0-9_-]/g, '')
+    .slice(0, 96);
+  const path = `communityPosts/${safeId}`;
+  try {
+    await setDoc(doc(db, 'communityPosts', safeId), {
+      templeId: String(post.templeId || 'vinh_trang').replace(/[^a-z0-9_]/g, '').slice(0, 48) || 'vinh_trang',
+      authorUid: uid,
+      authorName: String(post.authorName || 'Phật tử Tâm An').trim().slice(0, 64),
+      charKey: String(post.charKey || 'nu').slice(0, 32),
+      area: String(post.area || 'Chùa Vĩnh Tràng').slice(0, 80),
+      text: String(post.text || '').trim().slice(0, 240),
+      rejoiceCount: 0,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    });
+    return true;
+  } catch (err) {
+    handleFirestoreError(err, OperationType.CREATE, path);
+    return false;
+  }
+}

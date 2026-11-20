@@ -105,6 +105,9 @@ export const modalAndEventsMethods = {
     });
 
     // Minimal 3-Zone Top Bar actions
+    document.getElementById('nav-btn-social')?.addEventListener('click', () => {
+      this.openSocialHubModal?.('friends');
+    });
     document.getElementById('nav-btn-auth')?.addEventListener('click', () => {
       if (this.cloudUser) {
         this.openPilgrimagePassportModal('overview');
@@ -185,6 +188,10 @@ export const modalAndEventsMethods = {
     document.getElementById('btn-drawer-photo')?.addEventListener('click', () => {
       this.captureCleanMemoryPhoto();
     });
+    document.getElementById('btn-drawer-social')?.addEventListener('click', () => {
+      this.toggleUtilityDrawer(false);
+      this.openSocialHubModal?.('friends');
+    });
     document.getElementById('btn-drawer-shop')?.addEventListener('click', () => {
       this.openConsolidatedShopModal();
     });
@@ -196,11 +203,39 @@ export const modalAndEventsMethods = {
       this.toggleUtilityDrawer(false);
       this.openAccountModal();
     });
-    document.getElementById('btn-drawer-font-dec')?.addEventListener('click', () => {
-      this.stepElderFontScale(-1);
+    document.getElementById('btn-drawer-time-cycle')?.addEventListener('click', () => {
+      const cycle = ['auto', 'morning', 'midday', 'sunset', 'evening'];
+      const currentKey = this.timeOfDayMode === 'manual' ? this.timeOfDay : 'auto';
+      const nextKey = cycle[(cycle.indexOf(currentKey) + 1) % cycle.length];
+      if (nextKey === 'auto') {
+        this.timeOfDayMode = 'auto';
+        const autoPreset = this.resolveAutoTimeOfDay?.() || 'morning';
+        this.setTimeOfDay(autoPreset, false, true);
+      } else {
+        this.timeOfDayMode = 'manual';
+        this.setTimeOfDay(nextKey, false, true);
+      }
+      const lbl = document.getElementById('drawer-time-cycle-label');
+      if (lbl) {
+        const names = { morning: '🌅 Sáng', midday: '☀️ Trưa', sunset: '🌇 Chiều', evening: '🕯️ Tối' };
+        lbl.textContent = nextKey === 'auto' ? '🕒 Ánh sáng: Tự động' : `Ánh sáng: ${names[nextKey]}`;
+      }
+      this.saveState();
     });
-    document.getElementById('btn-drawer-font-inc')?.addEventListener('click', () => {
-      this.stepElderFontScale(1);
+    document.getElementById('btn-drawer-cam-toggle')?.addEventListener('click', () => {
+      this.toggleCameraViewModeInApp?.();
+      const lbl = document.getElementById('drawer-cam-toggle-label');
+      if (lbl) {
+        lbl.textContent = this.cameraViewMode === 'first' ? '👁️ Góc nhìn: Thứ 1' : '👤 Góc nhìn: Thứ 3';
+      }
+    });
+    document.getElementById('btn-drawer-font-toggle')?.addEventListener('click', () => {
+      const nextScale = this.elderFontScale === 'normal' ? 'large' : 'normal';
+      this.applyElderFontScale?.(nextScale, true);
+      const lbl = document.getElementById('drawer-font-toggle-label');
+      if (lbl) {
+        lbl.textContent = nextScale === 'normal' ? 'Aa Cỡ chữ: Chuẩn' : 'A+ Cỡ chữ: Lớn';
+      }
     });
     document.getElementById('btn-drawer-cloud-auth')?.addEventListener('click', () => {
       if (this.cloudUser) this.handleGoogleSignOut();
@@ -317,19 +352,9 @@ export const modalAndEventsMethods = {
     document.getElementById('btn-audio-global-mute')?.addEventListener('click', () => {
       this.setAudioMuted(!this.audioMuted);
     });
-    document.getElementById('slider-ambient-vol')?.addEventListener('input', (e) => {
-      const val = Number(e.target?.value ?? 45) / 100;
-      this.audio?.setAmbientVolume?.(val);
-      this.saveAudioMixerState();
-    });
-    document.getElementById('slider-sfx-vol')?.addEventListener('input', (e) => {
-      const val = Number(e.target?.value ?? 85) / 100;
-      this.audio?.setSfxVolume?.(val);
-      this.saveAudioMixerState();
-    });
-    document.getElementById('slider-voice-vol')?.addEventListener('input', (e) => {
-      const val = Number(e.target?.value ?? 90) / 100;
-      this.audio?.setVoiceVolume?.(val);
+    document.getElementById('slider-master-vol')?.addEventListener('input', (e) => {
+      const val = Number(e.target?.value ?? 100) / 100;
+      this.audio?.setMasterVolume?.(val);
       this.saveAudioMixerState();
     });
 
@@ -433,8 +458,31 @@ export const modalAndEventsMethods = {
     document.getElementById('btn-interior-blessing-tower')?.addEventListener('click', () => {
       this.openBlessingTowerModal();
     });
-    document.getElementById('btn-interior-exit-courtyard')?.addEventListener('click', () => {
-      this.toggleInteriorHallIn3D(false);
+    const exitMenuBtn = document.getElementById('btn-interior-exit-menu');
+    const exitPopover = document.getElementById('interior-exit-popover');
+    const setExitPopOpen = (open) => {
+      if (!exitPopover || !exitMenuBtn) return;
+      exitPopover.style.display = open ? 'flex' : 'none';
+      exitMenuBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    };
+    exitMenuBtn?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const open = exitPopover?.style.display !== 'flex';
+      setExitPopOpen(open);
+    });
+    document.querySelectorAll('[data-exit-gate]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const gate = btn.getAttribute('data-exit-gate') || 'front_tam_quan';
+        setExitPopOpen(false);
+        this.world3d?.exitInteriorGradual?.(gate);
+      });
+    });
+    document.addEventListener('click', (e) => {
+      if (exitPopover && exitPopover.style.display === 'flex') {
+        if (!exitPopover.contains(e.target) && !exitMenuBtn?.contains(e.target)) {
+          setExitPopOpen(false);
+        }
+      }
     });
 
     // Quick-Walk 3D Landmark Bar

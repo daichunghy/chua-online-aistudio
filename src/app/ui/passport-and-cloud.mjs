@@ -26,7 +26,8 @@ import {
   mergeCloudPassportState,
   matchHeritagePhotoSpot,
   recordHeritagePhoto,
-  HERITAGE_PHOTO_SPOTS
+  HERITAGE_PHOTO_SPOTS,
+  mergeBlessingTowerEntries
 } from './shared.mjs';
 
 import {
@@ -39,7 +40,12 @@ import {
   saveCloudJournalEntry,
   subscribeCommunityLanterns,
   postCommunityLantern,
-  blessCommunityLantern
+  blessCommunityLantern,
+  subscribeCloudBlessingTower,
+  postCloudBlessingTowerEntry,
+  saveCloudPublicProfile,
+  postCloudGiftTransaction,
+  postCloudCommunityPost
 } from '../firebase-sync.mjs';
 
 const QUICK_PRAYER_TEMPLATES = [
@@ -138,9 +144,45 @@ export const passportAndCloudMethods = {
           this.syncCombinedLanternsTo3D();
         }
       );
+
+      this._unsubBlessingTower = await subscribeCloudBlessingTower(
+        this.passport?.activeTempleId || DEFAULT_TEMPLE_ID,
+        (cloudEntries) => {
+          if (Array.isArray(cloudEntries) && cloudEntries.length > 0) {
+            this.blessingTower = mergeBlessingTowerEntries(this.blessingTower, cloudEntries);
+            this.saveState();
+            this.syncBlessingTowerTo3D?.();
+          }
+        }
+      );
     } catch (err) {
       console.warn('[passport-and-cloud] Offline fallback active:', err?.message || err);
     }
+  },
+
+  async syncBlessingTowerEntryToCloud(entry) {
+    if (!this.cloudUser?.uid || !entry) return false;
+    return postCloudBlessingTowerEntry(this.cloudUser.uid, {
+      ...entry,
+      templeId: this.passport?.activeTempleId || DEFAULT_TEMPLE_ID
+    });
+  },
+
+  async syncSocialCloudRecord(kind, payload) {
+    if (!this.cloudUser?.uid || !payload) return false;
+    if (kind === 'profile') {
+      return saveCloudPublicProfile(this.cloudUser.uid, payload);
+    }
+    if (kind === 'gift') {
+      return postCloudGiftTransaction(this.cloudUser.uid, payload);
+    }
+    if (kind === 'post') {
+      return postCloudCommunityPost(this.cloudUser.uid, {
+        ...payload,
+        templeId: this.passport?.activeTempleId || DEFAULT_TEMPLE_ID
+      });
+    }
+    return false;
   },
 
   syncCombinedLanternsTo3D() {

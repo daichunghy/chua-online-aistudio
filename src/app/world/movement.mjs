@@ -12,6 +12,7 @@ import {
   getTerrainGroundHeight,
   stepWalkingPhysics
 } from '../../logic/modules/pathfinding-and-collision.mjs';
+import { detectGroundSurface } from '../../logic/modules/surface-footsteps.mjs';
 
 const INTERIOR_BOUNDS = {
   minX: -61.5,
@@ -365,7 +366,9 @@ export const movementMethods = {
     this.playerState.moving = true;
 
     if (phys.footstepTriggered && !this.arrivalCutscene?.active && this.playerPhysics.actualSpeed > 0.35) {
-      this.onStepSound(this.inInterior ? 'interior' : 'stone');
+      const surface = detectGroundSurface(this.playerState.x, this.playerState.z, this.inInterior);
+      this.onStepSound(surface);
+      this.spawnFootstepBurst?.(this.playerState.x, this.playerElevationY || 0, this.playerState.z, this.playerState.yaw, surface);
     }
 
     // Only auto-follow camera yaw when walking predominantly forward (never fight A/D strafing or reverse)

@@ -204,3 +204,54 @@ export function registerBlessingTowerPrayer(currentState, payload = {}, date = n
     message: `Đã thắp sáng Ô Đèn #${slotNumber} (Tầng ${tier}/13) cầu nguyện "${category.label}" cho ${entry.devoteeName}.`
   };
 }
+
+export function mergeBlessingTowerEntries(localEntries = [], cloudEntries = []) {
+  const map = new Map();
+  const ingest = (list, fromCloud) => {
+    if (!Array.isArray(list)) return;
+    for (const raw of list) {
+      if (!raw || typeof raw.devoteeName !== 'string' || !raw.devoteeName.trim()) continue;
+      const id = String(raw.id || `bt_${raw.slotNumber || 0}_${raw.devoteeName.trim()}`);
+      const prev = map.get(id);
+      const entry = {
+        id,
+        devoteeName: raw.devoteeName.trim().slice(0, 72),
+        birthYear: String(raw.birthYear || '').trim().slice(0, 4),
+        familyNote: String(raw.familyNote || '').trim().slice(0, 90),
+        categoryId: BLESSING_TOWER_CATEGORIES.some((c) => c.id === raw.categoryId)
+          ? raw.categoryId
+          : 'gia_dao_binh_an',
+        wishText: String(raw.wishText || '').trim().slice(0, 220),
+        tier: Math.max(1, Math.min(13, Number(raw.tier) || 1)),
+        slotNumber: Math.max(1, Math.min(108, Number(raw.slotNumber) || 1)),
+        dateKey: String(raw.dateKey || '2026-05-18'),
+        createdAt: String(raw.createdAt || ''),
+        isUserOwned: Boolean(prev?.isUserOwned || raw.isUserOwned),
+        syncedCloud: Boolean(fromCloud || prev?.syncedCloud || raw.syncedCloud)
+      };
+      map.set(id, entry);
+    }
+  };
+
+  ingest(cloudEntries, true);
+  ingest(localEntries, false);
+
+  const merged = Array.from(map.values()).sort((a, b) => {
+    if (a.isUserOwned !== b.isUserOwned) return a.isUserOwned ? -1 : 1;
+    const tA = a.createdAt || a.dateKey || '';
+    const tB = b.createdAt || b.dateKey || '';
+    return tB.localeCompare(tA);
+  });
+
+  return merged.slice(0, 108);
+}
+
+export function filterBlessingTowerEntries(entries = [], query = '') {
+  const q = String(query || '').trim().toLowerCase();
+  if (!q) return Array.isArray(entries) ? entries : [];
+  return (Array.isArray(entries) ? entries : []).filter((e) => {
+    const hay = `${e.devoteeName || ''} ${e.familyNote || ''} ${e.wishText || ''} #${e.slotNumber || ''}`.toLowerCase();
+    return hay.includes(q);
+  });
+}
+

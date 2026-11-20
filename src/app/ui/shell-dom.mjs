@@ -127,20 +127,29 @@ export const shellDomMethods = {
           <button type="button" id="btn-skip-arrival-cutscene" class="entrance-tour-skip-btn" style="min-height:48px;padding:0 16px;">Bỏ qua &amp; vào sân chùa</button>
         </div>
 
-        <nav id="interior-zone-bar" class="interior-zone-bar" style="display:none;" aria-label="Khám phá Chùa Chính Hình Vuông">
-          <button type="button" class="walk-chip-btn active" data-interior-zone="day_ban_tho_phai">1. Lối Phải · 8 Bàn Thờ Phật</button>
-          <button type="button" class="walk-chip-btn" data-interior-zone="nghin_mat_nghin_tay">🙏 Nghìn Mắt Nghìn Tay</button>
-          <button type="button" class="walk-chip-btn" data-interior-zone="cho_ngu_cua_phat">🪷 Chỗ Ngủ Của Phật</button>
-          <button type="button" class="walk-chip-btn" data-interior-zone="chanh_dien">2. Cạnh Trái · Chính Điện &amp; 18 La Hán</button>
-          <button type="button" class="walk-chip-btn" id="btn-interior-blessing-tower" title="Tháp Đèn Dược Sư Vạn Phật · Ghi Tên Cầu Phước">🏮 Tháp Cầu Phước</button>
-          <button type="button" class="walk-chip-btn" data-interior-zone="ho_sen_bo">3. Giữa Chùa · Hồ Sen Bộ</button>
-          <button type="button" class="walk-chip-btn" data-interior-zone="hanh_lang_trai">4. Cạnh Trên · Tổ Đường</button>
-          <button type="button" class="walk-chip-btn" data-interior-zone="hanh_lang_duoi">5. Cạnh Dưới · Hành Lang</button>
-          <button type="button" class="walk-chip-btn" data-interior-zone="trai_duong">🪑 Phòng Khách · Kinh Sách</button>
-          <button type="button" class="walk-chip-btn" id="btn-interior-cutaway" title="Mặt cắt 3D toàn cảnh mặt bằng Hình Vuông &amp; Hồ Sen Bộ">✂️ Mặt cắt 3D</button>
-          <button type="button" class="walk-chip-btn" id="btn-interior-history" title="Đối chiếu tư liệu Tôn tượng Tam Bảo">📜 Tư liệu</button>
-          <button type="button" class="walk-chip-btn interior-exit-chip" id="btn-interior-exit-courtyard">← Ra Hiên Bỏ Dép</button>
+        <nav id="interior-zone-bar" class="interior-zone-bar" style="display:none;" aria-label="Di chuyển trong Chánh Điện">
+          <button type="button" class="walk-chip-btn active" data-interior-zone="chanh_dien">1. Chánh Điện</button>
+          <button type="button" class="walk-chip-btn" data-interior-zone="day_ban_tho_phai">2. 8 Bàn Thờ</button>
+          <button type="button" class="walk-chip-btn" data-interior-zone="ho_sen_bo">3. Hồ Sen Bộ</button>
+          <button type="button" class="walk-chip-btn" data-interior-zone="hanh_lang_trai">4. Tổ Đường</button>
+          <button type="button" class="walk-chip-btn" id="btn-interior-cutaway" title="Mặt cắt 3D mặt bằng Chánh Điện">✂️ Mặt cắt 3D</button>
+          <button type="button" class="walk-chip-btn interior-exit-chip" id="btn-interior-exit-menu" aria-expanded="false" aria-controls="interior-exit-popover">🚪 Ra sân chùa ▾</button>
         </nav>
+
+        <div id="interior-exit-popover" class="interior-exit-popover" style="display:none;" role="menu" aria-label="Chọn cổng ra sân chùa">
+          <button type="button" class="interior-exit-option" data-exit-gate="front_tam_quan" role="menuitem">
+            <span>🏮 Cổng chính · Sân trước &amp; Tháp Đèn</span>
+            <small>Hướng Phật nhìn ra Tam Quan</small>
+          </button>
+          <button type="button" class="interior-exit-option" data-exit-gate="right" role="menuitem">
+            <span>👟 Hiên bỏ dép · Lối hành lang phải</span>
+            <small>Về Tiệm Tạp Hóa &amp; đường hoa giấy</small>
+          </button>
+          <button type="button" class="interior-exit-option" data-exit-gate="north_garden" role="menuitem">
+            <span>🌳 Cổng Bắc · Vườn Phật Niết Bàn</span>
+            <small>Ra khu tượng Phật Nằm &amp; Bảo Tháp</small>
+          </button>
+        </div>
 
         <!-- Protagonist Hotspot in Courtyard -->
         <div id="protagonist-hotspot" title="Chọn nhân vật hoặc trang phục đi chùa"></div>
@@ -191,6 +200,12 @@ export const shellDomMethods = {
           </div>
 
           <div class="elder-top-actions">
+            <button type="button" class="elder-top-btn" id="nav-btn-social" title="Cộng đồng Đạo hữu: Bạn bè, Bảng xếp hạng &amp; Tặng quà">
+              <span aria-hidden="true">🤝</span>
+              <span class="top-btn-label">Cộng đồng</span>
+              <span class="nav-count-badge" id="nav-social-badge" style="display:none;">0</span>
+            </button>
+
             <button type="button" class="elder-top-btn ${this.audioMuted ? 'muted' : ''}" id="nav-btn-audio" title="Điều chỉnh âm thanh &amp; tắt/mở tiếng" aria-expanded="false">
               <span id="nav-audio-icon" aria-hidden="true">${this.audioMuted ? '🔇' : '🔊'}</span>
               <span class="top-btn-label" id="nav-audio-label">${this.audioMuted ? 'Tắt tiếng' : 'Âm thanh'}</span>
@@ -208,8 +223,8 @@ export const shellDomMethods = {
           </div>
         </header>
 
-        <!-- 3-Channel Audio Mixer & Ambient Soundscape Popover -->
-        <div id="audio-mixer-popover" class="audio-mixer-popover" style="display:none;" role="dialog" aria-label="Điều chỉnh âm thanh Chùa Online">
+        <!-- Simplified Auto-Balanced Audio Popover -->
+        <div id="audio-mixer-popover" class="audio-mixer-popover" style="display:none;" role="dialog" aria-label="Điều chỉnh âm thanh Chùa Vĩnh Tràng">
           <div class="audio-mixer-head">
             <strong>🎧 Âm thanh Chùa Vĩnh Tràng</strong>
             <button type="button" id="btn-close-audio-mixer" class="courtyard-help-close" aria-label="Đóng chỉnh âm thanh">✕</button>
@@ -218,11 +233,16 @@ export const shellDomMethods = {
             ${this.audioMuted ? '🔇 Đang Tắt toàn bộ tiếng (Bấm để Mở lại)' : '🔊 Đang Bật âm thanh (Bấm để Tắt tiếng)'}
           </button>
 
+          <div class="audio-slider-row">
+            <label for="slider-master-vol"><span>🔊 Âm lượng chung (tự cân bằng)</span><strong id="val-master-vol">${Math.round((this.audio?.masterVolume ?? 1) * 100)}%</strong></label>
+            <input type="range" id="slider-master-vol" min="0" max="100" value="${Math.round((this.audio?.masterVolume ?? 1) * 100)}" />
+          </div>
+
           <div class="audio-ambient-section">
             <div class="audio-ambient-master-row">
               <div class="audio-ambient-meta">
-                <strong>🪷 Âm thanh không gian chùa</strong>
-                <span id="mixer-ambient-subtitle">Niệm Phật xa &amp; chuông chùa lặp nhẹ nhàng</span>
+                <strong>🪷 Nhạc nền không gian chùa</strong>
+                <span id="mixer-ambient-subtitle">Tự động chuyển đổi theo sân chùa &amp; Chánh Điện</span>
               </div>
               <button
                 type="button"
@@ -230,40 +250,13 @@ export const shellDomMethods = {
                 class="audio-switch-btn ${this.ambientSettings?.enabled && !this.audioMuted ? 'is-on' : ''}"
                 role="switch"
                 aria-checked="${this.ambientSettings?.enabled && !this.audioMuted ? 'true' : 'false'}"
-                aria-label="Bật hoặc tắt âm thanh không gian chùa"
+                aria-label="Bật hoặc tắt nhạc nền không gian chùa"
               >
                 <span class="ambient-switch-track" aria-hidden="true">
                   <span class="ambient-switch-thumb"></span>
                 </span>
               </button>
             </div>
-            <div class="audio-layer-list">
-              <label class="audio-layer-item">
-                <input type="checkbox" id="chk-ambient-chanting" ${this.ambientSettings?.chanting !== false ? 'checked' : ''} />
-                <span>📿 Niệm Phật từ xa</span>
-              </label>
-              <label class="audio-layer-item">
-                <input type="checkbox" id="chk-ambient-bells" ${this.ambientSettings?.bells !== false ? 'checked' : ''} />
-                <span>🔔 Chuông chùa &amp; chuông gió</span>
-              </label>
-              <label class="audio-layer-item">
-                <input type="checkbox" id="chk-ambient-atmosphere" ${this.ambientSettings?.atmosphere !== false ? 'checked' : ''} />
-                <span>🌿 Gió sân &amp; điện thờ</span>
-              </label>
-            </div>
-          </div>
-
-          <div class="audio-slider-row">
-            <label for="slider-ambient-vol"><span>🪷 Âm lượng nền (Niệm Phật &amp; Chuông)</span><strong id="val-ambient-vol">${Math.round((this.audio?.ambientVolume ?? 0.45) * 100)}%</strong></label>
-            <input type="range" id="slider-ambient-vol" min="0" max="100" value="${Math.round((this.audio?.ambientVolume ?? 0.45) * 100)}" />
-          </div>
-          <div class="audio-slider-row">
-            <label for="slider-sfx-vol"><span>🔔 Chuông · Mõ · Bước chân</span><strong id="val-sfx-vol">${Math.round((this.audio?.sfxVolume ?? 0.85) * 100)}%</strong></label>
-            <input type="range" id="slider-sfx-vol" min="0" max="100" value="${Math.round((this.audio?.sfxVolume ?? 0.85) * 100)}" />
-          </div>
-          <div class="audio-slider-row">
-            <label for="slider-voice-vol"><span>🎙️ Pháp âm &amp; Thầy đọc bài</span><strong id="val-voice-vol">${Math.round((this.audio?.voiceVolume ?? 0.9) * 100)}%</strong></label>
-            <input type="range" id="slider-voice-vol" min="0" max="100" value="${Math.round((this.audio?.voiceVolume ?? 0.9) * 100)}" />
           </div>
         </div>
 
@@ -350,8 +343,9 @@ export const shellDomMethods = {
             </div>
 
             <div>
-              <h3 class="drawer-group-title">Cửa hàng &amp; Tu học</h3>
+              <h3 class="drawer-group-title">Cộng đồng &amp; Tu học</h3>
               <div class="drawer-btn-stack">
+                <button type="button" class="drawer-action-btn" id="btn-drawer-social"><span>🤝 Đạo Hữu · Bảng Xếp Hạng &amp; Tặng Quà</span><span>→</span></button>
                 <button type="button" class="drawer-action-btn" id="btn-drawer-shop"><span>👘 Cửa Hàng (Trang Phục 3D &amp; Quà)</span><span>→</span></button>
                 <button type="button" class="drawer-action-btn" id="btn-drawer-lecture"><span>📚 Học Viện &amp; Tủ Sách Phật Học</span><span>→</span></button>
                 <button type="button" class="drawer-action-btn" id="btn-drawer-character"><span>👤 Đổi Nhân Vật &amp; Hồ Sơ</span><span>→</span></button>
@@ -359,36 +353,17 @@ export const shellDomMethods = {
             </div>
 
             <div>
-              <h3 class="drawer-group-title">Thời khóa &amp; Ánh sáng sân chùa</h3>
-              <div class="drawer-segment-row" style="grid-template-columns:1fr 1fr;" role="group" aria-label="Thời khóa và ánh sáng trong ngày">
-                <button type="button" class="drawer-segment-btn ${this.timeOfDay === 'morning' ? 'active' : ''}" data-time-of-day="morning">🌅 Sáng (06:30)</button>
-                <button type="button" class="drawer-segment-btn ${this.timeOfDay === 'midday' ? 'active' : ''}" data-time-of-day="midday">☀️ Trưa (11:30)</button>
-                <button type="button" class="drawer-segment-btn ${this.timeOfDay === 'sunset' ? 'active' : ''}" data-time-of-day="sunset">🌇 Chiều (17:00)</button>
-                <button type="button" class="drawer-segment-btn ${this.timeOfDay === 'evening' ? 'active' : ''}" data-time-of-day="evening">🕯️ Tối (19:00)</button>
-              </div>
-            </div>
-
-            <div>
-              <h3 class="drawer-group-title">Thời tiết miền Tây</h3>
-              <div class="drawer-segment-row" style="grid-template-columns:1fr 1fr;" role="group" aria-label="Thời tiết sân chùa">
-                <button type="button" class="drawer-segment-btn ${this.weatherPreset !== 'rain' ? 'active' : ''}" data-weather-preset="clear">🌤️ Nắng đẹp</button>
-                <button type="button" class="drawer-segment-btn ${this.weatherPreset === 'rain' ? 'active' : ''}" data-weather-preset="rain">🌦️ Mưa rào</button>
-              </div>
-            </div>
-
-            <div>
-              <h3 class="drawer-group-title">Góc nhìn vãn cảnh (Phím V)</h3>
-              <div class="drawer-segment-row" style="grid-template-columns:1fr 1fr;" role="group" aria-label="Chế độ góc nhìn">
-                <button type="button" class="drawer-segment-btn ${this.cameraViewMode !== 'first' ? 'active' : ''}" data-camera-mode="third">👤 Góc thứ 3</button>
-                <button type="button" class="drawer-segment-btn ${this.cameraViewMode === 'first' ? 'active' : ''}" data-camera-mode="first">👁️ Thứ 1 [V]</button>
-              </div>
-            </div>
-
-            <div>
-              <h3 class="drawer-group-title">Cỡ chữ dễ đọc</h3>
-              <div class="drawer-segment-row" style="grid-template-columns:1fr 1fr;">
-                <button type="button" class="drawer-segment-btn" id="btn-drawer-font-dec">A- Nhỏ lại</button>
-                <button type="button" class="drawer-segment-btn" id="btn-drawer-font-inc">A+ Chữ lớn</button>
+              <h3 class="drawer-group-title">Cài đặt nhanh (Tự động cân chỉnh)</h3>
+              <div class="drawer-quick-grid" role="group" aria-label="Cài đặt nhanh sân chùa">
+                <button type="button" class="drawer-segment-btn" id="btn-drawer-time-cycle" title="Đổi ánh sáng theo giờ thực tế hoặc chọn thủ công">
+                  <span id="drawer-time-cycle-label">${this.timeOfDayMode === 'manual' ? (this.timeOfDay === 'morning' ? '🌅 Sáng' : this.timeOfDay === 'midday' ? '☀️ Trưa' : this.timeOfDay === 'sunset' ? '🌇 Chiều' : '🕯️ Tối') : '🕒 Ánh sáng: Tự động'}</span>
+                </button>
+                <button type="button" class="drawer-segment-btn" id="btn-drawer-cam-toggle" title="Đổi góc nhìn thứ 3 hoặc thứ 1 (phím V)">
+                  <span id="drawer-cam-toggle-label">${this.cameraViewMode === 'first' ? '👁️ Góc nhìn: Thứ 1' : '👤 Góc nhìn: Thứ 3'}</span>
+                </button>
+                <button type="button" class="drawer-segment-btn" id="btn-drawer-font-toggle" title="Chuyển đổi cỡ chữ chuẩn hoặc cỡ chữ lớn dễ đọc">
+                  <span id="drawer-font-toggle-label">${this.elderFontScale === 'normal' ? 'Aa Cỡ chữ: Chuẩn' : 'A+ Cỡ chữ: Lớn'}</span>
+                </button>
               </div>
             </div>
 

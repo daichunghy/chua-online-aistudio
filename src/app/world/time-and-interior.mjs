@@ -185,7 +185,75 @@ export const timeAndInteriorMethods = {
     }
   },
 
+  updateBlessingTowerNameBoard(entries = []) {
+    const canvas = this._blessingTowerBoardCanvas;
+    const tex = this.blessingTowerNameBoardTex;
+    if (!canvas || !tex) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const w = canvas.width;
+    const h = canvas.height;
+    ctx.fillStyle = '#4B120C';
+    ctx.fillRect(0, 0, w, h);
+
+    ctx.strokeStyle = '#E8BE52';
+    ctx.lineWidth = 8;
+    ctx.strokeRect(10, 10, w - 20, h - 20);
+    ctx.lineWidth = 2;
+    ctx.strokeRect(20, 20, w - 40, h - 40);
+
+    ctx.fillStyle = '#FFE8A3';
+    ctx.textAlign = 'center';
+    ctx.font = 'bold 28px Georgia, serif';
+    ctx.fillText('BẢNG GHI TÊN CẦU AN', w / 2, 64);
+
+    ctx.fillStyle = '#E8BE52';
+    ctx.font = '600 18px sans-serif';
+    const list = Array.isArray(entries) ? entries : [];
+    ctx.fillText(`Đã thắp sáng ${list.length} / 108 ô đèn`, w / 2, 96);
+
+    ctx.strokeStyle = 'rgba(232, 190, 82, 0.45)';
+    ctx.beginPath();
+    ctx.moveTo(42, 114);
+    ctx.lineTo(w - 42, 114);
+    ctx.stroke();
+
+    ctx.textAlign = 'left';
+    const visible = list.slice(0, 8);
+    if (!visible.length) {
+      ctx.fillStyle = '#F7E7C4';
+      ctx.textAlign = 'center';
+      ctx.font = 'italic 20px Georgia, serif';
+      ctx.fillText('Chạm vào Tháp để ghi tên cầu bình an', w / 2, 260);
+    } else {
+      visible.forEach((item, idx) => {
+        const y = 152 + idx * 46;
+        ctx.fillStyle = item.isUserOwned ? '#FFD966' : '#FFF4DC';
+        ctx.font = item.isUserOwned ? 'bold 21px sans-serif' : '600 19px sans-serif';
+        const rawName = String(item.devoteeName || 'Phật tử').slice(0, 26);
+        const slotTag = `#${item.slotNumber || idx + 1}`;
+        ctx.fillText(`${slotTag} · ${rawName}`, 36, y);
+
+        ctx.fillStyle = 'rgba(255, 232, 178, 0.72)';
+        ctx.font = '14px sans-serif';
+        const sub = item.familyNote
+          ? String(item.familyNote).slice(0, 38)
+          : String(item.wishText || 'Cầu bình an').slice(0, 38);
+        ctx.fillText(sub, 36, y + 18);
+      });
+    }
+
+    ctx.fillStyle = '#F0C968';
+    ctx.textAlign = 'center';
+    ctx.font = 'bold 17px sans-serif';
+    ctx.fillText('[E] hoặc Chạm Tháp để Ghi Tên Cầu Phước', w / 2, h - 32);
+
+    tex.needsUpdate = true;
+  },
+
   syncBlessingTowerLamps(entries = []) {
+    this.updateBlessingTowerNameBoard(entries);
     if (!Array.isArray(this.blessingTowerLampMeshes) || !this.blessingTowerLampMeshes.length) return;
     const bySlot = new Map();
     for (const item of Array.isArray(entries) ? entries : []) {
@@ -198,17 +266,12 @@ export const timeAndInteriorMethods = {
       const mesh = this.blessingTowerLampMeshes[i];
       const slot = mesh.userData?.slotNumber || i + 1;
       const entry = bySlot.get(slot);
-      if (!mesh.material) continue;
       if (entry) {
-        mesh.material.color.setHex(0xFFF3BA);
-        mesh.material.emissive.set(entry.colorHex || '#FFA733');
-        mesh.material.emissiveIntensity = 1.68;
-        mesh.scale.set(1.06, 1.44, 0.66);
+        if (this._btLampLitMat) mesh.material = this._btLampLitMat;
+        mesh.scale.setScalar(1.22);
       } else {
-        mesh.material.color.setHex(0xD89E5C);
-        mesh.material.emissive.setHex(0x7A3212);
-        mesh.material.emissiveIntensity = 0.32;
-        mesh.scale.set(0.92, 1.28, 0.52);
+        if (this._btLampDimMat) mesh.material = this._btLampDimMat;
+        mesh.scale.setScalar(0.88);
       }
     }
     this.renderFrame();

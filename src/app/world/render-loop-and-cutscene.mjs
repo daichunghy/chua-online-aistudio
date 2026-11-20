@@ -10,6 +10,7 @@ import {
   getTerrainGroundHeight
 } from '../../logic/modules/pathfinding-and-collision.mjs';
 import { evaluatePigeonState } from '../../logic/modules/living-world.mjs';
+import { detectGroundSurface } from '../../logic/modules/surface-footsteps.mjs';
 
 function smoothstep01(t) {
   const c = Math.max(0, Math.min(1, t));
@@ -127,7 +128,9 @@ export const renderLoopAndCutsceneMethods = {
     this.playerState.moving = true;
 
     if (phys.footstepTriggered && !this.arrivalCutscene?.active && this.playerPhysics.actualSpeed > 0.35) {
-      this.onStepSound(this.inInterior ? 'interior' : 'stone');
+      const surface = detectGroundSurface(this.playerState.x, this.playerState.z, this.inInterior);
+      this.onStepSound(surface);
+      this.spawnFootstepBurst?.(this.playerState.x, this.playerElevationY || 0, this.playerState.z, this.playerState.yaw, surface);
     }
 
     // Smooth camera auto-follow along the walking heading (unless user just dragged the camera)
@@ -481,6 +484,7 @@ export const renderLoopAndCutsceneMethods = {
       if (this.interiorWalkingRecords?.length) {
         this.stepNpcRecordList(this.interiorWalkingRecords, this.interiorGroup, dt);
       }
+      this.stepInteriorBellMonk?.(dt, elapsed);
     }
 
     // Animate Dâng hoa blooming & glowing lotus effect + active Dâng hương / Dâng hoa sequences + Mekong weather + Living World (zero GC)
@@ -489,9 +493,14 @@ export const renderLoopAndCutsceneMethods = {
     this.stepOfferingAnimations?.(ritualDt);
     this.stepWeatherSystem?.(dt);
     this.stepLivingWorld3D?.(dt, elapsed);
+    this.stepFootstepFX?.(dt);
 
     this.updateProjectedPins();
     this.updateCourtyardNpcInteraction();
+    if (this.isSoftwareGl && document.querySelector('.modal-backdrop.open')) {
+      window.setTimeout(() => this.animate(), 420);
+      return;
+    }
     try {
       this.renderer.render(this.scene, this.camera);
     } catch {}
@@ -518,6 +527,109 @@ export const renderLoopAndCutsceneMethods = {
       this.afterDraw(() => this.animate(), isActivelyAnimating ? 120 : 520);
     } else {
       requestAnimationFrame(() => this.animate());
+    }
+  },
+
+  triggerInteriorBellMonkStrike(immediate = true) {
+    const bm = this.interiorBellMonk;
+    if (!bm) return;
+    bm.striking = true;
+    bm.strikeTimer = 0;
+    bm.strikeImpactFired = false;
+    bm.cooldown = immediate ? 14.5 : bm.cooldown;
+  },
+
+  stepInteriorBellMonk(dt, elapsed) {
+    const bm = this.interiorBellMonk;
+    if (!bm || !bm.rec?.root) return;
+    bm.rec.mixer?.update(dt * 0.75);
+
+    if (!bm.striking) {
+      bm.cooldown -= dt;
+      if (bm.cooldown <= 0) {
+        bm.striking = true;
+        bm.strikeTimer = 0;
+        bm.strikeImpactFired = false;
+        bm.cooldown = 14.0 + Math.random() * 4.5;
+      }
+    }
+
+    let swingAngle = 0;
+    let bodyLean = 0;
+    if (bm.striking) {
+      bm.strikeTimer += dt;
+      const dur = 2.2;
+      const p = Math.min(1, bm.strikeTimer / dur);
+      if (p < 0.35) {
+        // Pull back the wooden striker gently
+        const t = smoothstep01(p / 0.35);
+        swingAngle = -0.42 * t;
+        bodyLean = -0.06 * t;
+      } else if (p < 0.56) {
+        // Forward strike onto Đại Hồng Chung
+        const t = smoothstep01((p - 0.35) / 0.21);
+        swingAngle = THREE.MathUtils.lerp(-0.42, 0.56, t);
+        bodyLean = THREE.MathUtils.lerp(-0.06, 0.16, t);
+      } else {
+        // Return calmly to serene posture
+        const t = smoothstep01((p - 0.56) / 0.44);
+        swingAngle = THREE.MathUtils.lerp(0.56, 0, t);
+        bodyLean = THREE.MathUtils.lerp(0.16, 0, t);
+      }
+
+      if (!bm.strikeImpactFired && p >= 0.52) {
+        bm.strikeImpactFired = true;
+        bm.ringTimer = 0.001;
+        if (bm.waveRing) {
+          bm.waveRing.visible = true;
+          bm.waveRing.scale.setScalar(0.5);
+          if (bm.waveRing.material) bm.waveRing.material.opacity = 0.72;
+        }
+        const dist = Math.hypot(
+          (this.playerState?.x || 0) - (-27.2),
+          (this.playerState?.z || 0) - (-7.8)
+        );
+        this.onBellMonkStrike?.(dist);
+      }
+
+      if (p >= 1) {
+        bm.striking = false;
+        bm.strikeTimer = 0;
+      }
+    }
+
+    // Apply pose to monk bones or striker pivot
+    const bones = bm.rec._bones || (bm.rec._bones = findCharacterBones(bm.rec.root));
+    if (bones.rightArm) {
+      bones.rightArm.rotation.x = -0.58 - swingAngle * 0.95;
+      bones.rightArm.rotation.z = -0.14;
+    }
+    if (bones.rightForearm) {
+      bones.rightForearm.rotation.x = -0.52 - swingAngle * 0.45;
+    }
+    if (bones.spine) {
+      bones.spine.rotation.x = 0.05 + bodyLean;
+    }
+    if (bm.strikerPivot) {
+      bm.strikerPivot.rotation.x = swingAngle * 0.85;
+    }
+    if (this.interiorBellAnchor && bm.ringTimer > 0) {
+      // Gentle physical bell resonance sway
+      this.interiorBellAnchor.rotation.z = Math.sin(elapsed * 9.5) * 0.025 * Math.max(0, 1 - bm.ringTimer / 2.6);
+    }
+
+    // Expand golden soundwave ring around Đại Hồng Chung
+    if (bm.ringTimer > 0 && bm.waveRing) {
+      bm.ringTimer += dt;
+      const rt = bm.ringTimer / 2.6;
+      if (rt >= 1) {
+        bm.ringTimer = 0;
+        bm.waveRing.visible = false;
+        if (this.interiorBellAnchor) this.interiorBellAnchor.rotation.z = 0;
+      } else {
+        bm.waveRing.scale.setScalar(0.55 + rt * 3.8);
+        if (bm.waveRing.material) bm.waveRing.material.opacity = (1 - rt) * (1 - rt) * 0.68;
+      }
     }
   },
 
@@ -1161,14 +1273,16 @@ export const renderLoopAndCutsceneMethods = {
     const poll = () => {
       polls += 1;
       const state = gl.getSyncParameter(sync, gl.SYNC_STATUS);
-      if (state === gl.UNSIGNALED && polls < 60) {
-        window.setTimeout(poll, 8);
+      if (state === gl.UNSIGNALED && polls < 400) {
+        window.setTimeout(poll, 24);
       } else {
         gl.deleteSync(sync);
-        window.setTimeout(cb, delayMs);
+        const modalOpen = Boolean(document.querySelector('.modal-backdrop.open'));
+        const nextDelay = modalOpen && this.isSoftwareGl ? Math.max(delayMs, 1100) : delayMs;
+        window.setTimeout(cb, nextDelay);
       }
     };
-    window.setTimeout(poll, 8);
+    window.setTimeout(poll, 24);
   },
 
   stepNpcRecordList(list, parentGroup, dt) {

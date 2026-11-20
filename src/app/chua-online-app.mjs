@@ -3,7 +3,7 @@
  * File này giữ constructor/state/init; các nhóm method nằm trong src/app/ui/*.mjs (xem docs/ARCHITECTURE.md).
  */
 
-import { CHARACTER_PROFILES, INITIAL_UGC_GALLERY, createSpiritualState, checkUGCMilestoneUnlock, calculateJourneyImprint, calculateCartSummary, getLocalDateKey, fetchDailyDharmaService, COURTYARD_NPC_DHARMA_QUOTES, createStoreProfileState, TIME_OF_DAY_PRESETS, createActivityHubState, ensureDailyMissionDate, NATIONALITY_PROFILES, PILGRIMAGE_MODES, HOA_DANG_WISHES, createDharmaJournalState, ACADEMY_COURSES, createAcademyEntitlementState, createBlessingTowerState, createSutraStudyState, SutraStudyController, TempleAudioEngine, STORAGE_KEY, applyMixins, createVisitorClientId, createAmbientSettingsState, DEFAULT_TEMPLE_ID, createPilgrimagePassportState, getActiveTempleRecord, createPilgrimageDepthState, mergeShopeeAffiliateOverrides } from './ui/shared.mjs';
+import { CHARACTER_PROFILES, INITIAL_UGC_GALLERY, createSpiritualState, checkUGCMilestoneUnlock, calculateJourneyImprint, calculateCartSummary, getLocalDateKey, fetchDailyDharmaService, COURTYARD_NPC_DHARMA_QUOTES, createStoreProfileState, TIME_OF_DAY_PRESETS, createActivityHubState, ensureDailyMissionDate, NATIONALITY_PROFILES, PILGRIMAGE_MODES, HOA_DANG_WISHES, createDharmaJournalState, ACADEMY_COURSES, createAcademyEntitlementState, createBlessingTowerState, mergeBlessingTowerEntries, createSocialState, createSutraStudyState, SutraStudyController, TempleAudioEngine, STORAGE_KEY, applyMixins, createVisitorClientId, createAmbientSettingsState, DEFAULT_TEMPLE_ID, createPilgrimagePassportState, getActiveTempleRecord, createPilgrimageDepthState, mergeShopeeAffiliateOverrides } from './ui/shared.mjs';
 import { shellDomMethods } from './ui/shell-dom.mjs';
 import { world3dBridgeMethods } from './ui/world3d-bridge.mjs';
 import { effectsAudioMethods } from './ui/effects-audio.mjs';
@@ -18,6 +18,7 @@ import { activityHubMethods } from './ui/activity-hub.mjs';
 import { stagesAndStoreMethods } from './ui/stages-and-store.mjs';
 import { modalAndEventsMethods } from './ui/modal-and-events.mjs';
 import { passportAndCloudMethods } from './ui/passport-and-cloud.mjs';
+import { socialHubMethods } from './ui/social-hub.mjs';
 
 export class ChuaOnlineApp {
   constructor() {
@@ -35,7 +36,11 @@ export class ChuaOnlineApp {
       typeof this.saved.goalsTrackerCollapsed === 'boolean'
         ? this.saved.goalsTrackerCollapsed
         : typeof window !== 'undefined' && window.innerWidth <= 768;
-    this.timeOfDay = TIME_OF_DAY_PRESETS[this.saved.timeOfDay] ? this.saved.timeOfDay : 'morning';
+    this.timeOfDayMode = this.saved.timeOfDayMode === 'manual' ? 'manual' : 'auto';
+    this.timeOfDay =
+      this.timeOfDayMode === 'manual' && TIME_OF_DAY_PRESETS[this.saved.timeOfDay]
+        ? this.saved.timeOfDay
+        : this.resolveAutoTimeOfDay();
     this.cameraViewMode = 'third';
     this.weatherPreset = 'clear';
     this.elderFontScale = ['normal', 'large', 'xlarge'].includes(this.saved.elderFontScale)
@@ -81,7 +86,7 @@ export class ChuaOnlineApp {
       Array.isArray(this.saved.hoaDangWishes) && this.saved.hoaDangWishes.length > 0
         ? this.saved.hoaDangWishes
         : [...HOA_DANG_WISHES];
-    this.blessingTower = createBlessingTowerState(this.saved.blessingTower);
+    this.blessingTower = this.loadMergedBlessingTowerState(this.saved.blessingTower);
     this.dharmaJournal = createDharmaJournalState(this.saved.dharmaJournal);
     this.academyState = createAcademyEntitlementState(this.saved.academyState);
     this.sutraStudy = createSutraStudyState(this.saved.sutraStudy);
@@ -92,6 +97,10 @@ export class ChuaOnlineApp {
     this.activeModuleId = this.saved.activeModuleId || null;
     this.practicedDays = Array.isArray(this.saved.practicedDays) ? [...this.saved.practicedDays] : [1];
     this.studentName = String(this.saved.studentName || 'Phật tử Tâm An').trim() || 'Phật tử Tâm An';
+    this.social = createSocialState(this.saved.social, {
+      name: this.studentName,
+      charKey: this.characterModelKey
+    });
 
     // Multi-temple Sổ Hành Hương & Cloud Sync state
     this.passport = createPilgrimagePassportState(this.saved.passport, {
@@ -202,6 +211,29 @@ export class ChuaOnlineApp {
     }
   }
 
+  resolveAutoTimeOfDay(now = new Date()) {
+    const h = now.getHours();
+    if (h >= 5 && h < 10) return 'morning';
+    if (h >= 10 && h < 15) return 'midday';
+    if (h >= 15 && h < 18) return 'sunset';
+    return 'evening';
+  }
+
+  loadMergedBlessingTowerState(savedTower) {
+    const base = createBlessingTowerState(savedTower);
+    try {
+      const rawBackup = localStorage.getItem('chua_online_blessing_tower_v2');
+      if (rawBackup) {
+        const parsed = JSON.parse(rawBackup);
+        const backupEntries = Array.isArray(parsed?.entries) ? parsed.entries : [];
+        if (backupEntries.length > 0) {
+          return mergeBlessingTowerEntries(base, backupEntries);
+        }
+      }
+    } catch {}
+    return base;
+  }
+
   loadState() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
@@ -240,6 +272,7 @@ export class ChuaOnlineApp {
           activityHub: this.activityHub,
           goalsTrackerCollapsed: this.goalsTrackerCollapsed,
           timeOfDay: this.timeOfDay,
+          timeOfDayMode: this.timeOfDayMode,
           elderFontScale: this.elderFontScale,
           readAlongRate: this.readAlongRate,
           cart: this.cart,
@@ -252,6 +285,7 @@ export class ChuaOnlineApp {
           arrivalCompleted: this.arrivalCompleted,
           hoaDangWishes: this.hoaDangWishes.slice(0, 48),
           blessingTower: this.blessingTower,
+          social: this.social,
           dharmaJournal: this.dharmaJournal,
           academyState: this.academyState,
           sutraStudy: this.sutraStudy,
@@ -268,6 +302,9 @@ export class ChuaOnlineApp {
           pilgrimageDepth: this.pilgrimageDepth
         })
       );
+      if (this.blessingTower?.entries?.length) {
+        localStorage.setItem('chua_online_blessing_tower_v2', JSON.stringify(this.blessingTower));
+      }
     } catch {}
   }
 
@@ -282,6 +319,7 @@ export class ChuaOnlineApp {
     this.renderShopProducts();
     this.renderLectureStage();
     this.updateActionBadges();
+    this.updateSocialBadge();
     this.refreshTopStampSummary();
     this.refreshGuidedNextButton();
     this.initVisitorPresence();
@@ -398,7 +436,8 @@ applyMixins(ChuaOnlineApp,
   activityHubMethods,
   stagesAndStoreMethods,
   modalAndEventsMethods,
-  passportAndCloudMethods
+  passportAndCloudMethods,
+  socialHubMethods
 );
 
 document.addEventListener('DOMContentLoaded', () => {

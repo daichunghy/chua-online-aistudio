@@ -166,6 +166,146 @@ service cloud.firestore {
         && data.updatedAt == request.time;
     }
 
+    function isValidBlessingTowerEntryCreate(data) {
+      return data.keys().hasAll([
+          'templeId',
+          'authorUid',
+          'devoteeName',
+          'categoryId',
+          'wishText',
+          'slotNumber',
+          'tier',
+          'dateKey',
+          'createdAt'
+        ])
+        && data.keys().hasOnly([
+          'templeId',
+          'authorUid',
+          'devoteeName',
+          'birthYear',
+          'familyNote',
+          'categoryId',
+          'wishText',
+          'slotNumber',
+          'tier',
+          'dateKey',
+          'createdAt'
+        ])
+        && isValidTempleId(data.templeId)
+        && data.authorUid == request.auth.uid
+        && data.devoteeName is string && data.devoteeName.size() >= 1 && data.devoteeName.size() <= 80
+        && (!('birthYear' in data) || (data.birthYear is string && data.birthYear.size() <= 8))
+        && (!('familyNote' in data) || (data.familyNote is string && data.familyNote.size() <= 120))
+        && data.categoryId is string && data.categoryId.size() >= 1 && data.categoryId.size() <= 32
+        && data.wishText is string && data.wishText.size() >= 1 && data.wishText.size() <= 260
+        && data.slotNumber is int && data.slotNumber >= 1 && data.slotNumber <= 108
+        && data.tier is int && data.tier >= 1 && data.tier <= 13
+        && isValidDateKey(data.dateKey)
+        && data.createdAt == request.time;
+    }
+
+    function isValidPublicProfile(data, uid) {
+      return data.keys().hasAll([
+          'uid',
+          'displayName',
+          'friendCode',
+          'charKey',
+          'merit',
+          'streakDays',
+          'giftsSent',
+          'createdAt',
+          'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'uid',
+          'displayName',
+          'friendCode',
+          'charKey',
+          'merit',
+          'streakDays',
+          'giftsSent',
+          'currentArea',
+          'createdAt',
+          'updatedAt'
+        ])
+        && data.uid == uid
+        && data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 64
+        && data.friendCode is string && data.friendCode.size() >= 4 && data.friendCode.size() <= 16
+        && data.charKey is string && data.charKey.size() >= 1 && data.charKey.size() <= 32
+        && data.merit is int && data.merit >= 0 && data.merit <= 1000000
+        && data.streakDays is int && data.streakDays >= 0 && data.streakDays <= 3650
+        && data.giftsSent is int && data.giftsSent >= 0 && data.giftsSent <= 10000
+        && (!('currentArea' in data) || (data.currentArea is string && data.currentArea.size() <= 80))
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidGiftTransactionCreate(data) {
+      return data.keys().hasAll([
+          'fromUid',
+          'fromName',
+          'toId',
+          'toName',
+          'giftId',
+          'giftName',
+          'message',
+          'lotusCost',
+          'createdAt'
+        ])
+        && data.keys().hasOnly([
+          'fromUid',
+          'fromName',
+          'toId',
+          'toName',
+          'giftId',
+          'giftName',
+          'message',
+          'lotusCost',
+          'createdAt'
+        ])
+        && data.fromUid == request.auth.uid
+        && data.fromName is string && data.fromName.size() >= 1 && data.fromName.size() <= 64
+        && data.toId is string && data.toId.size() >= 1 && data.toId.size() <= 128
+        && data.toName is string && data.toName.size() >= 1 && data.toName.size() <= 64
+        && data.giftId is string && data.giftId.size() >= 1 && data.giftId.size() <= 48
+        && data.giftName is string && data.giftName.size() >= 1 && data.giftName.size() <= 80
+        && data.message is string && data.message.size() >= 1 && data.message.size() <= 240
+        && data.lotusCost is int && data.lotusCost >= 0 && data.lotusCost <= 5000
+        && data.createdAt == request.time;
+    }
+
+    function isValidCommunityPostCreate(data) {
+      return data.keys().hasAll([
+          'templeId',
+          'authorUid',
+          'authorName',
+          'text',
+          'rejoiceCount',
+          'createdAt',
+          'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'templeId',
+          'authorUid',
+          'authorName',
+          'charKey',
+          'area',
+          'text',
+          'rejoiceCount',
+          'createdAt',
+          'updatedAt'
+        ])
+        && isValidTempleId(data.templeId)
+        && data.authorUid == request.auth.uid
+        && data.authorName is string && data.authorName.size() >= 1 && data.authorName.size() <= 64
+        && (!('charKey' in data) || (data.charKey is string && data.charKey.size() <= 32))
+        && (!('area' in data) || (data.area is string && data.area.size() <= 80))
+        && data.text is string && data.text.size() >= 1 && data.text.size() <= 240
+        && data.rejoiceCount is int && data.rejoiceCount == 0
+        && data.createdAt == request.time
+        && data.updatedAt == request.time;
+    }
+
     // ===============================================================
     // Collections
     // ===============================================================
@@ -225,6 +365,61 @@ service cloud.firestore {
         && request.resource.data.blessCount <= 100000
         && request.resource.data.updatedAt == request.time;
       allow delete: if isVerified() && resource.data.authorUid == request.auth.uid;
+    }
+
+    match /blessingTowerEntries/{entryId} {
+      allow get, list: if resource.data.templeId is string;
+      allow create: if isVerified()
+        && isValidId(entryId)
+        && isValidBlessingTowerEntryCreate(request.resource.data);
+      allow update: if false;
+      allow delete: if isVerified() && isValidId(entryId) && resource.data.authorUid == request.auth.uid;
+    }
+
+    match /publicProfiles/{uid} {
+      allow get: if isValidId(uid) && resource.data.uid == uid;
+      allow list: if resource.data.merit is int;
+      allow create: if isVerifiedOwner(uid)
+        && isValidId(uid)
+        && isValidPublicProfile(request.resource.data, uid)
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time;
+      allow update: if isVerifiedOwner(uid)
+        && isValidId(uid)
+        && isValidPublicProfile(request.resource.data, uid)
+        && request.resource.data.uid == resource.data.uid
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.updatedAt == request.time;
+      allow delete: if isVerifiedOwner(uid) && isValidId(uid);
+    }
+
+    match /giftTransactions/{giftId} {
+      allow get: if isSignedIn()
+        && isValidId(giftId)
+        && (resource.data.fromUid == request.auth.uid || resource.data.toId == request.auth.uid);
+      allow list: if isSignedIn()
+        && (resource.data.fromUid == request.auth.uid || resource.data.toId == request.auth.uid);
+      allow create: if isVerified()
+        && isValidId(giftId)
+        && isValidGiftTransactionCreate(request.resource.data);
+      allow update: if false;
+      allow delete: if isVerified() && isValidId(giftId) && resource.data.fromUid == request.auth.uid;
+    }
+
+    match /communityPosts/{postId} {
+      allow get, list: if resource.data.templeId is string;
+      allow create: if isVerified()
+        && isValidId(postId)
+        && isValidCommunityPostCreate(request.resource.data);
+      allow update: if isVerified()
+        && isValidId(postId)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['rejoiceCount', 'updatedAt'])
+        && request.resource.data.rejoiceCount is int
+        && resource.data.rejoiceCount is int
+        && request.resource.data.rejoiceCount == resource.data.rejoiceCount + 1
+        && request.resource.data.rejoiceCount <= 100000
+        && request.resource.data.updatedAt == request.time;
+      allow delete: if isVerified() && isValidId(postId) && resource.data.authorUid == request.auth.uid;
     }
 
     // Default deny for everything else

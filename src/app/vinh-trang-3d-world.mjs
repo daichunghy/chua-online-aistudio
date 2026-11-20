@@ -25,6 +25,7 @@ import { npcCourtyardInteractionMethods } from './world/npc-courtyard-interactio
 import { occlusionCullingMethods } from './world/occlusion-culling.mjs';
 import { weatherAndStreetMethods } from './world/weather-and-street.mjs';
 import { livingWorld3dMethods } from './world/living-world-3d.mjs';
+import { footstepFxMethods } from './world/footstep-fx.mjs';
 
 export class VinhTrang3DWorld {
   constructor(canvas, callbacks = {}) {
@@ -51,6 +52,7 @@ export class VinhTrang3DWorld {
     this.onWeatherChange = callbacks.onWeatherChange || (() => {});
     this.onCameraModeChange = callbacks.onCameraModeChange || (() => {});
     this.onBenchStateChange = callbacks.onBenchStateChange || (() => {});
+    this.onBellMonkStrike = callbacks.onBellMonkStrike || (() => {});
     this._stepAudioTimer = 0;
 
     this.scene = new THREE.Scene();
@@ -106,7 +108,7 @@ export class VinhTrang3DWorld {
       }
     })();
 
-    this.renderer.setPixelRatio(this.isSoftwareGl ? 1 : Math.min(window.devicePixelRatio || 1, 2));
+    this.renderer.setPixelRatio(this.isSoftwareGl ? 0.75 : Math.min(window.devicePixelRatio || 1, 2));
     this.renderer.shadowMap.enabled = !this.isSoftwareGl;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -384,6 +386,7 @@ export class VinhTrang3DWorld {
     this.buildTempleGroundsV8();
     this.initWeatherSystem();
     this.initLivingWorld3D();
+    this.initFootstepFX();
     // Defer buildInteriorChanhDienV8() until entry (or idle) to eliminate startup lag!
     this.buildStationBeacons();
     this.initPointerAndWheelControls();
@@ -425,7 +428,8 @@ applyMixins(VinhTrang3DWorld,
   npcCourtyardInteractionMethods,
   occlusionCullingMethods,
   weatherAndStreetMethods,
-  livingWorld3dMethods
+  livingWorld3dMethods,
+  footstepFxMethods
 );
 
 export {

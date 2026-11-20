@@ -1062,10 +1062,184 @@ export const templeGroundsMethods = {
       }
     }
 
+    this.buildExteriorBlessingTower();
     this.buildGardensTreesAndFlags();
     this.buildExpandedDiscoveryZones();
     this.buildCourtyardPigeons();
     this.buildInteractiveCourtyardLeaves();
     this.buildInteractiveGardenPlots();
+  },
+
+  buildExteriorBlessingTower() {
+    const M = this.MAT;
+    if (!this.blessingTowerClickTargets) this.blessingTowerClickTargets = [];
+    this.blessingTowerLampMeshes = [];
+
+    const btGroup = new THREE.Group();
+    // Placed right outside Chánh Điện's main front entrance along the Buddha's facing direction (+Z toward Sân Cờ & Tam Quan)
+    btGroup.position.set(28.2, 0, 15.2);
+    btGroup.rotation.y = 0;
+    this.blessingTowerGroup = btGroup;
+
+    const crimsonMat = new THREE.MeshStandardMaterial({
+      color: 0x7A1C14,
+      roughness: 0.45,
+      metalness: 0.12
+    });
+    const goldMat = M.gold || new THREE.MeshStandardMaterial({
+      color: 0xE2B246,
+      roughness: 0.3,
+      metalness: 0.65
+    });
+    const stoneMat = M.stone || new THREE.MeshStandardMaterial({
+      color: 0xD8D0C2,
+      roughness: 0.8
+    });
+
+    // Grounded 2-step octagonal stone & vermilion-gold pedestal
+    const stoneStep = new THREE.Mesh(new THREE.CylinderGeometry(1.22, 1.32, 0.2, 8), stoneMat);
+    stoneStep.position.y = 0.1;
+    stoneStep.receiveShadow = true;
+    stoneStep.castShadow = true;
+    btGroup.add(stoneStep);
+
+    const btBase = new THREE.Mesh(new THREE.CylinderGeometry(0.92, 1.04, 0.62, 8), crimsonMat);
+    btBase.position.y = 0.51;
+    btBase.castShadow = true;
+    btBase.receiveShadow = true;
+    btGroup.add(btBase);
+
+    const btRim = new THREE.Mesh(new THREE.CylinderGeometry(0.98, 0.98, 0.08, 8), goldMat);
+    btRim.position.y = 0.85;
+    btGroup.add(btRim);
+
+    const btBodyAnchor = new THREE.Group();
+    btBodyAnchor.position.set(0, 0.89, 0);
+    btGroup.add(btBodyAnchor);
+    this.blessingTowerBodyAnchor = btBodyAnchor;
+
+    // Fallback procedural core hidden automatically once thap-den-cau-an.glb mounts in Phase 1
+    const btCore = new THREE.Group();
+    const btCoreMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.46, 0.54, 2.3, 12), crimsonMat);
+    btCoreMesh.position.y = 1.15;
+    btCore.add(btCoreMesh);
+    const btRoof = new THREE.Mesh(new THREE.ConeGeometry(0.86, 0.62, 8), goldMat);
+    btRoof.position.y = 2.52;
+    btCore.add(btRoof);
+    btBodyAnchor.add(btCore);
+    this.blessingTowerProceduralCore = btCore;
+
+    // 108 Flush Integrated Warm Amber Lamp Orbs nestled into the tower tiers (ZERO protruding white rectangles!)
+    // Use 2 shared pooled materials (dim vs lit) for zero draw-state churn
+    this._btLampDimMat = new THREE.MeshStandardMaterial({
+      color: 0xC6883E,
+      emissive: 0x5E240A,
+      emissiveIntensity: 0.22,
+      roughness: 0.35
+    });
+    this._btLampLitMat = new THREE.MeshStandardMaterial({
+      color: 0xFFD56A,
+      emissive: 0xF59E2D,
+      emissiveIntensity: 1.15,
+      roughness: 0.25
+    });
+    const lampGeo = new THREE.SphereGeometry(0.025, 6, 5);
+    let slotIdx = 1;
+    for (let tier = 0; tier < 9; tier++) {
+      const ty = 1.36 + tier * 0.185;
+      const rad = 0.44 - tier * 0.008;
+      for (let k = 0; k < 12; k++) {
+        const ang = (k / 12) * Math.PI * 2;
+        const lamp = new THREE.Mesh(lampGeo, this._btLampDimMat);
+        lamp.position.set(Math.cos(ang) * rad, ty, Math.sin(ang) * rad);
+        lamp.userData.slotNumber = slotIdx++;
+        btGroup.add(lamp);
+        this.blessingTowerLampMeshes.push(lamp);
+      }
+    }
+
+    // Subtle warm lantern glow around tower
+    const towerLight = new THREE.PointLight(0xFFB85C, 1.4, 8.5, 1.6);
+    towerLight.position.set(0, 2.4, 0.6);
+    btGroup.add(towerLight);
+
+    // Architectural twin-post lacquered signboard framing the tower cleanly
+    const btSign = new THREE.Mesh(
+      new THREE.PlaneGeometry(1.98, 0.40),
+      new THREE.MeshBasicMaterial({
+        map: makeTextTex('🏮 THÁP ĐÈN CẦU AN · SÂN TRƯỚC CHÁNH ĐIỆN', {
+          w: 900,
+          h: 150,
+          bg: '#5B140E',
+          border: '#F5C954',
+          color: '#FFF5D6',
+          size: 30
+        }),
+        side: THREE.DoubleSide
+      })
+    );
+    btSign.position.set(0, 3.58, -0.58);
+    btGroup.add(btSign);
+    for (const sx of [-0.94, 0.94]) {
+      const signPost = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.055, 3.68, 8), crimsonMat);
+      signPost.position.set(sx, 1.84, -0.58);
+      signPost.castShadow = true;
+      btGroup.add(signPost);
+      const finial = new THREE.Mesh(new THREE.SphereGeometry(0.068, 8, 6), goldMat);
+      finial.position.set(sx, 3.72, -0.58);
+      btGroup.add(finial);
+    }
+
+    // Standing Golden Wooden "Bảng Ghi Tên Cầu An" beside the tower displaying live recorded names
+    const boardGroup = new THREE.Group();
+    boardGroup.position.set(1.52, 0, 0.25);
+    boardGroup.rotation.y = -0.18;
+
+    for (const px of [-0.52, 0.52]) {
+      const post = new THREE.Mesh(new THREE.BoxGeometry(0.08, 1.92, 0.08), crimsonMat);
+      post.position.set(px, 0.96, 0);
+      post.castShadow = true;
+      boardGroup.add(post);
+    }
+    const boardFrame = new THREE.Mesh(new THREE.BoxGeometry(1.26, 1.38, 0.09), crimsonMat);
+    boardFrame.position.set(0, 1.32, 0);
+    boardFrame.castShadow = true;
+    boardGroup.add(boardFrame);
+
+    const boardTrim = new THREE.Mesh(new THREE.BoxGeometry(1.32, 1.44, 0.05), goldMat);
+    boardTrim.position.set(0, 1.32, -0.01);
+    boardGroup.add(boardTrim);
+
+    const boardCanvas = document.createElement('canvas');
+    boardCanvas.width = 512;
+    boardCanvas.height = 560;
+    const boardTex = new THREE.CanvasTexture(boardCanvas);
+    boardTex.colorSpace = THREE.SRGBColorSpace;
+    this._blessingTowerBoardCanvas = boardCanvas;
+    this.blessingTowerNameBoardTex = boardTex;
+
+    const boardFace = new THREE.Mesh(
+      new THREE.PlaneGeometry(1.14, 1.26),
+      new THREE.MeshBasicMaterial({ map: boardTex })
+    );
+    boardFace.position.set(0, 1.32, 0.05);
+    boardGroup.add(boardFace);
+
+    btGroup.add(boardGroup);
+
+    // Generous click hitbox covering both tower and name board
+    const hitbox = new THREE.Mesh(
+      new THREE.BoxGeometry(3.2, 4.1, 2.2),
+      new THREE.MeshBasicMaterial({ visible: false })
+    );
+    hitbox.position.set(0.55, 2.05, 0.1);
+    btGroup.add(hitbox);
+
+    this.exteriorGroup.add(btGroup);
+    this.blessingTowerClickTargets.push(btGroup);
+    this.addObstacle(28.2, 15.2, 1.25);
+    this.addObstacle(29.7, 15.4, 0.72);
+
+    this.updateBlessingTowerNameBoard?.([]);
   }
 };

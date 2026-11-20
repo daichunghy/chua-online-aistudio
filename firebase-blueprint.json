@@ -70,6 +70,77 @@
         "updatedAt": { "type": "string", "format": "date-time" }
       },
       "required": ["templeId", "authorUid", "authorName", "wishText", "colorHex", "pondX", "pondZ", "blessCount", "createdAt", "updatedAt"]
+    },
+    "BlessingTowerEntry": {
+      "title": "BlessingTowerEntry",
+      "description": "Public blessing lamp record displayed on the exterior Tháp Đèn Cầu An signboard.",
+      "type": "object",
+      "properties": {
+        "templeId": { "type": "string", "description": "Temple slug identifier." },
+        "authorUid": { "type": "string", "description": "Creator Firebase Auth UID." },
+        "devoteeName": { "type": "string", "description": "Devotee name or Dharma name." },
+        "birthYear": { "type": "string", "description": "Optional birth year (YYYY)." },
+        "familyNote": { "type": "string", "description": "Optional family or location note." },
+        "categoryId": { "type": "string", "description": "Blessing prayer category ID." },
+        "wishText": { "type": "string", "description": "Prayer wish text." },
+        "slotNumber": { "type": "integer", "description": "Lamp slot index 1..108." },
+        "tier": { "type": "integer", "description": "Tower tier 1..13." },
+        "dateKey": { "type": "string", "description": "Calendar day YYYY-MM-DD." },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["templeId", "authorUid", "devoteeName", "categoryId", "wishText", "slotNumber", "tier", "dateKey", "createdAt"]
+    },
+    "PublicPilgrimProfile": {
+      "title": "PublicPilgrimProfile",
+      "description": "Public non-PII pilgrim profile used for friend discovery and leaderboards.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Owner Firebase Auth UID." },
+        "displayName": { "type": "string", "description": "Public pilgrim display name." },
+        "friendCode": { "type": "string", "description": "Short friend code (VT-XXXX)." },
+        "charKey": { "type": "string", "description": "3D avatar model key." },
+        "merit": { "type": "integer", "description": "Merit leaderboard score." },
+        "streakDays": { "type": "integer", "description": "Pilgrimage practice days." },
+        "giftsSent": { "type": "integer", "description": "Count of gifts sent to friends." },
+        "currentArea": { "type": "string", "description": "Current temple area label." },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "displayName", "friendCode", "charKey", "merit", "streakDays", "giftsSent", "createdAt", "updatedAt"]
+    },
+    "GiftTransaction": {
+      "title": "GiftTransaction",
+      "description": "Record of a spiritual gift sent to another devotee.",
+      "type": "object",
+      "properties": {
+        "fromUid": { "type": "string", "description": "Sender Firebase Auth UID." },
+        "fromName": { "type": "string", "description": "Sender display name." },
+        "toId": { "type": "string", "description": "Recipient user or community member ID." },
+        "toName": { "type": "string", "description": "Recipient display name." },
+        "giftId": { "type": "string", "description": "Gift catalog ID." },
+        "giftName": { "type": "string", "description": "Gift display label." },
+        "message": { "type": "string", "description": "Blessing note sent with gift." },
+        "lotusCost": { "type": "integer", "description": "Lotus merit points spent." },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["fromUid", "fromName", "toId", "toName", "giftId", "giftName", "message", "lotusCost", "createdAt"]
+    },
+    "CommunityPost": {
+      "title": "CommunityPost",
+      "description": "Public peaceful wish shared in the temple community feed.",
+      "type": "object",
+      "properties": {
+        "templeId": { "type": "string", "description": "Temple slug identifier." },
+        "authorUid": { "type": "string", "description": "Creator Firebase Auth UID." },
+        "authorName": { "type": "string", "description": "Author display name." },
+        "charKey": { "type": "string", "description": "Author avatar key." },
+        "area": { "type": "string", "description": "Temple area label." },
+        "text": { "type": "string", "description": "Peaceful wish content." },
+        "rejoiceCount": { "type": "integer", "description": "Number of Tùy hỷ rejoices." },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["templeId", "authorUid", "authorName", "text", "rejoiceCount", "createdAt", "updatedAt"]
     }
   },
   "firestore": {
@@ -88,6 +159,22 @@
     "/templeLanterns/{lanternId}": {
       "schema": { "$ref": "#/entities/CommunityLantern" },
       "description": "Publicly readable community floating lanterns on each temple lotus pond."
+    },
+    "/blessingTowerEntries/{entryId}": {
+      "schema": { "$ref": "#/entities/BlessingTowerEntry" },
+      "description": "Publicly readable blessing tower entries recorded at the exterior Tháp Đèn Cầu An."
+    },
+    "/publicProfiles/{uid}": {
+      "schema": { "$ref": "#/entities/PublicPilgrimProfile" },
+      "description": "Public non-PII profiles for friend lookup and temple leaderboards."
+    },
+    "/giftTransactions/{giftId}": {
+      "schema": { "$ref": "#/entities/GiftTransaction" },
+      "description": "Spiritual gift records readable by sender or recipient."
+    },
+    "/communityPosts/{postId}": {
+      "schema": { "$ref": "#/entities/CommunityPost" },
+      "description": "Publicly readable peaceful community wishes with Tùy hỷ counters."
     }
   }
 }

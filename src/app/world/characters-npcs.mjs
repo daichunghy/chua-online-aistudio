@@ -1268,12 +1268,73 @@ export const charactersNpcsMethods = {
           wp(48.6, -18.0, 'pass'),
           wp(48.4, 10.0, 'pass')
         ]
+      },
+      // --- G. Diverse Pilgrims Admiring Relocated Exterior Tháp Đèn Cầu An & Front Plaza ---
+      {
+        charKey: this.charDataCache.nu_ao_lam ? 'nu_ao_lam' : 'nu',
+        isMeshyChar: Boolean(this.charDataCache.nu_ao_lam),
+        tint: [0.58, 0.72, 0.82],
+        hat: false,
+        bag: 'tui_sen',
+        hand: 'hoa_sen',
+        speed: 0.95,
+        heightScale: 0.96,
+        pts: [
+          wp(26.5, 22.0, 'pass'),
+          wp(27.2, 18.2, 'chap_tay', 4.2, 28.2, 15.2),
+          wp(23.2, 15.8, 'chap_tay', 3.4, 23.0, 12.0),
+          wp(19.5, 21.5, 'pass')
+        ]
+      },
+      {
+        charKey: 'nu',
+        tint: [0.88, 0.56, 0.68], // Áo dài sen hồng Huế
+        hat: true,
+        bag: 'gio_may',
+        hand: 'quat',
+        speed: 1.0,
+        heightScale: 1.04,
+        pts: [
+          wp(30.4, 19.5, 'dung', 3.5, 28.2, 15.2),
+          wp(29.8, 25.0, 'chup_anh', 3.2, 23.0, 1.0),
+          wp(21.5, 29.0, 'pass'),
+          wp(28.5, 22.0, 'pass')
+        ]
+      },
+      {
+        charKey: this.charDataCache.du_khach ? 'du_khach' : 'nam',
+        isMeshyChar: Boolean(this.charDataCache.du_khach),
+        tint: [0.44, 0.58, 0.52],
+        bag: 'tui_sen',
+        speed: 1.04,
+        heightScale: 1.06,
+        pts: [
+          wp(18.0, 26.5, 'chup_anh', 3.6, 23.0, 1.0),
+          wp(26.8, 19.2, 'dung', 3.4, 28.2, 15.2),
+          wp(32.0, 16.0, 'pass'),
+          wp(32.0, 28.0, 'pass')
+        ]
+      },
+      {
+        charKey: this.charDataCache.nam_ao_nau ? 'nam_ao_nau' : 'nam',
+        isMeshyChar: Boolean(this.charDataCache.nam_ao_nau),
+        scarf: true,
+        hand: 'beads',
+        speed: 0.92,
+        heightScale: 0.95,
+        pts: [
+          wp(-14.0, 22.0, 'pass'),
+          wp(-18.5, 16.0, 'chap_tay', 3.8, -26.5, 4.0),
+          wp(-6.0, 14.0, 'pass'),
+          wp(-8.5, 26.0, 'quat_mat', 3.0, 3.5, 33.0)
+        ]
       }
     ];
 
     for (let ri = 0; ri < routes.length; ri++) {
       const rt = routes[ri];
-      const h = CHAR_HEIGHTS[rt.charKey] || 1.64;
+      const variance = rt.heightScale || (0.94 + ((ri * 17) % 13) * 0.01);
+      const h = (CHAR_HEIGHTS[rt.charKey] || 1.64) * variance;
       const rec = this.cloneAnimatedCharacter(rt.charKey, h);
       if (!rec) continue;
       if (!rt.isMeshyChar) {
@@ -1513,5 +1574,99 @@ export const charactersNpcsMethods = {
         lookZ: null
       });
     }
+
+    // Dedicated Animated Bell-Ringing Monk ("Sư Thầy Thỉnh Chuông") beside Đại Hồng Chung (-27.2, -7.8)
+    this.spawnInteriorBellMonk();
+  },
+
+  spawnInteriorBellMonk() {
+    if (this.interiorBellMonk?.rec?.root?.parent) {
+      this.interiorBellMonk.rec.root.parent.remove(this.interiorBellMonk.rec.root);
+    }
+    const monkKey = this.charDataCache.su_thay?.scene ? 'su_thay' : 'nam';
+    const h = CHAR_HEIGHTS[monkKey] || 1.72;
+    const rec = this.cloneAnimatedCharacter(monkKey, h);
+    if (!rec) return;
+    if (monkKey !== 'su_thay') {
+      this.recolorMonkRobe(rec.root, 1);
+    }
+
+    // Place monk respectfully beside Đại Hồng Chung (-27.2, -7.8) facing the bell
+    const mx = -28.65;
+    const mz = -7.35;
+    const facingBellYaw = Math.atan2(-27.2 - mx, -7.8 - mz);
+    rec.root.position.set(mx, rec.baseY, mz);
+    rec.root.rotation.y = facingBellYaw;
+    this.playClipCrossfade(rec, 'Dung', 0.08, false);
+
+    // Build wooden bell striker ("Chày gỗ thỉnh chuông") attached to monk's right hand or torso pivot
+    const strikerPivot = new THREE.Group();
+    const woodMat = new THREE.MeshStandardMaterial({ color: 0x6D3E1C, roughness: 0.65 });
+    const tipMat = new THREE.MeshStandardMaterial({ color: 0xC8963E, roughness: 0.45, metalness: 0.25 });
+    const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.036, 0.044, 0.92, 10), woodMat);
+    shaft.rotation.x = Math.PI / 2;
+    shaft.position.set(0, 0, 0.42);
+    strikerPivot.add(shaft);
+    const tip = new THREE.Mesh(new THREE.SphereGeometry(0.056, 10, 8), tipMat);
+    tip.position.set(0, 0, 0.88);
+    strikerPivot.add(tip);
+
+    const bones = findCharacterBones(rec.root);
+    const invS = 1 / (rec.root.scale.x || 1);
+    strikerPivot.scale.multiplyScalar(invS);
+    if (bones.rightHand || bones.rightForearm) {
+      strikerPivot.position.set(0.04 * invS, -0.02 * invS, 0.06 * invS);
+      (bones.rightHand || bones.rightForearm).add(strikerPivot);
+    } else {
+      strikerPivot.position.set(0.24 * invS, h * 0.62 * invS, 0.2 * invS);
+      rec.root.add(strikerPivot);
+    }
+
+    // Subtle wooden cushion & signboard near bell monk
+    const monkMat = this.makeKneelingCushion ? this.makeKneelingCushion() : null;
+    if (monkMat) {
+      monkMat.position.set(mx, 0, mz);
+      this.interiorGroup.add(monkMat);
+    }
+
+    // Expanding golden soundwave ring around Đại Hồng Chung
+    const waveRing = new THREE.Mesh(
+      new THREE.RingGeometry(0.45, 0.62, 36),
+      new THREE.MeshBasicMaterial({
+        color: 0xFFD97A,
+        transparent: true,
+        opacity: 0,
+        side: THREE.DoubleSide,
+        depthWrite: false
+      })
+    );
+    waveRing.rotation.x = -Math.PI / 2;
+    waveRing.position.set(-27.2, 1.35, -7.8);
+    waveRing.visible = false;
+    this.interiorGroup.add(waveRing);
+
+    // Click hitbox on the monk so clicking Sư Thầy requests a blessing bell strike
+    const hit = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.45, 0.45, 1.8, 10),
+      new THREE.MeshBasicMaterial({ visible: false })
+    );
+    hit.position.set(mx, 0.9, mz);
+    this.interiorGroup.add(hit);
+    if (this.interiorBellClickTargets) {
+      this.interiorBellClickTargets.push(hit);
+    }
+    this.interiorObstacles.push({ x: mx, z: mz, r: 0.62 });
+
+    this.interiorGroup.add(rec.root);
+    this.interiorBellMonk = {
+      rec,
+      strikerPivot,
+      waveRing,
+      cooldown: 4.5, // First gentle bell strike ~4.5s after entering Chánh Điện!
+      striking: false,
+      strikeTimer: 0,
+      strikeImpactFired: false,
+      ringTimer: 0
+    };
   }
 };
