@@ -4,7 +4,7 @@
  * Mixin của ChuaOnlineApp: 2 method (openExploreModal … openAccountModal).
  * Được gắn vào class trong chua-online-app.mjs qua applyMixins().
  */
-import { CHARACTER_PROFILES, PILGRIMAGE_STATIONS, DISCOVERY_ZONES, SHOP_CATALOG, performSpiritualAction, calculateJourneyImprint, getLocalDateKey, STORE_ITEMS_CATALOG, MARKETPLACE_STALL_CATEGORIES, filterMarketplaceItems, purchaseMarketplaceItem, ensureDailyMissionDate, getQuestsWithProgress, claimQuestReward, encodeProfileBackupCode, decodeProfileBackupCode, COURTYARD_LEAF_SPOTS, NATIONALITY_PROFILES, getNationalityProfile, PILGRIMAGE_MODES, getPilgrimageMode, EIGHTEEN_ARHATS } from './shared.mjs';
+import { CHARACTER_PROFILES, PILGRIMAGE_STATIONS, DISCOVERY_ZONES, SHOP_CATALOG, performSpiritualAction, calculateJourneyImprint, getLocalDateKey, STORE_ITEMS_CATALOG, MARKETPLACE_STALL_CATEGORIES, filterMarketplaceItems, purchaseMarketplaceItem, resolveShopeeAffiliateUrl, ensureDailyMissionDate, getQuestsWithProgress, claimQuestReward, encodeProfileBackupCode, decodeProfileBackupCode, COURTYARD_LEAF_SPOTS, NATIONALITY_PROFILES, getNationalityProfile, PILGRIMAGE_MODES, getPilgrimageMode, EIGHTEEN_ARHATS } from './shared.mjs';
 
 export const exploreAccountMethods = {
   openExploreModal(initialSubTab = 'stations', initialArhatIdx = 0) {
@@ -50,144 +50,174 @@ export const exploreAccountMethods = {
       if (sub === 'stations') {
         const curX = this.world3d ? this.world3d.playerPos.x : this.playerPos.x;
         const curZ = this.world3d ? this.world3d.playerPos.z : this.playerPos.z;
-        const mapX = (x) => Math.round(((x + 68) / 136) * 680 + 40);
-        const mapY = (z) => Math.round(((z + 72) / 130) * 280 + 25);
-        const px = mapX(curX);
-        const py = mapY(curZ);
+        // True-proportion world projection covering x ∈ [-68, +74] and z ∈ [-72, +172] (Temple + Công Viên Vĩnh Tràng + Đường Nguyễn Trung Trực!)
+        const mapX = (x) => Math.round(((x + 68) / 142) * 700 + 36);
+        const mapY = (z) => Math.round(((z + 72) / 248) * 412 + 24);
+        const px = mapX(Math.max(-68, Math.min(74, curX)));
+        const py = mapY(Math.max(-72, Math.min(174, curZ)));
         const axisX = mapX(23);
 
         box.innerHTML = `
           <div style="background:#f6ebd6;border:2px solid #C9962E;border-radius:18px;padding:12px 14px;margin-bottom:12px;box-shadow:inset 0 2px 10px rgba(74,50,34,0.1);">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:8px;">
               <div>
-                <strong style="font-size:15px;color:#5C381F;">Mặt bằng Tổng thể Chùa Vĩnh Tràng (Bám sát thực tế 136m × 114m)</strong>
-                <span style="font-size:12px;color:#6E5034;margin-left:8px;">Bấm vào điểm bất kỳ để nhân vật hành hương tới</span>
+                <strong style="font-size:15px;color:#5C381F;">Bản Đồ Thực Tế Chùa Vĩnh Tràng &amp; Công Viên Vĩnh Tràng (TP. Mỹ Tho)</strong>
+                <span style="font-size:12px;color:#6E5034;margin-left:8px;">Bấm vào điểm trên bản đồ để đi tới ngay</span>
               </div>
-              <div style="font-size:12px;font-weight:700;color:#B84518;background:#fffdf8;padding:4px 10px;border-radius:999px;border:1px solid #C9962E;">
-                ● Vị trí hiện tại
+              <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                <button type="button" id="btn-map-goto-park" class="product-detail-btn" style="width:auto;height:36px;padding:0 14px;font-size:12.5px;background:#1E6B4A;">
+                  🌳 Tới Công Viên Vĩnh Tràng
+                </button>
+                <button type="button" id="btn-map-goto-shop" class="product-detail-btn" style="width:auto;height:36px;padding:0 14px;font-size:12.5px;background:#B84518;">
+                  🛍️ Vào Tiệm Tạp Hóa
+                </button>
+                <div style="font-size:12px;font-weight:700;color:#B84518;background:#fffdf8;padding:4px 10px;border-radius:999px;border:1px solid #C9962E;">
+                  ● Vị trí của bạn
+                </div>
               </div>
             </div>
 
-            <svg viewBox="0 0 760 340" style="width:100%;height:265px;background:linear-gradient(in oklab 180deg,#d8ebd1 0%,#eee2c7 55%,#e4d3b0 100%);border-radius:14px;border:1.5px solid rgba(120,85,45,0.35);display:block;">
-              <!-- Outer Pilgrimage Street Market Corridor -->
-              <rect x="26" y="${mapY(46)}" width="708" height="44" rx="6" fill="#cfc3ad" stroke="#a6957c" stroke-width="1"/>
-              <text x="380" y="${mapY(55) + 4}" text-anchor="middle" fill="#4A3222" font-size="9.5" font-weight="800">ĐƯỜNG NGUYỄN TRUNG TRỰC · PHỐ HÀNG QUÁN HÀNH HƯƠNG</text>
+            <svg viewBox="0 0 772 460" style="width:100%;height:348px;background:linear-gradient(in oklab 180deg,#d8ebd1 0%,#eee2c7 48%,#e2d6bc 100%);border-radius:14px;border:1.5px solid rgba(120,85,45,0.35);display:block;">
+              <!-- Compass Rose -->
+              <g transform="translate(734, 34)">
+                <circle r="16" fill="rgba(255,250,238,0.88)" stroke="#8B5A2B" stroke-width="1.4"/>
+                <text x="0" y="-4" text-anchor="middle" fill="#7E2A22" font-size="9" font-weight="900">Bắc</text>
+                <text x="0" y="9" text-anchor="middle" fill="#5C381F" font-size="8" font-weight="700">▲</text>
+              </g>
 
-              <!-- Expanded Pagoda Perimeter Wall -->
-              <rect x="${mapX(-68)}" y="${mapY(-72)}" width="${mapX(68) - mapX(-68)}" height="${mapY(41.5) - mapY(-72)}" rx="10" fill="rgba(255,250,238,0.52)" stroke="#9A7241" stroke-width="2.5"/>
+              <!-- 1. KHUÔN VIÊN CHÙA VĨNH TRÀNG (x = -68..68, z = -72..42) -->
+              <rect x="${mapX(-68)}" y="${mapY(-72)}" width="${mapX(68) - mapX(-68)}" height="${mapY(42) - mapY(-72)}" rx="10" fill="rgba(255,250,238,0.62)" stroke="#9A7241" stroke-width="2.4"/>
 
-              <!-- Axis Road & Garden Walkways -->
-              <rect x="${axisX - 24}" y="${mapY(8)}" width="48" height="${mapY(41.5) - mapY(8)}" rx="6" fill="#d8ccb8" stroke="#b5a48b" stroke-width="1"/>
-              <path d="M ${mapX(-44)} ${mapY(29)} L ${mapX(-24.5)} ${mapY(29)} M ${mapX(-44)} ${mapY(29)} L ${mapX(-44)} ${mapY(-45.5)} L ${mapX(46)} ${mapY(-45.5)} M ${mapX(40.5)} ${mapY(41.5)} L ${mapX(40.5)} ${mapY(20)} L ${mapX(51.5)} ${mapY(14)} L ${mapX(51.5)} ${mapY(-45)}" stroke="#d8ccb8" stroke-width="9" fill="none" stroke-linecap="round"/>
+              <!-- Đường dạo nội khu chùa -->
+              <rect x="${axisX - 20}" y="${mapY(8)}" width="40" height="${mapY(42) - mapY(8)}" rx="4" fill="#d8ccb8" stroke="#b5a48b" stroke-width="1"/>
+              <path d="M ${mapX(-44)} ${mapY(29)} L ${mapX(-24.5)} ${mapY(29)} M ${mapX(-44)} ${mapY(29)} L ${mapX(-44)} ${mapY(-45.5)} L ${mapX(46)} ${mapY(-45.5)} M ${mapX(42.2)} ${mapY(42)} L ${mapX(42.2)} ${mapY(-32)}" stroke="#d8ccb8" stroke-width="8" fill="none" stroke-linecap="round"/>
 
-              <!-- Back North Wing -->
-              <ellipse cx="${mapX(-16)}" cy="${mapY(-56)}" rx="48" ry="18" fill="#2F6F64" stroke="#85C7B8" stroke-width="1.8"/>
-              <text x="${mapX(-16)}" y="${mapY(-56) + 3}" text-anchor="middle" fill="#FFF6E5" font-size="8.8" font-weight="800">Hồ Phóng Sinh</text>
+              <!-- Khu Bắc chùa: Hồ Phóng Sinh, Tổ Đường, Phật Nằm, Bảo Tháp, A Di Đà -->
+              <ellipse cx="${mapX(-16)}" cy="${mapY(-56)}" rx="42" ry="12" fill="#2F6F64" stroke="#85C7B8" stroke-width="1.5"/>
+              <text x="${mapX(-16)}" y="${mapY(-56) + 3}" text-anchor="middle" fill="#FFF6E5" font-size="8" font-weight="800">Hồ Phóng Sinh</text>
 
-              <rect x="${mapX(-44) - 32}" y="${mapY(-56) - 13}" width="64" height="26" rx="7" fill="#7E2A22" stroke="#FFD875" stroke-width="1.6"/>
-              <text x="${mapX(-44)}" y="${mapY(-56) + 3}" text-anchor="middle" fill="#FFD875" font-size="8.2" font-weight="800">Lầu Chuông</text>
+              <rect x="${mapX(-44) - 26}" y="${mapY(-56) - 10}" width="52" height="20" rx="5" fill="#7E2A22" stroke="#FFD875" stroke-width="1.4"/>
+              <text x="${mapX(-44)}" y="${mapY(-56) + 3}" text-anchor="middle" fill="#FFD875" font-size="7.5" font-weight="800">Lầu Chuông</text>
 
-              <rect x="${mapX(22) - 44}" y="${mapY(-58) - 14}" width="88" height="28" rx="7" fill="#9E4B2E" stroke="#FFD875" stroke-width="1.8"/>
-              <text x="${mapX(22)}" y="${mapY(-58) + 4}" text-anchor="middle" fill="#FFF6E5" font-size="9" font-weight="800">Tổ Đường</text>
+              <rect x="${mapX(22) - 36}" y="${mapY(-58) - 11}" width="72" height="22" rx="6" fill="#9E4B2E" stroke="#FFD875" stroke-width="1.5"/>
+              <text x="${mapX(22)}" y="${mapY(-58) + 3}" text-anchor="middle" fill="#FFF6E5" font-size="8.2" font-weight="800">Tổ Đường</text>
 
-              <rect x="${mapX(46) - 32}" y="${mapY(-56) - 13}" width="64" height="26" rx="7" fill="#7E2A22" stroke="#FFD875" stroke-width="1.6"/>
-              <text x="${mapX(46)}" y="${mapY(-56) + 3}" text-anchor="middle" fill="#FFD875" font-size="8.2" font-weight="800">Lầu Trống</text>
+              <rect x="${mapX(12) - 48}" y="${mapY(-38) - 11}" width="96" height="22" rx="6" fill="#f7efe0" stroke="#C9962E" stroke-width="1.6"/>
+              <text x="${mapX(12)}" y="${mapY(-38) + 3}" text-anchor="middle" fill="#4A3222" font-size="8.2" font-weight="800">Phật Niết Bàn 32m</text>
 
-              <!-- North Central Statues: Phật Niết Bàn + Bảo Tháp 7 tầng + A Di Đà -->
-              <rect x="${mapX(12) - 54}" y="${mapY(-38) - 14}" width="108" height="28" rx="8" fill="#f7efe0" stroke="#C9962E" stroke-width="1.8"/>
-              <text x="${mapX(12)}" y="${mapY(-38) + 4}" text-anchor="middle" fill="#4A3222" font-size="9.2" font-weight="800">Phật Niết Bàn 32m</text>
+              <circle cx="${mapX(-8)}" cy="${mapY(-37)}" r="12" fill="#e6b84c" stroke="#7E2A22" stroke-width="1.6"/>
+              <text x="${mapX(-8)}" y="${mapY(-37) + 2.5}" text-anchor="middle" fill="#241409" font-size="7.2" font-weight="800">Tháp</text>
 
-              <circle cx="${mapX(-8)}" cy="${mapY(-37)}" r="15" fill="#e6b84c" stroke="#7E2A22" stroke-width="1.8"/>
-              <text x="${mapX(-8)}" y="${mapY(-37) + 3}" text-anchor="middle" fill="#241409" font-size="8" font-weight="800">Bảo Tháp</text>
+              <circle cx="${mapX(-9.5)}" cy="${mapY(-21)}" r="14" fill="#fffdf8" stroke="#4E86A8" stroke-width="1.8"/>
+              <text x="${mapX(-9.5)}" y="${mapY(-21) + 2.5}" text-anchor="middle" fill="#5C381F" font-size="7.5" font-weight="900">A Di Đà</text>
 
-              <circle cx="${mapX(-8)}" cy="${mapY(-25)}" r="18" fill="#fffdf8" stroke="#4E86A8" stroke-width="2"/>
-              <text x="${mapX(-8)}" y="${mapY(-25) + 3}" text-anchor="middle" fill="#5C381F" font-size="8" font-weight="900">A Di Đà</text>
+              <!-- Khu Tây: Vườn Lâm Tỳ Ni, Hòn Non Bộ, Phật Di Lặc -->
+              <circle cx="${mapX(-54)}" cy="${mapY(-4)}" r="16" fill="#d9c6a3" stroke="#5C381F" stroke-width="1.5"/>
+              <text x="${mapX(-54)}" y="${mapY(-4) + 2.5}" text-anchor="middle" fill="#5C381F" font-size="7.2" font-weight="800">Non Bộ</text>
+              <rect x="${mapX(-53.5) - 34}" y="${mapY(22) - 11}" width="68" height="22" rx="6" fill="#F6E9D2" stroke="#5C381F" stroke-width="1.5"/>
+              <text x="${mapX(-53.5)}" y="${mapY(22) + 3}" text-anchor="middle" fill="#5C381F" font-size="7.5" font-weight="800">Lâm Tỳ Ni</text>
+              <circle cx="${mapX(-24.5)}" cy="${mapY(8)}" r="17" fill="#fffdf8" stroke="#5C381F" stroke-width="1.8"/>
+              <text x="${mapX(-24.5)}" y="${mapY(8) + 3}" text-anchor="middle" fill="#5C381F" font-size="7.8" font-weight="800">Di Lặc</text>
 
-              <!-- West Discovery Wing -->
-              <circle cx="${mapX(-54)}" cy="${mapY(-4)}" r="21" fill="#d9c6a3" stroke="#5C381F" stroke-width="1.8"/>
-              <text x="${mapX(-54)}" y="${mapY(-4) + 3}" text-anchor="middle" fill="#5C381F" font-size="8.2" font-weight="800">Hòn Non Bộ</text>
-              <rect x="${mapX(-53.5) - 42}" y="${mapY(22) - 14}" width="84" height="28" rx="8" fill="#F6E9D2" stroke="#5C381F" stroke-width="1.8"/>
-              <text x="${mapX(-53.5)}" y="${mapY(22) + 4}" text-anchor="middle" fill="#5C381F" font-size="8.5" font-weight="800">Vườn Lâm Tỳ Ni</text>
+              <!-- Chánh Điện Đại Hùng Bửu Điện (Mở rộng 100+ bồ đoàn) -->
+              <rect x="${axisX - 52}" y="${mapY(-26)}" width="104" height="${mapY(8) - mapY(-26)}" rx="7" fill="#D9A441" stroke="#7E2A22" stroke-width="2.2"/>
+              <text x="${axisX}" y="${mapY(-9)}" text-anchor="middle" fill="#241409" font-size="8.6" font-weight="900">ĐẠI HÙNG BỬU ĐIỆN</text>
+              <text x="${axisX}" y="${mapY(-1)}" text-anchor="middle" fill="#4A1A0E" font-size="7.2" font-weight="800">(100+ Bồ đoàn · 18 La Hán)</text>
 
-              <!-- Core Main Temple Area (Chùa Chính Chữ Quốc Complex x=10..36, z=-31..8) -->
-              <rect x="${axisX - 58}" y="${mapY(-31)}" width="116" height="${mapY(8) - mapY(-31)}" rx="8" fill="#D9A441" stroke="#7E2A22" stroke-width="2.5"/>
-              <rect x="${axisX - 24}" y="${mapY(-24)}" width="48" height="20" rx="5" fill="#4BA3B5" stroke="#FFF6E5" stroke-width="1.2"/>
-              <text x="${axisX}" y="${mapY(-20)}" text-anchor="middle" fill="#FFF6E5" font-size="7" font-weight="800">2 Thiên Tỉnh</text>
-              <text x="${axisX}" y="${mapY(1.5)}" text-anchor="middle" fill="#241409" font-size="9.5" font-weight="900">CHÙA CHÍNH (國)</text>
-              <text x="${axisX}" y="${mapY(-26)}" text-anchor="middle" fill="#241409" font-size="7.5" font-weight="800">Nhà Tổ · Nhà Hậu</text>
+              <!-- Khu Đông: Nhà Lưu Niệm Walkable (mở rộng), Giảng Đường, Trai Đường -->
+              <rect x="${mapX(42.2) - 38}" y="${mapY(-34.2) - 12}" width="76" height="24" rx="6" fill="#C9592E" stroke="#FFF6E5" stroke-width="1.6"/>
+              <text x="${mapX(42.2)}" y="${mapY(-34.2) + 3}" text-anchor="middle" fill="#FFF6E5" font-size="7.6" font-weight="900">Tạp Hóa · Lưu Niệm</text>
 
-              <!-- West Plaza: Phật Di Lặc -->
-              <circle cx="${mapX(-24.5)}" cy="${mapY(4)}" r="21" fill="#fffdf8" stroke="#5C381F" stroke-width="2"/>
-              <text x="${mapX(-24.5)}" y="${mapY(4) + 3}" text-anchor="middle" fill="#5C381F" font-size="8.5" font-weight="800">Phật Di Lặc</text>
+              <rect x="${mapX(58.5) - 30}" y="${mapY(-18) - 11}" width="60" height="22" rx="6" fill="#8A4A34" stroke="#f6cd72" stroke-width="1.5"/>
+              <text x="${mapX(58.5)}" y="${mapY(-18) + 3}" text-anchor="middle" fill="#FFF6E5" font-size="7.6" font-weight="800">Giảng Đường</text>
 
-              <!-- East Wing & Cool End-of-Road Souvenir Lane -->
-              <rect x="${mapX(58.5) - 36}" y="${mapY(-18) - 14}" width="72" height="28" rx="7" fill="#8A4A34" stroke="#f6cd72" stroke-width="1.8"/>
-              <text x="${mapX(58.5)}" y="${mapY(-18) + 4}" text-anchor="middle" fill="#FFF6E5" font-size="8.6" font-weight="800">Giảng Đường</text>
-              <rect x="${mapX(58) - 36}" y="${mapY(-12) - 13}" width="72" height="26" rx="7" fill="#3D6B4A" stroke="#FFD875" stroke-width="1.8"/>
-              <text x="${mapX(58)}" y="${mapY(-12) + 3}" text-anchor="middle" fill="#FFF6E5" font-size="8.2" font-weight="800">Lầu Trà Thiền</text>
-              <rect x="${mapX(59.5) - 38}" y="${mapY(14.5) - 13}" width="76" height="26" rx="7" fill="#7A4924" stroke="#FFD875" stroke-width="1.8"/>
-              <text x="${mapX(59.5)}" y="${mapY(14.5) + 3}" text-anchor="middle" fill="#FFF6E5" font-size="8.2" font-weight="800">Nhà Sàn Ăn</text>
-              <rect x="${mapX(47.8) - 36}" y="${mapY(-17.5) - 12}" width="72" height="24" rx="6" fill="#C96F4A" stroke="#fff" stroke-width="1.5"/>
-              <text x="${mapX(47.8)}" y="${mapY(-17.5) + 3}" text-anchor="middle" fill="#FFF6E5" font-size="8.2" font-weight="800">Tạp Hóa Cuối Đường</text>
+              <rect x="${mapX(58.5) - 32}" y="${mapY(14) - 11}" width="64" height="22" rx="6" fill="#7A4924" stroke="#FFD875" stroke-width="1.5"/>
+              <text x="${mapX(58.5)}" y="${mapY(14) + 3}" text-anchor="middle" fill="#FFF6E5" font-size="7.6" font-weight="800">Trai Đường</text>
 
-              <!-- Front Lotus Pond & Gates -->
-              <ellipse cx="${mapX(3.5)}" cy="${mapY(33)}" rx="36" ry="16" fill="#3B6E5C" stroke="#8fc9b3" stroke-width="1.6"/>
-              <text x="${mapX(3.5)}" y="${mapY(33) + 3}" text-anchor="middle" fill="#FFF6E5" font-size="8.5" font-weight="800">Hồ Sen Koi</text>
+              <!-- Hồ Sen Koi & 2 Cổng -->
+              <ellipse cx="${mapX(3.5)}" cy="${mapY(31)}" rx="30" ry="12" fill="#3B6E5C" stroke="#8fc9b3" stroke-width="1.5"/>
+              <text x="${mapX(3.5)}" y="${mapY(31) + 3}" text-anchor="middle" fill="#FFF6E5" font-size="7.8" font-weight="800">Hồ Sen Koi</text>
 
-              <rect x="${axisX - 50}" y="${mapY(41.5) - 10}" width="100" height="20" rx="5" fill="#7E2A22" stroke="#FFD875" stroke-width="1.8"/>
-              <text x="${axisX}" y="${mapY(41.5) + 4}" text-anchor="middle" fill="#FFD875" font-size="8.4" font-weight="800">TAM QUAN</text>
-              <rect x="${mapX(40.5) - 32}" y="${mapY(41.5) - 10}" width="64" height="20" rx="5" fill="#5C381F" stroke="#FFD875" stroke-width="1.6"/>
-              <text x="${mapX(40.5)}" y="${mapY(41.5) + 4}" text-anchor="middle" fill="#FFF6E5" font-size="8.2" font-weight="800">CỔNG PHỤ</text>
+              <rect x="${axisX - 42}" y="${mapY(41.5) - 8}" width="84" height="16" rx="4" fill="#7E2A22" stroke="#FFD875" stroke-width="1.6"/>
+              <text x="${axisX}" y="${mapY(41.5) + 3}" text-anchor="middle" fill="#FFD875" font-size="7.8" font-weight="900">CỔNG TAM QUAN</text>
+              <rect x="${mapX(40.5) - 28}" y="${mapY(41.5) - 8}" width="56" height="16" rx="4" fill="#5C381F" stroke="#FFD875" stroke-width="1.5"/>
+              <text x="${mapX(40.5)}" y="${mapY(41.5) + 3}" text-anchor="middle" fill="#FFF6E5" font-size="7.5" font-weight="900">CỔNG PHỤ</text>
+
+              <!-- 2. ĐƯỜNG THẲNG VÀO CHÙA VĨNH TRÀNG (170m từ Cổng Phụ ra Đường Nguyễn Trung Trực) -->
+              <rect x="${mapX(32.0)}" y="${mapY(42)}" width="${mapX(49.5) - mapX(32.0)}" height="${mapY(168) - mapY(42)}" fill="#c8beb0" stroke="#9b8d7a" stroke-width="1.2"/>
+              <line x1="${mapX(40.7)}" y1="${mapY(48)}" x2="${mapX(40.7)}" y2="${mapY(162)}" stroke="#FFF7E2" stroke-width="1.6" stroke-dasharray="6,6"/>
+              <text x="${mapX(40.7)}" y="${mapY(108)}" text-anchor="middle" fill="#4A3222" font-size="7.6" font-weight="800" transform="rotate(-90 ${mapX(40.7)} ${mapY(108)})">ĐƯỜNG VÀO CHÙA VĨNH TRÀNG (170m)</text>
+
+              <!-- 3. CÔNG VIÊN VĨNH TRÀNG THỰC TẾ (OSM way/266761436: x = -26..31.2, z = 54..168) -->
+              <g id="map2d-park-zone" style="cursor:pointer;">
+                <rect x="${mapX(-26)}" y="${mapY(54)}" width="${mapX(31.2) - mapX(-26)}" height="${mapY(168) - mapY(54)}" rx="10" fill="#A9D396" stroke="#2D6B3D" stroke-width="2.2"/>
+                <!-- Đường dạo chữ thập & đường chéo xuyên quảng trường tròn -->
+                <line x1="${mapX(8)}" y1="${mapY(55)}" x2="${mapX(8)}" y2="${mapY(167)}" stroke="#E6DAC3" stroke-width="5.5"/>
+                <line x1="${mapX(-25)}" y1="${mapY(70)}" x2="${mapX(30.5)}" y2="${mapY(70)}" stroke="#E6DAC3" stroke-width="4.2"/>
+                <line x1="${mapX(-25)}" y1="${mapY(104)}" x2="${mapX(30.5)}" y2="${mapY(104)}" stroke="#E6DAC3" stroke-width="5.5"/>
+                <line x1="${mapX(-25)}" y1="${mapY(138)}" x2="${mapX(30.5)}" y2="${mapY(138)}" stroke="#E6DAC3" stroke-width="4.2"/>
+                <line x1="${mapX(-18)}" y1="${mapY(66)}" x2="${mapX(28)}" y2="${mapY(144)}" stroke="#E6DAC3" stroke-width="3.2"/>
+                <line x1="${mapX(28)}" y1="${mapY(66)}" x2="${mapX(-18)}" y2="${mapY(144)}" stroke="#E6DAC3" stroke-width="3.2"/>
+                <!-- Quảng trường tròn & Đài phun nước hoa sen -->
+                <circle cx="${mapX(8)}" cy="${mapY(104)}" r="22" fill="#E8DBC2" stroke="#B5684A" stroke-width="2.4"/>
+                <circle cx="${mapX(8)}" cy="${mapY(104)}" r="10" fill="#4BA3B5" stroke="#FFF6E5" stroke-width="1.6"/>
+                <circle cx="${mapX(8)}" cy="${mapY(104)}" r="4" fill="#F08AA8"/>
+                <!-- Chòi Lục Giác & Khu Thể Dục Công Viên -->
+                <polygon points="${mapX(-8)},${mapY(82) - 10} ${mapX(-8) + 9},${mapY(82) - 5} ${mapX(-8) + 9},${mapY(82) + 5} ${mapX(-8)},${mapY(82) + 10} ${mapX(-8) - 9},${mapY(82) + 5} ${mapX(-8) - 9},${mapY(82) - 5}" fill="#B94B2B" stroke="#FFD875" stroke-width="1.3"/>
+                <text x="${mapX(-8)}" y="${mapY(82) + 19}" text-anchor="middle" fill="#214A2B" font-size="7.2" font-weight="800">Chòi Lục Giác</text>
+                <rect x="${mapX(19.5) - 16}" y="${mapY(86) - 9}" width="32" height="18" rx="4" fill="#1D5D9B" stroke="#F2C94C" stroke-width="1.3"/>
+                <text x="${mapX(19.5)}" y="${mapY(86) + 3}" text-anchor="middle" fill="#FFFFFF" font-size="6.8" font-weight="800">Thể dục</text>
+                <text x="${mapX(8)}" y="${mapY(154)}" text-anchor="middle" fill="#144524" font-size="9.2" font-weight="900">CÔNG VIÊN VĨNH TRÀNG (TP. MỸ THO)</text>
+                <text x="${mapX(8)}" y="${mapY(163)}" text-anchor="middle" fill="#235733" font-size="7.5" font-weight="700">Đài phun nước hoa sen · Vườn bông giấy · Lối dạo bộ</text>
+              </g>
+
+              <!-- 4. PHỐ MỸ THO & BÃI GIỮ XE PHÍA ĐÔNG ĐƯỜNG VÀO CHÙA -->
+              <rect x="${mapX(50.5)}" y="${mapY(54)}" width="${mapX(72) - mapX(50.5)}" height="${mapY(166) - mapY(54)}" rx="8" fill="#E9DFC8" stroke="#A6957C" stroke-width="1.4"/>
+              <text x="${mapX(61)}" y="${mapY(92)}" text-anchor="middle" fill="#5C381F" font-size="8" font-weight="800">Bãi Giữ Xe</text>
+              <text x="${mapX(61)}" y="${mapY(104)}" text-anchor="middle" fill="#5C381F" font-size="8" font-weight="800">&amp; Phố Mỹ Tho</text>
+
+              <!-- 5. ĐƯỜNG NGUYỄN TRUNG TRỰC (TRỤC CHÍNH PHÍA NAM) -->
+              <rect x="26" y="${mapY(166)}" width="720" height="24" rx="5" fill="#bfb5a4" stroke="#8B7E6A" stroke-width="1.2"/>
+              <text x="386" y="${mapY(166) + 15}" text-anchor="middle" fill="#3B2415" font-size="9.5" font-weight="900">ĐƯỜNG NGUYỄN TRUNG TRỰC · PHƯỜNG 8, TP. MỸ THO, TIỀN GIANG</text>
 
               ${PILGRIMAGE_STATIONS.map((st) => {
                 const pinShift = {
-                  cong_tam_quan: { dx: 0, dy: -13 },
-                  ho_sen_ca_koi: { dx: 0, dy: -16 },
-                  phat_adida: { dx: -20, dy: 0 },
-                  phat_di_lac: { dx: 0, dy: -18 },
+                  cong_tam_quan: { dx: 0, dy: -11 },
+                  ho_sen_ca_koi: { dx: 0, dy: -11 },
+                  phat_adida: { dx: -16, dy: 0 },
+                  phat_di_lac: { dx: 0, dy: -14 },
                   lu_huong_san: { dx: 0, dy: -4 },
-                  chanh_dien: { dx: 44, dy: -14 },
-                  cua_hang_luu_niem: { dx: -24, dy: -12 },
-                  giang_duong: { dx: -24, dy: -14 },
-                  phat_niet_ban: { dx: 36, dy: -14 }
-                }[st.key] || { dx: 0, dy: -14 };
+                  chanh_dien: { dx: 38, dy: -10 },
+                  cua_hang_luu_niem: { dx: -20, dy: -10 },
+                  giang_duong: { dx: -18, dy: -10 },
+                  phat_niet_ban: { dx: 32, dy: -10 }
+                }[st.key] || { dx: 0, dy: -10 };
                 const sx = mapX(st.pos.x) + pinShift.dx;
                 const sy = mapY(st.pos.z) + pinShift.dy;
                 const isAct = this.activeStationKey === st.key;
                 return `
                   <g class="map2d-station-pin" data-station-key="${st.key}" style="cursor:pointer;">
-                    <circle cx="${sx}" cy="${sy}" r="${isAct ? 9.5 : 7.5}" fill="${isAct ? '#C96F4A' : '#5C381F'}" stroke="#FFF6E5" stroke-width="2"/>
-                    <text x="${sx}" y="${sy + 2.8}" text-anchor="middle" fill="#FFF6E5" font-size="8" font-weight="900">${st.id + 1}</text>
+                    <circle cx="${sx}" cy="${sy}" r="${isAct ? 9 : 7}" fill="${isAct ? '#C96F4A' : '#5C381F'}" stroke="#FFF6E5" stroke-width="1.8"/>
+                    <text x="${sx}" y="${sy + 2.6}" text-anchor="middle" fill="#FFF6E5" font-size="7.6" font-weight="900">${st.id + 1}</text>
                   </g>
                 `;
               }).join('')}
 
               ${DISCOVERY_ZONES.map((dz, idx) => {
-                const dzShift = {
-                  vuon_lam_ty_ni: { dx: 28, dy: -14 },
-                  non_bo_quan_am: { dx: 24, dy: -14 },
-                  vuon_la_han_ngoai: { dx: 18, dy: -12 },
-                  ho_phong_sinh: { dx: 0, dy: -16 },
-                  thap_chuong_dai_hong: { dx: 24, dy: -12 },
-                  hau_to_nha_to: { dx: 32, dy: -14 },
-                  lau_tra_thien: { dx: -22, dy: -14 },
-                  nha_san_trai_duong: { dx: -24, dy: -14 },
-                  bao_thap_that_phat: { dx: -22, dy: -12 }
-                }[dz.key] || { dx: 0, dy: -14 };
-                const sx = mapX(dz.pos.x) + dzShift.dx;
-                const sy = mapY(dz.pos.z) + dzShift.dy;
+                const sx = mapX(dz.pos.x);
+                const sy = mapY(dz.pos.z) - 9;
                 const isAct = this.activeStationKey === dz.key;
                 return `
                   <g class="map2d-station-pin" data-station-key="${dz.key}" style="cursor:pointer;">
-                    <circle cx="${sx}" cy="${sy}" r="${isAct ? 9.5 : 7.5}" fill="${isAct ? '#B84518' : '#7E2A22'}" stroke="#FFD875" stroke-width="2"/>
-                    <text x="${sx}" y="${sy + 2.8}" text-anchor="middle" fill="#FFF6E5" font-size="7.8" font-weight="900">${String.fromCharCode(65 + idx)}</text>
+                    <circle cx="${sx}" cy="${sy}" r="${isAct ? 8.5 : 6.5}" fill="${isAct ? '#B84518' : '#7E2A22'}" stroke="#FFD875" stroke-width="1.6"/>
+                    <text x="${sx}" y="${sy + 2.4}" text-anchor="middle" fill="#FFF6E5" font-size="7.2" font-weight="900">${String.fromCharCode(65 + idx)}</text>
                   </g>
                 `;
               }).join('')}
 
               <g transform="translate(${px}, ${py})">
-                <circle r="12" fill="rgba(255, 196, 46, 0.42)"/>
-                <circle r="6.5" fill="#FFD875" stroke="#7E2A22" stroke-width="2.5"/>
+                <circle r="11" fill="rgba(255, 196, 46, 0.48)"/>
+                <circle r="6" fill="#FFD875" stroke="#7E2A22" stroke-width="2.2"/>
               </g>
             </svg>
           </div>
@@ -274,6 +304,54 @@ export const exploreAccountMethods = {
             const key = b.getAttribute('data-guide-station') || 'chanh_dien';
             this.activateGuidedBeacon(key);
           });
+        });
+        const goToCongVien = () => {
+          this.closeModal();
+          this.switchScreen('courtyard');
+          if (this.world3d?.insideInterior) this.toggleInteriorHallIn3D(false);
+          if (this.world3d?.playerState) {
+            this.world3d.cancelAutoWalk?.();
+            this.world3d.playerState.x = 26.0;
+            this.world3d.playerState.z = 104.0;
+            this.world3d.playerState.yaw = -Math.PI / 2;
+            this.world3d.cameraBaseYaw = -Math.PI / 2;
+            this.world3d.cameraAzimuthOffset = 0;
+            this.world3d.syncPlayerTransform?.(true);
+            this.world3d.checkStationProximity?.();
+            this.world3d.renderFrame?.();
+          }
+          this.playBellTone(324, 1.8);
+          this.showToast(
+            '🌳 Công Viên Vĩnh Tràng (Ngoài Chùa)',
+            'Đài phun nước hoa sen trung tâm, 4 lối dạo lát đá hướng tâm, chòi lục giác và đường Nguyễn Trung Trực.',
+            4200,
+            false
+          );
+        };
+        document.getElementById('btn-map-goto-park')?.addEventListener('click', goToCongVien);
+        document.getElementById('map2d-park-zone')?.addEventListener('click', goToCongVien);
+        document.getElementById('btn-map-goto-shop')?.addEventListener('click', () => {
+          this.closeModal();
+          this.switchScreen('courtyard');
+          if (this.world3d?.insideInterior) this.toggleInteriorHallIn3D(false);
+          if (this.world3d?.playerState) {
+            this.world3d.cancelAutoWalk?.();
+            this.world3d.playerState.x = 42.2;
+            this.world3d.playerState.z = -31.8;
+            this.world3d.playerState.yaw = Math.PI;
+            this.world3d.cameraBaseYaw = Math.PI;
+            this.world3d.cameraAzimuthOffset = 0;
+            this.world3d.syncPlayerTransform?.(true);
+            this.world3d.checkStationProximity?.();
+            this.world3d.renderFrame?.();
+          }
+          this.playMokugyoTap?.();
+          this.showToast(
+            '🛍️ Bên trong Nhà Lưu Niệm & Tiệm Tạp Hóa',
+            'Mời cô bác đi dạo giữa các kệ đặc sản chay Mỹ Tho hoặc bấm [E] để mở quầy hàng & đặt mua Shopee.',
+            4200,
+            false
+          );
         });
       } else if (sub === 'quests') {
         const quests = getQuestsWithProgress(this.activityHub, this.spiritual, this.completedLessons.size);
@@ -363,7 +441,9 @@ export const exploreAccountMethods = {
             `).join('')}
           </div>
           <div class="market-items-grid" style="max-height:46vh;overflow-y:auto;padding-right:4px;">
-            ${items.map((item) => `
+            ${items.map((item) => {
+              const shopee = resolveShopeeAffiliateUrl(item.id, item.name, this.shopeeAffiliateOverrides);
+              return `
               <article class="market-item-card">
                 <div class="market-item-top">
                   <div class="market-item-icon">
@@ -386,8 +466,12 @@ export const exploreAccountMethods = {
                   <button type="button" class="market-btn-use" data-explore-use="${item.id}">Thỉnh dâng ngay</button>
                   <button type="button" class="market-btn-cart" data-explore-cart="${item.id}">+ Giỏ hàng</button>
                 </div>
+                <a class="market-btn-shopee" href="${shopee.url}" target="_blank" rel="noopener noreferrer">
+                  🛒 ${shopee.label}
+                </a>
               </article>
-            `).join('')}
+            `;
+            }).join('')}
           </div>
         `;
         document.getElementById('btn-explore-open-9tab-store')?.addEventListener('click', () => {

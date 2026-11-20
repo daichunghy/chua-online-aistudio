@@ -3,7 +3,7 @@
  * File này giữ constructor/state/init; các nhóm method nằm trong src/app/ui/*.mjs (xem docs/ARCHITECTURE.md).
  */
 
-import { CHARACTER_PROFILES, INITIAL_UGC_GALLERY, createSpiritualState, checkUGCMilestoneUnlock, calculateJourneyImprint, calculateCartSummary, getLocalDateKey, fetchDailyDharmaService, COURTYARD_NPC_DHARMA_QUOTES, createStoreProfileState, TIME_OF_DAY_PRESETS, createActivityHubState, ensureDailyMissionDate, NATIONALITY_PROFILES, PILGRIMAGE_MODES, HOA_DANG_WISHES, createDharmaJournalState, ACADEMY_COURSES, createAcademyEntitlementState, createBlessingTowerState, createSutraStudyState, SutraStudyController, TempleAudioEngine, STORAGE_KEY, applyMixins, createVisitorClientId, createAmbientSettingsState, DEFAULT_TEMPLE_ID, createPilgrimagePassportState, getActiveTempleRecord } from './ui/shared.mjs';
+import { CHARACTER_PROFILES, INITIAL_UGC_GALLERY, createSpiritualState, checkUGCMilestoneUnlock, calculateJourneyImprint, calculateCartSummary, getLocalDateKey, fetchDailyDharmaService, COURTYARD_NPC_DHARMA_QUOTES, createStoreProfileState, TIME_OF_DAY_PRESETS, createActivityHubState, ensureDailyMissionDate, NATIONALITY_PROFILES, PILGRIMAGE_MODES, HOA_DANG_WISHES, createDharmaJournalState, ACADEMY_COURSES, createAcademyEntitlementState, createBlessingTowerState, createSutraStudyState, SutraStudyController, TempleAudioEngine, STORAGE_KEY, applyMixins, createVisitorClientId, createAmbientSettingsState, DEFAULT_TEMPLE_ID, createPilgrimagePassportState, getActiveTempleRecord, createPilgrimageDepthState, mergeShopeeAffiliateOverrides } from './ui/shared.mjs';
 import { shellDomMethods } from './ui/shell-dom.mjs';
 import { world3dBridgeMethods } from './ui/world3d-bridge.mjs';
 import { effectsAudioMethods } from './ui/effects-audio.mjs';
@@ -36,6 +36,8 @@ export class ChuaOnlineApp {
         ? this.saved.goalsTrackerCollapsed
         : typeof window !== 'undefined' && window.innerWidth <= 768;
     this.timeOfDay = TIME_OF_DAY_PRESETS[this.saved.timeOfDay] ? this.saved.timeOfDay : 'morning';
+    this.cameraViewMode = 'third';
+    this.weatherPreset = 'clear';
     this.elderFontScale = ['normal', 'large', 'xlarge'].includes(this.saved.elderFontScale)
       ? this.saved.elderFontScale
       : 'normal';
@@ -44,7 +46,9 @@ export class ChuaOnlineApp {
     this.ttsSpeaking = false;
     this.mindfulnessTimer = { running: false, intervalId: null, totalSec: 300, remainingSec: 300 };
     this.storeCategory = 'ao_trang';
-    this.marketStallTab = 'huong_hoa';
+    this.marketStallTab = 'all';
+    this.pilgrimageDepth = createPilgrimageDepthState(this.saved.pilgrimageDepth);
+    this.shopeeAffiliateOverrides = this.loadShopeeAffiliateOverrides();
     this.activeModalVariant = 'default';
     this.cart = Array.isArray(this.saved.cart)
       ? this.saved.cart
@@ -207,6 +211,25 @@ export class ChuaOnlineApp {
     }
   }
 
+  loadShopeeAffiliateOverrides() {
+    try {
+      const raw = localStorage.getItem('chua_online_shopee_affiliate_v1');
+      const parsed = raw ? JSON.parse(raw) : {};
+      return mergeShopeeAffiliateOverrides(parsed);
+    } catch {
+      return mergeShopeeAffiliateOverrides({});
+    }
+  }
+
+  saveShopeeAffiliateOverrides(overrides) {
+    const clean = mergeShopeeAffiliateOverrides(overrides);
+    this.shopeeAffiliateOverrides = clean;
+    try {
+      localStorage.setItem('chua_online_shopee_affiliate_v1', JSON.stringify(clean));
+    } catch {}
+    return clean;
+  }
+
   saveState() {
     try {
       localStorage.setItem(
@@ -241,7 +264,8 @@ export class ChuaOnlineApp {
           ambientSettings: this.ambientSettings,
           uploadedUserPhotoDataUrl: this.uploadedUserPhotoDataUrl,
           lastDailyDharmaDate: this.lastDailyDharmaDate,
-          lastDailyDharmaQuoteId: this.lastDailyDharmaQuoteId
+          lastDailyDharmaQuoteId: this.lastDailyDharmaQuoteId,
+          pilgrimageDepth: this.pilgrimageDepth
         })
       );
     } catch {}

@@ -5,6 +5,9 @@
  * Được gắn vào class trong vinh-trang-3d-world.mjs qua applyMixins().
  */
 import { THREE, PILGRIMAGE_STATIONS, DISCOVERY_ZONES, attachStorePropsToCharacterRig, CHAR_HEIGHTS } from './shared.mjs';
+import { computeFirstPersonEyePose, findNearestStreetEncounter } from '../../logic/modules/world-atmosphere.mjs';
+import { findNearestScenicBench } from '../../logic/modules/living-world.mjs';
+import { findNearestRandomEncounter, findNearestCongQuaTask } from '../../logic/modules/pilgrimage-depth.mjs';
 
 export const playerAndInteractionMethods = {
   triggerActionAnimation(clipName = 'Vái', opts = {}) {
@@ -21,6 +24,8 @@ export const playerAndInteractionMethods = {
       Quy: 'Quỳ',
       Quỳ: 'Quỳ',
       quy: 'Quỳ',
+      ngoi_thien: 'Ngồi thiền',
+      'Ngồi thiền': 'Ngồi thiền',
       'Di bo': 'Di bo',
       'Đi bộ': 'Di bo',
       Dung: 'Dung',
@@ -36,7 +41,15 @@ export const playerAndInteractionMethods = {
       'Ngắm cảnh': 'Ngắm cảnh'
     };
     const resolved = mapName[clipName] || 'Vái';
-    const isCustomGesture = ['Chụp ảnh', 'Selfie', 'Trò chuyện', 'Vẫy tay', 'Ngắm cảnh'].includes(resolved);
+    const isCustomGesture = [
+      'Chụp ảnh',
+      'Selfie',
+      'Trò chuyện',
+      'Vẫy tay',
+      'Ngắm cảnh',
+      'Ngồi thiền'
+    ].includes(resolved);
+    const isContinuous = Boolean(opts?.continuous) || resolved === 'Ngồi thiền';
     const dur =
       Number(opts?.duration) ||
       (resolved === 'Selfie'
@@ -48,23 +61,47 @@ export const playerAndInteractionMethods = {
         : resolved === 'Chụp ảnh'
         ? 2.8
         : 2.6);
+
+    clearTimeout(this._poseReturnTimer);
+    if (resolved === 'Dung') {
+      this.playerState.pose = 'Dung';
+      this.proceduralPoseState = { action: null, timer: 0, duration: 0, continuous: false, partnerNpc: null };
+      if (this.activePlayerRecord) {
+        this.playClipCrossfade(this.activePlayerRecord, 'Dung', 0.22, false);
+      }
+      return;
+    }
+
+    if (isContinuous) {
+      this.cancelAutoWalk?.();
+      this.playerState.moving = false;
+      if (this.playerPhysics) {
+        this.playerPhysics.vx = 0;
+        this.playerPhysics.vz = 0;
+        this.playerPhysics.speed = 0;
+        this.playerPhysics.actualSpeed = 0;
+      }
+    }
+
     this.playerState.pose = resolved;
     this.proceduralPoseState = {
-      action: resolved === 'Di bo' || resolved === 'Dung' ? null : resolved,
+      action: resolved === 'Di bo' ? null : resolved,
       timer: 0,
       duration: dur,
+      continuous: isContinuous,
       partnerNpc: opts?.partnerNpc || null
     };
     if (this.activePlayerRecord) {
-      this.playClipCrossfade(this.activePlayerRecord, isCustomGesture ? 'Dung' : resolved, 0.2, !isCustomGesture);
-      clearTimeout(this._poseReturnTimer);
-      this._poseReturnTimer = setTimeout(() => {
-        if (!this.playerState.moving && this.activePlayerRecord) {
-          this.playerState.pose = 'Dung';
-          if (this.proceduralPoseState) this.proceduralPoseState.action = null;
-          this.playClipCrossfade(this.activePlayerRecord, 'Dung', 0.25, false);
-        }
-      }, Math.round(dur * 1000) + 180);
+      this.playClipCrossfade(this.activePlayerRecord, isCustomGesture ? 'Dung' : resolved, 0.2, !isCustomGesture && !isContinuous);
+      if (!isContinuous) {
+        this._poseReturnTimer = setTimeout(() => {
+          if (!this.playerState.moving && this.activePlayerRecord && !this.proceduralPoseState?.continuous) {
+            this.playerState.pose = 'Dung';
+            if (this.proceduralPoseState) this.proceduralPoseState.action = null;
+            this.playClipCrossfade(this.activePlayerRecord, 'Dung', 0.25, false);
+          }
+        }, Math.round(dur * 1000) + 180);
+      }
     }
   },
 
@@ -146,6 +183,26 @@ export const playerAndInteractionMethods = {
     }
   },
 
+  setCameraViewMode(mode = 'third', immediate = false) {
+    const next = mode === 'first' ? 'first' : 'third';
+    if (this.cameraViewMode === next && !immediate) return next;
+    this.cameraViewMode = next;
+    if (next === 'first') {
+      this.selfieCamActive = false;
+      this.firstPersonPitch = 0.04;
+      this.cameraBaseYaw = this.playerState.yaw;
+      this.cameraAzimuthOffset = 0;
+    }
+    this.syncPlayerTransform();
+    if (immediate) this.snapCameraImmediate();
+    this.onCameraModeChange?.(next);
+    return next;
+  },
+
+  toggleCameraViewMode() {
+    return this.setCameraViewMode(this.cameraViewMode === 'first' ? 'third' : 'first');
+  },
+
   snapCameraImmediate() {
     this.syncPlayerTransform();
     this._camCurrentPos.copy(this._camDesiredPos);
@@ -183,7 +240,7 @@ export const playerAndInteractionMethods = {
     this.camera.lookAt(this._camCurrentLook);
   },
 
-  syncPlayerTransform() {
+  syncPlayerTransform(instant = false) {
     this.playerContainer.position.set(
       this.playerState.x,
       this.playerElevationY || 0,
@@ -192,6 +249,15 @@ export const playerAndInteractionMethods = {
     this.playerContainer.rotation.y = this.playerState.yaw;
 
     if (this.entranceTour?.active || this.arrivalCutscene?.active) return;
+
+    const isFirstPersonActive =
+      this.cameraViewMode === 'first' &&
+      !this._titlePanActive &&
+      !this.selfieCamActive &&
+      !(this.inInterior && this.interiorCutaway);
+    if (this.playerContainer) {
+      this.playerContainer.visible = !isFirstPersonActive;
+    }
 
     if (this.inInterior && this.interiorCutaway) {
       const cutAngle = Math.PI * 0.82 + this.cameraAzimuthOffset;
@@ -228,6 +294,58 @@ export const playerAndInteractionMethods = {
         this.playerState.x - fwdX * 0.65,
         (this.playerElevationY || 0) + 1.46,
         this.playerState.z - fwdZ * 0.65
+      );
+      return;
+    }
+
+    // Immersive First-Person Eye-Level Mode (V key) — works standing AND while seated on a scenic bench
+    if (isFirstPersonActive) {
+      const lookAngle = this.cameraBaseYaw + this.cameraAzimuthOffset;
+      const fpPose = computeFirstPersonEyePose({
+        x: this.playerState.x,
+        z: this.playerState.z,
+        elevationY: (this.playerElevationY || 0) - (this.seatedBench ? 0.44 : 0),
+        charHeight: CHAR_HEIGHTS[this.playerState.charKey] || 1.64,
+        yaw: lookAngle,
+        pitchRad: this.firstPersonPitch || 0,
+        stridePhase: this.playerPhysics?.stridePhase || 0,
+        moveSpeed: this.playerState.moving ? this.playerPhysics?.actualSpeed || 2.0 : 0
+      });
+      this._camDesiredPos.set(fpPose.pos.x, fpPose.pos.y, fpPose.pos.z);
+      this._camDesiredLook.set(fpPose.look.x, fpPose.look.y, fpPose.look.z);
+      if (instant || !this._camInitialized) {
+        this._camCurrentPos.copy(this._camDesiredPos);
+        this._camCurrentLook.copy(this._camDesiredLook);
+        this._camInitialized = true;
+        this.camera.position.copy(this._camCurrentPos);
+        this.camera.lookAt(this._camCurrentLook);
+      }
+      if (this.inInterior) {
+        const zKey = this.getInteriorZoneKey();
+        if (zKey !== this._lastInteriorZone) {
+          this._lastInteriorZone = zKey;
+          this.onInteriorZoneChange(zKey);
+        }
+      }
+      return;
+    }
+
+    // Diegetic Cinematic Bench Rest Camera (gentle scenic sweep looking across the temple vista)
+    if (this.seatedBench && !this.inInterior) {
+      const b = this.seatedBench;
+      const sway = Math.sin(this._benchCamOrbitAngle || 0) * 0.42 + (this.cameraAzimuthOffset || 0);
+      const orbitAngle = b.seatYaw + Math.PI + sway * 0.65;
+      const dist = Math.max(2.8, Math.min(8.5, 4.4 + (this.cameraZoomOffset || 0) * 0.5));
+      this._camDesiredPos.set(
+        b.x + Math.sin(orbitAngle) * dist,
+        2.15 + Math.sin((this._benchCamOrbitAngle || 0) * 0.6) * 0.14,
+        b.z + Math.cos(orbitAngle) * dist
+      );
+      const look = b.lookAt || { x: b.x + Math.sin(b.seatYaw) * 8, y: 1.8, z: b.z + Math.cos(b.seatYaw) * 8 };
+      this._camDesiredLook.set(
+        b.x * 0.35 + look.x * 0.65,
+        Math.max(1.2, look.y * 0.72),
+        b.z * 0.35 + look.z * 0.65
       );
       return;
     }
@@ -276,7 +394,7 @@ export const playerAndInteractionMethods = {
       const px = this.playerState.x;
       const pz = this.playerState.z;
       const maxCamX = 31.1;
-      cx = Math.max(-40.8, Math.min(maxCamX, cx));
+      cx = Math.max(-61.4, Math.min(maxCamX, cx));
       cz = Math.max(-55.2, Math.min(20.05, cz));
       if (px > 10.9 && px <= 31.1 && cx < 11.15 && Math.sin(lookAngle) > 0.25) {
         cx = 11.15;
@@ -293,7 +411,7 @@ export const playerAndInteractionMethods = {
       lookY,
       this.playerState.z + Math.cos(lookAngle) * 10.5
     );
-    if (!this._camInitialized) {
+    if (instant || !this._camInitialized) {
       this._camCurrentPos.copy(this._camDesiredPos);
       this._camCurrentLook.copy(this._camDesiredLook);
       this._camInitialized = true;
@@ -358,7 +476,7 @@ export const playerAndInteractionMethods = {
           exitSide: 'north_buddha',
           label: '🚪 [E] Ra vườn Phật Nằm & Bảo Tháp'
         };
-      } else if (px <= -36.5 && Math.abs(pz) <= 5.5) {
+      } else if (px <= -58.2 && Math.abs(pz) <= 6.0) {
         intPrompt = {
           kind: 'exit_interior',
           exitSide: 'front_tam_quan',
@@ -436,6 +554,36 @@ export const playerAndInteractionMethods = {
       }
     }
     if (!interactPrompt) {
+      const streetEnc = findNearestStreetEncounter(this.playerState.x, this.playerState.z);
+      if (streetEnc) {
+        interactPrompt = {
+          kind: 'street_encounter',
+          encounterId: streetEnc.id,
+          label: streetEnc.promptLabel
+        };
+      }
+    }
+    if (!interactPrompt) {
+      const randEnc = findNearestRandomEncounter(this.playerState.x, this.playerState.z);
+      if (randEnc) {
+        interactPrompt = {
+          kind: 'random_encounter',
+          encounterId: randEnc.id,
+          label: `${randEnc.icon} [E] ${randEnc.shortLabel}`
+        };
+      }
+    }
+    if (!interactPrompt) {
+      const cqTask = findNearestCongQuaTask(this.playerState.x, this.playerState.z);
+      if (cqTask) {
+        interactPrompt = {
+          kind: 'cong_qua_task',
+          taskId: cqTask.id,
+          label: `${cqTask.icon} [E] Công quả: ${cqTask.shortLabel}`
+        };
+      }
+    }
+    if (!interactPrompt) {
       if (
         this.playerState.x >= 18.0 &&
         this.playerState.x <= 28.0 &&
@@ -445,6 +593,16 @@ export const playerAndInteractionMethods = {
         interactPrompt = {
           kind: 'enter_chanh_dien_front',
           label: '🚪 [E] Vào Chánh Điện (Cửa Trước)'
+        };
+      }
+    }
+    if (!interactPrompt && !this.seatedBench) {
+      const nearBench = findNearestScenicBench(this.playerState, 2.75);
+      if (nearBench) {
+        interactPrompt = {
+          kind: 'scenic_bench',
+          benchId: nearBench.id,
+          label: `🪑 [E] Ngồi nghỉ ${nearBench.name}`
         };
       }
     }
@@ -465,11 +623,18 @@ export const playerAndInteractionMethods = {
         }
       }
     }
+    if (this.seatedBench) {
+      interactPrompt = {
+        kind: 'stand_up_bench',
+        benchId: this.seatedBench.id,
+        label: '🚶 [E] Đứng dậy tiếp tục vãn cảnh'
+      };
+    }
     const prevKey = this.nearestInteractPrompt
-      ? `${this.nearestInteractPrompt.kind}:${this.nearestInteractPrompt.leafId || this.nearestInteractPrompt.slotIndex || ''}`
+      ? `${this.nearestInteractPrompt.kind}:${this.nearestInteractPrompt.leafId || this.nearestInteractPrompt.slotIndex || this.nearestInteractPrompt.encounterId || this.nearestInteractPrompt.taskId || this.nearestInteractPrompt.benchId || ''}`
       : '';
     const nextKey = interactPrompt
-      ? `${interactPrompt.kind}:${interactPrompt.leafId || interactPrompt.slotIndex || ''}`
+      ? `${interactPrompt.kind}:${interactPrompt.leafId || interactPrompt.slotIndex || interactPrompt.encounterId || interactPrompt.taskId || interactPrompt.benchId || ''}`
       : '';
     if (prevKey !== nextKey) {
       this.nearestInteractPrompt = interactPrompt;
@@ -514,11 +679,19 @@ export const playerAndInteractionMethods = {
         this.cancelEntranceTour();
         this._lastCamDragAt = performance.now();
         this.cameraAzimuthOffset -= dx * 0.0045;
-        this.cameraPitchOffset = THREE.MathUtils.clamp(
-          (this.cameraPitchOffset || 0) + dy * 0.012,
-          -2.2,
-          5.5
-        );
+        if (this.cameraViewMode === 'first' && !this.selfieCamActive && !(this.inInterior && this.interiorCutaway)) {
+          this.firstPersonPitch = THREE.MathUtils.clamp(
+            (this.firstPersonPitch || 0) - dy * 0.0042,
+            -0.62,
+            0.92
+          );
+        } else {
+          this.cameraPitchOffset = THREE.MathUtils.clamp(
+            (this.cameraPitchOffset || 0) + dy * 0.012,
+            -2.2,
+            5.5
+          );
+        }
         downX = e.clientX;
         downY = e.clientY;
         this.syncPlayerTransform();
@@ -605,7 +778,7 @@ export const playerAndInteractionMethods = {
           const doorSpecs = {
             right: { x: 15.6, z: 18.6, walkX: 15.6, walkZ: 17.8, label: 'Cửa hông Chánh điện' },
             north_buddha: { x: 17.3, z: -55.2, walkX: 17.3, walkZ: -52.5, label: 'Cổng cuối hành lang ra vườn tượng' },
-            front_tam_quan: { x: -40.8, z: 0.0, walkX: -37.8, walkZ: 0.0, label: 'Cửa chính mặt tiền' }
+            front_tam_quan: { x: -61.6, z: 0.0, walkX: -58.6, walkZ: 0.0, label: 'Cửa chính mặt tiền' }
           };
           const spec = doorSpecs[exitSide] || doorSpecs.right;
           const distToDoor = Math.hypot(this.playerState.x - spec.x, this.playerState.z - spec.z);
@@ -679,6 +852,40 @@ export const playerAndInteractionMethods = {
         }
       }
     } else {
+      if (this.streetEncounterClickTargets?.length) {
+        const hits = raycaster.intersectObjects(this.streetEncounterClickTargets, false);
+        if (hits.length > 0) {
+          const encounterId = hits[0].object?.userData?.streetEncounterId;
+          if (encounterId) {
+            this.onObjectClick('OPEN_STREET_ENCOUNTER', { encounterId });
+            return;
+          }
+        }
+      }
+      if (this.depthInteractTargets?.length) {
+        const hits = raycaster.intersectObjects(this.depthInteractTargets, false);
+        if (hits.length > 0) {
+          const ud = hits[0].object?.userData || {};
+          if (ud.depthKind === 'random_encounter' && ud.depthId) {
+            this.onObjectClick('OPEN_RANDOM_ENCOUNTER', { encounterId: ud.depthId });
+            return;
+          }
+          if (ud.depthKind === 'cong_qua_task' && ud.depthId) {
+            this.onObjectClick('OPEN_CONG_QUA_TASK', { taskId: ud.depthId });
+            return;
+          }
+        }
+      }
+      if (this.benchClickTargets?.length) {
+        const hits = raycaster.intersectObjects(this.benchClickTargets, false);
+        if (hits.length > 0) {
+          const benchId = hits[0].object?.userData?.benchId;
+          if (benchId) {
+            this.onObjectClick('SIT_SCENIC_BENCH', { benchId });
+            return;
+          }
+        }
+      }
       if (this.lanternClickTargets?.length) {
         const hits = raycaster.intersectObjects(this.lanternClickTargets, false);
         if (hits.length > 0) {

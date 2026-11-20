@@ -23,7 +23,10 @@ import {
   harvestPassportGardenSlot,
   addTempleJournalEntry,
   addTempleMemoryPhoto,
-  mergeCloudPassportState
+  mergeCloudPassportState,
+  matchHeritagePhotoSpot,
+  recordHeritagePhoto,
+  HERITAGE_PHOTO_SPOTS
 } from './shared.mjs';
 
 import {
@@ -1254,6 +1257,37 @@ export const passportAndCloudMethods = {
         caption,
         stationLabel
       });
+
+      // Đợt 3: Tự động nhận diện 1 trong 12 Góc Ảnh Di Sản Chùa Vĩnh Tràng & Công Viên Vĩnh Tràng
+      const px = this.world3d?.playerState?.x ?? this.playerPos?.x ?? 40.5;
+      const pz = this.world3d?.playerState?.z ?? this.playerPos?.z ?? 43.8;
+      const inInterior = Boolean(this.world3d?.insideInterior);
+      const matchedSpot = matchHeritagePhotoSpot(px, pz, inInterior);
+      let heritageBadgeHtml = '';
+      if (matchedSpot) {
+        const recRes = recordHeritagePhoto(this.pilgrimageDepth, matchedSpot.id, {
+          dateKey: res.photo?.dateKey || getLocalDateKey(),
+          thumbnail: ''
+        });
+        if (recRes.ok) {
+          this.pilgrimageDepth = recRes.state;
+          if (recRes.isNewSpot && recRes.rewardLotus > 0) {
+            this.storeProfile.lotusPoints += recRes.rewardLotus;
+            this.grantPilgrimXp?.(20, `Góc ảnh di sản: ${matchedSpot.name}`);
+            this.updateActionBadges?.();
+          }
+          const totalCaptured = Object.keys(this.pilgrimageDepth.heritagePhotos || {}).length;
+          heritageBadgeHtml = `
+            <div style="background:#FFF8E6;border:1.5px solid #D5A94C;border-radius:12px;padding:10px 14px;font-size:13.5px;color:#5C381F;margin-bottom:8px;">
+              <strong>📸 Góc Ảnh Di Sản #${matchedSpot.order}/${HERITAGE_PHOTO_SPOTS.length}: ${escapeHtml(matchedSpot.name)}</strong>
+              <span style="display:block;font-size:12.5px;color:#7A4E1D;margin-top:2px;">
+                ${recRes.isNewSpot ? `✨ Mở khóa góc mới (+${recRes.rewardLotus} 🪷) · ` : ''}Đã sưu tầm ${totalCaptured}/${HERITAGE_PHOTO_SPOTS.length} góc ảnh Vĩnh Tràng.
+              </span>
+            </div>
+          `;
+        }
+      }
+
       this.saveState();
       this.playBellTone?.(360, 1.4);
 
@@ -1262,15 +1296,20 @@ export const passportAndCloudMethods = {
           isSelfie ? '🤳 Ảnh Selfie Kỷ Niệm Chùa Vĩnh Tràng' : '📸 Ảnh Kỷ Niệm Sạch HUD',
           `
           <div class="clean-photo-preview">
+            ${heritageBadgeHtml}
             <img src="${res.photo.dataUrl}" alt="${escapeHtml(res.photo.caption)}" />
             <p class="clean-photo-meta">📍 ${escapeHtml(res.photo.stationLabel)} · ${escapeHtml(res.photo.dateKey)} — Đã tự động lưu vào Sổ Hành Hương.</p>
             <div class="oracle-actions-row">
               <a class="passport-primary-btn" href="${res.photo.dataUrl}" download="chua-vinh-trang-${isSelfie ? 'selfie-' : ''}${escapeHtml(res.photo.dateKey)}.jpg">⬇️ Tải ảnh về máy</a>
-              <button type="button" class="passport-outline-btn" id="btn-photo-open-passport">📖 Xem trong Sổ Hành Hương</button>
+              <button type="button" class="passport-outline-btn" id="btn-photo-open-album12">📸 Bộ 12 Góc Ảnh</button>
+              <button type="button" class="passport-outline-btn" id="btn-photo-open-passport">📖 Sổ Hành Hương</button>
             </div>
           </div>
           `
         );
+        document.getElementById('btn-photo-open-album12')?.addEventListener('click', () => {
+          this.openPilgrimageDepthModal?.('photos');
+        });
         document.getElementById('btn-photo-open-passport')?.addEventListener('click', () => {
           this.openPilgrimagePassportModal('oracle_photos');
         });

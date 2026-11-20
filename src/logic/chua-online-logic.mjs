@@ -31,3 +31,9 @@ export * from './modules/visitor-presence.mjs'; // Hiện diện cộng đồng 
 export * from './modules/ambient-audio.mjs'; // Quản lý âm thanh không gian chùa (niệm Phật xa & chuông chùa)
 export * from './modules/pathfinding-and-collision.mjs'; // Giải va chạm đa lượt (MTV) & tìm đường A* tránh vật cản
 export * from './modules/pilgrimage-passport.mjs'; // Sổ Hành Hương liên chùa (templeId), Quẻ Bình An 30 ngày, Vườn Sen ngày thực
+export * from './modules/world-atmosphere.mjs'; // Thời tiết miền Tây, góc nhìn thứ nhất, âm thanh không gian 3 vùng & cảnh cổng chùa
+export * from './modules/living-world.mjs'; // Đợt 2: Thời khóa công phu 4 buổi, ghế đá ngắm cảnh, bồ câu & khí quyển siêu thực
+export * from './modules/shopee-affiliate.mjs'; // Liên kết Shopee Affiliate cho Nhà Lưu Niệm & Tiệm Tạp Hóa
+export * from './modules/pilgrimage-depth.mjs'; // Đợt 3: Gặp gỡ hữu duyên, Công quả & 12 Góc Ảnh Di Sản
+
+

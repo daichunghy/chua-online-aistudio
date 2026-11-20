@@ -750,7 +750,17 @@ export const exteriorTownMethods = {
       parkGroup.add(flBush);
     }
 
-    // Lối đi trục Bắc–Nam, 3 lối ngang Đông–Tây & 2 lối xéo xuyên vườn cỏ
+    // Lối đi trục Bắc–Nam, 3 lối ngang Đông–Tây, viền Tây–Nam & 2 lối chéo X xuyên Quảng trường Đài Phun Nước (đúng thực tế OSM Công Viên Vĩnh Tràng!)
+    const perimeterWestWalk = new THREE.Mesh(new THREE.BoxGeometry(2.8, 0.09, 113.4), parkTerrazzoMat);
+    perimeterWestWalk.position.set(-24.4, 0.06, 111.0);
+    perimeterWestWalk.receiveShadow = true;
+    parkGroup.add(perimeterWestWalk);
+
+    const perimeterSouthWalk = new THREE.Mesh(new THREE.BoxGeometry(56.6, 0.09, 3.2), parkTerrazzoMat);
+    perimeterSouthWalk.position.set(2.6, 0.06, 166.2);
+    perimeterSouthWalk.receiveShadow = true;
+    parkGroup.add(perimeterSouthWalk);
+
     const nsParkPath = new THREE.Mesh(new THREE.BoxGeometry(4.6, 0.08, 114.0), parkPathMat);
     nsParkPath.position.set(plazaX, 0.06, 111.0);
     nsParkPath.receiveShadow = true;
@@ -762,6 +772,42 @@ export const exteriorTownMethods = {
       ewPath.receiveShadow = true;
       parkGroup.add(ewPath);
     }
+
+    // 2 lối dạo xuyên chéo qua quảng trường tròn trung tâm (nối Chòi lục giác, Khu thể dục & các góc công viên)
+    for (const diagAngle of [Math.PI * 0.25, -Math.PI * 0.25]) {
+      const diagPath = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.075, 62.0), parkPathMat);
+      diagPath.position.set(plazaX, 0.056, plazaZ);
+      diagPath.rotation.y = diagAngle;
+      diagPath.receiveShadow = true;
+      parkGroup.add(diagPath);
+    }
+
+    // Vạch qua đường đi bộ nối trực tiếp từ đường vào Chùa Vĩnh Tràng sang Công Viên Vĩnh Tràng
+    const zebraMat = new THREE.MeshStandardMaterial({ color: 0xF3F0E6, roughness: 0.72 });
+    for (const cz of [70.0, 104.0, 138.0]) {
+      for (let zi = -2; zi <= 2; zi++) {
+        const stripe = new THREE.Mesh(new THREE.BoxGeometry(4.6, 0.025, 0.42), zebraMat);
+        stripe.position.set(34.5, 0.04, cz + zi * 0.78);
+        parkGroup.add(stripe);
+      }
+    }
+
+    // Bảng sơ đồ hướng dẫn Công Viên Vĩnh Tràng đặt gọn trên thảm cỏ bên lối vào Quảng trường
+    const parkMapPost = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.07, 1.8, 8), parkGymBlue);
+    parkMapPost.position.set(27.0, 0.9, 98.8);
+    parkGroup.add(parkMapPost);
+    const parkMapBoard = new THREE.Mesh(
+      new THREE.BoxGeometry(2.3, 0.92, 0.09),
+      new THREE.MeshStandardMaterial({
+        map: makeTextTex('CÔNG VIÊN VĨNH TRÀNG · ĐÀI PHUN NƯỚC · CHÒI LỤC GIÁC', {
+          w: 1120, h: 300, bg: '#184F32', border: '#F0D388', color: '#FFFDF0', size: 32
+        }),
+        roughness: 0.4
+      })
+    );
+    parkMapBoard.position.set(27.0, 1.65, 98.8);
+    parkMapBoard.rotation.y = Math.PI / 2;
+    parkGroup.add(parkMapBoard);
 
     // KHU TẬP THỂ DỤC CÔNG VIÊN NGOÀI TRỜI (dụng cụ sơn vàng-xanh đặc trưng công viên Việt Nam tại x = 19.5, z = 86.0)
     const gymPad = new THREE.Mesh(new THREE.BoxGeometry(10.5, 0.11, 11.5), parkTerrazzoMat);

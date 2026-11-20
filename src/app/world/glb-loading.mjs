@@ -418,475 +418,581 @@ export const glbLoadingMethods = {
     }
     this.renderFrame();
 
-    // Phase 3 (Background Idle Load Balancing): Gently warm interior GLB cache 1-by-1 while player explores outside
+    // Phase 3 (Gentle Idle Cache Warmup): Only pre-fetch light priority interior assets when player is idle
     window.setTimeout(() => {
       this._preloadInteriorAssetsIdle().catch(() => {});
-    }, this.isSoftwareGl ? 2400 : 1200);
+    }, this.isSoftwareGl ? 4200 : 2600);
   },
 
   async _preloadInteriorAssetsIdle() {
     if (this._interiorIdlePreloadStarted || this._interiorGLBsMounted) return;
     this._interiorIdlePreloadStarted = true;
-    const urls = [
+    // Pre-fetch ONLY the East Corridor arrival zone lightly during idle so first entry is instant without spiking memory
+    const lightEntryUrls = [
       STATUE_GLB_PATHS.hoPhap,
-      STATUE_GLB_PATHS.tieuDien,
-      STATUE_GLB_PATHS.toDatMa,
       STATUE_GLB_PATHS.nghinMatNghinTay,
+      STATUE_GLB_PATHS.quanAm,
       STATUE_GLB_PATHS.choNguCuaPhat,
-      ARCH_GLB_PATHS.long_tru,
-      ARCH_GLB_PATHS.bao_lam,
-      ARCH_GLB_PATHS.thap_den_cau_an,
-      ARCH_GLB_PATHS.hon_non_bo,
-      PROP_GLB_PATHS.cap_hac_rua,
-      PROP_GLB_PATHS.nhang_khoanh_dong,
-      ARHAT_GLB_PATHS.kyTuong,
-      ARHAT_GLB_PATHS.toaLoc,
-      ARHAT_GLB_PATHS.phucHo,
-      ARHAT_GLB_PATHS.hangLong,
-      ARHAT_GLB_PATHS.hoanHi,
-      ARHAT_GLB_PATHS.phucHo2,
-      ARHAT_GLB_PATHS.thienDinh,
-      ARHAT_GLB_PATHS.cuBat,
-      ARHAT_GLB_PATHS.thacThap,
-      ARHAT_GLB_PATHS.khaiTam,
-      ARHAT_GLB_PATHS.tieuSu
+      ARCH_GLB_PATHS.hon_non_bo
     ];
-    for (const url of urls) {
-      if (this._interiorLoadPromise || this._interiorGLBsMounted) return;
+    for (const url of lightEntryUrls) {
+      if (this.inInterior || this._interiorGLBsMounted) return;
+      // Pause preloading while the user is actively moving to keep outdoor frame times flat
+      while (this.playerState?.moving && !this.inInterior) {
+        await new Promise((r) => window.setTimeout(r, 320));
+      }
+      if (this.inInterior) return;
       await this.loadGLB(url);
-      await new Promise((r) => window.setTimeout(r, this.isSoftwareGl ? 260 : 140));
+      await new Promise((r) => window.setTimeout(r, this.isSoftwareGl ? 420 : 240));
     }
   },
 
-  ensureInteriorAssetsLoaded() {
-    if (this._interiorLoadPromise) return this._interiorLoadPromise;
-    this._interiorLoadPromise = (async () => {
-      const yieldBatch = () => new Promise((r) => window.setTimeout(r, this.isSoftwareGl ? 32 : 14));
-      const stripCastShadow = (root) => {
-        if (!root) return;
-        root.traverse((o) => {
-          if (o.isMesh) {
-            o.castShadow = false;
-            o.receiveShadow = false;
-          }
+  _getInteriorSharedMaterials() {
+    if (this._interiorSharedMats) return this._interiorSharedMats;
+    this._interiorSharedMats = {
+      gilded_gold: new THREE.MeshStandardMaterial({
+        color: 0xE2B03C,
+        metalness: 0.68,
+        roughness: 0.26,
+        envMapIntensity: 0.65
+      }),
+      antique_bronze: new THREE.MeshStandardMaterial({
+        color: 0xB88236,
+        metalness: 0.58,
+        roughness: 0.34,
+        envMapIntensity: 0.55
+      }),
+      jackfruit_wood: new THREE.MeshStandardMaterial({
+        color: 0x8F4C24,
+        metalness: 0.22,
+        roughness: 0.42,
+        envMapIntensity: 0.42
+      }),
+      dark_bronze: new THREE.MeshStandardMaterial({
+        color: 0x5E3E20,
+        metalness: 0.48,
+        roughness: 0.38,
+        envMapIntensity: 0.48
+      })
+    };
+    return this._interiorSharedMats;
+  },
+
+  _yieldInteriorFrame(extraMs = 0) {
+    return new Promise((resolve) => {
+      if (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function') {
+        window.requestAnimationFrame(() => {
+          if (extraMs > 0) window.setTimeout(resolve, extraMs);
+          else resolve();
         });
+      } else {
+        window.setTimeout(resolve, Math.max(16, extraMs));
+      }
+    });
+  },
+
+  _mountInteriorStatue(sceneObj, anchor, opts = {}) {
+    if (!sceneObj || !anchor) return null;
+    const mats = this._getInteriorSharedMaterials();
+    const matOverride = mats[opts.matKind] || null;
+    const mesh = this.cleanStatueScene(sceneObj, matOverride, true);
+    if (opts.matKind === 'keep_gold_pbr') {
+      mesh.traverse((o) => {
+        if (o.isMesh && o.material) {
+          o.material.roughness = Math.min(0.42, o.material.roughness ?? 0.34);
+          o.material.metalness = Math.max(0.42, o.material.metalness ?? 0.48);
+        }
+      });
+    }
+    const rawBox = new THREE.Box3().setFromObject(mesh);
+    const rawSz = rawBox.getSize(new THREE.Vector3());
+    if (opts.alignWideX && rawSz.z > rawSz.x * 1.18) {
+      mesh.rotation.y = Math.PI / 2;
+    }
+    if (opts.rotY) {
+      mesh.rotation.y += opts.rotY;
+    }
+    const box = new THREE.Box3().setFromObject(mesh);
+    const sz = box.getSize(new THREE.Vector3());
+    const scale = opts.targetW
+      ? opts.targetW / Math.max(0.1, sz.x)
+      : (opts.targetH || 1.9) / Math.max(0.1, sz.y);
+    mesh.scale.setScalar(scale);
+    const b2 = new THREE.Box3().setFromObject(mesh);
+    mesh.position.set(
+      (opts.offsetX || 0) - (b2.min.x + b2.max.x) / 2,
+      (opts.offsetY || 0) - b2.min.y,
+      (opts.offsetZ || 0) - (b2.min.z + b2.max.z) / 2
+    );
+    mesh.traverse((o) => {
+      if (o.isMesh) {
+        o.castShadow = false;
+        o.receiveShadow = false;
+      }
+    });
+    anchor.add(mesh);
+    this.freezeStaticSubtree?.(mesh);
+    return mesh;
+  },
+
+  /**
+   * Zone-prioritized lazy loader for Chánh Điện interior GLBs.
+   * Mounts ONLY the active entry zone immediately (spread across rAF frames so FPS never stalls),
+   * while deferring occluded halls (e.g. 18 Arhats behind walls) until approached or gently streamed.
+   */
+  async ensureInteriorZoneLoaded(zoneKey = 'east_corridor') {
+    this.ensureInteriorBuilt?.();
+    if (!this._interiorZonesLoaded) {
+      this._interiorZonesLoaded = {
+        east_corridor: false,
+        center_and_north: false,
+        west_chanh_dien: false
       };
-      // Load interior GLBs in balanced staggered batches instead of one giant spike
-      const [
-        adidaGltf,
-        dilacGltf,
-        quanAmGltf,
-        phatNamGltf,
-        hoPhapGltf,
-        tieuDienGltf,
-        toDatMaGltf,
-        nghinMatNghinTayGltf,
-        choNguCuaPhatGltf
-      ] = await Promise.all([
-        this.loadGLB(STATUE_GLB_PATHS.adida),
-        this.loadGLB(STATUE_GLB_PATHS.dilac),
-        this.loadGLB(STATUE_GLB_PATHS.quanAm),
-        this.loadGLB(STATUE_GLB_PATHS.phatnam),
-        this.loadGLB(STATUE_GLB_PATHS.hoPhap),
-        this.loadGLB(STATUE_GLB_PATHS.tieuDien),
-        this.loadGLB(STATUE_GLB_PATHS.toDatMa),
-        this.loadGLB(STATUE_GLB_PATHS.nghinMatNghinTay),
-        this.loadGLB(STATUE_GLB_PATHS.choNguCuaPhat)
-      ]);
-      await yieldBatch();
-      const [
-        longTruGltf,
-        baoLamGltf,
-        thapDenCauAnGltf,
-        honNonBoGltf,
-        daiHongChungGltf,
-        trongBatNhaGltf,
-        capHacRuaGltf,
-        nhangKhoanhDongGltf
-      ] = await Promise.all([
-        this.loadGLB(ARCH_GLB_PATHS.long_tru),
-        this.loadGLB(ARCH_GLB_PATHS.bao_lam),
-        this.loadGLB(ARCH_GLB_PATHS.thap_den_cau_an),
-        this.loadGLB(ARCH_GLB_PATHS.hon_non_bo),
-        this.loadGLB(ARCH_GLB_PATHS.dai_hong_chung),
-        this.loadGLB(ARCH_GLB_PATHS.trong_bat_nha),
-        this.loadGLB(PROP_GLB_PATHS.cap_hac_rua),
-        this.loadGLB(PROP_GLB_PATHS.nhang_khoanh_dong)
-      ]);
-      await yieldBatch();
+    }
+    if (!this._interiorZonePromises) this._interiorZonePromises = {};
+    if (this._interiorZonesLoaded[zoneKey]) return true;
+    if (this._interiorZonePromises[zoneKey]) return this._interiorZonePromises[zoneKey];
 
-      const [kyTuongGltf, toaLocGltf, phucHoGltf, hangLongGltf, hoanHiGltf] = await Promise.all([
-        this.loadGLB(ARHAT_GLB_PATHS.kyTuong),
-        this.loadGLB(ARHAT_GLB_PATHS.toaLoc),
-        this.loadGLB(ARHAT_GLB_PATHS.phucHo),
-        this.loadGLB(ARHAT_GLB_PATHS.hangLong),
-        this.loadGLB(ARHAT_GLB_PATHS.hoanHi)
-      ]);
+    const stripCastShadow = (root) => {
+      if (!root) return;
+      root.traverse((o) => {
+        if (o.isMesh) {
+          o.castShadow = false;
+          o.receiveShadow = false;
+        }
+      });
+    };
 
-      const [phucHo2Gltf, thienDinhGltf, cuBatGltf, thacThapGltf, khaiTamGltf, tieuSuGltf] =
-        await Promise.all([
-          this.loadGLB(ARHAT_GLB_PATHS.phucHo2),
+    const delayMs = this.isSoftwareGl ? 24 : 8;
+
+    const job = (async () => {
+      if (zoneKey === 'east_corridor') {
+        const [
+          hoPhapGltf,
+          nghinMatGltf,
+          quanAmGltf,
+          choNguGltf,
+          adidaGltf,
+          dilacGltf,
+          hangLongGltf,
+          tieuDienGltf,
+          phatNamGltf
+        ] = await Promise.all([
+          this.loadGLB(STATUE_GLB_PATHS.hoPhap),
+          this.loadGLB(STATUE_GLB_PATHS.nghinMatNghinTay),
+          this.loadGLB(STATUE_GLB_PATHS.quanAm),
+          this.loadGLB(STATUE_GLB_PATHS.choNguCuaPhat),
+          this.loadGLB(STATUE_GLB_PATHS.adida),
+          this.loadGLB(STATUE_GLB_PATHS.dilac),
+          this.loadGLB(ARHAT_GLB_PATHS.hangLong),
+          this.loadGLB(STATUE_GLB_PATHS.tieuDien),
+          this.loadGLB(STATUE_GLB_PATHS.phatnam)
+        ]);
+
+        const eastShrineGltfMap = {
+          hoPhap: hoPhapGltf?.scene,
+          nghinMat: nghinMatGltf?.scene,
+          quanAm: quanAmGltf?.scene,
+          choNgu: choNguGltf?.scene,
+          adida: adidaGltf?.scene,
+          dilac: dilacGltf?.scene,
+          duocSu: hangLongGltf?.scene,
+          tieuDien: tieuDienGltf?.scene
+        };
+
+        const shrines = this.eastCorridorShrines || [];
+        for (let i = 0; i < shrines.length; i++) {
+          const spec = shrines[i];
+          const modelScene = eastShrineGltfMap[spec.key];
+          if (!modelScene || !spec.anchor || spec.anchor.userData._glbMounted) continue;
+          spec.anchor.userData._glbMounted = true;
+          this._mountInteriorStatue(modelScene, spec.anchor, {
+            targetH: spec.targetH,
+            targetW: spec.targetW,
+            matKind: spec.matKind,
+            alignWideX: Boolean(spec.isBed),
+            offsetY: spec.isBed ? 0.02 : 0
+          });
+          // Yield every 2 shrines so frame time stays smooth
+          if (i % 2 === 1) await this._yieldInteriorFrame(delayMs);
+        }
+
+        if (phatNamGltf?.scene && this.northExitOutdoorBuddhaAnchor && !this.northExitOutdoorBuddhaAnchor.userData._glbMounted) {
+          this.northExitOutdoorBuddhaAnchor.userData._glbMounted = true;
+          this._mountInteriorStatue(phatNamGltf.scene, this.northExitOutdoorBuddhaAnchor, {
+            targetW: 5.4,
+            alignWideX: true,
+            rotY: Math.PI
+          });
+        }
+        this._interiorZonesLoaded.east_corridor = true;
+      } else if (zoneKey === 'center_and_north') {
+        const [thapDenGltf, honNonBoGltf, trongBatNhaGltf, toDatMaGltf] = await Promise.all([
+          this.loadGLB(ARCH_GLB_PATHS.thap_den_cau_an),
+          this.loadGLB(ARCH_GLB_PATHS.hon_non_bo),
+          this.loadGLB(ARCH_GLB_PATHS.trong_bat_nha),
+          this.loadGLB(STATUE_GLB_PATHS.toDatMa)
+        ]);
+        if (thapDenGltf?.scene) this.archMeshCache.thap_den_cau_an = thapDenGltf.scene;
+        if (honNonBoGltf?.scene) this.archMeshCache.hon_non_bo = honNonBoGltf.scene;
+        if (trongBatNhaGltf?.scene) this.archMeshCache.trong_bat_nha = trongBatNhaGltf.scene;
+
+        if (this.archMeshCache.thap_den_cau_an && this.blessingTowerBodyAnchor && !this.blessingTowerBodyAnchor.userData._glbMounted) {
+          this.blessingTowerBodyAnchor.userData._glbMounted = true;
+          const btModel = this.archMeshCache.thap_den_cau_an.clone(true);
+          btModel.traverse((o) => {
+            if (o.isMesh) {
+              o.castShadow = false;
+              o.receiveShadow = false;
+              if (o.geometry && !o.geometry.getAttribute('normal')) o.geometry.computeVertexNormals();
+              if (o.material) {
+                o.material = o.material.clone();
+                o.material.emissive = new THREE.Color(0x6E240A);
+                o.material.emissiveIntensity = 0.28;
+              }
+            }
+          });
+          const box = new THREE.Box3().setFromObject(btModel);
+          const sz = box.getSize(new THREE.Vector3());
+          const radScale = 1.1 / Math.max(0.1, sz.x, sz.z);
+          btModel.scale.set(radScale, 2.45 / Math.max(0.1, sz.y), radScale);
+          const b2 = new THREE.Box3().setFromObject(btModel);
+          btModel.position.set(-(b2.min.x + b2.max.x) / 2, -b2.min.y, -(b2.min.z + b2.max.z) / 2);
+          if (this.blessingTowerProceduralCore) this.blessingTowerProceduralCore.visible = false;
+          this.blessingTowerBodyAnchor.add(btModel);
+          this.freezeStaticSubtree?.(btModel);
+        }
+        await this._yieldInteriorFrame(delayMs);
+
+        if (this.archMeshCache.hon_non_bo && this.innerNonBoRockAnchor && !this.innerNonBoRockAnchor.userData._glbMounted) {
+          this.innerNonBoRockAnchor.userData._glbMounted = true;
+          const nbModel = this.archMeshCache.hon_non_bo.clone(true);
+          nbModel.traverse((o) => {
+            if (o.isMesh) {
+              o.castShadow = false;
+              o.receiveShadow = false;
+              if (o.geometry && !o.geometry.getAttribute('normal')) o.geometry.computeVertexNormals();
+            }
+          });
+          const box = new THREE.Box3().setFromObject(nbModel);
+          const sz = box.getSize(new THREE.Vector3());
+          const xzScale = 4.65 / Math.max(0.2, sz.x, sz.z);
+          nbModel.scale.set(xzScale, 4.45 / Math.max(0.2, sz.y), xzScale);
+          const b2 = new THREE.Box3().setFromObject(nbModel);
+          nbModel.position.set(-(b2.min.x + b2.max.x) / 2, -b2.min.y, -0.15 - (b2.min.z + b2.max.z) / 2);
+          if (this.innerNonBoProceduralRocks) this.innerNonBoProceduralRocks.visible = false;
+          this.innerNonBoRockAnchor.add(nbModel);
+          this.freezeStaticSubtree?.(nbModel);
+        }
+        await this._yieldInteriorFrame(delayMs);
+
+        if (this.archMeshCache.trong_bat_nha && this.interiorDrumAnchor?.group && !this.interiorDrumAnchor.group.userData._glbMounted) {
+          this.interiorDrumAnchor.group.userData._glbMounted = true;
+          if (this.interiorDrumAnchor.placeholder?.parent) {
+            this.interiorDrumAnchor.placeholder.parent.remove(this.interiorDrumAnchor.placeholder);
+          }
+          const drumRaw = this.archMeshCache.trong_bat_nha.clone(true);
+          drumRaw.traverse((o) => {
+            if (o.isMesh) {
+              o.castShadow = false;
+              o.receiveShadow = false;
+              if (o.geometry && !o.geometry.getAttribute('normal')) o.geometry.computeVertexNormals();
+            }
+          });
+          drumRaw.rotation.x = Math.PI * 0.42;
+          const idrum = new THREE.Group();
+          idrum.add(drumRaw);
+          const rawBox = new THREE.Box3().setFromObject(idrum);
+          const rawSz = rawBox.getSize(new THREE.Vector3());
+          const scale = 1.48 / Math.max(0.05, rawSz.x, rawSz.y, rawSz.z);
+          idrum.scale.setScalar(scale);
+          const db = new THREE.Box3().setFromObject(idrum);
+          idrum.position.set(-(db.min.x + db.max.x) / 2, 0.72 - db.min.y, -(db.min.z + db.max.z) / 2);
+          this.interiorDrumAnchor.group.add(idrum);
+          this.freezeStaticSubtree?.(idrum);
+        }
+
+        if (toDatMaGltf?.scene && this.toDatMaAnchor && !this.toDatMaAnchor.userData._glbMounted) {
+          this.toDatMaAnchor.userData._glbMounted = true;
+          this._mountInteriorStatue(toDatMaGltf.scene, this.toDatMaAnchor, {
+            targetH: 1.62,
+            matKind: 'jackfruit_wood'
+          });
+        }
+        this._interiorZonesLoaded.center_and_north = true;
+      } else if (zoneKey === 'west_chanh_dien') {
+        const mats = this._getInteriorSharedMaterials();
+        // Batch A: Primary Tam Bảo altar triad + Bao Lam + Long Trụ + Bell + Ritual Props
+        const [
+          thienDinhGltf,
+          quanAmGltf,
+          adidaGltf,
+          baoLamGltf,
+          longTruGltf,
+          daiHongChungGltf,
+          capHacRuaGltf,
+          nhangKhoanhDongGltf
+        ] = await Promise.all([
           this.loadGLB(ARHAT_GLB_PATHS.thienDinh),
+          this.loadGLB(STATUE_GLB_PATHS.quanAm),
+          this.loadGLB(STATUE_GLB_PATHS.adida),
+          this.loadGLB(ARCH_GLB_PATHS.bao_lam),
+          this.loadGLB(ARCH_GLB_PATHS.long_tru),
+          this.loadGLB(ARCH_GLB_PATHS.dai_hong_chung),
+          this.loadGLB(PROP_GLB_PATHS.cap_hac_rua),
+          this.loadGLB(PROP_GLB_PATHS.nhang_khoanh_dong)
+        ]);
+
+        if (longTruGltf?.scene) this.archMeshCache.long_tru = longTruGltf.scene;
+        if (baoLamGltf?.scene) this.archMeshCache.bao_lam = baoLamGltf.scene;
+        if (daiHongChungGltf?.scene) this.archMeshCache.dai_hong_chung = daiHongChungGltf.scene;
+        if (capHacRuaGltf?.scene) this.propMeshCache.cap_hac_rua = capHacRuaGltf.scene;
+        if (nhangKhoanhDongGltf?.scene) this.propMeshCache.nhang_khoanh_dong = nhangKhoanhDongGltf.scene;
+
+        const clearPlaceholders = (anchor) => {
+          for (let i = anchor.children.length - 1; i >= 0; i--) {
+            if (anchor.children[i]?.userData?._placeholder) anchor.remove(anchor.children[i]);
+          }
+        };
+
+        if (this.tamBaoMainAnchor && thienDinhGltf?.scene && !this.tamBaoMainAnchor.userData._glbMounted) {
+          this.tamBaoMainAnchor.userData._glbMounted = true;
+          clearPlaceholders(this.tamBaoMainAnchor);
+          this._mountInteriorStatue(thienDinhGltf.scene, this.tamBaoMainAnchor, { targetH: 2.38, matKind: 'gilded_gold' });
+        }
+        if (this.tamBaoLeftAnchor && quanAmGltf?.scene && !this.tamBaoLeftAnchor.userData._glbMounted) {
+          this.tamBaoLeftAnchor.userData._glbMounted = true;
+          clearPlaceholders(this.tamBaoLeftAnchor);
+          this._mountInteriorStatue(quanAmGltf.scene, this.tamBaoLeftAnchor, { targetH: 1.82, matKind: 'gilded_gold' });
+        }
+        if (this.tamBaoRightAnchor && adidaGltf?.scene && !this.tamBaoRightAnchor.userData._glbMounted) {
+          this.tamBaoRightAnchor.userData._glbMounted = true;
+          clearPlaceholders(this.tamBaoRightAnchor);
+          this._mountInteriorStatue(adidaGltf.scene, this.tamBaoRightAnchor, { targetH: 1.82, matKind: 'gilded_gold' });
+        }
+        await this._yieldInteriorFrame(delayMs);
+
+        if (this.archMeshCache.bao_lam && this.baoLamAnchor && !this.baoLamAnchor.userData._glbMounted) {
+          this.baoLamAnchor.userData._glbMounted = true;
+          const bl = this.archMeshCache.bao_lam.clone(true);
+          bl.traverse((o) => {
+            if (o.isMesh) {
+              o.castShadow = false;
+              o.receiveShadow = false;
+              if (o.geometry && !o.geometry.getAttribute('normal')) o.geometry.computeVertexNormals();
+            }
+          });
+          const box = new THREE.Box3().setFromObject(bl);
+          const sz = box.getSize(new THREE.Vector3());
+          bl.scale.set(9.6 / Math.max(0.2, sz.x), 6.4 / Math.max(0.2, sz.y), 0.92 / Math.max(0.1, sz.z));
+          const b2 = new THREE.Box3().setFromObject(bl);
+          bl.position.set(-(b2.min.x + b2.max.x) / 2, -b2.min.y, -(b2.min.z + b2.max.z) / 2);
+          this.baoLamAnchor.add(bl);
+          this.freezeStaticSubtree?.(bl);
+        }
+        await this._yieldInteriorFrame(delayMs);
+
+        if (this.archMeshCache.long_tru) {
+          for (const ph of this.longTruPlaceholders) {
+            if (ph.group?.userData?._glbMounted) continue;
+            ph.group.userData._glbMounted = true;
+            for (const p of ph.replaceParts) if (p.parent) p.parent.remove(p);
+            const ltModel = this.fitProp(this.archMeshCache.long_tru, 6.15);
+            ltModel.rotation.y = ph.sideSign < 0 ? 0.35 : -0.35;
+            const lb = new THREE.Box3().setFromObject(ltModel);
+            ltModel.position.set(-(lb.min.x + lb.max.x) / 2, 0.44 - lb.min.y, -(lb.min.z + lb.max.z) / 2);
+            stripCastShadow(ltModel);
+            ph.group.add(ltModel);
+            this.freezeStaticSubtree?.(ltModel);
+          }
+        }
+        if (this.archMeshCache.dai_hong_chung && this.interiorBellAnchor?.group && !this.interiorBellAnchor.group.userData._glbMounted) {
+          this.interiorBellAnchor.group.userData._glbMounted = true;
+          if (this.interiorBellAnchor.placeholder?.parent) {
+            this.interiorBellAnchor.placeholder.parent.remove(this.interiorBellAnchor.placeholder);
+          }
+          const ibell = this.cleanStatueScene(this.archMeshCache.dai_hong_chung, mats.dark_bronze, true);
+          const box = new THREE.Box3().setFromObject(ibell);
+          const sz = box.getSize(new THREE.Vector3());
+          ibell.scale.setScalar(2.45 / Math.max(0.1, sz.y));
+          const bb = new THREE.Box3().setFromObject(ibell);
+          ibell.position.set(-(bb.min.x + bb.max.x) / 2, -bb.min.y, -(bb.min.z + bb.max.z) / 2);
+          stripCastShadow(ibell);
+          this.interiorBellAnchor.group.add(ibell);
+          this.freezeStaticSubtree?.(ibell);
+        }
+        if (this.propMeshCache.nhang_khoanh_dong && this.spiralIncenseAnchors?.length) {
+          for (const anc of this.spiralIncenseAnchors) {
+            if (anc.userData._glbMounted) continue;
+            anc.userData._glbMounted = true;
+            while (anc.children.length > 0) anc.remove(anc.children[0]);
+            const coil = this.fitProp(this.propMeshCache.nhang_khoanh_dong, 1.02);
+            const cb = new THREE.Box3().setFromObject(coil);
+            coil.position.set(-(cb.min.x + cb.max.x) / 2, -cb.max.y, -(cb.min.z + cb.max.z) / 2);
+            stripCastShadow(coil);
+            anc.add(coil);
+            this.freezeStaticSubtree?.(coil);
+          }
+        }
+        if (this.propMeshCache.cap_hac_rua && this.craneTortoiseAnchor && !this.craneTortoiseAnchor.userData._glbMounted) {
+          this.craneTortoiseAnchor.userData._glbMounted = true;
+          while (this.craneTortoiseAnchor.children.length > 0) {
+            this.craneTortoiseAnchor.remove(this.craneTortoiseAnchor.children[0]);
+          }
+          for (const cx of [-2.85, 2.85]) {
+            const crane = this.fitProp(this.propMeshCache.cap_hac_rua, 1.65);
+            const cb = new THREE.Box3().setFromObject(crane);
+            crane.position.set(cx - (cb.min.x + cb.max.x) / 2, -cb.min.y, -(cb.min.z + cb.max.z) / 2);
+            crane.rotation.y = cx < 0 ? 0.16 : -0.16;
+            stripCastShadow(crane);
+            this.craneTortoiseAnchor.add(crane);
+            this.freezeStaticSubtree?.(crane);
+          }
+        }
+
+        // Also place already-cached altar props (mam_ngu_qua, mo_go, ban_tho) onto Tam Bảo if lazy-built after Phase 1
+        if (this.tamBaoAltarGroup && !this.tamBaoAltarGroup.userData._altarPropsMounted) {
+          this.tamBaoAltarGroup.userData._altarPropsMounted = true;
+          if (this.propMeshCache.mam_ngu_qua) {
+            const tray = this.fitProp(this.propMeshCache.mam_ngu_qua, 0.72);
+            tray.position.set(-1.35, 1.26, 0.88);
+            stripCastShadow(tray);
+            this.tamBaoAltarGroup.add(tray);
+            this.freezeStaticSubtree?.(tray);
+          }
+          if (this.propMeshCache.mo_go) {
+            const mogo = this.fitProp(this.propMeshCache.mo_go, 0.56);
+            mogo.position.set(1.35, 1.26, 0.88);
+            stripCastShadow(mogo);
+            this.tamBaoAltarGroup.add(mogo);
+            this.freezeStaticSubtree?.(mogo);
+          }
+          if (this.propMeshCache.ban_tho) {
+            const bowl = this.fitProp(this.propMeshCache.ban_tho, 0.7);
+            bowl.position.set(0, 1.26, 0.96);
+            stripCastShadow(bowl);
+            this.tamBaoAltarGroup.add(bowl);
+            this.freezeStaticSubtree?.(bowl);
+          }
+        }
+        await this._yieldInteriorFrame(delayMs);
+
+        // Batch B: 18 Thập Bát La Hán streamed progressively (2 statues per animation frame -> zero frame spikes!)
+        const [
+          kyTuongGltf,
+          toaLocGltf,
+          phucHoGltf,
+          hangLongGltf,
+          hoanHiGltf,
+          phucHo2Gltf,
+          cuBatGltf,
+          thacThapGltf,
+          khaiTamGltf,
+          tieuSuGltf
+        ] = await Promise.all([
+          this.loadGLB(ARHAT_GLB_PATHS.kyTuong),
+          this.loadGLB(ARHAT_GLB_PATHS.toaLoc),
+          this.loadGLB(ARHAT_GLB_PATHS.phucHo),
+          this.loadGLB(ARHAT_GLB_PATHS.hangLong),
+          this.loadGLB(ARHAT_GLB_PATHS.hoanHi),
+          this.loadGLB(ARHAT_GLB_PATHS.phucHo2),
           this.loadGLB(ARHAT_GLB_PATHS.cuBat),
           this.loadGLB(ARHAT_GLB_PATHS.thacThap),
           this.loadGLB(ARHAT_GLB_PATHS.khaiTam),
           this.loadGLB(ARHAT_GLB_PATHS.tieuSu)
         ]);
 
-      if (this._interiorGLBsMounted) return;
-      this._interiorGLBsMounted = true;
-
-      if (longTruGltf?.scene) this.archMeshCache.long_tru = longTruGltf.scene;
-      if (baoLamGltf?.scene) this.archMeshCache.bao_lam = baoLamGltf.scene;
-      if (thapDenCauAnGltf?.scene) this.archMeshCache.thap_den_cau_an = thapDenCauAnGltf.scene;
-      if (honNonBoGltf?.scene) this.archMeshCache.hon_non_bo = honNonBoGltf.scene;
-      if (daiHongChungGltf?.scene) this.archMeshCache.dai_hong_chung = daiHongChungGltf.scene;
-      if (trongBatNhaGltf?.scene) this.archMeshCache.trong_bat_nha = trongBatNhaGltf.scene;
-      if (capHacRuaGltf?.scene) this.propMeshCache.cap_hac_rua = capHacRuaGltf.scene;
-      if (nhangKhoanhDongGltf?.scene) this.propMeshCache.nhang_khoanh_dong = nhangKhoanhDongGltf.scene;
-
-      // Rich Vietnamese Temple PBR finishes for untextured sculpted clay GLBs (NO flat grey!)
-      const gildedGoldMat = new THREE.MeshStandardMaterial({
-        color: 0xE2B03C,
-        metalness: 0.68,
-        roughness: 0.26,
-        envMapIntensity: 0.65
-      });
-      const antiqueBronzeMat = new THREE.MeshStandardMaterial({
-        color: 0xB88236,
-        metalness: 0.58,
-        roughness: 0.34,
-        envMapIntensity: 0.55
-      });
-      const jackfruitWoodMat = new THREE.MeshStandardMaterial({
-        color: 0x8F4C24,
-        metalness: 0.22,
-        roughness: 0.42,
-        envMapIntensity: 0.42
-      });
-      const darkBronzeBellMat = new THREE.MeshStandardMaterial({
-        color: 0x5E3E20,
-        metalness: 0.48,
-        roughness: 0.38,
-        envMapIntensity: 0.48
-      });
-
-      const mountStatueOnAnchor = (sceneObj, anchor, opts = {}) => {
-        if (!sceneObj || !anchor) return null;
-        const matOverride =
-          opts.matKind === 'gilded_gold'
-            ? gildedGoldMat
-            : opts.matKind === 'antique_bronze'
-            ? antiqueBronzeMat
-            : opts.matKind === 'jackfruit_wood'
-            ? jackfruitWoodMat
-            : opts.matKind === 'dark_bronze'
-            ? darkBronzeBellMat
-            : null;
-        const mesh = this.cleanStatueScene(sceneObj, matOverride, true);
-        if (opts.matKind === 'keep_gold_pbr') {
-          mesh.traverse((o) => {
-            if (o.isMesh && o.material) {
-              o.material.roughness = Math.min(0.42, o.material.roughness ?? 0.34);
-              o.material.metalness = Math.max(0.42, o.material.metalness ?? 0.48);
-            }
-          });
-        }
-        const rawBox = new THREE.Box3().setFromObject(mesh);
-        const rawSz = rawBox.getSize(new THREE.Vector3());
-        if (opts.alignWideX && rawSz.z > rawSz.x * 1.18) {
-          mesh.rotation.y = Math.PI / 2;
-        }
-        if (opts.rotY) {
-          mesh.rotation.y += opts.rotY;
-        }
-        const box = new THREE.Box3().setFromObject(mesh);
-        const sz = box.getSize(new THREE.Vector3());
-        const scale = opts.targetW
-          ? opts.targetW / Math.max(0.1, sz.x)
-          : (opts.targetH || 1.9) / Math.max(0.1, sz.y);
-        mesh.scale.setScalar(scale);
-        const b2 = new THREE.Box3().setFromObject(mesh);
-        mesh.position.set(
-          (opts.offsetX || 0) - (b2.min.x + b2.max.x) / 2,
-          (opts.offsetY || 0) - b2.min.y,
-          (opts.offsetZ || 0) - (b2.min.z + b2.max.z) / 2
-        );
-        stripCastShadow(mesh);
-        anchor.add(mesh);
-        return mesh;
-      };
-
-      // 1. Tháp Đèn Cầu An / Đăng Dược Sư Vạn Phật PBR GLB beside Chánh Điện Doorway
-      if (this.archMeshCache.thap_den_cau_an && this.blessingTowerBodyAnchor) {
-        const btModel = this.archMeshCache.thap_den_cau_an.clone(true);
-        btModel.traverse((o) => {
-          if (o.isMesh) {
-            o.castShadow = false;
-            o.receiveShadow = false;
-            if (o.geometry && !o.geometry.getAttribute('normal')) o.geometry.computeVertexNormals();
-            if (o.material) {
-              o.material = o.material.clone();
-              o.material.emissive = new THREE.Color(0x6E240A);
-              o.material.emissiveIntensity = 0.28;
-            }
+        const arhatRoster = [
+          { index: 0, title: 'Tọa Lộc La Hán', gltf: toaLocGltf, matKind: null },
+          { index: 1, title: 'Khánh Hỷ La Hán', gltf: tieuSuGltf, matKind: null },
+          { index: 2, title: 'Cử Bát La Hán', gltf: cuBatGltf, matKind: null },
+          { index: 3, title: 'Hoan Hỉ La Hán', gltf: hoanHiGltf, matKind: 'jackfruit_wood' },
+          { index: 4, title: 'Bố Đại La Hán', gltf: hoanHiGltf, matKind: 'antique_bronze' },
+          { index: 5, title: 'Ba Tiêu La Hán', gltf: khaiTamGltf, matKind: null },
+          { index: 6, title: 'Kỵ Tượng La Hán', gltf: kyTuongGltf, matKind: null },
+          { index: 7, title: 'Tiếu Sư La Hán', gltf: tieuSuGltf, matKind: null },
+          { index: 8, title: 'Thiền Định La Hán', gltf: thienDinhGltf, matKind: 'antique_bronze' },
+          { index: 9, title: 'Trầm Tư La Hán', gltf: phucHo2Gltf, matKind: 'jackfruit_wood' },
+          { index: 10, title: 'Thám Thủ La Hán', gltf: hangLongGltf, matKind: 'jackfruit_wood' },
+          { index: 11, title: 'Khai Tâm La Hán', gltf: khaiTamGltf, matKind: null },
+          { index: 12, title: 'Phục Hổ Tôn Giả', gltf: phucHo2Gltf, matKind: 'antique_bronze' },
+          { index: 13, title: 'Thác Tháp La Hán', gltf: thacThapGltf, matKind: null },
+          { index: 14, title: 'Khoái Nhĩ La Hán', gltf: cuBatGltf, matKind: null },
+          { index: 15, title: 'Trường Mi La Hán', gltf: toaLocGltf, matKind: null },
+          { index: 16, title: 'Hàng Long La Hán', gltf: hangLongGltf, matKind: 'antique_bronze' },
+          { index: 17, title: 'Phục Hổ La Hán', gltf: phucHoGltf, matKind: null }
+        ];
+        const slots = this.arhatSlotSpecs || [];
+        if (this.arhatGroups.length < 18) {
+          for (let i = 0; i < Math.min(18, slots.length); i++) {
+            const item = arhatRoster[i];
+            const slot = slots[i];
+            const srcScene = item.gltf?.scene || kyTuongGltf?.scene || cuBatGltf?.scene;
+            if (!srcScene) continue;
+            const matOverride = mats[item.matKind] || null;
+            const statue = this.cleanStatueScene(srcScene, matOverride, true);
+            const initialBounds = new THREE.Box3().setFromObject(statue);
+            const height = Math.max(0.1, initialBounds.max.y - initialBounds.min.y);
+            statue.scale.setScalar(1.22 / height);
+            statue.rotation.y = slot.facing;
+            const bounds = new THREE.Box3().setFromObject(statue);
+            statue.position.set(
+              slot.x - (bounds.min.x + bounds.max.x) / 2,
+              slot.y - bounds.min.y,
+              slot.z - (bounds.min.z + bounds.max.z) / 2
+            );
+            stripCastShadow(statue);
+            statue.userData.arhatIndex = item.index;
+            statue.userData.arhatTitle = item.title;
+            this.interiorGroup.add(statue);
+            this.arhatGroups.push(statue);
+            this.registerInteriorObjectInZone?.(statue, 'west_chanh_dien');
+            if (i % 2 === 1) await this._yieldInteriorFrame(delayMs);
           }
-        });
-        const box = new THREE.Box3().setFromObject(btModel);
-        const sz = box.getSize(new THREE.Vector3());
-        const radScale = 1.1 / Math.max(0.1, sz.x, sz.z);
-        btModel.scale.set(radScale, 2.45 / Math.max(0.1, sz.y), radScale);
-        const b2 = new THREE.Box3().setFromObject(btModel);
-        btModel.position.set(-(b2.min.x + b2.max.x) / 2, -b2.min.y, -(b2.min.z + b2.max.z) / 2);
-        if (this.blessingTowerProceduralCore) this.blessingTowerProceduralCore.visible = false;
-        this.blessingTowerBodyAnchor.add(btModel);
-      }
-
-      // 2. Hòn Non Bộ Sân Thiên Tỉnh PBR GLB
-      if (this.archMeshCache.hon_non_bo && this.innerNonBoRockAnchor) {
-        const nbModel = this.archMeshCache.hon_non_bo.clone(true);
-        nbModel.traverse((o) => {
-          if (o.isMesh) {
-            o.castShadow = false;
-            o.receiveShadow = false;
-            if (o.geometry && !o.geometry.getAttribute('normal')) o.geometry.computeVertexNormals();
-          }
-        });
-        const box = new THREE.Box3().setFromObject(nbModel);
-        const sz = box.getSize(new THREE.Vector3());
-        const xzScale = 4.65 / Math.max(0.2, sz.x, sz.z);
-        nbModel.scale.set(xzScale, 4.45 / Math.max(0.2, sz.y), xzScale);
-        const b2 = new THREE.Box3().setFromObject(nbModel);
-        nbModel.position.set(-(b2.min.x + b2.max.x) / 2, -b2.min.y, -0.15 - (b2.min.z + b2.max.z) / 2);
-        if (this.innerNonBoProceduralRocks) this.innerNonBoProceduralRocks.visible = false;
-        this.innerNonBoRockAnchor.add(nbModel);
-      }
-
-      // 3. West Grand Chánh Điện — Ban Thờ Tam Bảo Sculpted Gilded GLB Triad (Proportional, zero procedural statues!)
-      if (this.tamBaoMainAnchor && thienDinhGltf?.scene) {
-        mountStatueOnAnchor(thienDinhGltf.scene, this.tamBaoMainAnchor, {
-          targetH: 2.38,
-          matKind: 'gilded_gold'
-        });
-      }
-      if (this.tamBaoLeftAnchor && quanAmGltf?.scene) {
-        mountStatueOnAnchor(quanAmGltf.scene, this.tamBaoLeftAnchor, {
-          targetH: 1.82,
-          matKind: 'gilded_gold'
-        });
-      }
-      if (this.tamBaoRightAnchor && adidaGltf?.scene) {
-        mountStatueOnAnchor(adidaGltf.scene, this.tamBaoRightAnchor, {
-          targetH: 1.82,
-          matKind: 'gilded_gold'
-        });
-      }
-
-      // 4. Grand Carved Gilded Bao Lam Arch (`bao-lam-thep-vang.glb`) framing the Chánh Điện Nave
-      if (this.archMeshCache.bao_lam && this.baoLamAnchor) {
-        const bl = this.archMeshCache.bao_lam.clone(true);
-        bl.traverse((o) => {
-          if (o.isMesh) {
-            o.castShadow = false;
-            o.receiveShadow = false;
-            if (o.geometry && !o.geometry.getAttribute('normal')) o.geometry.computeVertexNormals();
-          }
-        });
-        const box = new THREE.Box3().setFromObject(bl);
-        const sz = box.getSize(new THREE.Vector3());
-        bl.scale.set(
-          9.6 / Math.max(0.2, sz.x),
-          6.4 / Math.max(0.2, sz.y),
-          0.92 / Math.max(0.1, sz.z)
-        );
-        const b2 = new THREE.Box3().setFromObject(bl);
-        bl.position.set(-(b2.min.x + b2.max.x) / 2, -b2.min.y, -(b2.min.z + b2.max.z) / 2);
-        this.baoLamAnchor.add(bl);
-      }
-
-      // 5. North Spacious Tổ Đường — Sculpted Tổ Sư Đạt Ma GLB
-      if (toDatMaGltf?.scene && this.toDatMaAnchor) {
-        mountStatueOnAnchor(toDatMaGltf.scene, this.toDatMaAnchor, {
-          targetH: 1.62,
-          matKind: 'jackfruit_wood'
-        });
-      }
-      await yieldBatch();
-
-      // 6. All 8 Extended East Corridor Shrines — 100% Authentic Sculpted GLB Buddhas & Bodhisattvas!
-      const eastShrineGltfMap = {
-        hoPhap: hoPhapGltf?.scene,
-        nghinMat: nghinMatNghinTayGltf?.scene,
-        quanAm: quanAmGltf?.scene,
-        choNgu: choNguCuaPhatGltf?.scene,
-        adida: adidaGltf?.scene,
-        dilac: dilacGltf?.scene,
-        duocSu: hangLongGltf?.scene,
-        tieuDien: tieuDienGltf?.scene
-      };
-      for (const spec of this.eastCorridorShrines || []) {
-        const modelScene = eastShrineGltfMap[spec.key];
-        if (!modelScene || !spec.anchor) continue;
-        mountStatueOnAnchor(modelScene, spec.anchor, {
-          targetH: spec.targetH,
-          targetW: spec.targetW,
-          matKind: spec.matKind,
-          alignWideX: Boolean(spec.isBed),
-          offsetY: spec.isBed ? 0.02 : 0
-        });
-      }
-
-      // 7. Sunlit Outdoor Buddha Preview beyond Open North Exit Archway of East Corridor
-      if (phatNamGltf?.scene && this.northExitOutdoorBuddhaAnchor) {
-        mountStatueOnAnchor(phatNamGltf.scene, this.northExitOutdoorBuddhaAnchor, {
-          targetW: 5.4,
-          alignWideX: true,
-          rotY: Math.PI
-        });
-      }
-      await yieldBatch();
-
-      // 8. 18 Thập Bát La Hán neatly arranged along North & South Side Wall Plinths INSIDE Grand Chánh Điện
-      //    Strictly uses verified sculpted GLBs (ZERO handmade procedural Arhat statues!)
-      const arhatRoster = [
-        { index: 0, title: 'Tọa Lộc La Hán', gltf: toaLocGltf, matKind: null },
-        { index: 1, title: 'Khánh Hỷ La Hán', gltf: tieuSuGltf, matKind: null },
-        { index: 2, title: 'Cử Bát La Hán', gltf: cuBatGltf, matKind: null },
-        { index: 3, title: 'Hoan Hỉ La Hán', gltf: hoanHiGltf, matKind: 'jackfruit_wood' },
-        { index: 4, title: 'Bố Đại La Hán', gltf: hoanHiGltf, matKind: 'antique_bronze' },
-        { index: 5, title: 'Ba Tiêu La Hán', gltf: khaiTamGltf, matKind: null },
-        { index: 6, title: 'Kỵ Tượng La Hán', gltf: kyTuongGltf, matKind: null },
-        { index: 7, title: 'Tiếu Sư La Hán', gltf: tieuSuGltf, matKind: null },
-        { index: 8, title: 'Thiền Định La Hán', gltf: thienDinhGltf, matKind: 'antique_bronze' },
-        { index: 9, title: 'Trầm Tư La Hán', gltf: phucHo2Gltf, matKind: 'jackfruit_wood' },
-        { index: 10, title: 'Thám Thủ La Hán', gltf: hangLongGltf, matKind: 'jackfruit_wood' },
-        { index: 11, title: 'Khai Tâm La Hán', gltf: khaiTamGltf, matKind: null },
-        { index: 12, title: 'Phục Hổ Tôn Giả', gltf: phucHo2Gltf, matKind: 'antique_bronze' },
-        { index: 13, title: 'Thác Tháp La Hán', gltf: thacThapGltf, matKind: null },
-        { index: 14, title: 'Khoái Nhĩ La Hán', gltf: cuBatGltf, matKind: null },
-        { index: 15, title: 'Trường Mi La Hán', gltf: toaLocGltf, matKind: null },
-        { index: 16, title: 'Hàng Long La Hán', gltf: hangLongGltf, matKind: 'antique_bronze' },
-        { index: 17, title: 'Phục Hổ La Hán', gltf: phucHoGltf, matKind: null }
-      ];
-      const slots = this.arhatSlotSpecs || [];
-      for (let i = 0; i < Math.min(18, slots.length); i++) {
-        const item = arhatRoster[i];
-        const slot = slots[i];
-        const srcScene = item.gltf?.scene || kyTuongGltf?.scene || cuBatGltf?.scene;
-        if (!srcScene) continue;
-        const matOverride =
-          item.matKind === 'jackfruit_wood'
-            ? jackfruitWoodMat
-            : item.matKind === 'antique_bronze'
-            ? antiqueBronzeMat
-            : null;
-        const statue = this.cleanStatueScene(srcScene, matOverride, true);
-        const initialBounds = new THREE.Box3().setFromObject(statue);
-        const height = Math.max(0.1, initialBounds.max.y - initialBounds.min.y);
-        statue.scale.setScalar(1.22 / height);
-        statue.rotation.y = slot.facing;
-        const bounds = new THREE.Box3().setFromObject(statue);
-        statue.position.set(
-          slot.x - (bounds.min.x + bounds.max.x) / 2,
-          slot.y - bounds.min.y,
-          slot.z - (bounds.min.z + bounds.max.z) / 2
-        );
-        stripCastShadow(statue);
-        statue.userData.arhatIndex = item.index;
-        statue.userData.arhatTitle = item.title;
-        this.interiorGroup.add(statue);
-        this.arhatGroups.push(statue);
-        if (i % 6 === 5) await yieldBatch();
-      }
-      await yieldBatch();
-
-      // 9. Đại Hồng Chung (with rich antique bronze/teakwood PBR material — NOT flat grey!)
-      if (this.archMeshCache.dai_hong_chung && this.interiorBellAnchor?.group) {
-        if (this.interiorBellAnchor.placeholder?.parent) {
-          this.interiorBellAnchor.placeholder.parent.remove(this.interiorBellAnchor.placeholder);
         }
-        const ibell = this.cleanStatueScene(this.archMeshCache.dai_hong_chung, darkBronzeBellMat, true);
-        const box = new THREE.Box3().setFromObject(ibell);
-        const sz = box.getSize(new THREE.Vector3());
-        ibell.scale.setScalar(2.45 / Math.max(0.1, sz.y));
-        const bb = new THREE.Box3().setFromObject(ibell);
-        ibell.position.set(-(bb.min.x + bb.max.x) / 2, -bb.min.y, -(bb.min.z + bb.max.z) / 2);
-        stripCastShadow(ibell);
-        this.interiorBellAnchor.group.add(ibell);
+        this._interiorZonesLoaded.west_chanh_dien = true;
       }
 
-      // 10. Trống Bát Nhã (gorgeous red Meshy PBR temple drum tilted forward on its wooden drum cradle beside Chánh Điện doorway!)
-      if (this.archMeshCache.trong_bat_nha && this.interiorDrumAnchor?.group) {
-        if (this.interiorDrumAnchor.placeholder?.parent) {
-          this.interiorDrumAnchor.placeholder.parent.remove(this.interiorDrumAnchor.placeholder);
-        }
-        const drumRaw = this.archMeshCache.trong_bat_nha.clone(true);
-        drumRaw.traverse((o) => {
-          if (o.isMesh) {
-            o.castShadow = false;
-            o.receiveShadow = false;
-            if (o.geometry && !o.geometry.getAttribute('normal')) {
-              o.geometry.computeVertexNormals();
-            }
-          }
-        });
-        // Rotate drum cylinder forward (+X axis in drumGroup local space) so the white leather drumhead faces East (+X) across Hồ Sen Bộ!
-        drumRaw.rotation.x = Math.PI * 0.42;
-        const idrum = new THREE.Group();
-        idrum.add(drumRaw);
-        const rawBox = new THREE.Box3().setFromObject(idrum);
-        const rawSz = rawBox.getSize(new THREE.Vector3());
-        const scale = 1.48 / Math.max(0.05, rawSz.x, rawSz.y, rawSz.z);
-        idrum.scale.setScalar(scale);
-        const db = new THREE.Box3().setFromObject(idrum);
-        idrum.position.set(-(db.min.x + db.max.x) / 2, 0.72 - db.min.y, -(db.min.z + db.max.z) / 2);
-        this.interiorDrumAnchor.group.add(idrum);
+      if (
+        this._interiorZonesLoaded.east_corridor &&
+        this._interiorZonesLoaded.center_and_north &&
+        this._interiorZonesLoaded.west_chanh_dien
+      ) {
+        this._interiorGLBsMounted = true;
       }
+      this.updateSceneOcclusionCulling?.();
+      this.renderFrame();
+      return true;
+    })();
 
-      // 11. Carved Gilded Long Trụ framing the wide Grand Chánh Điện Nave
-      if (this.archMeshCache.long_tru) {
-        for (const ph of this.longTruPlaceholders) {
-          for (const p of ph.replaceParts) if (p.parent) p.parent.remove(p);
-          const ltModel = this.fitProp(this.archMeshCache.long_tru, 6.15);
-          ltModel.rotation.y = ph.sideSign < 0 ? 0.35 : -0.35;
-          const lb = new THREE.Box3().setFromObject(ltModel);
-          ltModel.position.set(-(lb.min.x + lb.max.x) / 2, 0.44 - lb.min.y, -(lb.min.z + lb.max.z) / 2);
-          stripCastShadow(ltModel);
-          ph.group.add(ltModel);
-        }
-      }
+    this._interiorZonePromises[zoneKey] = job;
+    return job;
+  },
 
-      // 12. Hanging Spiral Incense Coils & Cặp Hạc Rùa Đồng on Tam Bảo
-      if (this.propMeshCache.nhang_khoanh_dong && this.spiralIncenseAnchors?.length) {
-        for (const anc of this.spiralIncenseAnchors) {
-          while (anc.children.length > 0) anc.remove(anc.children[0]);
-          const coil = this.fitProp(this.propMeshCache.nhang_khoanh_dong, 1.02);
-          const cb = new THREE.Box3().setFromObject(coil);
-          coil.position.set(-(cb.min.x + cb.max.x) / 2, -cb.max.y, -(cb.min.z + cb.max.z) / 2);
-          stripCastShadow(coil);
-          anc.add(coil);
-        }
-      }
-      if (this.propMeshCache.cap_hac_rua && this.craneTortoiseAnchor) {
-        while (this.craneTortoiseAnchor.children.length > 0) {
-          this.craneTortoiseAnchor.remove(this.craneTortoiseAnchor.children[0]);
-        }
-        for (const cx of [-2.85, 2.85]) {
-          const crane = this.fitProp(this.propMeshCache.cap_hac_rua, 1.65);
-          const cb = new THREE.Box3().setFromObject(crane);
-          crane.position.set(cx - (cb.min.x + cb.max.x) / 2, -cb.min.y, -(cb.min.z + cb.max.z) / 2);
-          crane.rotation.y = cx < 0 ? 0.16 : -0.16;
-          stripCastShadow(crane);
-          this.craneTortoiseAnchor.add(crane);
-        }
-      }
+  ensureInteriorAssetsLoaded(priorityZone = 'east_corridor') {
+    this.ensureInteriorBuilt?.();
+    const first =
+      priorityZone === 'west_chanh_dien'
+        ? 'west_chanh_dien'
+        : priorityZone === 'center_and_north'
+        ? 'center_and_north'
+        : 'east_corridor';
+
+    const p = this.ensureInteriorZoneLoaded(first).then(async () => {
       if (!this._interiorWorshippersSpawned) {
         this._interiorWorshippersSpawned = true;
         this.spawnInteriorWorshippersV8();
       }
-      this.renderFrame();
-    })();
-    return this._interiorLoadPromise;
+      // Gently warm adjacent center courtyard + Tổ Đường right after entry zone completes
+      if (!this._interiorZonesLoaded.center_and_north) {
+        await this._yieldInteriorFrame(this.isSoftwareGl ? 120 : 60);
+        if (this.inInterior) {
+          this.ensureInteriorZoneLoaded('center_and_north').catch(() => {});
+        }
+      }
+    });
+    this._interiorLoadPromise = p;
+    return p;
   },
 
   fitProp(sceneObj, targetSize) {

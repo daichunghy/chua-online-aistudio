@@ -17,7 +17,7 @@ export const timeAndInteriorMethods = {
   },
 
   setTimeOfDay(presetKey = 'morning', immediate = false) {
-    const key = ['morning', 'midday', 'evening'].includes(presetKey) ? presetKey : 'morning';
+    const key = ['morning', 'midday', 'sunset', 'evening'].includes(presetKey) ? presetKey : 'morning';
     this.timeOfDay = key;
 
     const cfg =
@@ -35,9 +35,27 @@ export const timeAndInteriorMethods = {
             fillColor: 0xFFB86C,
             fillIntensity: 0.42,
             exposure: 0.98,
-            lanternEmissive: 1.55,
+            lanternEmissive: 1.65,
             porchIntensity: 7.4,
             interiorBoost: 1.32
+          }
+        : key === 'sunset'
+        ? {
+            bg: 0xD8875E,
+            fogColor: 0xE29E6E,
+            fogDensity: 0.0036,
+            hemiSky: 0x93A6D6,
+            hemiGround: 0x5E3B24,
+            hemiIntensity: 1.06,
+            sunColor: 0xFF9F54,
+            sunIntensity: 2.08,
+            sunPos: [-48, 13.5, 22],
+            fillColor: 0xFFC582,
+            fillIntensity: 0.56,
+            exposure: 1.06,
+            lanternEmissive: 0.95,
+            porchIntensity: 6.2,
+            interiorBoost: 1.15
           }
         : key === 'midday'
         ? {
@@ -118,11 +136,20 @@ export const timeAndInteriorMethods = {
         o.intensity = o.userData.baseIntensity * cfg.interiorBoost;
       }
     });
-    if (this.exteriorEnvTex && (!this.inInterior || this.interiorCutaway)) {
-      this.scene.environment = this.exteriorEnvTex;
+    if (!this.inInterior || this.interiorCutaway) {
+      const targetEnv =
+        key === 'sunset' && this.sunsetEnvTex
+          ? this.sunsetEnvTex
+          : key === 'evening' && this.eveningEnvTex
+          ? this.eveningEnvTex
+          : this.exteriorEnvTex;
+      if (targetEnv) this.scene.environment = targetEnv;
     }
     if (this.inInterior && !this.interiorCutaway) {
       this.applyInteriorAtmosphere();
+    } else {
+      this._applyWeatherVisuals?.(true);
+      this._syncLivingWorldAtmosphere?.();
     }
     if (immediate || !this.lectureHallMode) {
       this.renderFrame();
@@ -253,7 +280,8 @@ export const timeAndInteriorMethods = {
     if (!this.inInterior) {
       this.toggleInterior(true, 'right');
     }
-    this.ensureInteriorAssetsLoaded().catch(() => {});
+    this.ensureInteriorBuilt();
+    this.ensureInteriorAssetsLoaded('west_chanh_dien').catch(() => {});
     this.cancelAutoWalk();
     this.playerElevationY = 0;
     const px = ax;
@@ -274,7 +302,9 @@ export const timeAndInteriorMethods = {
 
   enterInteriorGradual(side = 'right', onEntered = null) {
     this.cancelEntranceTour();
-    this.ensureInteriorAssetsLoaded().catch(() => {});
+    const priorityZone = side === 'front_tam_quan' ? 'west_chanh_dien' : 'east_corridor';
+    this.ensureInteriorBuilt();
+    this.ensureInteriorAssetsLoaded(priorityZone).catch(() => {});
     if (this.inInterior) {
       if (typeof onEntered === 'function') onEntered();
       return true;
@@ -423,11 +453,18 @@ export const timeAndInteriorMethods = {
     this._doorCooldownUntil = performance.now() + 2200;
     this.inInterior = Boolean(enter ?? !this.inInterior);
     if (this.inInterior) {
-      this.ensureInteriorAssetsLoaded().catch(() => {});
+      this.ensureInteriorBuilt();
+      const priorityZone = this.lastDoorSide === 'front_tam_quan' ? 'west_chanh_dien' : 'east_corridor';
+      this.ensureInteriorAssetsLoaded(priorityZone).catch(() => {});
     }
     this.exteriorGroup.visible = !this.inInterior;
     this.interiorGroup.visible = this.inInterior;
     this.playerElevationY = 0;
+    if (this.playerPhysics) {
+      this.playerPhysics.vx = 0;
+      this.playerPhysics.vz = 0;
+      this.playerPhysics.speed = 0;
+    }
     if (!this.inInterior && this.interiorCutaway) {
       this.setInteriorCutaway(false);
     }
@@ -474,6 +511,7 @@ export const timeAndInteriorMethods = {
       this.checkStationProximity();
     }
     this.onInteriorStateChange(this.inInterior);
+    this.updateSceneOcclusionCulling?.();
     this.renderFrame();
     return this.inInterior;
   },
@@ -495,7 +533,7 @@ export const timeAndInteriorMethods = {
     const pz = this.playerState.z;
     if (px > 24.4) return 'trai_duong';
     if (Math.abs(px) < 10.6 && Math.abs(pz) < 10.6) return 'ho_sen_bo';
-    if (px <= -10.6 && Math.abs(pz) <= 12.2) return 'chanh_dien';
+    if (px <= -15.2 && Math.abs(pz) <= 21.0) return 'chanh_dien';
     if (px >= 10.6) return 'day_ban_tho_phai';
     if (pz <= -10.6 && px > -15.5 && px < 10.6) return 'hanh_lang_trai';
     return 'hanh_lang_duoi';
@@ -504,9 +542,16 @@ export const timeAndInteriorMethods = {
   goToInteriorZone(rawZoneKey = 'day_ban_tho_phai') {
     const zoneKey = this.normalizeInteriorZoneKey(rawZoneKey);
     if (!this.inInterior) {
-      this.toggleInterior(true, 'right');
+      this.toggleInterior(true, zoneKey === 'chanh_dien' ? 'front_tam_quan' : 'right');
     }
-    this.ensureInteriorAssetsLoaded().catch(() => {});
+    this.ensureInteriorBuilt();
+    const priorityZone =
+      zoneKey === 'chanh_dien'
+        ? 'west_chanh_dien'
+        : zoneKey === 'ho_sen_bo' || zoneKey === 'hanh_lang_trai'
+        ? 'center_and_north'
+        : 'east_corridor';
+    this.ensureInteriorAssetsLoaded(priorityZone).catch(() => {});
     this.cancelAutoWalk();
     this.playerElevationY = 0;
     if (zoneKey === 'day_ban_tho_phai') {
@@ -552,16 +597,17 @@ export const timeAndInteriorMethods = {
       this.playerState.yaw = Math.PI * 0.44;
       this.cameraBaseYaw = Math.PI * 0.44;
     } else {
-      // Grand Front Worship Nave of Chánh Điện (after walking around from Hòn Non Bộ):
-      // Facing East (+X) directly at the outward-facing Buddha in the center, framed by Bao Lam, Long Trụ & 18 La Hán surrounding!
-      this.playerState.x = -36.0;
+      // Grand 100+ Pilgrim Worship Nave of Chánh Điện:
+      // Standing along the central crimson carpet looking East (+X) across 112 bồ đoàn toward Tam Bảo, Bao Lam & 18 La Hán!
+      this.playerState.x = -46.0;
       this.playerState.z = 0.0;
       this.playerState.yaw = Math.PI / 2;
       this.cameraBaseYaw = Math.PI / 2;
     }
     this.playerState.moving = false;
     this.cameraAzimuthOffset = 0;
-    this.syncPlayerTransform();
+    this.syncPlayerTransform(true);
+    this.updateSceneOcclusionCulling?.();
     this.renderFrame();
     const zKey = this.getInteriorZoneKey();
     this._lastInteriorZone = zKey;

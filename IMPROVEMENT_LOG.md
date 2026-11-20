@@ -241,4 +241,57 @@ Dựa trên phản hồi thực tế và đối chiếu ảnh thực địa Chù
 - **Cân bằng tải & xóa giật lag khi bước vào Chánh Điện (`src/app/vinh-trang-square-interior.mjs`, `src/app/world/time-and-interior.mjs`, `src/app/world/glb-loading.mjs`)**:
   - Giảm số đèn `THREE.PointLight` nội thất từ **~43 đèn xuống còn 5 đèn** phạm vi rộng kết hợp tăng cường ánh sáng `hemiLight` / `sunLight` vàng ấm (giảm ~8.5 lần chi phí fragment shader); tắt `castShadow` trên tượng/kiến trúc nội thất; nạp nền từng GLB nội thất (`_preloadInteriorAssetsIdle`) khi đang dạo ngoài sân và chia nhỏ các đợt gắn mô hình (`yieldBatch`) để không bao giờ đứng khung hình khi vào điện.
 
+---
 
+## 13. Đợt 1 — Lộ Trình Hành Hương Siêu Thực (Cảm Hứng GTA Thế Giới Sống) & Nâng Cấp Chất Liệu PBR
+
+- **Lưu lộ trình dài hạn (3 đợt + hạng mục Thiết kế & Chất liệu PBR)**:
+  - Lưu toàn bộ kế hoạch 3 đợt tại `/docs/PILGRIMAGE_ROADMAP_PLAN.md` (tuân thủ từ ngữ tiếng Việt tự nhiên thông dụng như *vãn cảnh chùa, chiêm bái, công quả, thời khóa công phu, thọ trai, khảm sành sứ, góc nhìn thứ nhất, mưa rào miền Tây*).
+- **Nâng cấp thiết kế & chất liệu PBR giàu chi tiết (`materials-and-lights.mjs`, `gates-and-discovery.mjs`, `temple-grounds.mjs`)**:
+  - **Gạch lát sân chùa (`pavingTex` + `pavingBumpTex` + `pavingRoughTex`)**: bổ sung rãnh mạch vữa, vát cạnh, hạt đá mài, vết rêu ẩm góc gạch và kích hoạt độ lọc bất đẳng hướng (`anisotropy`) giảm nhòe ở góc nhìn gần.
+  - **Khảm sành sứ Cổng Tam Quan & Cổng Phụ (`makeMosaicShardTex` 512px + `makeMosaicBumpTex`)**: tăng độ chi tiết từng mảnh gốm sứ lam–ngọc–đỏ–vàng ghép bông sen, tạo độ nổi bóng men (`roughness: 0.24, metalness: 0.16, bumpScale: 0.032`).
+  - **Mái ngói âm dương & tường vôi cổ (`roofTex/roofBumpTex`, `limeWallTex/limeBumpTex`)**: nâng lên 512px có rãnh ngói nổi, vết mưa rêu miền Tây tự nhiên và gán bump map cho tường vàng, cột son, gỗ trầm.
+- **Góc nhìn thứ nhất (`Phím V` & nút trong Ngăn kéo Tiện ích)**:
+  - Triển khai `setCameraViewMode('first' | 'third')` trong `player-and-interaction.mjs` & `world-atmosphere.mjs`: đưa camera về đúng tầm mắt (`1.58m`), ẩn thân nhân vật chính, hỗ trợ xoay nhìn ngang/ngước lên ngắm tượng Phật & vòm cổng (`pitch ∈ [-0.62, +0.92] rad`).
+- **Âm thanh không gian 3 vùng & tiếng mưa miền Tây (`audio-engine.mjs`, `weather-and-street.mjs`)**:
+  - Tự động pha trộn mượt mà 3 vùng âm thanh theo vị trí thực của người chơi: **`street`** (tiếng phố Mỹ Tho ngoài cổng `z > 43`) ↔ **`courtyard`** (sân chùa, gió, chuông, tụng kinh) ↔ **`interior`** (âm vang ấm trong Chánh Điện, tiếng mưa ngoài trời tự động trầm ấm lại ở tần số thấp `760Hz`).
+- **Thời tiết động Miền Tây (`🌤️ Nắng đẹp` ↔ `🌦️ Mưa rào`)**:
+  - Hệ hạt mưa 320 tia zero-GC quanh người chơi, bầu trời u ám chuyển sắc (`_buildSkyTextureForPreset('rain')`), sương mù dịu, **mặt sân & mặt đường tự động sẫm màu và phản xạ bóng ướt (`computeWetMaterialParams`)**, và **NPC ngoài trời tự động bung dù che mưa 3D nhiều màu sắc**.
+- **Cảnh sinh hoạt thực tế ngoài Cổng Phụ `Tịnh Độ Huyền Môn` (đối chiếu `image_bb72a8b0.png`)**:
+  - Dựng **Xe Cà Rem Mỹ Tho** (thùng gỗ vàng–đỏ, bánh nan hoa, biển vẽ tay, chuông leng keng) và **Cô Bán Nón Lá Ven Cổng** (chồng nón lá xếp lớp) ngay bên trụ Đông ngoài cổng phụ; hỗ trợ bấm trực tiếp và phím `[E]` để thưởng thức cà rem dừa/đậu xanh/sầu riêng hoặc **đội thử Nón Lá 3D lên nhân vật**.
+
+---
+
+## 14. Đợt 2 — Thế Giới Sống, Khí Quyển Điện Ảnh & Ánh Sáng Siêu Thực Chuẩn GTA 6
+
+- **4 Thời khóa công phu & Ánh sáng vật lý PMREM (`living-world.mjs`, `materials-and-lights.mjs`, `time-and-interior.mjs`, `vinh-trang-3d-world.mjs`)**:
+  - Nâng cấp hệ thời khóa thành 4 khung giờ chuẩn sinh hoạt chùa Việt: **`🌅 Sáng (06:30)`**, **`☀️ Trưa (11:30)`**, **`🌇 Chiều (17:00 · Nắng chiều vàng Mỹ Tho)`**, và **`🕯️ Tối (19:00 · Tịnh độ hoa đăng)`**.
+  - Dựng mới bầu trời **Chiều vàng Mỹ Tho (`_buildSkyTextureForPreset('sunset')`)** và tiền nướng (pre-bake) 2 bản đồ phản xạ môi trường PMREM riêng (`sunsetEnvTex`, `eveningEnvTex`) để khảm sành sứ, mặt nước Hồ Sen, chuông đồng và sân đá ướt phản chiếu ánh cam-đồng hoàng hôn hoặc đêm sao chân thực.
+- **Khí quyển siêu thực zero-GC (`src/app/world/living-world-3d.mjs`)**:
+  - **Tia nắng xiên (Volumetric Sunshafts)**: 5 chùm tia sáng xiên dịu rọi qua Cổng Phụ, sân Chánh Điện, Hồ Sen và Đại tượng Phật vào buổi Sáng & Chiều vàng (tự tắt khi mưa hoặc tối).
+  - **Bụi nắng & Đom đóm Hồ Sen**: 140 hạt bụi nắng lơ lửng ban ngày, tự chuyển thành đom đóm xanh-vàng ấm quanh Hồ Sen khi sang buổi Tối.
+  - **Lá Bồ Đề & Cánh hoa giấy rơi theo gió**: 34 lá vàng và cánh hoa giấy bay xoắn nhẹ dọc sân chùa và lối Cổng Phụ.
+  - **Đèn rọi điểm nhấn di sản**: 3 đèn chiếu ấm cho Cổng Phụ, Mặt tiền 13 vòm Chánh Điện và Tượng Di Lặc bật tự động lúc chiều tà & tối.
+- **Hệ sinh thái phản ứng tự nhiên (`living-world.mjs`, `living-world-3d.mjs`, `render-loop-and-cutscene.mjs`)**:
+  - **Chim bồ câu thông minh (`evaluatePigeonState`)**: giật mình bay vòng cung mềm mại rồi đáp lại nhẹ nhàng (hết hẳn lỗi dịch chuyển tức thời) khi chạy nhanh lại gần, giữ bình an khi đi chậm (*Thiền hành*), và tự trú mưa khi bật Mưa rào.
+  - **Vòng gợn sóng động trên Hồ Sen (`pondRipples`)**: 18 vòng sóng tròn lan tỏa theo cá Koi, tăng dày thành vòng sóng giọt mưa khi bật Mưa rào và bừng sóng vàng khi rắc thức ăn cho cá Koi.
+- **Ngồi nghỉ ghế đá & Ngắm cảnh điện ảnh (`Diegetic Bench Rest`)**:
+  - Bổ sung 3 ghế đá mài granite mới tại Cổng Phụ, bờ Hồ Sen và Vườn Tượng Di Lặc (tổng 6 ghế tương tác `SCENIC_BENCHES`), hỗ trợ chạm trực tiếp hoặc bấm `[E]` để ngồi nghỉ trong góc máy điện ảnh chậm (và hỗ trợ bấm `V` để ngồi ngắm cảnh ở Góc nhìn thứ nhất).
+
+---
+
+## 15. Đợt 3 — Chánh Điện 100+ Người Chơi, Tiệm Tạp Hóa Đi Bộ + Shopee Affiliate, Bản Đồ Công Viên Vĩnh Tràng & Chiều Sâu Hành Hương
+
+- **Mở rộng Chánh Điện Lạy Phật đủ chứa hơn 100 người chơi (`vinh-trang-square-interior.mjs`, `movement.mjs`, `time-and-interior.mjs`, `player-and-interaction.mjs`, `characters-npcs.mjs`)**:
+  - Mở rộng đại sảnh Chánh Điện lên **`47,4m × 41,6m`** (`x ∈ [-62,4, -15,2], z ∈ [-20,8, +20,8]`), mặt tiền 9 vòm Á–Âu đón nắng tại `x = -62,4`, 8 bộ vì kèo gỗ lim và 2 hàng cột đại trụ dọc `z = ±10,4`.
+  - Bố trí **112 bồ đoàn lạy Phật** (7 hàng × 16 cột chia 4 khối với lối đi trung tâm & 2 hành lang rộng) bằng **3 `THREE.InstancedMesh`** (chỉ tốn 3 draw calls nên giữ nguyên khung hình mượt mà), nới rộng bệ **18 Vị La Hán** ra `z = ±19,55` (cách nhau `4,4m` như bảo tàng), và tăng thêm 6 Phật tử đang quỳ lạy.
+- **Tiệm Tạp Hóa / Nhà Lưu Niệm 3D tỉ lệ thật đi bộ vào mua sắm + Shopee Affiliate (`grocery-halls-statues.mjs`, `marketplace.mjs`, `shopee-affiliate.mjs`, `stages-and-store.mjs`, `explore-account.mjs`, `characters-npcs.mjs`)**:
+  - Mở rộng gian nhà lên **`15,4m × 10,6m × 4,45m`** tại `(42,2, 0, -34,2)` với lối vào mở rộng `14,2m`, 6 đèn trần ấm, kệ lưng 4 tầng dài `13,4m`, tủ mát nước dừa xiêm, giá treo 7 bộ Pháp phục, quầy thu ngân & tủ tràng hạt bên phải kèm bảng **`🛒 ĐẶT ONLINE SHOPEE · GIAO TẬN NHÀ`**, và **2 đảo trưng bày thấp** ở giữa chừa lối đi `2,6–2,8m` cho nhân vật & 2 NPC khách đi thẳng vào bên trong mua sắm.
+  - Mở rộng danh mục từ 24 lên **32 mặt hàng** (bổ sung nhóm *Tất cả* và *Pháp phục & Đồ tu học*: áo tràng lam, đồ bà ba lụa, túi vải thêu sen, khăn rằn, muối mè, trà sen Đồng Tháp, dầu gió thảo mộc, trầm nụ...).
+  - Xây dựng mô-đun **`shopee-affiliate.mjs`** có kiểm tra tên miền chặt chẽ (`https://shopee.vn`, `s.shopee.vn`, `shope.ee`, `shp.ee`, `vn.shp.ee`), nút **`🛒 Mua trên Shopee`** trên từng thẻ sản phẩm (`<a target="_blank" rel="noopener noreferrer">`) và bảng **`🔗 Gắn link Shopee`** lưu vào `localStorage` để chủ dự án dễ dàng dán link Affiliate bất cứ lúc nào.
+- **Cải thiện độ chính xác Bản đồ 3D & 2D khu vực Công Viên Vĩnh Tràng ngoài chùa (`exterior-town.mjs`, `explore-account.mjs`)**:
+  - Trong 3D: hoàn thiện lối dạo chu vi Tây (`x = -24,4`) và Nam (`z = 166,2`), 2 đường lát đá chéo hướng tâm xuyên qua quảng trường Đài Phun Nước Hoa Sen `(8,0, 104,0)`, 3 vạch sang đường trắng (`z = 70, 104, 138`) nối đường dẫn 170m sang công viên và bảng sơ đồ Công Viên Vĩnh Tràng.
+  - Trên bản đồ 2D SVG (`viewBox="0 0 772 460"`): mở rộng phạm vi chiếu từ `z ∈ [-72, +58]` sang **`z ∈ [-72, +172]`**, hiển thị đầy đủ **Công Viên Vĩnh Tràng**, Đài Phun Nước, đường dạo hướng tâm, Chòi Lục Giác, Khu Thể Dục, Bãi Giữ Xe, Phố Mỹ Tho và **Đường Nguyễn Trung Trực** kèm nút đi thẳng ra Công Viên & vào bên trong Tiệm Tạp Hóa.
+- **Đợt 3 — Gặp gỡ hữu duyên, Công quả & 12 Góc Ảnh Di Sản (`pilgrimage-depth.mjs`, `living-world-3d.mjs`, `hud-navigation.mjs`, `passport-and-cloud.mjs`, `world3d-bridge.mjs`)**:
+  - Dựng đạo cụ 3D + hitbox tương tác & phím `[E]` cho **3 Gặp gỡ hữu duyên** (Bà cụ đánh rơi tràng hạt gần Hồ Sen, Du khách quốc tế hỏi kiến trúc Pháp–Việt, Sư thầy mời trà sen) và **3 việc Công quả** (Đánh bóng lư hương đồng, Tưới vườn cây kiểng Công Viên, Phụ dọn Trai đường).
+  - Tích hợp tự động nhận diện **12 Góc Ảnh Di Sản** ngay khi chụp ảnh kỷ niệm sạch HUD (`+20 🪷` cho mỗi góc mới), có trung tâm tổng hợp trong Ngăn kéo Tiện ích (`🤝 Công Quả · Hữu Duyên · 12 Ảnh Di Sản`).

@@ -49,315 +49,316 @@ export const groceryHallsStatuesMethods = {
     const porcelainMat = new THREE.MeshStandardMaterial({ color: 0xF5F3EC, roughness: 0.26, metalness: 0.05 });
 
     // =========================================================================
-    // 1. NHÀ LƯU NIỆM · ĐẶC SẢN CHAY CHÙA VĨNH TRÀNG (ĐI BỘ VÀO BÊN TRONG MUA ĐỒ!)
-    //    Vị trí: (42.2, 0, -33.5), mặt tiền MỞ RỘNG 8.2m quay về hướng Nam (+Z)
-    //    Khách hành hương đi thẳng vào bên trong ngắm kệ Kho Quẹt Chay, Chao Môn,
-    //    Tràng Hạt, Tượng Phật nhỏ, Mỹ Nghệ Gỗ Dừa, Kinh Sách & Nước Mát!
+    // 1. NHÀ LƯU NIỆM · TIỆM TẠP HÓA ĐẶC SẢN CHAY CHÙA VĨNH TRÀNG (TỈ LỆ NGƯỜI THẬT!)
+    //    Mở rộng không gian mua sắm rộng rãi 15.4m × 10.6m × 4.45m tại (42.2, 0, -34.2)
+    //    Mặt tiền mở toang 13.8m quay về hướng Nam (+Z) để nhân vật đi bộ thẳng vào
+    //    5 phân khu mua sắm với lối đi rộng >= 2.6m (30+ mặt hàng + gắn sẵn Shopee Affiliate!)
     // =========================================================================
     const kiosk = new THREE.Group();
-    kiosk.position.set(42.2, 0, -33.5);
+    kiosk.position.set(42.2, 0, -34.2);
     kiosk.userData.stallType = 'phap_khi';
-    kiosk.userData.stallTitle = 'Nhà Lưu Niệm · Đặc Sản Chay Chùa Vĩnh Tràng';
+    kiosk.userData.stallTitle = 'Nhà Lưu Niệm · Tiệm Tạp Hóa Đặc Sản Chay';
 
     const ceramicFloorMat = new THREE.MeshStandardMaterial({
       map: this.pavingTex,
-      color: 0xD2C2A8,
-      roughness: 0.58
+      color: 0xDDD0BA,
+      roughness: 0.54
     });
     const jarCapRedMat = new THREE.MeshStandardMaterial({ color: 0xB82D24, roughness: 0.36 });
     const jarCapGoldMat = new THREE.MeshStandardMaterial({ color: 0xD9A234, roughness: 0.34, metalness: 0.35 });
     const khoQuetJarMat = new THREE.MeshStandardMaterial({ color: 0x5C2C14, roughness: 0.22, metalness: 0.08 });
     const chaoJarMat = new THREE.MeshStandardMaterial({ color: 0xE8D49E, roughness: 0.28 });
     const coconutWoodMat = new THREE.MeshStandardMaterial({ color: 0x6A3A1E, roughness: 0.44 });
+    const shopeeOrangeMat = new THREE.MeshStandardMaterial({ color: 0xEE4D2D, roughness: 0.38 });
 
-    // 1a. Nền gạch men rộng đi bộ phẳng mượt từ sân gạch vào hẳn trong nhà (11.4m x 7.4m)
-    const plinth = new THREE.Mesh(new THREE.BoxGeometry(11.4, 0.1, 7.4), ceramicFloorMat);
+    // 1a. Nền gạch men sáng rộng 15.4m × 10.6m phẳng mượt bước thẳng từ sân gạch vào trong
+    const plinth = new THREE.Mesh(new THREE.BoxGeometry(15.4, 0.1, 10.6), ceramicFloorMat);
     plinth.position.set(0, 0.05, 0.1);
     plinth.receiveShadow = true;
     kiosk.add(plinth);
 
     const welcomeMat = new THREE.Mesh(
-      new THREE.BoxGeometry(3.2, 0.025, 0.95),
-      new THREE.MeshStandardMaterial({ color: 0x7A241E, roughness: 0.9 })
+      new THREE.BoxGeometry(4.4, 0.025, 1.15),
+      new THREE.MeshStandardMaterial({ color: 0x7A241E, roughness: 0.88 })
     );
-    welcomeMat.position.set(0, 0.11, 3.35);
+    welcomeMat.position.set(0, 0.11, 4.95);
     kiosk.add(welcomeMat);
 
-    // 1b. Khung cột nhà rộng thoáng (mở toang mặt trước 8.4m không chắn lối đi!)
+    // 1b. Khung cột nhà cao thoáng 4.35m (mở toang mặt trước 14.2m — KHÔNG chắn lối vào!)
     const postCoords = [
-      [-5.45, -3.35], [-1.8, -3.35], [1.8, -3.35], [5.45, -3.35],
-      [-5.45, 0.2], [5.45, 0.2],
-      [-5.45, 3.65], [5.45, 3.65]
+      [-7.45, -4.95], [-2.5, -4.95], [2.5, -4.95], [7.45, -4.95],
+      [-7.45, 0.1], [7.45, 0.1],
+      [-7.45, 5.15], [7.45, 5.15]
     ];
     for (const [px, pz] of postCoords) {
-      const h = pz < 2.0 ? 3.55 : 3.25;
-      const post = new THREE.Mesh(new THREE.BoxGeometry(0.16, h, 0.16), steelFrameMat);
+      const h = pz < 3.0 ? 4.35 : 3.95;
+      const post = new THREE.Mesh(new THREE.BoxGeometry(0.2, h, 0.2), steelFrameMat);
       post.position.set(px, 0.1 + h * 0.5, pz);
       post.castShadow = true;
       kiosk.add(post);
     }
-    const eaveBeam = new THREE.Mesh(new THREE.BoxGeometry(11.2, 0.14, 0.14), steelFrameMat);
-    eaveBeam.position.set(0, 3.35, 3.65);
+    const eaveBeam = new THREE.Mesh(new THREE.BoxGeometry(15.2, 0.18, 0.18), steelFrameMat);
+    eaveBeam.position.set(0, 4.05, 5.15);
     kiosk.add(eaveBeam);
 
-    // 1c. Vách tường 3 mặt (Sau, Trái, Phải) có lamri gỗ ấm & cửa sổ thoáng khí (Mặt trước mở hoàn toàn!)
-    const backWallLower = new THREE.Mesh(new THREE.BoxGeometry(11.0, 1.15, 0.18), wainscotWoodMat);
-    backWallLower.position.set(0, 0.675, -3.38);
+    // 1c. Vách tường 3 mặt (Sau, Trái, Phải) cao thoáng với lamri gỗ & cửa sổ mở đón gió
+    const backWallLower = new THREE.Mesh(new THREE.BoxGeometry(15.0, 1.25, 0.2), wainscotWoodMat);
+    backWallLower.position.set(0, 0.725, -4.98);
     backWallLower.castShadow = true;
     kiosk.add(backWallLower);
 
-    const backWallUpper = new THREE.Mesh(new THREE.BoxGeometry(11.0, 2.45, 0.16), creamPanelMat);
-    backWallUpper.position.set(0, 2.45, -3.38);
+    const backWallUpper = new THREE.Mesh(new THREE.BoxGeometry(15.0, 3.15, 0.18), creamPanelMat);
+    backWallUpper.position.set(0, 2.9, -4.98);
     backWallUpper.castShadow = true;
     kiosk.add(backWallUpper);
 
     for (const side of [-1, 1]) {
-      const sx = side * 5.48;
-      const sideLower = new THREE.Mesh(new THREE.BoxGeometry(0.18, 1.15, 7.0), wainscotWoodMat);
-      sideLower.position.set(sx, 0.675, 0.1);
+      const sx = side * 7.48;
+      const sideLower = new THREE.Mesh(new THREE.BoxGeometry(0.2, 1.25, 10.2), wainscotWoodMat);
+      sideLower.position.set(sx, 0.725, 0.1);
       sideLower.castShadow = true;
       kiosk.add(sideLower);
 
-      const sideBackCol = new THREE.Mesh(new THREE.BoxGeometry(0.16, 2.45, 2.3), creamPanelMat);
-      sideBackCol.position.set(sx, 2.45, -2.25);
+      const sideBackCol = new THREE.Mesh(new THREE.BoxGeometry(0.18, 3.15, 3.1), creamPanelMat);
+      sideBackCol.position.set(sx, 2.9, -3.45);
       kiosk.add(sideBackCol);
 
-      const sideFrontCol = new THREE.Mesh(new THREE.BoxGeometry(0.16, 2.45, 1.65), creamPanelMat);
-      sideFrontCol.position.set(sx, 2.45, 2.75);
+      const sideFrontCol = new THREE.Mesh(new THREE.BoxGeometry(0.18, 3.15, 2.3), creamPanelMat);
+      sideFrontCol.position.set(sx, 2.9, 4.05);
       kiosk.add(sideFrontCol);
 
-      const sideTopStrip = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.62, 3.1), creamPanelMat);
-      sideTopStrip.position.set(sx, 3.35, 0.42);
+      const sideTopStrip = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.85, 4.8), creamPanelMat);
+      sideTopStrip.position.set(sx, 4.0, 0.5);
       kiosk.add(sideTopStrip);
 
-      // Cửa sổ chống mái che bên hông thoáng mát
-      const proppedShutter = new THREE.Mesh(new THREE.BoxGeometry(1.15, 0.07, 2.95), roofGreenMat);
-      proppedShutter.position.set(sx + side * 0.56, 2.86, 0.42);
+      const proppedShutter = new THREE.Mesh(new THREE.BoxGeometry(1.35, 0.08, 4.6), roofGreenMat);
+      proppedShutter.position.set(sx + side * 0.65, 3.38, 0.5);
       proppedShutter.rotation.z = side * -0.45;
       kiosk.add(proppedShutter);
     }
 
-    // 1d. Mái ngói / tôn xanh cổ tự 2 mái cao thoáng + mái hiên đón khách
-    const mainRoof = makeHippedRoofMesh(12.2, 8.2, 1.85, roofGreenMat);
-    mainRoof.position.set(0, 4.55, 0.15);
+    // 1d. Mái tôn xanh cổ tự 2 mái cao thoáng + mái hiên đón khách rộng 2.8m
+    const mainRoof = makeHippedRoofMesh(16.4, 11.6, 2.2, roofGreenMat);
+    mainRoof.position.set(0, 5.45, 0.15);
     mainRoof.castShadow = true;
     kiosk.add(mainRoof);
 
-    const roofRidge = new THREE.Mesh(new THREE.BoxGeometry(6.6, 0.14, 0.2), aluMat);
-    roofRidge.position.set(0, 5.48, 0.15);
+    const roofRidge = new THREE.Mesh(new THREE.BoxGeometry(8.8, 0.16, 0.22), aluMat);
+    roofRidge.position.set(0, 6.56, 0.15);
     kiosk.add(roofRidge);
 
-    const frontAwning = new THREE.Mesh(new THREE.BoxGeometry(11.8, 0.1, 2.2), roofGreenMat);
-    frontAwning.position.set(0, 3.42, 4.45);
+    const frontAwning = new THREE.Mesh(new THREE.BoxGeometry(15.8, 0.12, 2.65), roofGreenMat);
+    frontAwning.position.set(0, 4.05, 6.15);
     frontAwning.rotation.x = 0.22;
     frontAwning.castShadow = true;
     kiosk.add(frontAwning);
 
-    // 1e. Đèn treo ấm áp bên trong phòng trưng bày (emissive sáng rõ, chỉ 1 PointLight chung)
+    // 1e. Hệ thống 6 đèn treo ấm áp chiếu sáng rõ nét toàn bộ gian hàng + 1 PointLight chung
     const warmBulbMat = new THREE.MeshStandardMaterial({
       color: 0xFFF5D4,
       emissive: 0xFFD47A,
       emissiveIntensity: 0.95,
       roughness: 0.2
     });
-    for (const lx of [-2.8, 0, 2.8]) {
-      const cord = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.55, 5), darkTrimWoodMat);
-      cord.position.set(lx, 3.45, 0.2);
-      kiosk.add(cord);
-      const shade = new THREE.Mesh(new THREE.ConeGeometry(0.22, 0.12, 10, 1, true), roofGreenMat);
-      shade.position.set(lx, 3.18, 0.2);
-      kiosk.add(shade);
-      const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.085, 8, 7), warmBulbMat);
-      bulb.position.set(lx, 3.08, 0.2);
-      kiosk.add(bulb);
+    for (const lx of [-4.2, 0, 4.2]) {
+      for (const lz of [-1.8, 2.1]) {
+        const cord = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.72, 5), darkTrimWoodMat);
+        cord.position.set(lx, 4.05, lz);
+        kiosk.add(cord);
+        const shade = new THREE.Mesh(new THREE.ConeGeometry(0.24, 0.14, 10, 1, true), roofGreenMat);
+        shade.position.set(lx, 3.68, lz);
+        kiosk.add(shade);
+        const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.09, 8, 7), warmBulbMat);
+        bulb.position.set(lx, 3.58, lz);
+        kiosk.add(bulb);
+      }
     }
+    const shopInteriorLight = new THREE.PointLight(0xFFE6B5, 2.2, 18.0, 1.2);
+    shopInteriorLight.position.set(0, 3.45, 0.2);
+    kiosk.add(shopInteriorLight);
 
-    // 1f. VÁCH SAU (z = -2.9): KỆ ĐẶC SẢN CHAY (KHO QUẸT CHAY · CHAO MÔN) & VĂN HÓA PHẨM PHẬT GIÁO
-    const shelfWidth = 9.4;
-    for (const postX of [-4.6, -2.3, 0, 2.3, 4.6]) {
-      const upright = new THREE.Mesh(new THREE.BoxGeometry(0.06, 2.7, 0.06), shelfMetalMat);
-      upright.position.set(postX, 1.45, -2.85);
+    // 1f. VÁCH SAU (z = -4.45): HỆ KỆ 4 TẦNG RỘNG 13.4m (ĐẶC SẢN CHAY + VĂN HÓA PHẨM PHẬT GIÁO)
+    const shelfWidth = 13.4;
+    for (const postX of [-6.6, -4.4, -2.2, 0, 2.2, 4.4, 6.6]) {
+      const upright = new THREE.Mesh(new THREE.BoxGeometry(0.07, 3.05, 0.07), shelfMetalMat);
+      upright.position.set(postX, 1.62, -4.35);
       kiosk.add(upright);
     }
-    for (const ty of [0.62, 1.18, 1.76, 2.34]) {
-      const plank = new THREE.Mesh(new THREE.BoxGeometry(shelfWidth, 0.055, 0.62), counterWoodMat);
-      plank.position.set(0, ty, -2.92);
+    for (const ty of [0.64, 1.26, 1.88, 2.52]) {
+      const plank = new THREE.Mesh(new THREE.BoxGeometry(shelfWidth, 0.06, 0.68), counterWoodMat);
+      plank.position.set(0, ty, -4.45);
       kiosk.add(plank);
     }
 
-    // Bảng phân khu trên vách sau bên trong nhà lưu niệm
     const backZoneSignLeft = new THREE.Mesh(
-      new THREE.BoxGeometry(3.8, 0.44, 0.06),
+      new THREE.BoxGeometry(5.6, 0.52, 0.06),
       new THREE.MeshStandardMaterial({
-        map: makeTextTex('KHO QUẸT CHAY · CHAO MÔN · BÁNH CHAY', {
-          w: 960, h: 120, bg: '#8A2B1D', border: '#F4CC6A', color: '#FFF7E0', size: 36
+        map: makeTextTex('KHO QUẸT CHAY · CHAO MÔN · BÁNH PÍA · TRÀ SEN', {
+          w: 1120, h: 120, bg: '#8A2B1D', border: '#F4CC6A', color: '#FFF7E0', size: 34
         }),
         roughness: 0.4
       })
     );
-    backZoneSignLeft.position.set(-2.4, 2.95, -3.26);
+    backZoneSignLeft.position.set(-3.4, 3.32, -4.82);
     kiosk.add(backZoneSignLeft);
 
     const backZoneSignRight = new THREE.Mesh(
-      new THREE.BoxGeometry(3.8, 0.44, 0.06),
+      new THREE.BoxGeometry(5.6, 0.52, 0.06),
       new THREE.MeshStandardMaterial({
-        map: makeTextTex('TRÀNG HẠT · TƯỢNG PHẬT · KINH SÁCH', {
-          w: 960, h: 120, bg: '#1B5836', border: '#F4CC6A', color: '#FFF7E0', size: 36
+        map: makeTextTex('NHANG TRẦM · TƯỢNG PHẬT · MÕ GỖ · KINH SÁCH', {
+          w: 1120, h: 120, bg: '#1B5836', border: '#F4CC6A', color: '#FFF7E0', size: 34
         }),
         roughness: 0.4
       })
     );
-    backZoneSignRight.position.set(2.4, 2.95, -3.26);
+    backZoneSignRight.position.set(3.4, 3.32, -4.82);
     kiosk.add(backZoneSignRight);
 
-    // Kệ trái vách sau (x = -4.3 .. -0.3): HŨ KHO QUẸT CHAY, HŨ CHAO MÔN, HỘP BÁNH PÍA CHAY & HẠT SEN
-    for (let ji = 0; ji < 12; ji++) {
-      const jx = -4.25 + ji * 0.34;
-      // Tầng 2: Hũ Kho Quẹt Chay nắp đỏ bóng
-      const kqJar = new THREE.Mesh(new THREE.CylinderGeometry(0.085, 0.09, 0.2, 10), khoQuetJarMat);
-      kqJar.position.set(jx, 1.31, -2.86);
+    // Kệ trái vách sau: 18 hũ Kho Quẹt Chay + 18 hũ Chao Môn & Muối Mè + Hộp Bánh Pía / Mứt Dừa / Trà Sen
+    for (let ji = 0; ji < 16; ji++) {
+      const jx = -6.3 + ji * 0.39;
+      const kqJar = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.095, 0.22, 10), khoQuetJarMat);
+      kqJar.position.set(jx, 1.4, -4.38);
       kiosk.add(kqJar);
-      const kqCap = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.075, 0.04, 10), jarCapRedMat);
-      kqCap.position.set(jx, 1.43, -2.86);
+      const kqCap = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.04, 10), jarCapRedMat);
+      kqCap.position.set(jx, 1.53, -4.38);
       kiosk.add(kqCap);
-      // Tầng 3: Hũ Chao Môn Chay & Muối Mè nắp vàng
-      const chaoJar = new THREE.Mesh(new THREE.CylinderGeometry(0.085, 0.09, 0.21, 10), chaoJarMat);
-      chaoJar.position.set(jx, 1.89, -2.86);
+
+      const chaoJar = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.095, 0.22, 10), chaoJarMat);
+      chaoJar.position.set(jx, 2.02, -4.38);
       kiosk.add(chaoJar);
-      const chaoCap = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.075, 0.04, 10), jarCapGoldMat);
-      chaoCap.position.set(jx, 2.02, -2.86);
+      const chaoCap = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.04, 10), jarCapGoldMat);
+      chaoCap.position.set(jx, 2.15, -4.38);
       kiosk.add(chaoCap);
     }
-    // Tầng 1 & Tầng 4 bên trái: Hộp bánh pía chay & giỏ quà đặc sản Tiền Giang
-    const foodBoxCols = [0xC9462C, 0xD89B28, 0x2B7348, 0xA83628];
-    for (let i = 0; i < 7; i++) {
-      const bx = -4.15 + i * 0.62;
+    const foodBoxCols = [0xC9462C, 0xD89B28, 0x2B7348, 0xA83628, 0x8F4D26];
+    for (let i = 0; i < 10; i++) {
+      const bx = -6.15 + i * 0.64;
       const box1 = new THREE.Mesh(
-        new THREE.BoxGeometry(0.48, 0.32, 0.36),
+        new THREE.BoxGeometry(0.5, 0.34, 0.38),
         new THREE.MeshStandardMaterial({ color: foodBoxCols[i % foodBoxCols.length], roughness: 0.56 })
       );
-      box1.position.set(bx, 0.81, -2.88);
+      box1.position.set(bx, 0.84, -4.4);
       kiosk.add(box1);
       const box4 = new THREE.Mesh(
-        new THREE.BoxGeometry(0.44, 0.28, 0.32),
+        new THREE.BoxGeometry(0.46, 0.3, 0.34),
         new THREE.MeshStandardMaterial({ color: foodBoxCols[(i + 2) % foodBoxCols.length], roughness: 0.52 })
       );
-      box4.position.set(bx, 2.51, -2.88);
+      box4.position.set(bx, 2.7, -4.4);
       kiosk.add(box4);
     }
 
-    // Kệ phải vách sau (x = 0.2 .. 4.4): KINH SÁCH, NHANG TRẦM, TƯỢNG PHẬT MINI & MỸ NGHỆ GỖ DỪA
+    // Kệ phải vách sau: Kinh Nhật Tụng, Nhang trầm vòng, Tượng Di Lặc mini, Mõ gỗ mít & Mỹ nghệ gỗ dừa
     const bookColors = [0x8E2420, 0xC98B28, 0x23523B, 0x264878, 0xA84C24, 0xDFC78A];
-    for (let bi = 0; bi < 16; bi++) {
-      const bh = 0.24 + (bi % 3) * 0.04;
+    for (let bi = 0; bi < 22; bi++) {
+      const bh = 0.26 + (bi % 3) * 0.04;
       const book = new THREE.Mesh(
-        new THREE.BoxGeometry(0.11, bh, 0.24),
+        new THREE.BoxGeometry(0.11, bh, 0.26),
         new THREE.MeshStandardMaterial({ color: bookColors[bi % bookColors.length], roughness: 0.68 })
       );
-      book.position.set(0.35 + bi * 0.16, 1.21 + bh * 0.5, -2.88);
+      book.position.set(0.4 + bi * 0.17, 1.29 + bh * 0.5, -4.4);
       kiosk.add(book);
     }
-    for (let ci = 0; ci < 4; ci++) {
+    for (let ci = 0; ci < 6; ci++) {
       const coilBox = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.16, 0.16, 0.14, 14),
+        new THREE.CylinderGeometry(0.17, 0.17, 0.15, 14),
         new THREE.MeshStandardMaterial({ color: ci % 2 === 0 ? 0xC83A28 : 0xDBA030, roughness: 0.5 })
       );
-      coilBox.position.set(3.15 + ci * 0.38, 1.28, -2.88);
+      coilBox.position.set(4.35 + ci * 0.4, 1.37, -4.4);
       kiosk.add(coilBox);
     }
-    for (let si = 0; si < 6; si++) {
-      const sx = 0.55 + si * 0.72;
+    for (let si = 0; si < 8; si++) {
+      const sx = 0.65 + si * 0.78;
       const isGold = si % 2 === 0;
-      const miniStand = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.06, 0.26), darkTrimWoodMat);
-      miniStand.position.set(sx, 1.82, -2.88);
+      const miniStand = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.06, 0.28), darkTrimWoodMat);
+      miniStand.position.set(sx, 1.94, -4.4);
       kiosk.add(miniStand);
-      const body = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.28, 10), isGold ? goldMat : porcelainMat);
-      body.position.set(sx, 1.99, -2.88);
+      const body = new THREE.Mesh(new THREE.ConeGeometry(0.13, 0.3, 10), isGold ? goldMat : porcelainMat);
+      body.position.set(sx, 2.12, -4.4);
       kiosk.add(body);
-      const head = new THREE.Mesh(new THREE.SphereGeometry(0.055, 8, 7), isGold ? goldMat : porcelainMat);
-      head.position.set(sx, 2.16, -2.88);
+      const head = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 7), isGold ? goldMat : porcelainMat);
+      head.position.set(sx, 2.3, -4.4);
       kiosk.add(head);
     }
-    // Mỹ nghệ gỗ dừa (chén gỗ dừa & đèn hoa sen tầng 4)
-    for (let wi = 0; wi < 6; wi++) {
-      const wx = 0.6 + wi * 0.7;
-      const bowl = new THREE.Mesh(new THREE.SphereGeometry(0.14, 10, 8, 0, Math.PI * 2, Math.PI * 0.45, Math.PI * 0.55), coconutWoodMat);
-      bowl.position.set(wx, 2.48, -2.88);
+    for (let wi = 0; wi < 8; wi++) {
+      const wx = 0.7 + wi * 0.78;
+      const bowl = new THREE.Mesh(new THREE.SphereGeometry(0.16, 10, 8, 0, Math.PI * 2, Math.PI * 0.45, Math.PI * 0.55), coconutWoodMat);
+      bowl.position.set(wx, 2.66, -4.4);
       kiosk.add(bowl);
       const incenseBox = new THREE.Mesh(
-        new THREE.BoxGeometry(0.46, 0.3, 0.34),
+        new THREE.BoxGeometry(0.5, 0.32, 0.36),
         new THREE.MeshStandardMaterial({ color: wi % 2 === 0 ? 0xB92D24 : 0xD89B28, roughness: 0.56 })
       );
-      incenseBox.position.set(wx, 0.8, -2.88);
+      incenseBox.position.set(wx, 0.84, -4.4);
       kiosk.add(incenseBox);
     }
 
-    // 1g. VÁCH TRÁI (x = -4.9): TỦ MÁT NƯỚC GIẢI KHÁT + KỆ PHÁP PHỤC ÁO LAM & TÚI VẢI HOA SEN
+    // 1g. VÁCH TRÁI (x = -6.75): TỦ MÁT 2 CÁNH NƯỚC GIẢI KHÁT + GIAN PHÁP PHỤC ÁO TRÀNG LAM & NÓN LÁ
     const fridge = new THREE.Group();
-    fridge.position.set(-4.85, 0.1, -1.55);
+    fridge.position.set(-6.75, 0.1, -2.25);
     fridge.rotation.y = Math.PI / 2;
     const fridgeBody = new THREE.Mesh(
-      new THREE.BoxGeometry(1.42, 2.12, 0.78),
+      new THREE.BoxGeometry(2.1, 2.25, 0.85),
       new THREE.MeshStandardMaterial({ color: 0xF1F5F8, roughness: 0.28, metalness: 0.14 })
     );
-    fridgeBody.position.y = 1.06;
+    fridgeBody.position.y = 1.125;
     fridge.add(fridgeBody);
     const fridgeHeader = new THREE.Mesh(
-      new THREE.BoxGeometry(1.32, 0.26, 0.05),
+      new THREE.BoxGeometry(1.96, 0.28, 0.05),
       new THREE.MeshStandardMaterial({
-        map: makeTextTex('NƯỚC MÁT · TRÀ SEN ƯỚP LẠNH', {
-          w: 512, h: 110, bg: '#1668B8', border: '#FFFFFF', color: '#FFFFFF', size: 28
+        map: makeTextTex('DỪA XIÊM · TRÀ TẮC · SÂM BÍ ĐAO ƯỚP LẠNH', {
+          w: 640, h: 110, bg: '#1668B8', border: '#FFFFFF', color: '#FFFFFF', size: 26
         }),
         roughness: 0.32
       })
     );
-    fridgeHeader.position.set(0, 1.96, 0.39);
+    fridgeHeader.position.set(0, 2.06, 0.43);
     fridge.add(fridgeHeader);
     const fridgeInterior = new THREE.Mesh(
-      new THREE.PlaneGeometry(1.18, 1.56),
+      new THREE.PlaneGeometry(1.82, 1.66),
       new THREE.MeshBasicMaterial({ color: 0xCBEFFF })
     );
-    fridgeInterior.position.set(0, 0.98, 0.4);
+    fridgeInterior.position.set(0, 1.02, 0.44);
     fridge.add(fridgeInterior);
     const bottleColors = [0x24944A, 0xD63B2A, 0xE6A826, 0x2276C8, 0x5CB338, 0xF0EFE8];
     for (let r = 0; r < 4; r++) {
-      for (let b = 0; b < 5; b++) {
+      for (let b = 0; b < 7; b++) {
         const bottle = new THREE.Mesh(
-          new THREE.CylinderGeometry(0.038, 0.044, 0.22, 7),
+          new THREE.CylinderGeometry(0.04, 0.046, 0.24, 7),
           new THREE.MeshStandardMaterial({ color: bottleColors[(r + b) % bottleColors.length], roughness: 0.25 })
         );
-        bottle.position.set(-0.42 + b * 0.21, 0.42 + r * 0.37, 0.42);
+        bottle.position.set(-0.72 + b * 0.24, 0.42 + r * 0.38, 0.46);
         fridge.add(bottle);
       }
     }
     kiosk.add(fridge);
 
-    // Giá treo Pháp Phục Áo Lam & Nón Lá dọc vách trái phía trước (z = 0.2 .. 2.8)
-    const rackBar = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 2.75, 8), aluMat);
+    // Giá treo Pháp Phục Áo Tràng Lam & Khăn Rằn Nam Bộ dọc vách trái phía trước (z = 0.0 .. 4.0)
+    const rackBar = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 4.1, 8), aluMat);
     rackBar.rotation.x = Math.PI / 2;
-    rackBar.position.set(-4.88, 1.88, 1.45);
+    rackBar.position.set(-6.8, 2.02, 2.0);
     kiosk.add(rackBar);
-    const robeCols = [0x8E8995, 0x7A8EA4, 0x9B8674, 0xB898A8, 0x748D7A];
-    for (let ri = 0; ri < 5; ri++) {
+    const robeCols = [0x8E8995, 0x7A8EA4, 0x9B8674, 0xB898A8, 0x748D7A, 0x6F7D8C, 0xA69182];
+    for (let ri = 0; ri < 7; ri++) {
       const robe = new THREE.Mesh(
-        new THREE.BoxGeometry(0.16, 0.86, 0.42),
+        new THREE.BoxGeometry(0.18, 0.96, 0.46),
         new THREE.MeshStandardMaterial({ color: robeCols[ri], roughness: 0.78 })
       );
-      robe.position.set(-4.88, 1.38, 0.45 + ri * 0.5);
+      robe.position.set(-6.8, 1.48, 0.35 + ri * 0.56);
       kiosk.add(robe);
     }
 
-    // 1h. VÁCH PHẢI (x = +4.45): QUẦY THU NGÂN & TỦ KÍNH TRÀNG HẠT (Gọn bên hông phải, KHÔNG chặn lối vào!)
-    const sideCounter = new THREE.Mesh(new THREE.BoxGeometry(0.95, 1.08, 4.6), counterWoodMat);
-    sideCounter.position.set(4.45, 0.64, 0.3);
+    // 1h. VÁCH PHẢI (x = +6.35): QUẦY THU NGÂN RỘNG + TỦ KÍNH TRÀNG HẠT + BẢNG SHOPEE AFFILIATE
+    const sideCounter = new THREE.Mesh(new THREE.BoxGeometry(1.05, 1.08, 6.8), counterWoodMat);
+    sideCounter.position.set(6.35, 0.64, 0.3);
     sideCounter.castShadow = true;
     kiosk.add(sideCounter);
 
-    const showcaseGlass = new THREE.Mesh(new THREE.BoxGeometry(0.76, 0.58, 3.1), glassShowcaseMat);
-    showcaseGlass.position.set(4.45, 1.47, 0.95);
+    const showcaseGlass = new THREE.Mesh(new THREE.BoxGeometry(0.84, 0.62, 4.6), glassShowcaseMat);
+    showcaseGlass.position.set(6.35, 1.49, 1.1);
     kiosk.add(showcaseGlass);
-    const showcaseTopFrame = new THREE.Mesh(new THREE.BoxGeometry(0.82, 0.045, 3.16), aluMat);
-    showcaseTopFrame.position.set(4.45, 1.77, 0.95);
+    const showcaseTopFrame = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.05, 4.66), aluMat);
+    showcaseTopFrame.position.set(6.35, 1.81, 1.1);
     kiosk.add(showcaseTopFrame);
 
     const beadMats = [
@@ -366,94 +367,138 @@ export const groceryHallsStatuesMethods = {
       new THREE.MeshStandardMaterial({ color: 0xD9A234, roughness: 0.3 }),
       new THREE.MeshStandardMaterial({ color: 0x8C2A24, roughness: 0.36 })
     ];
-    for (let ti = 0; ti < 4; ti++) {
-      const tz = -0.25 + ti * 0.78;
-      const tray = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.04, 0.62), velvetTrayMat);
-      tray.position.set(4.45, 1.22, tz);
+    for (let ti = 0; ti < 5; ti++) {
+      const tz = -0.75 + ti * 0.92;
+      const tray = new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.04, 0.72), velvetTrayMat);
+      tray.position.set(6.35, 1.22, tz);
       kiosk.add(tray);
       for (let bi = -1; bi <= 1; bi++) {
-        const beads = new THREE.Mesh(new THREE.TorusGeometry(0.08, 0.02, 7, 14), beadMats[(ti + bi + 4) % beadMats.length]);
+        const beads = new THREE.Mesh(new THREE.TorusGeometry(0.085, 0.022, 7, 14), beadMats[(ti + bi + 4) % beadMats.length]);
         beads.rotation.x = Math.PI / 2;
-        beads.position.set(4.45, 1.26, tz + bi * 0.18);
+        beads.position.set(6.35, 1.27, tz + bi * 0.2);
         kiosk.add(beads);
       }
     }
 
-    // 1i. BÀN TRƯNG BÀY ĐẢO GIỮA THẤP (1.75m x 0.95m) — Khách đi vòng xung quanh chọn Kho Quẹt Chay & Quà Lưu Niệm!
-    const islandTable = new THREE.Mesh(new THREE.BoxGeometry(1.75, 0.78, 0.95), counterWoodMat);
-    islandTable.position.set(-0.2, 0.49, 0.25);
+    // Bảng "ĐẶT GIAO NHANH SHOPEE · AFFILIATE CHÍNH HÃNG" ngay quầy thu ngân bên phải
+    const shopeeBoard = new THREE.Mesh(
+      new THREE.BoxGeometry(0.08, 0.68, 2.35),
+      new THREE.MeshStandardMaterial({
+        map: makeTextTex('🛒 ĐẶT ONLINE SHOPEE · GIAO TẬN NHÀ', {
+          w: 760, h: 210, bg: '#EE4D2D', border: '#FFF6DE', color: '#FFFFFF', size: 36
+        }),
+        roughness: 0.38
+      })
+    );
+    shopeeBoard.position.set(7.25, 2.55, 0.4);
+    kiosk.add(shopeeBoard);
+
+    // 1i. HAI ĐẢO TRƯNG BÀY GIỮA THẤP (LỐI ĐI TRUNG TÂM RỘNG 2.8m + LỐI VÒNG XUNG QUANH >= 2.6m!)
+    const islandTable = new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.82, 1.25), counterWoodMat);
+    islandTable.position.set(-2.55, 0.51, 0.65);
     islandTable.castShadow = true;
     kiosk.add(islandTable);
     const islandCloth = new THREE.Mesh(
-      new THREE.BoxGeometry(1.8, 0.05, 1.0),
+      new THREE.BoxGeometry(2.16, 0.05, 1.3),
       new THREE.MeshStandardMaterial({ color: 0x8C251E, roughness: 0.85 })
     );
-    islandCloth.position.set(-0.2, 0.9, 0.25);
+    islandCloth.position.set(-2.55, 0.94, 0.65);
     kiosk.add(islandCloth);
-    // Bày hũ kho quẹt chay, hũ chao môn & khay tràng hạt nổi bật ngay bàn đảo giữa
-    for (let ii = 0; ii < 5; ii++) {
-      const ix = -0.85 + ii * 0.32;
+    for (let ii = 0; ii < 6; ii++) {
+      const ix = -3.35 + ii * 0.32;
       const sampleJar = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.075, 0.08, 0.19, 10),
+        new THREE.CylinderGeometry(0.08, 0.085, 0.21, 10),
         ii % 2 === 0 ? khoQuetJarMat : chaoJarMat
       );
-      sampleJar.position.set(ix, 1.02, 0.08);
+      sampleJar.position.set(ix, 1.07, 0.42);
       kiosk.add(sampleJar);
       const sampleCap = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.068, 0.068, 0.035, 10),
+        new THREE.CylinderGeometry(0.072, 0.072, 0.036, 10),
         ii % 2 === 0 ? jarCapRedMat : jarCapGoldMat
       );
-      sampleCap.position.set(ix, 1.13, 0.08);
+      sampleCap.position.set(ix, 1.19, 0.42);
       kiosk.add(sampleCap);
     }
     const islandSign = new THREE.Mesh(
-      new THREE.BoxGeometry(1.42, 0.34, 0.05),
+      new THREE.BoxGeometry(1.75, 0.38, 0.05),
       new THREE.MeshStandardMaterial({
-        map: makeTextTex('KHO QUẸT CHAY · QUÀ CHÙA', {
-          w: 640, h: 160, bg: '#FFF7E0', border: '#8C251E', color: '#7A1F16', size: 38
+        map: makeTextTex('KHO QUẸT CHAY · ĐẶC SẢN MIỀN TÂY', {
+          w: 720, h: 160, bg: '#FFF7E0', border: '#8C251E', color: '#7A1F16', size: 36
         }),
         roughness: 0.4
       })
     );
-    islandSign.position.set(-0.2, 1.16, 0.56);
+    islandSign.position.set(-2.55, 1.2, 1.05);
     islandSign.rotation.x = -0.22;
     kiosk.add(islandSign);
 
-    // 1j. ĐỒ TREO DƯỚI MÁI HIÊN: NÓN LÁ, TÚI VẢI HOA SEN & KHÁNH BÌNH AN (cao > 2.4m không chắn người đi vào!)
+    // Đảo 2 bên phải: Tràng hạt, Bồ đoàn thiền, Đèn hoa sen & Quà lưu niệm Shopee
+    const islandTable2 = new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.82, 1.25), counterWoodMat);
+    islandTable2.position.set(2.35, 0.51, 0.65);
+    islandTable2.castShadow = true;
+    kiosk.add(islandTable2);
+    const islandCloth2 = new THREE.Mesh(
+      new THREE.BoxGeometry(2.16, 0.05, 1.3),
+      new THREE.MeshStandardMaterial({ color: 0x1E5B3A, roughness: 0.85 })
+    );
+    islandCloth2.position.set(2.35, 0.94, 0.65);
+    kiosk.add(islandCloth2);
+    for (let si = 0; si < 4; si++) {
+      const cushion = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.2, 0.22, 0.12, 12),
+        si % 2 === 0 ? velvetTrayMat : shopeeOrangeMat
+      );
+      cushion.position.set(1.62 + si * 0.48, 1.03, 0.42);
+      kiosk.add(cushion);
+    }
+    const islandSign2 = new THREE.Mesh(
+      new THREE.BoxGeometry(1.75, 0.38, 0.05),
+      new THREE.MeshStandardMaterial({
+        map: makeTextTex('TRÀNG HẠT · BỒ ĐOÀN · QUÀ LƯU NIỆM', {
+          w: 720, h: 160, bg: '#FFF7E0', border: '#1B5836', color: '#1B5836', size: 35
+        }),
+        roughness: 0.4
+      })
+    );
+    islandSign2.position.set(2.35, 1.2, 1.05);
+    islandSign2.rotation.x = -0.22;
+    kiosk.add(islandSign2);
+
+    // 1j. ĐỒ TREO DƯỚI MÁI HIÊN CAO > 2.8m (NÓN LÁ, TÚI VẢI HOA SEN & KHÁNH BÌNH AN — KHÔNG CHẮN NGƯỜI!)
     const hatMat = new THREE.MeshStandardMaterial({ color: 0xE8D4A4, roughness: 0.8, side: THREE.DoubleSide });
-    for (const hx of [-4.75, -4.15]) {
+    for (const hx of [-6.4, -5.75]) {
       for (let hi = 0; hi < 3; hi++) {
-        const hat = new THREE.Mesh(new THREE.ConeGeometry(0.24, 0.15, 14, 1, true), hatMat);
-        hat.position.set(hx, 2.88 - hi * 0.2, 3.65);
+        const hat = new THREE.Mesh(new THREE.ConeGeometry(0.26, 0.16, 14, 1, true), hatMat);
+        hat.position.set(hx, 3.42 - hi * 0.22, 5.15);
         kiosk.add(hat);
       }
     }
-    const bagCols = [0xEFE4C8, 0xDCE6D4, 0xF2D8DC];
-    for (let bi = 0; bi < 3; bi++) {
+    const bagCols = [0xEFE4C8, 0xDCE6D4, 0xF2D8DC, 0xE5D4B8];
+    for (let bi = 0; bi < 4; bi++) {
       const bag = new THREE.Mesh(
-        new THREE.BoxGeometry(0.28, 0.34, 0.06),
+        new THREE.BoxGeometry(0.3, 0.36, 0.06),
         new THREE.MeshStandardMaterial({ color: bagCols[bi], roughness: 0.85 })
       );
-      bag.position.set(3.2 + bi * 0.44, 2.75, 3.65);
+      bag.position.set(4.5 + bi * 0.48, 3.25, 5.15);
       kiosk.add(bag);
     }
-    for (let ti = 0; ti < 9; ti++) {
-      const tx = -3.0 + ti * 0.74;
-      const charm = new THREE.Mesh(new THREE.OctahedronGeometry(0.055, 0), goldMat);
-      charm.position.set(tx, 3.12, 3.72);
+    for (let ti = 0; ti < 11; ti++) {
+      const tx = -4.2 + ti * 0.84;
+      const charm = new THREE.Mesh(new THREE.OctahedronGeometry(0.06, 0), goldMat);
+      charm.position.set(tx, 3.72, 5.22);
       kiosk.add(charm);
-      const tassel = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.024, 0.22, 6), velvetTrayMat);
-      tassel.position.set(tx, 2.94, 3.72);
+      const tassel = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.026, 0.24, 6), velvetTrayMat);
+      tassel.position.set(tx, 3.52, 5.22);
       kiosk.add(tassel);
     }
 
-    // 1k. BẢNG HIỆU CHÍNH TRANG NHÃ (tiếng Việt chuẩn chùa Việt)
+    // 1k. BẢNG HIỆU CHÍNH RỘNG RÃI TRANG NHÃ
     const mainSign = new THREE.Mesh(
-      new THREE.BoxGeometry(9.6, 0.92, 0.14),
+      new THREE.BoxGeometry(13.2, 1.05, 0.16),
       new THREE.MeshStandardMaterial({
-        map: makeTextTex('NHÀ LƯU NIỆM · ĐẶC SẢN CHAY CHÙA VĨNH TRÀNG', {
-          w: 1800,
-          h: 180,
+        map: makeTextTex('NHÀ LƯU NIỆM · TIỆM TẠP HÓA ĐẶC SẢN CHAY VĨNH TRÀNG', {
+          w: 2048,
+          h: 190,
           bg: '#1B5836',
           border: '#F4CC6A',
           color: '#FFF8E5',
@@ -462,14 +507,14 @@ export const groceryHallsStatuesMethods = {
         roughness: 0.36
       })
     );
-    mainSign.position.set(0, 3.68, 3.82);
+    mainSign.position.set(0, 4.48, 5.32);
     kiosk.add(mainSign);
 
     const subMenuBoard = new THREE.Mesh(
-      new THREE.BoxGeometry(1.45, 0.68, 0.08),
+      new THREE.BoxGeometry(2.1, 0.78, 0.08),
       new THREE.MeshStandardMaterial({
-        map: makeTextTex('KHO QUẸT CHAY · TRÀNG HẠT · ĐỒ CHÙA', {
-          w: 840,
+        map: makeTextTex('30+ MẶT HÀNG · MỜI BƯỚC VÀO MUA SẮM', {
+          w: 920,
           h: 220,
           bg: '#FFF6DE',
           border: '#1B5836',
@@ -479,39 +524,52 @@ export const groceryHallsStatuesMethods = {
         roughness: 0.42
       })
     );
-    subMenuBoard.position.set(4.55, 2.42, 3.74);
+    subMenuBoard.position.set(5.95, 2.85, 5.24);
     kiosk.add(subMenuBoard);
 
     const trigRing = new THREE.Mesh(
-      new THREE.RingGeometry(0.75, 1.08, 28),
+      new THREE.RingGeometry(0.95, 1.32, 28),
       new THREE.MeshBasicMaterial({ color: 0xFFD166, side: THREE.DoubleSide, transparent: true, opacity: 0.72 })
     );
     trigRing.rotation.x = -Math.PI / 2;
-    trigRing.position.set(0, 0.12, 2.1);
+    trigRing.position.set(0, 0.12, 3.2);
     kiosk.add(trigRing);
 
     this.exteriorGroup.add(kiosk);
     this.stallAnchors.push(kiosk);
-    this.stallClickTargets.push(sideCounter, showcaseGlass, islandTable, mainSign, mainRoof, frontAwning, fridgeBody, trigRing);
+    this.stallClickTargets.push(
+      sideCounter,
+      showcaseGlass,
+      islandTable,
+      islandTable2,
+      mainSign,
+      mainRoof,
+      frontAwning,
+      fridgeBody,
+      shopeeBoard,
+      trigRing
+    );
 
-    // Đăng ký vùng tương tác bao trùm cả trong và trước cửa Nhà Lưu Niệm để vào trong là mở cửa hàng ngay!
+    // Vùng tương tác bao trùm toàn bộ bên trong gian hàng để đi tới bất kỳ quầy nào đều mở mua sắm ngay!
     this.stallTriggers.push({
       x: 42.2,
-      z: -32.2,
-      radius: 6.2,
+      z: -33.2,
+      radius: 8.2,
       stallType: 'phap_khi',
-      title: 'Nhà Lưu Niệm · Đặc Sản Chay Chùa Vĩnh Tràng'
+      title: 'Nhà Lưu Niệm · Tiệm Tạp Hóa Đặc Sản Chay'
     });
 
-    // Colliders CHỈ BỌC 3 VÁCH TƯỜNG + BÀN ĐẢO GIỮA — MỞ TOANG TOÀN BỘ LỐI ĐI VÀO TRONG NHÀ LƯU NIỆM!
-    // Back wall & shelves (world z = -37.2 .. -35.8)
-    this.addRectObstacle(36.5, 47.9, -37.2, -35.85);
-    // Left wall, fridge & robe rack (world x = 36.5 .. 38.0)
-    this.addRectObstacle(36.5, 38.05, -37.2, -29.8);
-    // Right wall & side checkout counter (world x = 46.0 .. 47.9)
-    this.addRectObstacle(46.0, 47.9, -37.2, -29.8);
-    // Compact central display island (walkable all around!)
-    this.addRectObstacle(41.15, 42.85, -33.75, -32.75);
+    // Colliders CHỈ BỌC 3 VÁCH TƯỜNG + 2 ĐẢO TRƯNG BÀY — MỞ RỘNG TOÀN BỘ LỐI ĐI BỘ VÀO TRONG MUA SẮM!
+    // Back wall & shelves (world z = -39.5 .. -38.15)
+    this.addRectObstacle(34.5, 49.9, -39.5, -38.15);
+    // Left wall, fridge & robe rack (world x = 34.5 .. 36.1)
+    this.addRectObstacle(34.5, 36.1, -39.5, -28.9);
+    // Right wall & cashier counter (world x = 47.9 .. 49.9)
+    this.addRectObstacle(47.9, 49.9, -39.5, -28.9);
+    // Left display island (world x = 38.6..40.7, z = -34.2..-32.9)
+    this.addRectObstacle(38.6, 40.7, -34.2, -32.9);
+    // Right display island (world x = 43.5..45.6, z = -34.2..-32.9)
+    this.addRectObstacle(43.5, 45.6, -34.2, -32.9);
 
     // =========================================================================
     // 2. BÊN PHẢI SÂN RẼ TRÁI (x = 50.8..56.8, z = -27.5..-10.0):

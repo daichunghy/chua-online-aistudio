@@ -302,38 +302,40 @@ export function buildSquareChanhDienInterior(world, THREE) {
   eastNorthExtFloor.receiveShadow = true;
   g.add(eastNorthExtFloor);
 
-  // Grand Chánh Điện Hall warm terracotta tile floor (x ∈ [-41.6, -15.2], z ∈ [-11.8, +11.8])
-  const chanhDienFloor = new THREE.Mesh(new THREE.PlaneGeometry(26.8, 23.8), gachTauMat);
+  // Grand Chánh Điện Hall warm terracotta tile floor — MỞ RỘNG CHỨA 100+ PHẬT TỬ (x ∈ [-62.6, -15.2], z ∈ [-21.0, +21.0])
+  const chanhDienFloor = new THREE.Mesh(new THREE.PlaneGeometry(47.8, 42.2), gachTauMat);
   chanhDienFloor.rotation.x = -Math.PI / 2;
-  chanhDienFloor.position.set(-28.4, 0.012, 0);
+  chanhDienFloor.position.set(-38.9, 0.012, 0);
   chanhDienFloor.receiveShadow = true;
   g.add(chanhDienFloor);
 
-  // Ceremonial crimson carpet runner in FRONT of the outward-facing Buddha (from front Tam Quan arches x = -40.8 to Tam Bảo front x = -26.8)
-  const chanhDienRunner = new THREE.Mesh(new THREE.PlaneGeometry(14.2, 3.6), carpetRunnerMat);
+  // Ceremonial crimson carpet runner in FRONT of the outward-facing Buddha (x = -61.8 to Tam Bảo front x = -26.8)
+  const chanhDienRunner = new THREE.Mesh(new THREE.PlaneGeometry(35.2, 4.4), carpetRunnerMat);
   chanhDienRunner.rotation.x = -Math.PI / 2;
-  chanhDienRunner.position.set(-33.8, 0.018, 0);
+  chanhDienRunner.position.set(-44.3, 0.018, 0);
   chanhDienRunner.receiveShadow = true;
   g.add(chanhDienRunner);
 
+  // Side ceremonial carpet aisles flanking the 112-cushion worship blocks (z = ±10.5)
+  for (const aisleZ of [-10.5, 10.5]) {
+    const sideAisleRunner = new THREE.Mesh(new THREE.PlaneGeometry(39.0, 2.2), carpetRunnerMat);
+    sideAisleRunner.rotation.x = -Math.PI / 2;
+    sideAisleRunner.position.set(-41.5, 0.017, aisleZ);
+    sideAisleRunner.receiveShadow = true;
+    g.add(sideAisleRunner);
+  }
+
   // Guiding crimson walkaround runners ("Lối đi vòng hai bên vào Chánh Điện chiêm bái Phật")
-  const rearVestibuleRunner = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 14.4), carpetRunnerMat);
+  const rearVestibuleRunner = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 23.0), carpetRunnerMat);
   rearVestibuleRunner.rotation.x = -Math.PI / 2;
   rearVestibuleRunner.position.set(-18.6, 0.017, 0);
   rearVestibuleRunner.receiveShadow = true;
   g.add(rearVestibuleRunner);
-  const rearDoorEntryStrip = new THREE.Mesh(new THREE.PlaneGeometry(3.4, 2.8), carpetRunnerMat);
+  const rearDoorEntryStrip = new THREE.Mesh(new THREE.PlaneGeometry(3.4, 3.2), carpetRunnerMat);
   rearDoorEntryStrip.rotation.x = -Math.PI / 2;
   rearDoorEntryStrip.position.set(-16.9, 0.017, 0);
   rearDoorEntryStrip.receiveShadow = true;
   g.add(rearDoorEntryStrip);
-  for (const sideZ of [-6.4, 6.4]) {
-    const sideLoopRunner = new THREE.Mesh(new THREE.PlaneGeometry(17.6, 1.85), carpetRunnerMat);
-    sideLoopRunner.rotation.x = -Math.PI / 2;
-    sideLoopRunner.position.set(-26.8, 0.017, sideZ);
-    sideLoopRunner.receiveShadow = true;
-    g.add(sideLoopRunner);
-  }
 
   // Open-sky Center Courtyard terracotta paving ("Sân Thiên Tỉnh Hình Vuông" — 21.2m × 21.2m)
   const centerTerracotta = new THREE.Mesh(new THREE.PlaneGeometry(21.2, 21.2), gachTauMat);
@@ -498,10 +500,10 @@ export function buildSquareChanhDienInterior(world, THREE) {
     { minX: 17.6, maxX: 32.4, minZ: 20.3, maxZ: 21.2 },
     // Far East perimeter wall (x = +32.0)
     { minX: 31.6, maxX: 32.5, minZ: -56.6, maxZ: 21.2 },
-    // Grand Chánh Điện outer walls (North z = -11.8, South z = +11.8, West Front Facade x = -41.4 facing Cổng Tam Quan)
-    { minX: -42.0, maxX: -15.2, minZ: -12.3, maxZ: -11.4 },
-    { minX: -42.0, maxX: -15.2, minZ: 11.4, maxZ: 12.3 },
-    { minX: -42.0, maxX: -41.0, minZ: -12.3, maxZ: 12.3 },
+    // Grand Chánh Điện outer walls — MỞ RỘNG 100+ PHẬT TỬ (North z = -20.8, South z = +20.8, West Front Facade x = -62.4)
+    { minX: -63.0, maxX: -15.2, minZ: -21.4, maxZ: -20.4 },
+    { minX: -63.0, maxX: -15.2, minZ: 20.4, maxZ: 21.4 },
+    { minX: -63.0, maxX: -61.8, minZ: -21.4, maxZ: 21.4 },
     // North wall flanking the Open Sunlit Exit Archway at z = -56.0 (open x ∈ [12.5, 22.0])
     { minX: 10.2, maxX: 12.6, minZ: -56.6, maxZ: -55.4 },
     { minX: 22.0, maxX: 32.4, minZ: -56.6, maxZ: -55.4 }
@@ -519,8 +521,8 @@ export function buildSquareChanhDienInterior(world, THREE) {
     { w: 5.0, d: 21.2, x: -13.0, z: 0 },
     // Entire Wide Extended East Wing roof (x = +10.6 .. +32.2, z = -56.6 .. +21.0)
     { w: 21.8, d: 77.8, x: 21.4, z: -17.8 },
-    // Grand West Chánh Điện Hall roof (x = -41.6 .. -15.2, z = -12.0 .. +12.0)
-    { w: 26.8, d: 24.2, x: -28.4, z: 0 }
+    // Grand West Chánh Điện Hall roof — 100+ Pilgrim Nave (x = -62.8 .. -15.2, z = -21.0 .. +21.0)
+    { w: 48.0, d: 42.4, x: -39.0, z: 0 }
   ];
   for (const rs of roofSlabs) {
     const ceil = registerCutaway(new THREE.Mesh(new THREE.BoxGeometry(rs.w, 0.28, rs.d), ceilingWoodMat));
@@ -1812,42 +1814,43 @@ function buildWestGrandChanhDienAndNorthToDuong(world, THREE, ctx) {
   world.interiorObstacles.push({ x: -13.6, z: -4.8, r: 0.92 });
 
   // =========================================================================================
-  // B. INSIDE THE GRAND MAIN CHÁNH ĐIỆN HALL (x = -15.4 .. -41.4, z = -11.6 .. +11.6)
-  //    Authentic Chùa Vĩnh Tràng spatial layout:
-  //    - Enter from Hòn Non Bộ rear doorway (x = -15.2) after leaving shoes outside ("để dép bên ngoài")
-  //    - Central Ban Thờ Tam Bảo (Phật ở giữa, x = -25.2, z = 0) faces OUTWARD (-X, toward Cổng Tam Quan!)
-  //    - Carved red-and-gold rear screen behind Buddha invites worshippers to walk around ("đi vòng")
-  //      via wide North/South aisles lined by 18 Vị La Hán xung quanh (9 North + 9 South)
-  //    - Front worship nave (x = -27 .. -41) looks straight at the golden Buddha framed by Bao Lam,
-  //      Long Trụ, Nhang Khoanh & kneeling cushions, with sunlit Cổng Tam Quan front arches behind!
+  // B. INSIDE THE GRAND MAIN CHÁNH ĐIỆN HALL — MỞ RỘNG ĐẠI HÙNG BỬU ĐIỆN 100+ PHẬT TỬ
+  //    (x = -15.4 .. -62.4, z = -20.8 .. +20.8 — 47.0m × 41.6m ≈ 1,955 m²)
+  //    - Central Ban Thờ Tam Bảo (x = -25.2, z = 0) faces OUTWARD (-X, toward Cổng Tam Quan!)
+  //    - 112 Plush Crimson-Gold Kneeling Cushions (7 rows × 16 columns via 3 InstancedMeshes!)
+  //      comfortably accommodate 100+ simultaneous pilgrims with wide central & side aisles!
+  //    - 18 Vị La Hán line both grand North (z = -19.55) & South (z = +19.55) gallery walls!
   // =========================================================================================
 
-  // B1. Authentic Dark Timber Side Walls (North z = -11.7, South z = +11.7) + Sunlit Front Tam Quan Arch Facade (x = -41.4)
-  for (const sideZ of [-11.7, 11.7]) {
-    const cdSideWall = registerCutaway(new THREE.Mesh(new THREE.BoxGeometry(26.4, 8.9, 0.44), wallWoodMat));
-    cdSideWall.position.set(-28.4, 4.45, sideZ);
+  // B1. Authentic Dark Timber Side Walls (North z = -20.8, South z = +20.8) + Sunlit Front Tam Quan Arch Facade (x = -62.4)
+  for (const sideZ of [-20.8, 20.8]) {
+    const cdSideWall = registerCutaway(new THREE.Mesh(new THREE.BoxGeometry(47.4, 8.95, 0.46), wallWoodMat));
+    cdSideWall.position.set(-38.9, 4.48, sideZ);
     cdSideWall.receiveShadow = true;
     g.add(cdSideWall);
+    const cdSideUpper = registerCutaway(new THREE.Mesh(new THREE.BoxGeometry(47.2, 2.6, 0.5), frenchCreamMat));
+    cdSideUpper.position.set(-38.9, 7.2, sideZ);
+    g.add(cdSideUpper);
   }
 
-  // Sunlit West Front Facade at x = -41.4 (5 Franco-Khmer golden arches looking out toward Front Courtyard & Cổng Tam Quan!)
+  // Sunlit West Front Facade at x = -62.4 (9 Franco-Khmer golden arches looking out toward Front Courtyard & Cổng Tam Quan!)
   const frontTamQuanFacade = new THREE.Group();
-  frontTamQuanFacade.position.set(-41.4, 0, 0);
-  frontTamQuanFacade.rotation.y = Math.PI / 2; // Local +Z faces East (+X) into the worship hall; local -Z looks West (-X) out toward Cổng Tam Quan!
+  frontTamQuanFacade.position.set(-62.4, 0, 0);
+  frontTamQuanFacade.rotation.y = Math.PI / 2;
 
   const ironGrilleMat = new THREE.MeshStandardMaterial({ color: 0x2A231E, metalness: 0.65, roughness: 0.38 });
-  const frontUpperHeader = registerCutaway(new THREE.Mesh(new THREE.BoxGeometry(23.6, 3.35, 0.44), frenchCreamMat));
+  const frontUpperHeader = registerCutaway(new THREE.Mesh(new THREE.BoxGeometry(41.8, 3.35, 0.44), frenchCreamMat));
   frontUpperHeader.position.set(0, 7.15, 0);
   frontTamQuanFacade.add(frontUpperHeader);
-  const frontCornice = new THREE.Mesh(new THREE.BoxGeometry(23.8, 0.32, 0.62), terraTrimMat);
+  const frontCornice = new THREE.Mesh(new THREE.BoxGeometry(42.0, 0.32, 0.62), terraTrimMat);
   frontCornice.position.set(0, 5.45, 0);
   frontTamQuanFacade.add(frontCornice);
 
-  // 5 Franco-Khmer yellow-ochre arched portals spanning z = -10.5 .. +10.5 (bay width 4.2m)
-  for (let bi = -2; bi <= 2; bi++) {
-    const u = bi * 4.2;
+  // 9 Franco-Khmer yellow-ochre arched portals spanning z = -18.0 .. +18.0 (bay width 4.5m)
+  for (let bi = -4; bi <= 4; bi++) {
+    const u = bi * 4.5;
     const isCenterDoor = bi === 0;
-    for (const px of [-2.05, 2.05]) {
+    for (const px of [-2.2, 2.2]) {
       const pier = new THREE.Mesh(new THREE.BoxGeometry(0.46, 5.4, 0.52), frenchOchreMat);
       pier.position.set(u + px, 2.7, 0);
       frontTamQuanFacade.add(pier);
@@ -1855,48 +1858,45 @@ function buildWestGrandChanhDienAndNorthToDuong(world, THREE, ctx) {
       cap.position.set(u + px, 5.32, 0);
       frontTamQuanFacade.add(cap);
     }
-    const archRing = new THREE.Mesh(new THREE.TorusGeometry(1.65, 0.17, 10, 24, Math.PI), frenchOchreMat);
-    archRing.position.set(u, 3.72, 0);
+    const archRing = new THREE.Mesh(new THREE.TorusGeometry(1.78, 0.17, 10, 24, Math.PI), frenchOchreMat);
+    archRing.position.set(u, 3.68, 0);
     frontTamQuanFacade.add(archRing);
 
     if (isCenterDoor) {
-      // Ornate open central ceremonial doorway looking straight out to sunlit front steps & Cổng Tam Quan
       for (const side of [-1, 1]) {
-        const doorLeaf = new THREE.Mesh(new THREE.BoxGeometry(1.15, 3.85, 0.1), doorRedLacquerMat);
-        doorLeaf.position.set(side * 1.48, 1.95, 0.35);
+        const doorLeaf = new THREE.Mesh(new THREE.BoxGeometry(1.25, 3.95, 0.1), doorRedLacquerMat);
+        doorLeaf.position.set(side * 1.62, 1.98, 0.35);
         doorLeaf.rotation.y = side * 0.85;
         frontTamQuanFacade.add(doorLeaf);
       }
       const frontHitbox = new THREE.Mesh(
-        new THREE.BoxGeometry(3.8, 4.8, 1.2),
+        new THREE.BoxGeometry(4.2, 4.9, 1.2),
         new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false })
       );
-      frontHitbox.position.set(0, 2.4, -0.35);
+      frontHitbox.position.set(0, 2.45, -0.35);
       frontHitbox.userData.exitSide = 'front_tam_quan';
       frontTamQuanFacade.add(frontHitbox);
       world.interiorDoorClickTargets.push(frontHitbox);
     } else {
-      // Side arched bays with traditional low cream balustrade + sunlit iron-grille window
-      const lowWall = new THREE.Mesh(new THREE.BoxGeometry(3.7, 1.05, 0.36), frenchCreamMat);
+      const lowWall = new THREE.Mesh(new THREE.BoxGeometry(4.0, 1.05, 0.36), frenchCreamMat);
       lowWall.position.set(u, 0.52, 0);
       frontTamQuanFacade.add(lowWall);
       for (let bar = -4; bar <= 4; bar++) {
         const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 3.25, 6), ironGrilleMat);
-        rod.position.set(u + bar * 0.38, 2.7, 0);
+        rod.position.set(u + bar * 0.42, 2.7, 0);
         frontTamQuanFacade.add(rod);
       }
-      const midBar = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.06, 0.06), goldLeafMat);
+      const midBar = new THREE.Mesh(new THREE.BoxGeometry(3.9, 0.06, 0.06), goldLeafMat);
       midBar.position.set(u, 2.65, 0);
       frontTamQuanFacade.add(midBar);
     }
   }
 
-  // Ceremonial sign inside the front arches showing the orientation toward Cổng Tam Quan
   const frontTamQuanSign = new THREE.Mesh(
-    new THREE.PlaneGeometry(6.6, 0.66),
+    new THREE.PlaneGeometry(8.6, 0.72),
     new THREE.MeshBasicMaterial({
-      map: world.makeSignTexture('☀ CỬA CHÍNH MẶT TIỀN · HƯỚNG RA SÂN TRƯỚC & CỔNG TAM QUAN', {
-        w: 1120,
+      map: world.makeSignTexture('☀ ĐẠI HÙNG BỬU ĐIỆN · CỬA CHÍNH HƯỚNG RA SÂN TRƯỚC & CỔNG TAM QUAN', {
+        w: 1280,
         h: 130,
         bg: '#4A120E',
         border: '#F3C85A',
@@ -1906,136 +1906,187 @@ function buildWestGrandChanhDienAndNorthToDuong(world, THREE, ctx) {
       side: THREE.DoubleSide
     })
   );
-  frontTamQuanSign.position.set(0, 5.95, 0.32);
+  frontTamQuanSign.position.set(0, 6.0, 0.32);
   frontTamQuanSign.userData.exitSide = 'front_tam_quan';
   frontTamQuanFacade.add(frontTamQuanSign);
   world.interiorDoorClickTargets.push(frontTamQuanSign);
 
-  // Sunlit Exterior Front Courtyard & Cổng Tam Quan Vista right outside the West Front Facade (local -Z -> world -X)
   const frontPorchFloor = new THREE.Mesh(
-    new THREE.PlaneGeometry(24.0, 15.0),
+    new THREE.PlaneGeometry(42.0, 16.0),
     new THREE.MeshStandardMaterial({ color: 0xD2C3A5, roughness: 0.72 })
   );
   frontPorchFloor.rotation.x = -Math.PI / 2;
-  frontPorchFloor.position.set(0, -0.02, -7.8);
+  frontPorchFloor.position.set(0, -0.02, -8.2);
   frontTamQuanFacade.add(frontPorchFloor);
 
   const frontSkyVista = new THREE.Mesh(
-    new THREE.PlaneGeometry(26.0, 14.0),
+    new THREE.PlaneGeometry(46.0, 16.0),
     new THREE.MeshBasicMaterial({ color: 0x87C8FA, side: THREE.DoubleSide })
   );
-  frontSkyVista.position.set(0, 6.4, -14.8);
+  frontSkyVista.position.set(0, 6.8, -15.6);
   frontTamQuanFacade.add(frontSkyVista);
 
-  // Silhouette of Cổng Tam Quan & lotus garden seen straight outside the front doorway
   const vistaGateGrp = new THREE.Group();
-  vistaGateGrp.position.set(0, 0, -12.6);
-  for (const gx of [-3.2, -1.35, 1.35, 3.2]) {
-    const gp = new THREE.Mesh(new THREE.BoxGeometry(0.42, 4.4, 0.42), frenchOchreMat);
-    gp.position.set(gx, 2.2, 0);
+  vistaGateGrp.position.set(0, 0, -13.2);
+  for (const gx of [-3.4, -1.45, 1.45, 3.4]) {
+    const gp = new THREE.Mesh(new THREE.BoxGeometry(0.44, 4.6, 0.44), frenchOchreMat);
+    gp.position.set(gx, 2.3, 0);
     vistaGateGrp.add(gp);
   }
-  const gateRoof1 = new THREE.Mesh(new THREE.BoxGeometry(7.6, 0.55, 0.9), terraTrimMat);
-  gateRoof1.position.set(0, 4.55, 0);
+  const gateRoof1 = new THREE.Mesh(new THREE.BoxGeometry(8.0, 0.58, 0.92), terraTrimMat);
+  gateRoof1.position.set(0, 4.75, 0);
   vistaGateGrp.add(gateRoof1);
-  const gateUpper = new THREE.Mesh(new THREE.BoxGeometry(3.8, 1.45, 0.65), frenchCreamMat);
-  gateUpper.position.set(0, 5.5, 0);
+  const gateUpper = new THREE.Mesh(new THREE.BoxGeometry(4.0, 1.5, 0.68), frenchCreamMat);
+  gateUpper.position.set(0, 5.7, 0);
   vistaGateGrp.add(gateUpper);
-  const gateRoof2 = new THREE.Mesh(new THREE.BoxGeometry(4.4, 0.48, 0.85), terraTrimMat);
-  gateRoof2.position.set(0, 6.42, 0);
+  const gateRoof2 = new THREE.Mesh(new THREE.BoxGeometry(4.6, 0.5, 0.88), terraTrimMat);
+  gateRoof2.position.set(0, 6.65, 0);
   vistaGateGrp.add(gateRoof2);
   frontTamQuanFacade.add(vistaGateGrp);
   g.add(frontTamQuanFacade);
 
-  // B2. Exposed Vietnamese Timber Roof Trusses ("Hệ vì kèo chồng rường / kẻ truyền") spanning across Z
+  // B2. Exposed Vietnamese Timber Roof Trusses ("Hệ vì kèo chồng rường / kẻ truyền") spanning full 40.8m width
   const addTimberViKeoTrussX = (xPos) => {
     const truss = registerCutaway(new THREE.Group());
-    truss.position.set(xPos, 6.3, 0);
-    const spanW = 22.8;
-    const apexH = 2.25;
-    const tieBeam = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.24, spanW), rafterMat);
+    truss.position.set(xPos, 6.5, 0);
+    const spanW = 40.6;
+    const apexH = 2.2;
+    const tieBeam = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.26, spanW), rafterMat);
     truss.add(tieBeam);
-    const kingPost = new THREE.Mesh(new THREE.BoxGeometry(0.22, apexH, 0.22), rafterMat);
+    const kingPost = new THREE.Mesh(new THREE.BoxGeometry(0.24, apexH, 0.24), rafterMat);
     kingPost.position.y = apexH * 0.5;
     truss.add(kingPost);
-    for (const qz of [-5.2, 5.2]) {
-      const qH = apexH * 0.54;
-      const qp = new THREE.Mesh(new THREE.BoxGeometry(0.18, qH, 0.18), rafterMat);
+    for (const qz of [-10.4, 10.4]) {
+      const qH = apexH * 0.56;
+      const qp = new THREE.Mesh(new THREE.BoxGeometry(0.2, qH, 0.2), rafterMat);
       qp.position.set(0, qH * 0.5, qz);
       truss.add(qp);
     }
-    const collar = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.18, 11.2), rafterMat);
-    collar.position.y = apexH * 0.54;
+    const collar = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.2, 21.4), rafterMat);
+    collar.position.y = apexH * 0.56;
     truss.add(collar);
     const halfSpan = spanW * 0.5;
     const rafLen = Math.hypot(halfSpan, apexH);
     const slope = Math.atan2(apexH, halfSpan);
     for (const sSign of [-1, 1]) {
-      const raf = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.2, rafLen), rafterMat);
+      const raf = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.22, rafLen), rafterMat);
       raf.position.set(0, apexH * 0.5, sSign * halfSpan * 0.5);
       raf.rotation.x = sSign * slope;
       truss.add(raf);
     }
     g.add(truss);
   };
-  for (const tx of [-18.0, -22.5, -27.0, -31.5, -36.0, -39.5]) {
+  for (const tx of [-18.5, -24.5, -30.5, -36.5, -42.5, -48.5, -54.5, -60.0]) {
     addTimberViKeoTrussX(tx);
   }
-  // Nave structural columns framing the side aisles (z = ±5.4, leaving wide walkaround aisles & 10.8m clear center nave!)
-  for (const cx of [-18.0, -22.5, -34.5, -38.5]) {
-    for (const cz of [-5.4, 5.4]) {
-      const plinth = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.34, 0.7), M.stoneLight);
-      plinth.position.set(cx, 0.17, cz);
+
+  // Grand colonnade along z = ±10.4 framing the 20.8m unobstructed central nave & twin side worship wings!
+  for (const cx of [-18.5, -24.5, -36.5, -43.5, -50.5, -57.5]) {
+    for (const cz of [-10.4, 10.4]) {
+      const plinth = new THREE.Mesh(new THREE.BoxGeometry(0.76, 0.36, 0.76), M.stoneLight);
+      plinth.position.set(cx, 0.18, cz);
       g.add(plinth);
-      const col = new THREE.Mesh(new THREE.CylinderGeometry(0.23, 0.26, 6.2, 16), darkLacquerColMat);
-      col.position.set(cx, 3.4, cz);
+      const col = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.29, 6.4, 16), darkLacquerColMat);
+      col.position.set(cx, 3.55, cz);
       col.castShadow = true;
       g.add(col);
-      const band = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.28, 0.16, 16), goldLeafMat);
-      band.position.set(cx, 5.9, cz);
+      const band = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.32, 0.18, 16), goldLeafMat);
+      band.position.set(cx, 6.1, cz);
       g.add(band);
-      world.interiorObstacles.push({ x: cx, z: cz, r: 0.4 });
+      world.interiorObstacles.push({ x: cx, z: cz, r: 0.44 });
     }
   }
 
   // B3. Grand Carved Gilded Bao Lam Arch (`bao-lam-thep-vang.glb`) framing the FRONT of Ban Thờ Tam Bảo at x = -29.8
   const baoLamAnchor = new THREE.Group();
   baoLamAnchor.position.set(-29.8, 0, 0);
-  baoLamAnchor.rotation.y = -Math.PI / 2; // Faces West (-X) toward worshippers in the front nave & Cổng Tam Quan!
+  baoLamAnchor.rotation.y = -Math.PI / 2;
   g.add(baoLamAnchor);
   world.baoLamAnchor = baoLamAnchor;
 
-  // B4. Pair of Carved Gilded Long Trụ (`long-tru-rong-cuon.glb`) flanking the front worship nave (z = ±4.9)
+  // B4. Pair of Carved Gilded Long Trụ (`long-tru-rong-cuon.glb`) flanking the front worship nave (z = ±5.4)
   for (const sideSign of [-1, 1]) {
     const ltGrp = new THREE.Group();
-    ltGrp.position.set(-30.6, 0, sideSign * 4.9);
-    const basePlinth = new THREE.Mesh(new THREE.CylinderGeometry(0.54, 0.62, 0.44, 12), M.stoneLight);
+    ltGrp.position.set(-30.6, 0, sideSign * 5.4);
+    const basePlinth = new THREE.Mesh(new THREE.CylinderGeometry(0.56, 0.64, 0.44, 12), M.stoneLight);
     basePlinth.position.y = 0.22;
     ltGrp.add(basePlinth);
-    const placeholderShaft = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.28, 6.0, 14), crimsonWoodMat);
-    placeholderShaft.position.y = 3.44;
+    const placeholderShaft = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.29, 6.2, 14), crimsonWoodMat);
+    placeholderShaft.position.y = 3.54;
     ltGrp.add(placeholderShaft);
     g.add(ltGrp);
     world.longTruPlaceholders.push({ group: ltGrp, replaceParts: [placeholderShaft], sideSign });
     world.longTruClickTargets.push(ltGrp);
-    world.interiorObstacles.push({ x: -30.6, z: sideSign * 4.9, r: 0.58 });
+    world.interiorObstacles.push({ x: -30.6, z: sideSign * 5.4, r: 0.6 });
   }
 
-  // B5. Hanging Spiral Incense Coils (`nhang-khoanh-dong.glb`) suspended high over the front worship nave
-  for (const [ix, iz] of [[-32.2, -2.8], [-32.2, 2.8], [-36.2, -2.8], [-36.2, 2.8]]) {
+  // B5. Hanging Spiral Incense Coils (`nhang-khoanh-dong.glb`) suspended across the vast 100-pilgrim worship hall
+  for (const [ix, iz] of [
+    [-33.5, -3.4], [-33.5, 3.4],
+    [-41.5, -3.4], [-41.5, 3.4],
+    [-49.5, -3.4], [-49.5, 3.4]
+  ]) {
     const anc = new THREE.Group();
-    anc.position.set(ix, 6.25, iz);
+    anc.position.set(ix, 6.45, iz);
     g.add(anc);
     world.spiralIncenseAnchors.push(anc);
   }
 
-  // B6. Generous Kneeling Worship Cushions in FRONT of Ban Thờ Tam Bảo (worshippers kneel facing +X toward center Buddha!)
-  for (const kx of [-31.8, -35.0]) {
-    for (const kz of [-2.2, 0.0, 2.2]) {
-      const csh = world.makeKneelingCushion();
-      csh.position.set(kx, 0, kz);
-      g.add(csh);
+  // B6. 112 PLUSH GOLDEN-CRIMSON BỒ ĐOÀN (7 ROWS × 16 COLUMNS) — ĐỦ SỨC CHỨA 100+ NGƯỜI CHƠI LỄ PHẬT CÙNG LÚC!
+  //     Rendered with 3 InstancedMeshes (only 3 draw calls total!) with wide central & side aisles!
+  {
+    const rowXs = [-33.4, -37.0, -40.6, -44.2, -47.8, -51.4, -55.0];
+    const colZs = [
+      -17.2, -15.6, -14.0, -12.4, // North outer wing (4 cols)
+      -8.5, -6.8, -5.1, -3.4,     // North inner nave (4 cols)
+      3.4, 5.1, 6.8, 8.5,         // South inner nave (4 cols)
+      12.4, 14.0, 15.6, 17.2      // South outer wing (4 cols)
+    ];
+    const totalMats = rowXs.length * colZs.length; // 112 bồ đoàn!
+    const matBaseGeo = new THREE.BoxGeometry(0.96, 0.04, 0.96);
+    const matBaseMat = new THREE.MeshStandardMaterial({ color: 0x6E1B16, roughness: 0.85 });
+    const padGeo = new THREE.CylinderGeometry(0.32, 0.36, 0.13, 14);
+    const padMat = new THREE.MeshStandardMaterial({ color: 0xA8291E, roughness: 0.72 });
+    const trimGeo = new THREE.TorusGeometry(0.31, 0.025, 6, 16);
+    trimGeo.rotateX(Math.PI / 2);
+    const trimMat = new THREE.MeshStandardMaterial({ color: 0xE6B84C, roughness: 0.35, metalness: 0.45 });
+
+    const matInst = new THREE.InstancedMesh(matBaseGeo, matBaseMat, totalMats);
+    const padInst = new THREE.InstancedMesh(padGeo, padMat, totalMats);
+    const trimInst = new THREE.InstancedMesh(trimGeo, trimMat, totalMats);
+    matInst.receiveShadow = true;
+    padInst.castShadow = false;
+    padInst.receiveShadow = true;
+
+    const dummy = new THREE.Object3D();
+    let idx = 0;
+    for (const kx of rowXs) {
+      for (const kz of colZs) {
+        dummy.position.set(kx, 0.032, kz);
+        dummy.rotation.set(0, 0, 0);
+        dummy.scale.set(1, 1, 1);
+        dummy.updateMatrix();
+        matInst.setMatrixAt(idx, dummy.matrix);
+
+        dummy.position.set(kx + 0.08, 0.11, kz);
+        dummy.updateMatrix();
+        padInst.setMatrixAt(idx, dummy.matrix);
+
+        dummy.position.set(kx + 0.08, 0.165, kz);
+        dummy.updateMatrix();
+        trimInst.setMatrixAt(idx, dummy.matrix);
+        idx++;
+      }
     }
+    matInst.instanceMatrix.needsUpdate = true;
+    padInst.instanceMatrix.needsUpdate = true;
+    trimInst.instanceMatrix.needsUpdate = true;
+    g.add(matInst, padInst, trimInst);
+
+    // Single wide warm sanctuary light bathing the entire 112-mat congregation hall (fast fragment shader cost)
+    const hallLightMid = new THREE.PointLight(0xFFDDA2, 2.8, 66.0, 0.9);
+    hallLightMid.position.set(-45.5, 6.8, 0);
+    g.add(hallLightMid);
   }
 
   // B7. CENTRAL BAN THỜ TAM BẢO (x = -25.2, z = 0) — PHẬT Ở GIỮA, QUAY RA NGOÀI HƯỚNG RA CỔNG TAM QUAN (-X)!
@@ -2135,18 +2186,42 @@ function buildWestGrandChanhDienAndNorthToDuong(world, THREE, ctx) {
   tamBaoGroup.add(tier3);
 
   // Sacred GLB Statue Anchors on Tam Bảo (all automatically face -X outward toward Cổng Tam Quan!)
+  const makeTamBaoPlaceholder = (scale = 1.0) => {
+    const ph = new THREE.Group();
+    ph.userData._placeholder = true;
+    const lotus = new THREE.Mesh(new THREE.CylinderGeometry(0.62 * scale, 0.72 * scale, 0.32 * scale, 16), goldLeafMat);
+    lotus.position.y = 0.16 * scale;
+    ph.add(lotus);
+    const robe = new THREE.Mesh(new THREE.ConeGeometry(0.56 * scale, 1.15 * scale, 14), goldLeafMat);
+    robe.position.y = 0.86 * scale;
+    ph.add(robe);
+    const chest = new THREE.Mesh(new THREE.CylinderGeometry(0.28 * scale, 0.4 * scale, 0.56 * scale, 12), goldLeafMat);
+    chest.position.y = 1.38 * scale;
+    ph.add(chest);
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.24 * scale, 14, 12), goldLeafMat);
+    head.position.y = 1.84 * scale;
+    ph.add(head);
+    const ushnisha = new THREE.Mesh(new THREE.SphereGeometry(0.11 * scale, 10, 8), goldLeafMat);
+    ushnisha.position.y = 2.08 * scale;
+    ph.add(ushnisha);
+    return ph;
+  };
+
   const tamBaoMainAnchor = new THREE.Group();
   tamBaoMainAnchor.position.set(0, 2.52, -0.58);
+  tamBaoMainAnchor.add(makeTamBaoPlaceholder(1.08));
   tamBaoGroup.add(tamBaoMainAnchor);
   world.tamBaoMainAnchor = tamBaoMainAnchor;
 
   const tamBaoLeftAnchor = new THREE.Group();
   tamBaoLeftAnchor.position.set(-2.35, 1.98, -0.35);
+  tamBaoLeftAnchor.add(makeTamBaoPlaceholder(0.82));
   tamBaoGroup.add(tamBaoLeftAnchor);
   world.tamBaoLeftAnchor = tamBaoLeftAnchor;
 
   const tamBaoRightAnchor = new THREE.Group();
   tamBaoRightAnchor.position.set(2.35, 1.98, -0.35);
+  tamBaoRightAnchor.add(makeTamBaoPlaceholder(0.82));
   tamBaoGroup.add(tamBaoRightAnchor);
   world.tamBaoRightAnchor = tamBaoRightAnchor;
 
@@ -2203,54 +2278,52 @@ function buildWestGrandChanhDienAndNorthToDuong(world, THREE, ctx) {
   world.interiorBellClickTargets.push(moStand);
   world.interiorObstacles.push({ x: -27.2, z: 7.8, r: 0.65 });
 
-  // B9. 18 VỊ LA HÁN GALLERY PLINTHS SURROUNDING THE ENTIRE CHÁNH ĐIỆN (NORTH & SOUTH WALLS AROUND CENTER BUDDHA!)
-  //     9 Arhats along North wall (z = -10.65) + 9 along South wall (z = +10.65) spanning x = -18.8 .. -38.0!
-  for (const sideZ of [-10.65, 10.65]) {
-    const benchPlinth = new THREE.Mesh(new THREE.BoxGeometry(21.6, 0.62, 1.12), doorTeakMat);
-    benchPlinth.position.set(-28.4, 0.31, sideZ);
+  // B9. 18 VỊ LA HÁN GALLERY PLINTHS SURROUNDING THE ENTIRE 100-PILGRIM CHÁNH ĐIỆN (NORTH z = -19.55 & SOUTH z = +19.55!)
+  for (const sideZ of [-19.55, 19.55]) {
+    const benchPlinth = new THREE.Mesh(new THREE.BoxGeometry(40.8, 0.66, 1.35), doorTeakMat);
+    benchPlinth.position.set(-38.6, 0.33, sideZ);
     benchPlinth.receiveShadow = true;
     g.add(benchPlinth);
-    const benchTrim = new THREE.Mesh(new THREE.BoxGeometry(21.72, 0.06, 1.18), goldLeafMat);
-    benchTrim.position.set(-28.4, 0.64, sideZ);
+    const benchTrim = new THREE.Mesh(new THREE.BoxGeometry(41.0, 0.07, 1.42), goldLeafMat);
+    benchTrim.position.set(-38.6, 0.68, sideZ);
     g.add(benchTrim);
 
     const sideSign = new THREE.Mesh(
-      new THREE.PlaneGeometry(4.8, 0.52),
+      new THREE.PlaneGeometry(6.4, 0.62),
       new THREE.MeshBasicMaterial({
         map: world.makeSignTexture(
-          sideZ < 0 ? 'THẬP BÁT LA HÁN · DÃY BẮC (9 VỊ XUNG QUANH CHÁNH ĐIỆN)' : 'THẬP BÁT LA HÁN · DÃY NAM (9 VỊ XUNG QUANH CHÁNH ĐIỆN)',
+          sideZ < 0 ? 'THẬP BÁT LA HÁN GỖ MÍT 1907 · DÃY BẮC (9 VỊ)' : 'THẬP BÁT LA HÁN GỖ MÍT 1907 · DÃY NAM (9 VỊ)',
           {
-            w: 1040,
+            w: 1120,
             h: 130,
             bg: '#4A120E',
             border: '#E5B24C',
             color: '#FFECC7',
-            size: 30
+            size: 32
           }
         )
       })
     );
-    sideSign.position.set(-28.4, 3.55, sideZ + (sideZ < 0 ? 0.85 : -0.85));
+    sideSign.position.set(-38.6, 3.85, sideZ + (sideZ < 0 ? 0.92 : -0.92));
     sideSign.rotation.y = sideZ < 0 ? 0 : Math.PI;
     g.add(sideSign);
 
-    // Clean narrow obstacle right along the wall plinth (leaves generous >9m hall width between plinths!)
     world.interiorRectObstacles.push({
-      minX: -39.4,
-      maxX: -17.4,
-      minZ: sideZ - 0.65,
-      maxZ: sideZ + 0.65
+      minX: -59.2,
+      maxX: -18.0,
+      minZ: sideZ - 0.78,
+      maxZ: sideZ + 0.78
     });
   }
 
-  // Register exact slot coordinates for all 18 sculpted GLB Arhats surrounding the center Buddha (mounted in glb-loading.mjs)
+  // Register exact slot coordinates for all 18 sculpted GLB Arhats along the expanded grand hall (4.4m spacious spacing!)
   for (let i = 0; i < 18; i++) {
     const isNorth = i < 9;
     const colIdx = i % 9;
-    const ax = -18.8 - colIdx * 2.4;
-    const az = isNorth ? -10.65 : 10.65;
-    const facing = isNorth ? 0 : Math.PI; // Facing inward toward the center Buddha & worshippers!
-    world.arhatSlotSpecs.push({ index: i, x: ax, y: 0.67, z: az, facing });
+    const ax = -20.8 - colIdx * 4.4;
+    const az = isNorth ? -19.55 : 19.55;
+    const facing = isNorth ? 0 : Math.PI;
+    world.arhatSlotSpecs.push({ index: i, x: ax, y: 0.72, z: az, facing });
   }
 
   // =========================================================================================

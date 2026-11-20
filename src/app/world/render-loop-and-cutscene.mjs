@@ -5,15 +5,31 @@
  * Được gắn vào class trong vinh-trang-3d-world.mjs qua applyMixins().
  */
 import { THREE, findCharacterBones, _koiPos, _koiTan, normalizeAnimKey, CHAR_HEIGHTS } from './shared.mjs';
+import {
+  stepWalkingPhysics,
+  getTerrainGroundHeight
+} from '../../logic/modules/pathfinding-and-collision.mjs';
+import { evaluatePigeonState } from '../../logic/modules/living-world.mjs';
+
+function smoothstep01(t) {
+  const c = Math.max(0, Math.min(1, t));
+  return c * c * (3 - 2 * c);
+}
 
 export const renderLoopAndCutsceneMethods = {
   updateAutoWalk(dt) {
     if (!this.autoWalkWaypoints.length) return;
+    if (!this.playerPhysics) {
+      this.playerPhysics = { vx: 0, vz: 0, speed: 0, stridePhase: 0, gaitMode: 'normal', actualSpeed: 0 };
+    }
     const wp = this.autoWalkWaypoints[0];
     const dx = wp.x - this.playerState.x;
     const dz = wp.z - this.playerState.z;
     const dist = Math.hypot(dx, dz);
-    if (dist < 0.55) {
+    const isFinalWp = this.autoWalkWaypoints.length === 1;
+    const reachRadius = isFinalWp ? 0.42 : 0.72;
+
+    if (dist < reachRadius) {
       this.autoWalkWaypoints.shift();
       if (this._stuckTracker) {
         this._stuckTracker.timer = 0;
@@ -22,6 +38,10 @@ export const renderLoopAndCutsceneMethods = {
       }
       if (this.autoWalkWaypoints.length === 0) {
         this.playerState.moving = false;
+        this.playerPhysics.vx = 0;
+        this.playerPhysics.vz = 0;
+        this.playerPhysics.speed = 0;
+        this.playerPhysics.actualSpeed = 0;
         if (wp.lookAt) {
           const ldx = wp.lookAt.x - this.playerState.x;
           const ldz = wp.lookAt.z - this.playerState.z;
@@ -49,36 +69,66 @@ export const renderLoopAndCutsceneMethods = {
       return;
     }
 
-    const stepSpeed = Math.min(dist, dt * (this.inInterior ? 4.6 : 5.5));
+    const finalWp = this.autoWalkWaypoints[this.autoWalkWaypoints.length - 1];
+    const distToFinal = isFinalWp
+      ? dist
+      : Math.hypot(finalWp.x - this.playerState.x, finalWp.z - this.playerState.z);
+
     const nx = dx / dist;
     const nz = dz / dist;
+    const maxSpeed = this.getMaxWalkSpeed ? this.getMaxWalkSpeed() : (this.inInterior ? 3.85 : 4.65);
+    const phys = stepWalkingPhysics(this.playerPhysics, nx, nz, {
+      dt,
+      maxSpeed,
+      accel: this.playerPhysics.gaitMode === 'thien_hanh' ? 6.5 : 10.5,
+      decel: 14.0,
+      distToFinal,
+      strideLength: this.playerPhysics.gaitMode === 'thien_hanh' ? 1.05 : 1.38
+    });
+    this.playerPhysics.vx = phys.vx;
+    this.playerPhysics.vz = phys.vz;
+    this.playerPhysics.speed = phys.speed;
+    this.playerPhysics.stridePhase = phys.stridePhase;
+
+    // Clamp single-frame step so we never overshoot the current waypoint
+    const stepMag = Math.hypot(phys.stepDx, phys.stepDz);
+    const stepScale = stepMag > dist && stepMag > 1e-4 ? dist / stepMag : 1;
+    const prevX = this.playerState.x;
+    const prevZ = this.playerState.z;
     const moved = this.tryMove(
-      this.playerState.x + nx * stepSpeed,
-      this.playerState.z + nz * stepSpeed
+      prevX + phys.stepDx * stepScale,
+      prevZ + phys.stepDz * stepScale,
+      0.52,
+      dt
     );
-    const actualDx = moved.x - this.playerState.x;
-    const actualDz = moved.z - this.playerState.z;
+    const actualDx = moved.x - prevX;
+    const actualDz = moved.z - prevZ;
     const actualDist = Math.hypot(actualDx, actualDz);
+    this.playerPhysics.actualSpeed = actualDist / Math.max(0.004, dt);
     this.playerState.x = moved.x;
     this.playerState.z = moved.z;
 
     // Face actual movement direction (with smooth corner lookahead when approaching intermediate waypoint)
     let steerX = actualDist > 0.01 ? actualDx / actualDist : nx;
     let steerZ = actualDist > 0.01 ? actualDz / actualDist : nz;
-    if (dist < 1.35 && this.autoWalkWaypoints.length > 1) {
+    if (dist < 1.65 && this.autoWalkWaypoints.length > 1) {
       const nextWp = this.autoWalkWaypoints[1];
       const ndx = nextWp.x - moved.x;
       const ndz = nextWp.z - moved.z;
       const nLen = Math.hypot(ndx, ndz);
       if (nLen > 0.2) {
-        const blend = Math.max(0, Math.min(0.65, (1.35 - dist) / 1.35));
+        const blend = Math.max(0, Math.min(0.6, (1.65 - dist) / 1.65));
         steerX = steerX * (1 - blend) + (ndx / nLen) * blend;
         steerZ = steerZ * (1 - blend) + (ndz / nLen) * blend;
       }
     }
     const desiredYaw = Math.atan2(steerX, steerZ);
-    this.playerState.yaw = this.lerpAngle(this.playerState.yaw, desiredYaw, 1 - Math.exp(-10.5 * dt));
+    this.playerState.yaw = this.lerpAngle(this.playerState.yaw, desiredYaw, 1 - Math.exp(-9.5 * dt));
     this.playerState.moving = true;
+
+    if (phys.footstepTriggered && !this.arrivalCutscene?.active && this.playerPhysics.actualSpeed > 0.35) {
+      this.onStepSound(this.inInterior ? 'interior' : 'stone');
+    }
 
     // Smooth camera auto-follow along the walking heading (unless user just dragged the camera)
     const manualDragRecent = performance.now() - (this._lastCamDragAt || 0) < 2200;
@@ -98,22 +148,26 @@ export const renderLoopAndCutsceneMethods = {
       this._stuckTracker.timer = 0;
     } else {
       this._stuckTracker.timer += dt;
-      if (this._stuckTracker.timer > 1.05) {
-        const finalWp = this.autoWalkWaypoints[this.autoWalkWaypoints.length - 1];
-        if (!this._stuckTracker.rerouted && finalWp) {
+      if (this._stuckTracker.timer > 1.15) {
+        const lastTargetWp = this.autoWalkWaypoints[this.autoWalkWaypoints.length - 1];
+        if (!this._stuckTracker.rerouted && lastTargetWp) {
           this._stuckTracker.rerouted = true;
           this._stuckTracker.timer = 0;
           this.autoWalkWaypoints = this.computeSmartWaypoints(
             this.playerState.x,
             this.playerState.z,
-            finalWp.x,
-            finalWp.z,
-            finalWp.lookAt || null
+            lastTargetWp.x,
+            lastTargetWp.z,
+            lastTargetWp.lookAt || null
           );
           this.updateWalkPathLine();
         } else {
           this.cancelAutoWalk();
           this.playerState.moving = false;
+          this.playerPhysics.vx = 0;
+          this.playerPhysics.vz = 0;
+          this.playerPhysics.speed = 0;
+          this.playerPhysics.actualSpeed = 0;
           return;
         }
       }
@@ -147,12 +201,20 @@ export const renderLoopAndCutsceneMethods = {
       }
     } else if (tr.phase === 'enter_veil') {
       if (t >= 1) {
+        this.ensureInteriorBuilt?.();
         this.inInterior = true;
-        this.ensureInteriorAssetsLoaded().catch(() => {});
+        const entryPriority = tr.side === 'front_tam_quan' ? 'west_chanh_dien' : 'east_corridor';
+        this.ensureInteriorAssetsLoaded(entryPriority).catch(() => {});
         this.exteriorGroup.visible = false;
         this.interiorGroup.visible = true;
         this.applyInteriorAtmosphere();
         this.playerElevationY = 0;
+        if (this.playerPhysics) {
+          this.playerPhysics.vx = 0;
+          this.playerPhysics.vz = 0;
+          this.playerPhysics.speed = 0;
+          this.playerPhysics.actualSpeed = 0;
+        }
         this._doorCooldownUntil = performance.now() + 2600;
         const isFront = tr.side === 'front_tam_quan';
         const entryYaw = isFront ? Math.PI * 0.5 : Math.PI - 0.34;
@@ -166,6 +228,7 @@ export const renderLoopAndCutsceneMethods = {
         this.cameraBaseYaw = entryYaw;
         this.cameraAzimuthOffset = 0;
         this.snapCameraImmediate();
+        this.updateSceneOcclusionCulling?.();
         this.nearestStallTrigger = null;
         this.onStallProximity(null);
         this.checkStationProximity();
@@ -252,6 +315,10 @@ export const renderLoopAndCutsceneMethods = {
     const trDt = this.isSoftwareGl ? Math.max(dt, Math.min(rawDelta, 0.35)) : dt;
     const elapsed = this.clock.elapsedTime;
 
+    if (this.seatedBench && (this.heldDirs.size > 0 || Math.hypot(this.joystickVec?.x || 0, this.joystickVec?.z || 0) > 0.15)) {
+      this.standUpFromBench?.();
+    }
+
     if (this.interiorTransition) {
       this.stepInteriorTransition(trDt);
     } else {
@@ -263,38 +330,48 @@ export const renderLoopAndCutsceneMethods = {
     // Smooth damped camera gimbal every frame (eliminates 1-frame height/angle jumps)
     this.updateCameraDamped(this.isSoftwareGl ? trDt : dt);
 
-    // Damped Entrance Camera Tour along Tam Quan -> Yellow Banner & Vietnamese Stalls -> Right Bougainvillea Path
-    const tourStep = this.isSoftwareGl ? Math.max(dt, 0.14) : dt;
-    this.stepArrivalCutscene(tourStep);
-    this.stepEntranceTour(tourStep);
-    this.stepRoadTraffic(this.isSoftwareGl ? trDt : dt);
+    // Run zero-GC spatial occlusion & frustum culling BEFORE updating NPC mixers & rendering
+    this.updateSceneOcclusionCulling?.();
+
+    // Outdoor-only entrance camera tour & road traffic (completely paused while inside Chánh Điện!)
+    if (!this.inInterior) {
+      const tourStep = this.isSoftwareGl ? Math.max(dt, 0.14) : dt;
+      this.stepArrivalCutscene(tourStep);
+      this.stepEntranceTour(tourStep);
+      this.stepRoadTraffic(this.isSoftwareGl ? trDt : dt);
+    }
 
     if (this.activePlayerRecord) {
       if (this.playerState.moving) {
-        this.playerState.moveBlend = Math.min(1, this.playerState.moveBlend + dt * 6);
-        this.playClipCrossfade(this.activePlayerRecord, 'Di bo', 0.15, false);
-        if (this.activePlayerRecord.activeAction) {
-          this.activePlayerRecord.activeAction.paused = false;
-          this.activePlayerRecord.activeAction.timeScale =
-            0.55 + 0.65 * this.playerState.moveBlend;
-        }
-        this.activePlayerRecord.mixer.update(dt);
-        if (!this.arrivalCutscene?.active) {
-          this._stepAudioTimer += dt;
-          if (this._stepAudioTimer >= 0.42) {
-            this._stepAudioTimer = 0;
-            this.onStepSound(this.inInterior ? 'interior' : 'stone');
+        // Gracefully cancel any stationary gesture (including meditation) when player starts walking
+        if (this.proceduralPoseState?.action) {
+          this.proceduralPoseState.action = null;
+          this.proceduralPoseState.continuous = false;
+          this.proceduralPoseState.timer = 0;
+          this.activePlayerRecord.root.position.y = this.activePlayerRecord.baseY || 0;
+          if (this.activePlayerRecord._handheldPhone) {
+            this.activePlayerRecord._handheldPhone.visible = false;
           }
         }
+        const physSpeed = this.playerPhysics?.actualSpeed || (this.arrivalCutscene?.active ? 3.2 : 4.2);
+        const speedRatio = Math.max(0.28, Math.min(1.28, physSpeed / 4.2));
+        this.playerState.moveBlend = Math.min(1, this.playerState.moveBlend + dt * 7.5);
+        this.playClipCrossfade(this.activePlayerRecord, 'Di bo', 0.16, false);
+        if (this.activePlayerRecord.activeAction) {
+          this.activePlayerRecord.activeAction.paused = false;
+          // Velocity-synced animation cadence eliminates foot sliding during accel, braking, or Thiền hành
+          this.activePlayerRecord.activeAction.timeScale = speedRatio * (0.45 + 0.55 * this.playerState.moveBlend);
+        }
+        this.activePlayerRecord.mixer.update(dt);
       } else {
-        this.playerState.moveBlend = Math.max(0, this.playerState.moveBlend - dt * 7);
-        this._stepAudioTimer = 0.25;
+        this.playerState.moveBlend = Math.max(0, this.playerState.moveBlend - dt * 8.0);
         const activeName = normalizeAnimKey(this.activePlayerRecord.activeClipName);
         if ((activeName === 'di bo' || activeName === 'walk') && !this.proceduralPoseState?.action) {
-          this.playClipCrossfade(this.activePlayerRecord, 'Dung', 0.2, false);
+          this.playClipCrossfade(this.activePlayerRecord, 'Dung', 0.22, false);
         }
         if (this.activePlayerRecord.activeAction) {
           this.activePlayerRecord.activeAction.paused = false;
+          this.activePlayerRecord.activeAction.timeScale = 1.0;
         }
         this.activePlayerRecord.mixer.update(dt);
       }
@@ -303,15 +380,102 @@ export const renderLoopAndCutsceneMethods = {
 
     this.stepPilgrimageCompanions(dt);
 
-    if (this.guidedBeaconGroup?.visible && this.guidedBeaconGroup.userData?.diamond) {
-      this.guidedBeaconGroup.userData.diamond.rotation.y = elapsed * 1.4;
-      this.guidedBeaconGroup.userData.diamond.position.y = 5.2 + Math.sin(elapsed * 2.6) * 0.38;
-    }
-
     if (!this.inInterior) {
+      if (this.guidedBeaconGroup?.visible && this.guidedBeaconGroup.userData?.diamond) {
+        this.guidedBeaconGroup.userData.diamond.rotation.y = elapsed * 1.4;
+        this.guidedBeaconGroup.userData.diamond.position.y = 5.2 + Math.sin(elapsed * 2.6) * 0.38;
+      }
+
       this.stepNpcRecordList(this.riggedNpcRecords, this.exteriorGroup, dt);
+
+      for (let vi = 0; vi < this.vendorNpcRecords.length; vi++) {
+        const vRec = this.vendorNpcRecords[vi];
+        if (vRec._culled) continue;
+        vRec.mixer.update(dt * 0.7);
+      }
+
+      for (let si = 0; si < this.smokeColumns.length; si++) {
+        this.smokeColumns[si].update(dt, elapsed);
+      }
+      for (let li = 0; li < this.lotusSwayGroups.length; li++) {
+        const ls = this.lotusSwayGroups[li];
+        if (!ls.group.visible) continue;
+        ls.group.rotation.z = Math.sin(elapsed * 1.4 + ls.phase) * 0.045;
+        ls.group.rotation.x = Math.cos(elapsed * 1.1 + ls.phase) * 0.035;
+      }
+      if (this.floatingLanterns?.length) {
+        for (let fi = 0; fi < this.floatingLanterns.length; fi++) {
+          const fl = this.floatingLanterns[fi];
+          fl.mesh.position.y = 0.04 + Math.sin(elapsed * 1.7 + fl.phase) * 0.025;
+          fl.mesh.rotation.y += dt * 0.14;
+          fl.mesh.rotation.z = Math.sin(elapsed * 1.3 + fl.phase) * 0.06;
+          if (fl.flameMat) {
+            fl.flameMat.emissiveIntensity = 0.85 + Math.sin(elapsed * 7.5 + fl.phase) * 0.28;
+          }
+        }
+      }
+
+      for (let ki = 0; ki < this.koiList.length; ki++) {
+        const k = this.koiList[ki];
+        if (k.curve && k.mesh?.visible !== false) {
+          const u = ((elapsed * k.speed) + k.phase) % 1;
+          k.curve.getPointAt(u, _koiPos);
+          k.curve.getTangentAt(u, _koiTan);
+          k.mesh.position.copy(_koiPos);
+          k.mesh.rotation.y = Math.atan2(_koiTan.x, _koiTan.z);
+          if (k.bodyPivot) {
+            k.bodyPivot.rotation.y = Math.sin(elapsed * 7.5 + k.phase * 12) * 0.08;
+          }
+          if (k.tail) {
+            k.tail.rotation.y = Math.sin(elapsed * 11 + k.phase * 12) * 0.45;
+          }
+        }
+      }
+      const isRainingNow = (this.weatherState?.rainIntensity || 0) > 0.25;
+      const playerSnapshot = {
+        x: this.playerState.x,
+        z: this.playerState.z,
+        speed: this.playerState.moving ? this.playerPhysics?.actualSpeed || 2.8 : 0,
+        isMindful: this.playerPhysics?.gaitMode === 'thien_hanh' || !this.playerState.moving
+      };
+      for (let pi = 0; pi < this.pigeons.length; pi++) {
+        const p = this.pigeons[pi];
+        const nextP = evaluatePigeonState(
+          {
+            baseX: p.baseX,
+            baseZ: p.baseZ,
+            x: p.group.position.x,
+            y: p.group.position.y,
+            z: p.group.position.z,
+            yaw: p.group.rotation.y,
+            phase: p.phase,
+            flying: p.flying,
+            flyTimer: p.flyTimer
+          },
+          playerSnapshot,
+          dt,
+          isRainingNow,
+          elapsed
+        );
+        p.flying = nextP.flying;
+        p.flyTimer = nextP.flyTimer;
+        p.group.position.set(nextP.x, nextP.y, nextP.z);
+        p.group.rotation.y = nextP.yaw;
+        if (p.wL && p.wR) {
+          p.wL.rotation.z = nextP.wingAngle;
+          p.wR.rotation.z = -nextP.wingAngle;
+        }
+      }
+
+      for (const grp of this.courtyardLeafMeshes.values()) {
+        if (!grp.visible) continue;
+        grp.position.y = 0.025 + Math.sin(elapsed * 2.2 + (grp.userData.phase || 0)) * 0.015;
+      }
     } else {
-      for (const kr of this.interiorKneelingRecords) {
+      // Interior-only updates: only tick non-culled worshippers & visible interior lotus/koi
+      for (let ki = 0; ki < this.interiorKneelingRecords.length; ki++) {
+        const kr = this.interiorKneelingRecords[ki];
+        if (kr._culled) continue;
         kr.mixer.update(dt * 0.72);
       }
       if (this.interiorWalkingRecords?.length) {
@@ -319,85 +483,12 @@ export const renderLoopAndCutsceneMethods = {
       }
     }
 
-    for (const vRec of this.vendorNpcRecords) {
-      vRec.mixer.update(dt * 0.7);
-    }
-
-    for (const sc of this.smokeColumns) {
-      sc.update(dt, elapsed);
-    }
-    for (const ls of this.lotusSwayGroups) {
-      ls.group.rotation.z = Math.sin(elapsed * 1.4 + ls.phase) * 0.045;
-      ls.group.rotation.x = Math.cos(elapsed * 1.1 + ls.phase) * 0.035;
-    }
-    if (this.floatingLanterns?.length && !this.inInterior) {
-      for (const fl of this.floatingLanterns) {
-        fl.mesh.position.y = 0.04 + Math.sin(elapsed * 1.7 + fl.phase) * 0.025;
-        fl.mesh.rotation.y += dt * 0.14;
-        fl.mesh.rotation.z = Math.sin(elapsed * 1.3 + fl.phase) * 0.06;
-        if (fl.flameMat) {
-          fl.flameMat.emissiveIntensity = 0.85 + Math.sin(elapsed * 7.5 + fl.phase) * 0.28;
-        }
-      }
-    }
-
-    // Animate Dâng hoa blooming & glowing lotus effect in the pond + active Dâng hương / Dâng hoa sequences (zero GC)
+    // Animate Dâng hoa blooming & glowing lotus effect + active Dâng hương / Dâng hoa sequences + Mekong weather + Living World (zero GC)
     const ritualDt = this.isSoftwareGl ? Math.max(dt, 0.12) : dt;
     this.stepLotusBloom(ritualDt);
     this.stepOfferingAnimations?.(ritualDt);
-
-    for (const k of this.koiList) {
-      if (k.curve) {
-        const u = ((elapsed * k.speed) + k.phase) % 1;
-        k.curve.getPointAt(u, _koiPos);
-        k.curve.getTangentAt(u, _koiTan);
-        k.mesh.position.copy(_koiPos);
-        k.mesh.rotation.y = Math.atan2(_koiTan.x, _koiTan.z);
-        if (k.bodyPivot) {
-          k.bodyPivot.rotation.y = Math.sin(elapsed * 7.5 + k.phase * 12) * 0.08;
-        }
-        if (k.tail) {
-          k.tail.rotation.y = Math.sin(elapsed * 11 + k.phase * 12) * 0.45;
-        }
-      }
-    }
-    for (const p of this.pigeons) {
-      const distToPlayer = Math.hypot(
-        this.playerState.x - p.group.position.x,
-        this.playerState.z - p.group.position.z
-      );
-      if (distToPlayer < 3.2 && !p.flying) {
-        p.flying = true;
-        p.flyTimer = 0;
-      }
-      if (p.flying) {
-        p.flyTimer += dt;
-        p.group.position.y = Math.min(5.5, p.flyTimer * 2.8);
-        p.group.position.x += Math.sin(p.phase) * dt * 2.4;
-        p.group.position.z -= Math.cos(p.phase) * dt * 2.4;
-        if (p.wL && p.wR) {
-          const flap = Math.sin(elapsed * 26) * 0.65;
-          p.wL.rotation.z = flap;
-          p.wR.rotation.z = -flap;
-        }
-        if (p.flyTimer > 4.5) {
-          p.flying = false;
-          p.group.position.set(p.baseX, 0, p.baseZ);
-          if (p.wL && p.wR) {
-            p.wL.rotation.z = 0;
-            p.wR.rotation.z = 0;
-          }
-        }
-      } else {
-        p.group.position.y = Math.abs(Math.sin(elapsed * 3.2 + p.phase)) * 0.04;
-        p.group.rotation.y = Math.sin(elapsed * 0.7 + p.phase) * 0.6;
-      }
-    }
-
-    for (const grp of this.courtyardLeafMeshes.values()) {
-      if (!grp.visible) continue;
-      grp.position.y = 0.025 + Math.sin(elapsed * 2.2 + (grp.userData.phase || 0)) * 0.015;
-    }
+    this.stepWeatherSystem?.(dt);
+    this.stepLivingWorld3D?.(dt, elapsed);
 
     this.updateProjectedPins();
     this.updateCourtyardNpcInteraction();
@@ -410,6 +501,7 @@ export const renderLoopAndCutsceneMethods = {
         activeClip &&
         activeClip !== 'dung' &&
         Boolean(this.activePlayerRecord?.activeAction && !this.activePlayerRecord.activeAction.paused);
+      const isRaining = (this.weatherState?.rainIntensity || 0) > 0.05;
       const isActivelyAnimating =
         this.playerState.moving ||
         this.heldDirs.size > 0 ||
@@ -417,9 +509,11 @@ export const renderLoopAndCutsceneMethods = {
         this.entranceTour.active ||
         Boolean(this.arrivalCutscene?.active) ||
         Boolean(this.proceduralPoseState?.action) ||
+        Boolean(this.seatedBench) ||
         this.lotusBloomState.active ||
         Boolean(this.activeOfferingAnimations?.length) ||
         Boolean(this.interiorTransition) ||
+        isRaining ||
         hasNonIdleAction;
       this.afterDraw(() => this.animate(), isActivelyAnimating ? 120 : 520);
     } else {
@@ -430,7 +524,7 @@ export const renderLoopAndCutsceneMethods = {
   ensureHandheldPhoneProp(record) {
     if (!record?.root) return null;
     if (record._handheldPhone) return record._handheldPhone;
-    const bones = findCharacterBones(record.root);
+    const bones = record._bones || (record._bones = findCharacterBones(record.root));
     const parentBone = bones.rightHand || bones.rightForearm || record.root;
     const phone = new THREE.Group();
     const body = new THREE.Mesh(
@@ -457,7 +551,8 @@ export const renderLoopAndCutsceneMethods = {
 
   applyExpressiveGesturePose(record, gestureKey, phaseTime, strength = 1.0, isMoving = false) {
     if (!record?.root) return;
-    const bones = findCharacterBones(record.root);
+    // Cache skeleton bone lookup once per character record (zero per-frame traversal!)
+    const bones = record._bones || (record._bones = findCharacterBones(record.root));
     const g = normalizeAnimKey(gestureKey || '');
     const showPhone = g === 'chup anh' || g === 'chup_anh' || g === 'selfie';
     if (record._handheldPhone || showPhone) {
@@ -465,8 +560,6 @@ export const renderLoopAndCutsceneMethods = {
       if (phone) phone.visible = Boolean(showPhone && strength > 0.12);
     }
 
-    // Drift-free additive pose helper: if AnimationMixer did not overwrite a bone since last frame,
-    // restore its exact pre-gesture base rotation before applying this frame's desired offset.
     if (!record._gesturePrev) record._gesturePrev = {};
     const deltas = {
       spine: [0, 0, 0],
@@ -479,16 +572,38 @@ export const renderLoopAndCutsceneMethods = {
     };
 
     const s = Math.max(0, Math.min(1, strength));
-    if (!isMoving && !g) {
+    if (isMoving && this.playerPhysics?.gaitMode === 'thien_hanh' && record === this.activePlayerRecord) {
+      // Mindful walking ("Thiền hành"): serene upright posture with forearms gently clasped at abdomen
+      deltas.spine[0] = 0.04;
+      deltas.head[0] = 0.06;
+      deltas.rightArm[0] = -0.34;
+      deltas.leftArm[0] = -0.34;
+      deltas.rightArm[2] = -0.14;
+      deltas.leftArm[2] = 0.14;
+      deltas.rightForearm[0] = -0.58;
+      deltas.leftForearm[0] = -0.58;
+    } else if (!isMoving && !g) {
       // Subtle organic idle breathing & soft gaze when standing still
       const breath = Math.sin(phaseTime * 1.9);
-      const glance = Math.sin(phaseTime * 0.55) * 0.12;
+      const glance = Math.sin(phaseTime * 0.55) * 0.11;
       deltas.chest[0] = breath * 0.024;
       deltas.head[1] = glance;
-      deltas.head[0] = Math.sin(phaseTime * 0.9) * 0.028;
+      deltas.head[0] = Math.sin(phaseTime * 0.9) * 0.026;
     } else if (s > 0.01 && g) {
-      if (g === 'chup anh' || g === 'chup_anh') {
-        // Raise both forearms holding smartphone steady to frame the temple shot
+      if (g === 'ngoi thien' || g === 'ngoi_thien') {
+        // Seated peaceful meditation ("Ngồi thiền"): lowered torso, straight spine, hands resting on lap, slow breath
+        const breath = Math.sin(phaseTime * 1.15);
+        record.root.position.y = (record.baseY || 0) - 0.52 * s;
+        deltas.spine[0] = 0.05 * s;
+        deltas.chest[0] = breath * 0.028 * s;
+        deltas.head[0] = (0.11 + breath * 0.018) * s;
+        deltas.rightArm[0] = -0.36 * s;
+        deltas.leftArm[0] = -0.36 * s;
+        deltas.rightArm[2] = -0.18 * s;
+        deltas.leftArm[2] = 0.18 * s;
+        deltas.rightForearm[0] = -0.68 * s;
+        deltas.leftForearm[0] = -0.68 * s;
+      } else if (g === 'chup anh' || g === 'chup_anh') {
         deltas.rightArm[0] = -0.82 * s;
         deltas.rightArm[2] = -0.16 * s;
         deltas.leftArm[0] = -0.76 * s;
@@ -498,7 +613,6 @@ export const renderLoopAndCutsceneMethods = {
         deltas.head[0] = -0.05 * s;
         deltas.head[2] = Math.sin(phaseTime * 1.6) * 0.03 * s;
       } else if (g === 'selfie') {
-        // Natural selfie pose: extend right arm forward-up holding phone, gentle warm head tilt
         deltas.rightArm[0] = -1.12 * s;
         deltas.rightArm[2] = -0.22 * s;
         deltas.rightForearm[0] = -0.26 * s;
@@ -508,7 +622,6 @@ export const renderLoopAndCutsceneMethods = {
         deltas.head[2] = -0.09 * s;
         deltas.head[1] = 0.08 * s;
       } else if (g === 'tro chuyen' || g === 'tro_chuyen') {
-        // Lively natural family conversation with alternating hand gestures & warm head nods
         const nod = Math.sin(phaseTime * 3.6) * 0.10 * s;
         const g1 = Math.sin(phaseTime * 4.2) * 0.20 * s;
         const g2 = Math.cos(phaseTime * 3.4) * 0.16 * s;
@@ -520,14 +633,12 @@ export const renderLoopAndCutsceneMethods = {
         deltas.leftArm[0] = -(0.34 - g1 * 0.7) * s;
         deltas.leftForearm[0] = -(0.38 - g2 * 0.6) * s;
       } else if (g === 'vay tay' || g === 'vay_tay') {
-        // Friendly raised right-hand wave
         const wave = Math.sin(phaseTime * 9.5) * 0.34 * s;
         deltas.rightArm[0] = -1.18 * s;
         deltas.rightArm[2] = -(0.34 + wave * 0.35) * s;
         deltas.rightForearm[2] = -wave;
         deltas.head[2] = 0.06 * s;
       } else if (g === 'ngam canh' || g === 'quat mat' || g === 'quat_mat') {
-        // Relaxed sightseeing: gentle fanning with right hand + slow admiring panoramic gaze
         const fan = Math.sin(phaseTime * 6.8) * 0.26 * s;
         deltas.rightArm[0] = -0.45 * s;
         deltas.rightForearm[2] = fan;
@@ -537,15 +648,30 @@ export const renderLoopAndCutsceneMethods = {
         record.root.position.y = (record.baseY || 0) - 0.34 * s;
         deltas.spine[0] = 0.32 * s;
         deltas.head[0] = 0.24 * s;
+        deltas.leftArm[0] = -0.42 * s;
+        deltas.rightArm[0] = -0.42 * s;
+        deltas.leftForearm[0] = -0.56 * s;
+        deltas.rightForearm[0] = -0.56 * s;
       } else if (g === 'vai') {
-        deltas.spine[0] = 0.44 * s;
-        if (bones.chest && bones.chest !== bones.spine) deltas.chest[0] = 0.18 * s;
-        deltas.head[0] = 0.28 * s;
+        // Respectful Vietnamese temple bow: palms joined at chest + dignified forward bow
+        deltas.spine[0] = 0.42 * s;
+        if (bones.chest && bones.chest !== bones.spine) deltas.chest[0] = 0.16 * s;
+        deltas.head[0] = 0.26 * s;
+        deltas.leftArm[0] = -0.48 * s;
+        deltas.rightArm[0] = -0.48 * s;
+        deltas.leftArm[2] = 0.22 * s;
+        deltas.rightArm[2] = -0.22 * s;
+        deltas.leftForearm[0] = -0.62 * s;
+        deltas.rightForearm[0] = -0.62 * s;
       } else if (g === 'thap nhang' || g === 'chap tay' || g === 'chap_tay') {
-        deltas.spine[0] = 0.16 * s;
-        deltas.head[0] = 0.18 * s;
-        deltas.leftForearm[0] = -0.55 * s;
-        deltas.rightForearm[0] = -0.55 * s;
+        deltas.spine[0] = 0.14 * s;
+        deltas.head[0] = 0.16 * s;
+        deltas.leftArm[0] = -0.42 * s;
+        deltas.rightArm[0] = -0.42 * s;
+        deltas.leftArm[2] = 0.20 * s;
+        deltas.rightArm[2] = -0.20 * s;
+        deltas.leftForearm[0] = -0.62 * s;
+        deltas.rightForearm[0] = -0.62 * s;
       }
     }
 
@@ -591,19 +717,32 @@ export const renderLoopAndCutsceneMethods = {
       if (this.activePlayerRecord._handheldPhone) {
         this.activePlayerRecord._handheldPhone.visible = false;
       }
+      if (Math.abs(this.activePlayerRecord.root.position.y - (this.activePlayerRecord.baseY || 0)) > 0.002) {
+        this.activePlayerRecord.root.position.y = THREE.MathUtils.lerp(
+          this.activePlayerRecord.root.position.y,
+          this.activePlayerRecord.baseY || 0,
+          1 - Math.exp(-10 * dt)
+        );
+      }
       this.applyExpressiveGesturePose(this.activePlayerRecord, '', elapsed, 1.0, this.playerState.moving);
       return;
     }
+
     st.timer += dt;
+    if (st.continuous) {
+      const rampIn = smoothstep01(st.timer / 0.55);
+      this.applyExpressiveGesturePose(this.activePlayerRecord, st.action, elapsed, rampIn, false);
+      return;
+    }
+
     const dur = Math.max(0.25, st.duration || 2.6);
     const p = Math.min(1, st.timer / dur);
-    // Smooth trapezoidal envelope (ease-in 15%, hold 70%, ease-out 15%) for natural poses like Selfie/Photo/Chat
-    const rampIn = Math.min(1, p / 0.16);
-    const rampOut = Math.min(1, (1 - p) / 0.18);
+    const rampIn = smoothstep01(p / 0.18);
+    const rampOut = smoothstep01((1 - p) / 0.20);
     const act = normalizeAnimKey(st.action);
     const curve =
       act === 'vai' || act === 'quy' || act === 'thap nhang'
-        ? Math.sin(p * Math.PI)
+        ? Math.sin(smoothstep01(p) * Math.PI)
         : Math.min(rampIn, rampOut);
 
     this.applyExpressiveGesturePose(this.activePlayerRecord, st.action, elapsed + st.timer, curve, false);
@@ -712,7 +851,7 @@ export const renderLoopAndCutsceneMethods = {
       return;
     }
 
-    // 2.8 -> 6.8s: step out of vehicle onto East curb & walk straight North into Cổng Phụ Tịnh Độ Huyền Môn
+    // 2.8 -> 6.8s: step out of vehicle onto the straight road centerline (x = 40.5) & walk strictly straight North into Cổng Phụ
     if (!cs.cuedArrival) {
       cs.cuedArrival = true;
       if (vGrp) {
@@ -720,28 +859,33 @@ export const renderLoopAndCutsceneMethods = {
         vGrp.rotation.y = Math.PI;
       }
       this.playerContainer.visible = true;
-      this.playerState.x = 42.6;
-      this.playerState.z = 56.0;
+      this.playerState.x = 40.5;
+      this.playerState.z = 56.5;
+      this.playerState.yaw = Math.PI;
       cs.onCue('step_out');
     }
     if (cs.timer < 6.8) {
       const w = (cs.timer - 2.8) / 4.0;
-      const sx = THREE.MathUtils.lerp(42.6, 40.5, w);
-      const sz = THREE.MathUtils.lerp(56.0, 43.8, w);
-      this.playerState.yaw = THREE.MathUtils.lerp(Math.atan2(40.5 - 42.6, 43.8 - 56.0), Math.PI, Math.min(1, w * 1.35));
+      const smoothW = w < 0.15 ? (w * w) / 0.15 : w > 0.85 ? 1 - ((1 - w) * (1 - w)) / 0.15 : w;
+      const sx = 40.5;
+      const sz = THREE.MathUtils.lerp(56.5, 43.8, smoothW);
+      const sy = getTerrainGroundHeight(sx, sz, false);
+      this.playerState.yaw = Math.PI;
       this.playerState.x = sx;
       this.playerState.z = sz;
+      this.playerElevationY = sy;
       this.playerState.moving = true;
-      this.playerContainer.position.set(sx, 0, sz);
-      this.playerContainer.rotation.y = this.playerState.yaw;
+      if (this.playerPhysics) this.playerPhysics.actualSpeed = 3.2;
+      this.playerContainer.position.set(sx, sy, sz);
+      this.playerContainer.rotation.y = Math.PI;
       if (!cs.cuedWalkIn && w > 0.35) {
         cs.cuedWalkIn = true;
         cs.onCue('enter_gate');
       }
       this.camera.position.set(
-        THREE.MathUtils.lerp(38.0, 40.5, w),
-        THREE.MathUtils.lerp(3.4, 2.1, w),
-        THREE.MathUtils.lerp(68.5, 50.8, w)
+        THREE.MathUtils.lerp(38.8, 40.5, w),
+        THREE.MathUtils.lerp(3.2, 2.1, w),
+        THREE.MathUtils.lerp(66.5, 50.8, w)
       );
       this.camera.lookAt(
         40.5,
@@ -1033,6 +1177,7 @@ export const renderLoopAndCutsceneMethods = {
     for (let ni = 0; ni < list.length; ni++) {
       const npc = list[ni];
       const pos = npc.rec.root.position;
+      const isCulled = Boolean(npc._culled);
       if (npc.pauseTimer > 0) {
         npc.pauseTimer -= dt;
         if (npc.pauseTimer <= 0 && npc.temporary && npc.removeAfterPause) {
@@ -1041,6 +1186,7 @@ export const renderLoopAndCutsceneMethods = {
           ni -= 1;
           continue;
         }
+        if (isCulled) continue;
         const desiredClip = npc.pauseClip === 'Chắp tay' ? 'Chắp tay' : 'Dung';
         if (npc.state !== desiredClip) {
           npc.state = desiredClip;

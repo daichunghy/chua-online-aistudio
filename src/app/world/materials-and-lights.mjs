@@ -8,25 +8,39 @@ import { THREE, shiftOklch, VINH_TRANG_OKLCH_PALETTE, makeCanvasTex } from './sh
 
 export const materialsAndLightsMethods = {
   initTexturesAndMaterials() {
-    // 1. Weathered Courtyard Stone Slabs with damp mortar crevices, subtle moss & blossom flecks
+    // Track exterior ground materials that glisten & darken during Mekong rain
+    this.wettableMaterials = [];
+    const maxAniso = Math.min(16, this.renderer?.capabilities?.getMaxAnisotropy?.() || 8);
+
+    // 1. Weathered Courtyard Stone Slabs (High-detail albedo + paired bump & roughness maps)
     this.pavingTex = makeCanvasTex(
       (g, w, h) => {
-        g.fillStyle = '#BFB5A0';
+        g.fillStyle = '#B8AE98';
         g.fillRect(0, 0, w, h);
         const step = 64;
         for (let y = 0; y < h; y += step) {
           for (let x = 0; x < w; x += step) {
             const seed = ((Math.sin(x * 12.9898 + y * 78.233) * 43758.5453) % 1 + 1) % 1;
-            const v = seed * 22 - 11;
+            const v = seed * 24 - 12;
             const warm = ((Math.sin(x * 3.7 + y * 9.1) * 19231.4) % 1 + 1) % 1;
-            g.fillStyle = `rgb(${Math.round(202 + v + warm * 6)}, ${Math.round(191 + v)}, ${Math.round(170 + v - warm * 5)})`;
+            g.fillStyle = `rgb(${Math.round(199 + v + warm * 7)}, ${Math.round(188 + v)}, ${Math.round(166 + v - warm * 5)})`;
             g.fillRect(x + 2, y + 2, step - 4, step - 4);
-            g.fillStyle = seed > 0.55 ? 'rgba(255,248,232,0.12)' : 'rgba(92,78,56,0.08)';
-            g.fillRect(x + 6, y + 8, step - 14, step - 18);
+            // Subtle chamfer highlight on sunlit top-left slab edges
+            g.fillStyle = 'rgba(255,250,238,0.16)';
+            g.fillRect(x + 2, y + 2, step - 5, 3);
+            g.fillRect(x + 2, y + 2, 3, step - 5);
+            // Shaded bottom-right edge for crisp stone relief
+            g.fillStyle = 'rgba(72,62,48,0.16)';
+            g.fillRect(x + 3, y + step - 4, step - 5, 2);
+            g.fillRect(x + step - 4, y + 3, 2, step - 5);
+            // Natural mineral patch inside slab
+            g.fillStyle = seed > 0.52 ? 'rgba(255,248,232,0.12)' : 'rgba(86,74,56,0.10)';
+            g.fillRect(x + 7, y + 9, step - 16, step - 18);
           }
         }
-        g.strokeStyle = 'rgba(96, 86, 68, 0.44)';
-        g.lineWidth = 2.4;
+        // Deep recessed mortar joints
+        g.strokeStyle = 'rgba(78, 70, 56, 0.58)';
+        g.lineWidth = 2.8;
         for (let i = 0; i <= w; i += step) {
           g.beginPath();
           g.moveTo(i, 0);
@@ -37,13 +51,19 @@ export const materialsAndLightsMethods = {
           g.lineTo(w, i);
           g.stroke();
         }
-        // Tropical moss specks along stone joints + scattered soil grit
-        for (let i = 0; i < 260; i++) {
-          const sx = (i * 73) % w;
-          const sy = (i * 137) % h;
-          g.fillStyle = i % 5 === 0 ? 'rgba(84,116,54,0.22)' : 'rgba(105,84,58,0.14)';
+        // Fine granite pores + Mekong moss specks along stone joints
+        for (let i = 0; i < 680; i++) {
+          const sx = (i * 73 + ((i * 19) % 23)) % w;
+          const sy = (i * 137 + ((i * 11) % 17)) % h;
+          const nearJoint = sx % step < 5 || sy % step < 5;
+          g.fillStyle =
+            nearJoint && i % 2 === 0
+              ? 'rgba(76,112,48,0.28)'
+              : i % 4 === 0
+              ? 'rgba(248,242,228,0.14)'
+              : 'rgba(92,76,56,0.15)';
           g.beginPath();
-          g.arc(sx, sy, 1.5 + (i % 4), 0, Math.PI * 2);
+          g.arc(sx, sy, nearJoint ? 2.1 : 1.1 + (i % 3) * 0.45, 0, Math.PI * 2);
           g.fill();
         }
       },
@@ -52,6 +72,84 @@ export const materialsAndLightsMethods = {
       20,
       20
     );
+    this.pavingTex.anisotropy = maxAniso;
+
+    // Paired linear bump map for courtyard paving (recessed joints, chiseled micro-grain)
+    this.pavingBumpTex = makeCanvasTex(
+      (g, w, h) => {
+        g.fillStyle = '#C8C8C8';
+        g.fillRect(0, 0, w, h);
+        const step = 64;
+        for (let y = 0; y < h; y += step) {
+          for (let x = 0; x < w; x += step) {
+            const seed = ((Math.sin(x * 12.9898 + y * 78.233) * 43758.5453) % 1 + 1) % 1;
+            const v = Math.round(192 + seed * 36);
+            g.fillStyle = `rgb(${v},${v},${v})`;
+            g.fillRect(x + 3, y + 3, step - 6, step - 6);
+          }
+        }
+        // Deep dark crevices for mortar seams
+        g.strokeStyle = '#383838';
+        g.lineWidth = 4;
+        for (let i = 0; i <= w; i += step) {
+          g.beginPath();
+          g.moveTo(i, 0);
+          g.lineTo(i, h);
+          g.stroke();
+          g.beginPath();
+          g.moveTo(0, i);
+          g.lineTo(w, i);
+          g.stroke();
+        }
+        // Stone grain pits
+        for (let i = 0; i < 900; i++) {
+          const v = i % 2 === 0 ? 155 : 230;
+          g.fillStyle = `rgba(${v},${v},${v},0.35)`;
+          g.fillRect((i * 83) % w, (i * 149) % h, 2, 2);
+        }
+      },
+      512,
+      512,
+      20,
+      20,
+      false
+    );
+    this.pavingBumpTex.anisotropy = maxAniso;
+
+    // Paired linear roughness map (worn polished stone centers vs rougher mortar joints)
+    this.pavingRoughTex = makeCanvasTex(
+      (g, w, h) => {
+        g.fillStyle = '#DFDFDF';
+        g.fillRect(0, 0, w, h);
+        const step = 64;
+        for (let y = 0; y < h; y += step) {
+          for (let x = 0; x < w; x += step) {
+            const seed = ((Math.sin(x * 17.3 + y * 51.7) * 43758.5453) % 1 + 1) % 1;
+            const v = Math.round(186 + seed * 36);
+            g.fillStyle = `rgb(${v},${v},${v})`;
+            g.fillRect(x + 4, y + 4, step - 8, step - 8);
+          }
+        }
+        g.strokeStyle = '#F6F6F6';
+        g.lineWidth = 4;
+        for (let i = 0; i <= w; i += step) {
+          g.beginPath();
+          g.moveTo(i, 0);
+          g.lineTo(i, h);
+          g.stroke();
+          g.beginPath();
+          g.moveTo(0, i);
+          g.lineTo(w, i);
+          g.stroke();
+        }
+      },
+      512,
+      512,
+      20,
+      20,
+      false
+    );
+    this.pavingRoughTex.anisotropy = maxAniso;
 
     // 1b. Southern Terracotta Brick Pavers for Bougainvillea Side Path & Cổng Phụ apron
     this.sideBrickTex = makeCanvasTex(
@@ -261,66 +359,126 @@ export const materialsAndLightsMethods = {
       2
     );
 
-    // 2. Yin-Yang Terracotta Roof Tiles (OKLCH warm clay tiles — never muddy or black)
+    // 2. Yin-Yang Terracotta Roof Tiles (512px OKLCH clay tiles + paired deep cylindrical bump map)
     const tileLight = shiftOklch(VINH_TRANG_OKLCH_PALETTE.terracottaTile, 0.12, 1.08, 4);
     const tileMid = shiftOklch(VINH_TRANG_OKLCH_PALETTE.terracottaTile, 0.04, 1.02, 1);
-    const tileGroove = shiftOklch(VINH_TRANG_OKLCH_PALETTE.terracottaTile, -0.09, 0.92, -4);
+    const tileGroove = shiftOklch(VINH_TRANG_OKLCH_PALETTE.terracottaTile, -0.10, 0.92, -4);
     this.roofTex = makeCanvasTex(
       (g, w, h) => {
         g.fillStyle = tileMid;
         g.fillRect(0, 0, w, h);
-        for (let y = 0; y < h; y += 24) {
-          g.fillStyle = y % 48 === 0 ? tileLight : tileMid;
-          g.fillRect(0, y, w, 20);
+        for (let y = 0; y < h; y += 32) {
+          g.fillStyle = y % 64 === 0 ? tileLight : tileMid;
+          g.fillRect(0, y, w, 26);
           g.fillStyle = tileGroove;
-          g.fillRect(0, y + 20, w, 4);
+          g.fillRect(0, y + 26, w, 6);
         }
-        for (let x = 0; x < w; x += 28) {
-          g.fillStyle = 'rgba(255,222,195,0.16)';
-          g.fillRect(x + 4, 0, 8, h);
-          g.strokeStyle = 'rgba(65,24,14,0.34)';
-          g.lineWidth = 2;
-          g.beginPath();
-          g.moveTo(x, 0);
-          g.lineTo(x, h);
-          g.stroke();
+        for (let x = 0; x < w; x += 32) {
+          const cylGrad = g.createLinearGradient(x, 0, x + 32, 0);
+          cylGrad.addColorStop(0.0, 'rgba(54,20,12,0.34)');
+          cylGrad.addColorStop(0.28, 'rgba(255,224,196,0.20)');
+          cylGrad.addColorStop(0.62, 'rgba(255,224,196,0.04)');
+          cylGrad.addColorStop(1.0, 'rgba(48,18,10,0.38)');
+          g.fillStyle = cylGrad;
+          g.fillRect(x, 0, 32, h);
         }
-        g.fillStyle = 'rgba(72, 102, 52, 0.14)';
-        for (let i = 0; i < 16; i++) {
+        // Subtle tropical moss patina on weathered clay roofs
+        for (let i = 0; i < 36; i++) {
+          g.fillStyle = i % 3 === 0 ? 'rgba(72, 102, 52, 0.16)' : 'rgba(56, 36, 22, 0.10)';
           g.beginPath();
-          g.arc((i * 53) % w, (i * 41) % h, 9 + (i % 6), 0, Math.PI * 2);
+          g.arc((i * 59) % w, (i * 47) % h, 8 + (i % 9), 0, Math.PI * 2);
           g.fill();
         }
       },
-      256,
-      256,
+      512,
+      512,
       10,
       4
     );
+    this.roofTex.anisotropy = maxAniso;
 
-    // 3. Sunlit Aged Lime-Plaster Texture with subtle tropical humidity patina
+    this.roofBumpTex = makeCanvasTex(
+      (g, w, h) => {
+        g.fillStyle = '#808080';
+        g.fillRect(0, 0, w, h);
+        for (let x = 0; x < w; x += 32) {
+          const ridge = g.createLinearGradient(x, 0, x + 32, 0);
+          ridge.addColorStop(0.0, '#303030');
+          ridge.addColorStop(0.45, '#F0F0F0');
+          ridge.addColorStop(1.0, '#282828');
+          g.fillStyle = ridge;
+          g.fillRect(x, 0, 32, h);
+        }
+        g.fillStyle = 'rgba(24,24,24,0.65)';
+        for (let y = 26; y < h; y += 32) {
+          g.fillRect(0, y, w, 6);
+        }
+      },
+      512,
+      512,
+      10,
+      4,
+      false
+    );
+    this.roofBumpTex.anisotropy = maxAniso;
+
+    // 3. Sunlit Aged Lime-Plaster Texture (512px warm ochre-cream stucco + paired plaster bump map)
     this.limeWallTex = makeCanvasTex(
       (g, w, h) => {
-        g.fillStyle = '#F5E3B8';
+        g.fillStyle = '#F3DFB2';
         g.fillRect(0, 0, w, h);
-        for (let i = 0; i < 200; i++) {
-          const x = (i * 79) % w;
-          const y = (i * 43) % h;
-          g.fillStyle = i % 2 === 0 ? 'rgba(255,250,236,0.18)' : 'rgba(182,146,78,0.1)';
+        for (let i = 0; i < 340; i++) {
+          const x = (i * 79 + ((i * 13) % 31)) % w;
+          const y = (i * 43 + ((i * 29) % 37)) % h;
+          g.fillStyle =
+            i % 3 === 0
+              ? 'rgba(255,250,236,0.20)'
+              : i % 3 === 1
+              ? 'rgba(182,146,78,0.12)'
+              : 'rgba(156,124,68,0.08)';
           g.beginPath();
-          g.arc(x, y, 16 + (i % 22), 0, Math.PI * 2);
+          g.arc(x, y, 14 + (i % 26), 0, Math.PI * 2);
           g.fill();
         }
+        // Subtle aged stucco speckles & vertical Mekong rainwater weathering streaks
+        for (let s = 0; s < 14; s++) {
+          const sx = (s * 43 + 18) % w;
+          const streak = g.createLinearGradient(sx, 0, sx, h * 0.45);
+          streak.addColorStop(0, 'rgba(112, 96, 68, 0.14)');
+          streak.addColorStop(1, 'rgba(112, 96, 68, 0)');
+          g.fillStyle = streak;
+          g.fillRect(sx, 0, 5 + (s % 6), h * 0.45);
+        }
         const dampGrad = g.createLinearGradient(0, h * 0.72, 0, h);
-        dampGrad.addColorStop(0, 'rgba(98, 92, 68, 0)');
-        dampGrad.addColorStop(1, 'rgba(98, 92, 68, 0.16)');
+        dampGrad.addColorStop(0, 'rgba(92, 86, 62, 0)');
+        dampGrad.addColorStop(1, 'rgba(84, 78, 56, 0.22)');
         g.fillStyle = dampGrad;
         g.fillRect(0, h * 0.72, w, h * 0.28);
+      },
+      512,
+      512,
+      4,
+      2
+    );
+    this.limeWallTex.anisotropy = maxAniso;
+
+    this.limeBumpTex = makeCanvasTex(
+      (g, w, h) => {
+        g.fillStyle = '#808080';
+        g.fillRect(0, 0, w, h);
+        for (let i = 0; i < 1400; i++) {
+          const v = 104 + ((i * 37) % 48);
+          g.fillStyle = `rgba(${v},${v},${v},0.42)`;
+          g.beginPath();
+          g.arc((i * 67) % w, (i * 113) % h, 2 + (i % 5), 0, Math.PI * 2);
+          g.fill();
+        }
       },
       256,
       256,
       4,
-      2
+      2,
+      false
     );
 
     // 4. Weathered Statue Stone Bump Texture (PROMPT_ARGON_CHAT_LIEU #1)
@@ -462,14 +620,16 @@ export const materialsAndLightsMethods = {
       goldWall: new THREE.MeshStandardMaterial({
         color: 0xECC56A,
         map: this.limeWallTex,
-        bumpMap: this.stoneBumpTex,
-        bumpScale: 0.012,
-        roughness: 0.56
+        bumpMap: this.limeBumpTex,
+        bumpScale: 0.024,
+        roughness: 0.62
       }),
       goldLight: new THREE.MeshStandardMaterial({
         color: 0xF5D98C,
         map: this.limeWallTex,
-        roughness: 0.5
+        bumpMap: this.limeBumpTex,
+        bumpScale: 0.018,
+        roughness: 0.56
       }),
       goldAccent: new THREE.MeshStandardMaterial({
         color: 0xD8A436,
@@ -478,26 +638,30 @@ export const materialsAndLightsMethods = {
       }),
       creamTrim: new THREE.MeshStandardMaterial({
         color: 0xF2ECE0,
-        bumpMap: this.stoneBumpTex,
-        bumpScale: 0.01,
-        roughness: 0.65
+        bumpMap: this.limeBumpTex,
+        bumpScale: 0.016,
+        roughness: 0.68
       }),
       redColumn: new THREE.MeshStandardMaterial({
         color: 0x862820,
-        roughness: 0.42,
+        bumpMap: this.woodGrainTex,
+        bumpScale: 0.012,
+        roughness: 0.38,
         metalness: 0.08
       }),
       darkWood: new THREE.MeshStandardMaterial({
         color: 0x5A3D26,
         map: this.woodGrainTex,
-        roughness: 0.65
+        bumpMap: this.woodGrainTex,
+        bumpScale: 0.018,
+        roughness: 0.62
       }),
       darkOpening: new THREE.MeshStandardMaterial({ color: 0x221712, roughness: 0.88 }),
       roofTile: new THREE.MeshStandardMaterial({
         map: this.roofTex,
-        bumpMap: this.roofTex,
-        bumpScale: 0.016,
-        roughness: 0.62
+        bumpMap: this.roofBumpTex,
+        bumpScale: 0.036,
+        roughness: 0.64
       }),
       statueWhite: new THREE.MeshStandardMaterial({
         color: 0xEFE9DD,
@@ -710,6 +874,59 @@ export const materialsAndLightsMethods = {
         sctx.fill();
       }
       sctx.fillStyle = 'rgba(22, 34, 42, 0.6)';
+    } else if (presetKey === 'rain') {
+      // Moody tropical Mekong rainstorm sky (cool slate-blue zenith -> misty rain-curtain horizon)
+      grad.addColorStop(0.0, '#44576B');
+      grad.addColorStop(0.38, '#65798C');
+      grad.addColorStop(0.70, '#8C9CA9');
+      grad.addColorStop(0.90, '#A9B4BC');
+      grad.addColorStop(1.0, '#929EA6');
+      sctx.fillStyle = grad;
+      sctx.fillRect(0, 0, 1024, 512);
+      // Heavy layered raincloud banks
+      for (let i = 0; i < 48; i++) {
+        const cx = ((i * 97) % 1000) + 12;
+        const cy = 70 + (i % 7) * 32;
+        const scale = 1.1 + (i % 4) * 0.4;
+        sctx.fillStyle = i % 3 === 0 ? 'rgba(66,78,92,0.46)' : 'rgba(130,144,158,0.34)';
+        for (let j = 0; j < 4; j++) {
+          sctx.beginPath();
+          sctx.ellipse(cx + (j - 1.5) * 28 * scale, cy + (j % 2 ? 6 : -5), 34 * scale, 16 * scale, 0, 0, Math.PI * 2);
+          sctx.fill();
+        }
+      }
+      sctx.fillStyle = 'rgba(78, 96, 88, 0.42)';
+    } else if (presetKey === 'sunset') {
+      // Photorealistic Mekong Golden Hour (17:00) — indigo-violet zenith -> rose coral -> glowing amber horizon
+      grad.addColorStop(0.0, '#2B3566');
+      grad.addColorStop(0.28, '#6B4E7D');
+      grad.addColorStop(0.56, '#C46F65');
+      grad.addColorStop(0.78, '#EE9B59');
+      grad.addColorStop(0.92, '#FBD188');
+      grad.addColorStop(1.0, '#D9945E');
+      sctx.fillStyle = grad;
+      sctx.fillRect(0, 0, 1024, 512);
+      // Warm low setting sun glow halo on the Western horizon
+      const sunGrad = sctx.createRadialGradient(260, 392, 10, 260, 392, 195);
+      sunGrad.addColorStop(0.0, 'rgba(255, 248, 212, 0.96)');
+      sunGrad.addColorStop(0.24, 'rgba(255, 206, 118, 0.72)');
+      sunGrad.addColorStop(0.62, 'rgba(246, 134, 72, 0.28)');
+      sunGrad.addColorStop(1.0, 'rgba(246, 134, 72, 0.0)');
+      sctx.fillStyle = sunGrad;
+      sctx.fillRect(40, 180, 440, 320);
+      // Backlit golden-rimmed cumulus clouds
+      for (let i = 0; i < 40; i++) {
+        const cx = ((i * 113) % 980) + 22;
+        const cy = 150 + (i % 7) * 28;
+        const scale = 0.9 + (i % 4) * 0.35;
+        sctx.fillStyle = i % 2 === 0 ? 'rgba(255, 210, 148, 0.48)' : 'rgba(138, 78, 104, 0.36)';
+        for (let j = 0; j < 4; j++) {
+          sctx.beginPath();
+          sctx.ellipse(cx + (j - 1.5) * 24 * scale, cy + (j % 2 ? 5 : -4), 30 * scale, 11 * scale, 0, 0, Math.PI * 2);
+          sctx.fill();
+        }
+      }
+      sctx.fillStyle = 'rgba(72, 46, 48, 0.50)';
     } else if (presetKey === 'midday') {
       grad.addColorStop(0.0, '#1D74DC');
       grad.addColorStop(0.36, '#6CB8F4');

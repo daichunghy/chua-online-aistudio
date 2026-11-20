@@ -663,3 +663,118 @@ export function generateAcademyCertificate(
     motto: 'Tự giác · Giác tha · Giác hạnh viên mãn'
   };
 }
+
+function normalizeVietnameseSearch(text = '') {
+  return String(text || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd')
+    .trim();
+}
+
+export function getCourseProgress(courseId, completedLessonIds = []) {
+  const course = ACADEMY_COURSES.find((c) => c.id === courseId) || ACADEMY_COURSES[0];
+  const doneSet = new Set(Array.isArray(completedLessonIds) ? completedLessonIds : []);
+  const lessonIds = Array.isArray(course.lessonIds) ? course.lessonIds : [];
+  const totalCount = lessonIds.length;
+  const completedCount = lessonIds.filter((id) => doneSet.has(id)).length;
+  const percent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+  const nextLessonId = lessonIds.find((id) => !doneSet.has(id)) || lessonIds[0] || null;
+  return {
+    courseId: course.id,
+    completedCount,
+    totalCount,
+    percent,
+    isCompleted: totalCount > 0 && completedCount >= totalCount,
+    nextLessonId
+  };
+}
+
+export function getAcademyOverallProgress(completedLessonIds = [], unlockedCourses = ['course_1_khai_tam']) {
+  const unlockedSet = new Set(Array.isArray(unlockedCourses) ? unlockedCourses : ['course_1_khai_tam']);
+  const doneSet = new Set(Array.isArray(completedLessonIds) ? completedLessonIds : []);
+  const perCourse = ACADEMY_COURSES.map((c) => ({
+    ...getCourseProgress(c.id, completedLessonIds),
+    unlocked: Boolean(c.unlockedByDefault) || unlockedSet.has(c.id)
+  }));
+  const totalLessons = ACADEMY_COURSES.reduce((sum, c) => sum + (c.lessonIds?.length || 0), 0);
+  const completedLessons = ACADEMY_COURSES.reduce(
+    (sum, c) => sum + (c.lessonIds || []).filter((id) => doneSet.has(id)).length,
+    0
+  );
+  return {
+    completedLessons,
+    totalLessons,
+    percent: totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0,
+    unlockedCourseCount: perCourse.filter((c) => c.unlocked).length,
+    totalCourseCount: ACADEMY_COURSES.length,
+    perCourse
+  };
+}
+
+export function getNextRecommendedLesson(
+  completedLessonIds = [],
+  unlockedCourses = ['course_1_khai_tam'],
+  allLessons = LECTURE_LESSONS
+) {
+  const doneSet = new Set(Array.isArray(completedLessonIds) ? completedLessonIds : []);
+  const unlockedSet = new Set(Array.isArray(unlockedCourses) ? unlockedCourses : ['course_1_khai_tam']);
+  const lessonMap = new Map((Array.isArray(allLessons) ? allLessons : []).map((l) => [l.id, l]));
+
+  for (const course of ACADEMY_COURSES) {
+    const isUnlocked = Boolean(course.unlockedByDefault) || unlockedSet.has(course.id);
+    if (!isUnlocked) continue;
+    for (const lid of course.lessonIds || []) {
+      if (!doneSet.has(lid) && lessonMap.has(lid)) {
+        const lesson = lessonMap.get(lid);
+        const mod = ACADEMY_MODULES.find((m) => m.id === lesson.moduleId) || null;
+        return {
+          course,
+          module: mod,
+          lesson,
+          allUnlockedDone: false
+        };
+      }
+    }
+  }
+
+  // Fallback to first lesson of first course if all unlocked lessons are completed
+  const firstCourse = ACADEMY_COURSES[0];
+  const firstLesson = lessonMap.get(firstCourse.lessonIds[0]) || (allLessons || [])[0] || null;
+  const firstMod = firstLesson ? ACADEMY_MODULES.find((m) => m.id === firstLesson.moduleId) || null : null;
+  return {
+    course: firstCourse,
+    module: firstMod,
+    lesson: firstLesson,
+    allUnlockedDone: true
+  };
+}
+
+export function filterAcademyLessons(
+  lessons = LECTURE_LESSONS,
+  { query = '', status = 'all', completedLessonIds = [], unlockedCourses = ['course_1_khai_tam'] } = {}
+) {
+  const q = normalizeVietnameseSearch(query);
+  const doneSet = new Set(Array.isArray(completedLessonIds) ? completedLessonIds : []);
+  const unlockedSet = new Set(Array.isArray(unlockedCourses) ? unlockedCourses : ['course_1_khai_tam']);
+  const defaultUnlockedIds = new Set(
+    ACADEMY_COURSES.filter((c) => c.unlockedByDefault).map((c) => c.id)
+  );
+
+  return (Array.isArray(lessons) ? lessons : []).filter((lesson) => {
+    const isDone = doneSet.has(lesson.id);
+    const isUnlocked = defaultUnlockedIds.has(lesson.courseId) || unlockedSet.has(lesson.courseId);
+
+    if (status === 'completed' && !isDone) return false;
+    if (status === 'incomplete' && isDone) return false;
+    if (status === 'unlocked' && !isUnlocked) return false;
+
+    if (!q) return true;
+    const haystack = normalizeVietnameseSearch(
+      `${lesson.id} ${lesson.title} ${lesson.sourceBook || ''} ${(lesson.summary || []).join(' ')}`
+    );
+    return haystack.includes(q);
+  });
+}
+

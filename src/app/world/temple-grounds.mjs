@@ -30,28 +30,59 @@ export const templeGroundsMethods = {
     grass.receiveShadow = true;
     this.exteriorGroup.add(grass);
 
+    const regWet = (mat, opts) => {
+      this.registerWettableMaterial?.(mat, opts);
+      return mat;
+    };
+
     // Expanded Stone Courtyard spanning full 136m x 134m (~18,200 m² sanctuary covering rear hall)
-    const courtyard = new THREE.Mesh(
-      new THREE.BoxGeometry(136, 0.1, 134),
-      new THREE.MeshStandardMaterial({ map: this.pavingTex, color: 0xD9D0BF, roughness: 0.86 })
+    const courtyardMat = regWet(
+      new THREE.MeshStandardMaterial({
+        map: this.pavingTex,
+        bumpMap: this.pavingBumpTex,
+        bumpScale: 0.028,
+        roughnessMap: this.pavingRoughTex,
+        color: 0xD9D0BF,
+        roughness: 0.88
+      }),
+      { minRoughness: 0.2, darkenStrength: 0.22 }
     );
+    const courtyard = new THREE.Mesh(new THREE.BoxGeometry(136, 0.1, 134), courtyardMat);
     courtyard.position.set(0.0, -0.04, -25.5);
     courtyard.receiveShadow = true;
     this.exteriorGroup.add(courtyard);
 
     // Front Plaza Axis (Cổng Tam Quan -> Sân Cờ -> Chánh Điện; terminates cleanly at gate line z = 41.5)
-    const mainRoad = new THREE.Mesh(
-      new THREE.BoxGeometry(10.8, 0.12, 32.5),
-      new THREE.MeshStandardMaterial({ map: this.pavingTex, color: 0xC6BBA6, roughness: 0.88 })
+    const mainRoadMat = regWet(
+      new THREE.MeshStandardMaterial({
+        map: this.pavingTex,
+        bumpMap: this.pavingBumpTex,
+        bumpScale: 0.026,
+        roughnessMap: this.pavingRoughTex,
+        color: 0xC6BBA6,
+        roughness: 0.88
+      }),
+      { minRoughness: 0.2, darkenStrength: 0.24 }
     );
+    const mainRoad = new THREE.Mesh(new THREE.BoxGeometry(10.8, 0.12, 32.5), mainRoadMat);
     mainRoad.position.set(23, 0.0, 25.25);
     mainRoad.receiveShadow = true;
     this.exteriorGroup.add(mainRoad);
 
     // RIGHT (East) Tourist Arrival Road inside compound (warm weathered concrete stone, zero glare)
+    const rightArrivalRoadMat = regWet(
+      new THREE.MeshStandardMaterial({
+        map: this.concreteRoadTex,
+        bumpMap: this.stoneBumpTex,
+        bumpScale: 0.018,
+        color: 0xB8AE9B,
+        roughness: 0.90
+      }),
+      { minRoughness: 0.22, darkenStrength: 0.25 }
+    );
     const rightArrivalRoad = new THREE.Mesh(
       new THREE.BoxGeometry(12.4, 0.12, 34.5),
-      new THREE.MeshStandardMaterial({ map: this.concreteRoadTex, color: 0xB8AE9B, roughness: 0.90 })
+      rightArrivalRoadMat
     );
     rightArrivalRoad.position.set(41.8, 0.002, 24.25);
     rightArrivalRoad.receiveShadow = true;
@@ -59,32 +90,57 @@ export const templeGroundsMethods = {
 
     // Long, Wide Weathered Stone-Concrete Entrance Road inside Cổng Phụ Tịnh Độ Huyền Môn (x = 35.5..48.1, z = +41.5 -> -42)
     // + Spacious Left-Turn Plaza at End of Road (z = -14.5) leading onto the Shoe-Removal Veranda of Chánh Điện!
-    const sideWalkway = new THREE.Mesh(
-      new THREE.BoxGeometry(12.6, 0.12, 83.5),
-      new THREE.MeshStandardMaterial({ map: this.concreteRoadTex, color: 0xBDB3A0, roughness: 0.90 })
+    const sideWalkwayMat = regWet(
+      new THREE.MeshStandardMaterial({
+        map: this.concreteRoadTex,
+        bumpMap: this.stoneBumpTex,
+        bumpScale: 0.018,
+        color: 0xBDB3A0,
+        roughness: 0.90
+      }),
+      { minRoughness: 0.22, darkenStrength: 0.24 }
     );
+    const sideWalkway = new THREE.Mesh(new THREE.BoxGeometry(12.6, 0.12, 83.5), sideWalkwayMat);
     sideWalkway.position.set(41.8, 0.006, -0.25);
     sideWalkway.receiveShadow = true;
     this.exteriorGroup.add(sideWalkway);
 
-    const endTurnPlaza = new THREE.Mesh(
-      new THREE.BoxGeometry(17.6, 0.13, 27.0),
-      new THREE.MeshStandardMaterial({ map: this.sideBrickTex, color: 0xC9B39A, roughness: 0.86 })
+    const endTurnPlazaMat = regWet(
+      new THREE.MeshStandardMaterial({
+        map: this.sideBrickTex,
+        bumpMap: this.pavingBumpTex,
+        bumpScale: 0.022,
+        color: 0xC9B39A,
+        roughness: 0.86
+      }),
+      { minRoughness: 0.24, darkenStrength: 0.24 }
     );
+    const endTurnPlaza = new THREE.Mesh(new THREE.BoxGeometry(17.6, 0.13, 27.0), endTurnPlazaMat);
     endTurnPlaza.position.set(42.5, 0.008, -21.5);
     endTurnPlaza.receiveShadow = true;
     this.exteriorGroup.add(endTurnPlaza);
 
     // Lối lát đá rộng nối từ sân rẽ trái xuyên giữa 2 bồn cây kiểng thẳng vào Văn Phòng Ban Trị Sự · Giảng Đường Huệ Đăng
+    const giangDuongWalkwayMat = regWet(
+      new THREE.MeshStandardMaterial({
+        map: this.pavingTex,
+        bumpMap: this.pavingBumpTex,
+        bumpScale: 0.024,
+        color: 0xC4B8A3,
+        roughness: 0.88
+      }),
+      { minRoughness: 0.22, darkenStrength: 0.24 }
+    );
     const giangDuongWalkway = new THREE.Mesh(
       new THREE.BoxGeometry(10.6, 0.12, 5.4),
-      new THREE.MeshStandardMaterial({ map: this.pavingTex, color: 0xC4B8A3, roughness: 0.88 })
+      giangDuongWalkwayMat
     );
     giangDuongWalkway.position.set(54.2, 0.007, -18.0);
     giangDuongWalkway.receiveShadow = true;
     this.exteriorGroup.add(giangDuongWalkway);
 
     this.buildFenceAndGateWall();
+    this.buildCongPhuStreetLife?.();
 
     // =========================================================================================
     // REAL CHÙA VĨNH TRÀNG AGED, DUSTY, UNEVEN MỸ THO APPROACH ROAD (170m LONG)
@@ -171,22 +227,32 @@ export const templeGroundsMethods = {
     straightAsphaltTex.wrapS = THREE.RepeatWrapping;
     straightAsphaltTex.wrapT = THREE.RepeatWrapping;
     straightAsphaltTex.repeat.set(1, 22);
-    const straightAsphaltMat = new THREE.MeshStandardMaterial({
-      map: straightAsphaltTex,
-      color: 0xD2C8B8,
-      roughness: 0.96,
-      metalness: 0.0
-    });
+    const straightAsphaltMat = regWet(
+      new THREE.MeshStandardMaterial({
+        map: straightAsphaltTex,
+        bumpMap: this.stoneBumpTex,
+        bumpScale: 0.022,
+        color: 0xD2C8B8,
+        roughness: 0.94,
+        metalness: 0.0
+      }),
+      { minRoughness: 0.18, darkenStrength: 0.30 }
+    );
 
     const apronAsphaltTex = straightAsphaltTex.clone();
     apronAsphaltTex.needsUpdate = true;
     apronAsphaltTex.repeat.set(8, 2);
-    const apronAsphaltMat = new THREE.MeshStandardMaterial({
-      map: apronAsphaltTex,
-      color: 0xD4CBB9,
-      roughness: 0.95,
-      metalness: 0.0
-    });
+    const apronAsphaltMat = regWet(
+      new THREE.MeshStandardMaterial({
+        map: apronAsphaltTex,
+        bumpMap: this.stoneBumpTex,
+        bumpScale: 0.022,
+        color: 0xD4CBB9,
+        roughness: 0.93,
+        metalness: 0.0
+      }),
+      { minRoughness: 0.18, darkenStrength: 0.30 }
+    );
 
     // Dusty red-brown Mekong compacted earth & gravel verge texture ("lề đường đất bụi Mỹ Tho")
     const dirtVergeCanvas = document.createElement('canvas');
@@ -209,28 +275,41 @@ export const templeGroundsMethods = {
     dirtVergeTex.wrapS = THREE.RepeatWrapping;
     dirtVergeTex.wrapT = THREE.RepeatWrapping;
     dirtVergeTex.repeat.set(1, 38);
-    const dirtVergeMat = new THREE.MeshStandardMaterial({
-      map: dirtVergeTex,
-      color: 0xC9B393,
-      roughness: 0.98
-    });
+    const dirtVergeMat = regWet(
+      new THREE.MeshStandardMaterial({
+        map: dirtVergeTex,
+        color: 0xC9B393,
+        roughness: 0.98
+      }),
+      { minRoughness: 0.52, darkenStrength: 0.28 }
+    );
 
     const urbanSidewalkTex = this.pavingTex.clone();
     urbanSidewalkTex.needsUpdate = true;
     urbanSidewalkTex.repeat.set(2, 34);
-    const urbanSidewalkMat = new THREE.MeshStandardMaterial({
-      map: urbanSidewalkTex,
-      color: 0xD0C3AE,
-      roughness: 0.92
-    });
+    const urbanSidewalkMat = regWet(
+      new THREE.MeshStandardMaterial({
+        map: urbanSidewalkTex,
+        bumpMap: this.pavingBumpTex,
+        bumpScale: 0.024,
+        color: 0xD0C3AE,
+        roughness: 0.90
+      }),
+      { minRoughness: 0.22, darkenStrength: 0.24 }
+    );
     const frontWalkTex = this.pavingTex.clone();
     frontWalkTex.needsUpdate = true;
     frontWalkTex.repeat.set(18, 2);
-    const frontWalkMat = new THREE.MeshStandardMaterial({
-      map: frontWalkTex,
-      color: 0xD2C6B2,
-      roughness: 0.90
-    });
+    const frontWalkMat = regWet(
+      new THREE.MeshStandardMaterial({
+        map: frontWalkTex,
+        bumpMap: this.pavingBumpTex,
+        bumpScale: 0.024,
+        color: 0xD2C6B2,
+        roughness: 0.88
+      }),
+      { minRoughness: 0.22, darkenStrength: 0.24 }
+    );
     const urbanCurbMat = new THREE.MeshStandardMaterial({ color: 0xA99E8E, roughness: 0.93 });
 
     // Helper: create bumpy, weathered uneven ground/road strip with subtle real-world undulations

@@ -344,6 +344,7 @@ export const shellDomMethods = {
                 <button type="button" class="drawer-action-btn" id="btn-drawer-oracle"><span>🎋 Rút Quẻ Bình An hôm nay</span><span>→</span></button>
                 <button type="button" class="drawer-action-btn" id="btn-drawer-lanterns"><span>🏮 Thả Hoa Đăng Hồ Sen</span><span>→</span></button>
                 <button type="button" class="drawer-action-btn" id="btn-drawer-blessing-tower"><span>🕯️ Tháp Đèn Cầu An</span><span>→</span></button>
+                <button type="button" class="drawer-action-btn" id="btn-drawer-depth"><span>🤝 Công Quả · Hữu Duyên · 12 Ảnh Di Sản</span><span>→</span></button>
                 <button type="button" class="drawer-action-btn" id="btn-drawer-photo"><span>📸 Chụp Ảnh Kỷ Niệm Sạch HUD</span><span>→</span></button>
               </div>
             </div>
@@ -358,11 +359,28 @@ export const shellDomMethods = {
             </div>
 
             <div>
-              <h3 class="drawer-group-title">Ánh sáng sân chùa</h3>
-              <div class="drawer-segment-row" role="group" aria-label="Thời gian trong ngày">
-                <button type="button" class="drawer-segment-btn ${this.timeOfDay === 'morning' ? 'active' : ''}" data-time-of-day="morning">🌅 Sáng</button>
-                <button type="button" class="drawer-segment-btn ${this.timeOfDay === 'midday' ? 'active' : ''}" data-time-of-day="midday">☀️ Trưa</button>
-                <button type="button" class="drawer-segment-btn ${this.timeOfDay === 'evening' ? 'active' : ''}" data-time-of-day="evening">🕯️ Tối</button>
+              <h3 class="drawer-group-title">Thời khóa &amp; Ánh sáng sân chùa</h3>
+              <div class="drawer-segment-row" style="grid-template-columns:1fr 1fr;" role="group" aria-label="Thời khóa và ánh sáng trong ngày">
+                <button type="button" class="drawer-segment-btn ${this.timeOfDay === 'morning' ? 'active' : ''}" data-time-of-day="morning">🌅 Sáng (06:30)</button>
+                <button type="button" class="drawer-segment-btn ${this.timeOfDay === 'midday' ? 'active' : ''}" data-time-of-day="midday">☀️ Trưa (11:30)</button>
+                <button type="button" class="drawer-segment-btn ${this.timeOfDay === 'sunset' ? 'active' : ''}" data-time-of-day="sunset">🌇 Chiều (17:00)</button>
+                <button type="button" class="drawer-segment-btn ${this.timeOfDay === 'evening' ? 'active' : ''}" data-time-of-day="evening">🕯️ Tối (19:00)</button>
+              </div>
+            </div>
+
+            <div>
+              <h3 class="drawer-group-title">Thời tiết miền Tây</h3>
+              <div class="drawer-segment-row" style="grid-template-columns:1fr 1fr;" role="group" aria-label="Thời tiết sân chùa">
+                <button type="button" class="drawer-segment-btn ${this.weatherPreset !== 'rain' ? 'active' : ''}" data-weather-preset="clear">🌤️ Nắng đẹp</button>
+                <button type="button" class="drawer-segment-btn ${this.weatherPreset === 'rain' ? 'active' : ''}" data-weather-preset="rain">🌦️ Mưa rào</button>
+              </div>
+            </div>
+
+            <div>
+              <h3 class="drawer-group-title">Góc nhìn vãn cảnh (Phím V)</h3>
+              <div class="drawer-segment-row" style="grid-template-columns:1fr 1fr;" role="group" aria-label="Chế độ góc nhìn">
+                <button type="button" class="drawer-segment-btn ${this.cameraViewMode !== 'first' ? 'active' : ''}" data-camera-mode="third">👤 Góc thứ 3</button>
+                <button type="button" class="drawer-segment-btn ${this.cameraViewMode === 'first' ? 'active' : ''}" data-camera-mode="first">👁️ Thứ 1 [V]</button>
               </div>
             </div>
 

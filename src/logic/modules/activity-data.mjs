@@ -19,14 +19,21 @@ export const TIME_OF_DAY_PRESETS = {
     label: 'Giữa Trưa',
     shortLabel: 'Trưa',
     icon: '☀️',
-    subtitle: 'Ánh nắng rực rỡ chiếu rọi 13 nhịp vòm vàng Chánh điện'
+    subtitle: 'Giờ thọ trai 11:30 · Ánh nắng trong xanh rọi 13 nhịp vòm vàng Chánh điện'
+  },
+  sunset: {
+    key: 'sunset',
+    label: 'Chiều Vàng',
+    shortLabel: 'Chiều',
+    icon: '🌇',
+    subtitle: 'Hoàng hôn 17:00 Mỹ Tho · Nắng chiều hắt đồng rực rỡ lên khảm sành sứ & vườn tượng'
   },
   evening: {
     key: 'evening',
     label: 'Buổi Tối',
     shortLabel: 'Tối',
     icon: '🕯️',
-    subtitle: 'Ánh nến & đèn lồng ấm áp dưới bầu trời sao thanh tịnh'
+    subtitle: 'Tịnh độ 19:00 · Ánh nến, đèn lồng lục giác & hoa đăng ấm áp dưới trời sao'
   }
 };
 

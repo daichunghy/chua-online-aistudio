@@ -422,11 +422,13 @@ test('9-category Store catalog, live try-on, level gating, and Tam Quan South->N
 });
 
 test('Temple Entrance Grocery House & continuous Chữ Quốc walkway routing work cleanly', () => {
-  assert.equal(MARKETPLACE_STALL_CATEGORIES.length, 3);
-  assert.ok(MARKETPLACE_STALL_CATALOG.length >= 18);
+  assert.ok(MARKETPLACE_STALL_CATEGORIES.length >= 5);
+  assert.ok(MARKETPLACE_STALL_CATALOG.length >= 28);
+  assert.equal(filterMarketplaceItems('all').length, MARKETPLACE_STALL_CATALOG.length);
   assert.ok(filterMarketplaceItems('huong_hoa').length >= 5);
   assert.ok(filterMarketplaceItems('thu_cong').length >= 6);
   assert.ok(filterMarketplaceItems('am_thuc_chay').length >= 7);
+  assert.ok(filterMarketplaceItems('phap_phuc').length >= 4);
 
   const profile = createStoreProfileState({ lotusPoints: 250 });
   const spiritual = createSpiritualState();

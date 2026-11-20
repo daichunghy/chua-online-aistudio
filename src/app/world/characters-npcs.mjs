@@ -929,8 +929,11 @@ export const charactersNpcsMethods = {
           wp(41.2, 12.0, 'pass'),
           wp(41.2, -14.5, 'pass'),
           wp(37.2, -14.5, 'chap_tay', 3.4, 35.2, -14.5),
-          wp(42.2, -14.5, 'pass'),
-          wp(42.2, -28.4, 'dung', 2.6, 42.2, -33.5),
+          wp(42.2, -26.5, 'pass'),
+          wp(42.2, -31.2, 'pass'),
+          wp(42.2, -36.5, 'dung', 3.2, 42.2, -38.8),
+          wp(46.2, -33.2, 'dung', 2.8, 48.8, -33.2),
+          wp(42.2, -28.0, 'pass'),
           wp(42.4, 4.0, 'pass')
         ]
       },
@@ -958,8 +961,11 @@ export const charactersNpcsMethods = {
           wp(40.6, 18.0, 'pass'),
           wp(40.6, -14.5, 'pass'),
           wp(37.4, -14.5, 'chap_tay', 3.0, 35.2, -14.5),
-          wp(42.6, -24.0, 'pass'),
-          wp(42.2, -28.6, 'dung', 2.8, 42.2, -33.5),
+          wp(42.4, -26.5, 'pass'),
+          wp(38.0, -31.0, 'pass'),
+          wp(37.4, -36.2, 'chup_anh', 3.2, 37.4, -38.8),
+          wp(42.2, -36.6, 'dung', 2.8, 42.2, -38.8),
+          wp(42.4, -27.5, 'pass'),
           wp(43.2, -12.0, 'pass'),
           wp(43.0, 14.0, 'pass')
         ]
@@ -1371,6 +1377,27 @@ export const charactersNpcsMethods = {
         this.recolorPastelDress(rec.root, sp.tint);
       }
       rec.root.position.set(sp.x, rec.baseY + (sp.elev || 0), sp.z);
+      rec.root.rotation.y = sp.yaw;
+      this.playClipCrossfade(rec, sp.pose, 0.05);
+      this.interiorGroup.add(rec.root);
+      this.interiorKneelingRecords.push(rec);
+    }
+
+    // Additional congregation worshippers seated across the expanded 112-mat Chánh Điện hall
+    const extraHallWorshippers = [
+      { x: -37.0, z: -5.1, yaw: Math.PI / 2, charKey: this.charDataCache.nu_ao_lam ? 'nu_ao_lam' : 'nu', isMeshyChar: Boolean(this.charDataCache.nu_ao_lam), pose: 'chap_tay' },
+      { x: -37.0, z: 5.1, yaw: Math.PI / 2, charKey: this.charDataCache.nam_ao_nau ? 'nam_ao_nau' : 'nam', isMeshyChar: Boolean(this.charDataCache.nam_ao_nau), pose: 'chap_tay' },
+      { x: -40.6, z: -6.8, yaw: Math.PI / 2, charKey: 'nu', tint: [0.76, 0.72, 0.82], pose: 'chap_tay' },
+      { x: -40.6, z: 6.8, yaw: Math.PI / 2, charKey: 'nam', tint: [0.64, 0.68, 0.74], pose: 'chap_tay' },
+      { x: -44.2, z: -14.0, yaw: Math.PI / 2, charKey: this.charDataCache.nu_ao_lam ? 'nu_ao_lam' : 'nu', isMeshyChar: Boolean(this.charDataCache.nu_ao_lam), pose: 'chap_tay' },
+      { x: -44.2, z: 14.0, yaw: Math.PI / 2, charKey: 'nu', tint: [0.84, 0.78, 0.70], pose: 'chap_tay' }
+    ];
+    for (const sp of extraHallWorshippers) {
+      const h = CHAR_HEIGHTS[sp.charKey] || 1.64;
+      const rec = this.cloneAnimatedCharacter(sp.charKey, h);
+      if (!rec) continue;
+      if (!sp.isMeshyChar && sp.tint) this.recolorPastelDress(rec.root, sp.tint);
+      rec.root.position.set(sp.x, rec.baseY, sp.z);
       rec.root.rotation.y = sp.yaw;
       this.playClipCrossfade(rec, sp.pose, 0.05);
       this.interiorGroup.add(rec.root);

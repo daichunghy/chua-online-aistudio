@@ -438,3 +438,338 @@ export function findGridPathAStar(grid, startX, startZ, goalX, goalZ) {
   const smoothed = smoothGridPath(grid, withAnchors);
   return smoothed.slice(1);
 }
+
+/**
+ * Actual site layout constants for Chùa Vĩnh Tràng's straight 170m approach road & outer parking area.
+ */
+export const TEMPLE_APPROACH_LAYOUT = Object.freeze({
+  roadCenterX: 40.5,
+  roadMinX: 33.7,
+  roadMaxX: 47.3,
+  gateZ: 41.5,
+  outerParking: {
+    minX: 47.5,
+    maxX: 78.0,
+    minZ: 98.0,
+    maxZ: 140.0,
+    apronExitX: 46.8,
+    apronExitZ: 112.0
+  }
+});
+
+/**
+ * Removes redundant nearly-collinear intermediate waypoints so straight corridors stay strictly linear.
+ */
+export function pruneCollinearWaypoints(waypoints, angleToleranceRad = 0.075, minSpacing = 0.45) {
+  if (!Array.isArray(waypoints) || waypoints.length <= 2) return Array.isArray(waypoints) ? waypoints.slice() : [];
+  const compact = [waypoints[0]];
+  for (let i = 1; i < waypoints.length; i++) {
+    const prev = compact[compact.length - 1];
+    const cur = waypoints[i];
+    if (i === waypoints.length - 1 || Math.hypot(cur.x - prev.x, cur.z - prev.z) >= minSpacing) {
+      compact.push(cur);
+    }
+  }
+  if (compact.length <= 2) return compact;
+
+  const result = [compact[0]];
+  const cosThresh = Math.cos(angleToleranceRad);
+  for (let i = 1; i < compact.length - 1; i++) {
+    const a = result[result.length - 1];
+    const b = compact[i];
+    const c = compact[i + 1];
+    const v1x = b.x - a.x;
+    const v1z = b.z - a.z;
+    const v2x = c.x - b.x;
+    const v2z = c.z - b.z;
+    const l1 = Math.hypot(v1x, v1z);
+    const l2 = Math.hypot(v2x, v2z);
+    if (l1 < 1e-4 || l2 < 1e-4) continue;
+    const dot = (v1x * v2x + v1z * v2z) / (l1 * l2);
+    if (dot >= cosThresh) {
+      // b lies virtually on the straight segment a -> c; skip it
+      continue;
+    }
+    result.push(b);
+  }
+  result.push(compact[compact.length - 1]);
+  return result;
+}
+
+/**
+ * Computes a smooth, straight-aligned navigation path that eliminates non-linear detours
+ * along the 170m approach road between Bãi Giữ Xe (outer parking area) and Cổng Phụ (x=40.5, z=41.5).
+ */
+export function optimizeEntrancePath(grid, fromX, fromZ, toX, toZ, inInterior = false) {
+  const segments = [];
+  const { roadCenterX, gateZ, outerParking } = TEMPLE_APPROACH_LAYOUT;
+
+  if (!inInterior) {
+    const curOutside = fromZ > gateZ + 0.6;
+    const destInside = toZ < gateZ - 0.6;
+    const curInside = fromZ < gateZ - 0.6;
+    const destOutside = toZ > gateZ + 0.6;
+
+    const inParkingLot =
+      fromX >= outerParking.minX &&
+      fromZ >= outerParking.minZ &&
+      fromZ <= outerParking.maxZ;
+    const destInParkingLot =
+      toX >= outerParking.minX &&
+      toZ >= outerParking.minZ &&
+      toZ <= outerParking.maxZ;
+
+    // Straight exit from outer parking area onto the 170m approach road centerline (x = 40.5)
+    if (inParkingLot && toX < outerParking.minX) {
+      const mergeZ = clamp(fromZ - 4.0, outerParking.minZ + 2.0, outerParking.maxZ - 2.0);
+      segments.push({ x: roadCenterX, z: mergeZ });
+    }
+
+    // Crossing Cổng Phụ Tịnh Độ Huyền Môn along the exact straight road axis (x = 40.5, no x=39.2 zigzag!)
+    if (curOutside && destInside) {
+      if (Math.abs(fromX - roadCenterX) > 2.6 || fromZ > gateZ + 12) {
+        segments.push({ x: roadCenterX, z: Math.min(fromZ, gateZ + 6.0) });
+      }
+      segments.push({ x: roadCenterX, z: gateZ });
+      // Continue straight past the gate into the inner entrance lane if heading further North
+      if (toZ < gateZ - 4.5 && Math.abs(toX - roadCenterX) <= 4.5) {
+        segments.push({ x: roadCenterX, z: Math.max(toZ, gateZ - 6.0) });
+      }
+    } else if (curInside && destOutside) {
+      segments.push({ x: roadCenterX, z: gateZ });
+      if (destInParkingLot) {
+        segments.push({ x: roadCenterX, z: clamp(toZ, outerParking.minZ + 2.0, outerParking.maxZ - 2.0) });
+      }
+    } else if (curOutside && destOutside && destInParkingLot && fromX < outerParking.minX) {
+      segments.push({ x: roadCenterX, z: clamp(toZ, outerParking.minZ + 2.0, outerParking.maxZ - 2.0) });
+    }
+  }
+
+  segments.push({ x: toX, z: toZ });
+
+  // Deduplicate redundant consecutive segment targets
+  const cleanSegments = [];
+  for (let i = 0; i < segments.length; i++) {
+    const s = segments[i];
+    const prev = cleanSegments[cleanSegments.length - 1];
+    if (!prev || Math.hypot(s.x - prev.x, s.z - prev.z) > 0.6) {
+      cleanSegments.push(s);
+    }
+  }
+
+  const combined = [{ x: fromX, z: fromZ }];
+  let curX = fromX;
+  let curZ = fromZ;
+
+  for (let s = 0; s < cleanSegments.length; s++) {
+    const seg = cleanSegments[s];
+    const leg = grid
+      ? findGridPathAStar(grid, curX, curZ, seg.x, seg.z)
+      : [{ x: seg.x, z: seg.z }];
+    for (let i = 0; i < leg.length; i++) {
+      const p = leg[i];
+      const last = combined[combined.length - 1];
+      if (!last || Math.hypot(p.x - last.x, p.z - last.z) > 0.35) {
+        combined.push({ x: p.x, z: p.z });
+      }
+    }
+    curX = seg.x;
+    curZ = seg.z;
+  }
+
+  // Global string-pulling across the whole merged route removes segment boundary kinks
+  const globalSmoothed = grid ? smoothGridPath(grid, combined) : combined;
+  const pruned = pruneCollinearWaypoints(globalSmoothed, 0.08, 0.45);
+  const out = pruned.slice(1);
+  if (out.length === 0) {
+    return [{ x: toX, z: toZ }];
+  }
+  return out;
+}
+
+/**
+ * Samples realistic terrain elevation (in meters) matching the 3D scene geometry:
+ * - Chánh Điện interior floor: 0.0m
+ * - Stilt dining porch & access ramp: 0.0m -> 1.14m
+ * - Straight 170m approach road crown & subtle Mekong asphalt undulation: ~0.015..0.065m
+ * - Temple courtyard tiles: 0.0m
+ */
+export function getTerrainGroundHeight(x, z, inInterior = false) {
+  if (inInterior) return 0;
+  // Stilt porch / raised hall platform & ramp (x in [52.0..64.6], z in [7.6..21.4])
+  if (x >= 54.4 && x <= 64.6 && z >= 7.6 && z <= 21.4) {
+    return 1.14;
+  }
+  if (x >= 52.0 && x < 54.4 && z >= 12.6 && z <= 16.4) {
+    return ((x - 52.0) / 2.4) * 1.14;
+  }
+  // Straight 170m outer approach road (x in [33.7..47.3], z in [41.5..212.0]) — subtle road crown
+  if (x >= 33.7 && x <= 47.3 && z >= 41.5 && z <= 212.0) {
+    const roadHalfW = 6.8;
+    const normOffset = clamp(Math.abs(x - 40.5) / roadHalfW, 0, 1);
+    const crown = (1 - normOffset * normOffset) * 0.045;
+    const microRipple = Math.sin(z * 0.14) * 0.012 + Math.cos(x * 0.55) * 0.008;
+    return Math.max(0, 0.015 + crown + microRipple);
+  }
+  // Outer parking pad apron (x in [48.5..76.5], z in [102..138])
+  if (x >= 48.5 && x <= 76.5 && z >= 102.0 && z <= 138.0) {
+    return 0.055;
+  }
+  return 0;
+}
+
+/**
+ * Realistic walking physics step with smooth acceleration, deceleration, cornering slowdown,
+ * arrival braking, and stride phase advancement for footstep sync & zero foot sliding.
+ */
+export function stepWalkingPhysics(state, desiredDirX, desiredDirZ, options = {}) {
+  const dt = Math.max(0.001, Math.min(0.1, Number(options.dt) || 0.016));
+  const maxSpeed = Number.isFinite(options.maxSpeed) ? options.maxSpeed : 4.4;
+  const accel = Number.isFinite(options.accel) ? options.accel : 10.5;
+  const decel = Number.isFinite(options.decel) ? options.decel : 14.0;
+  const inputScale = clamp(Number.isFinite(options.inputScale) ? options.inputScale : 1.0, 0, 1);
+  const distToFinal = Number.isFinite(options.distToFinal) ? options.distToFinal : Infinity;
+  const strideLength = Number.isFinite(options.strideLength) ? options.strideLength : 1.38;
+
+  let vx = Number.isFinite(state?.vx) ? state.vx : 0;
+  let vz = Number.isFinite(state?.vz) ? state.vz : 0;
+  let stridePhase = Number.isFinite(state?.stridePhase) ? state.stridePhase : 0;
+
+  const dirLen = Math.hypot(desiredDirX, desiredDirZ);
+  let targetVx = 0;
+  let targetVz = 0;
+
+  if (dirLen > 1e-4 && inputScale > 0.02) {
+    const nx = desiredDirX / dirLen;
+    const nz = desiredDirZ / dirLen;
+    let targetSpeed = maxSpeed * inputScale;
+
+    // Gentle arrival deceleration within 2.4m of final stop
+    if (distToFinal < 2.4) {
+      const brakeFactor = clamp(distToFinal / 2.4, 0.24, 1.0);
+      targetSpeed *= brakeFactor;
+    }
+
+    // Natural cornering speed moderation when turning sharply relative to current momentum
+    const curSpeed = Math.hypot(vx, vz);
+    if (curSpeed > 0.6) {
+      const alignDot = clamp((vx * nx + vz * nz) / curSpeed, -1, 1);
+      if (alignDot < 0.72) {
+        const cornerScale = 0.55 + 0.45 * Math.max(0, alignDot);
+        targetSpeed *= cornerScale;
+      }
+    }
+
+    targetVx = nx * targetSpeed;
+    targetVz = nz * targetSpeed;
+  }
+
+  const dvx = targetVx - vx;
+  const dvz = targetVz - vz;
+  const dvMag = Math.hypot(dvx, dvz);
+  const isBraking = Math.hypot(targetVx, targetVz) < Math.hypot(vx, vz);
+  const rate = isBraking ? decel : accel;
+  const maxChange = rate * dt;
+
+  if (dvMag <= maxChange) {
+    vx = targetVx;
+    vz = targetVz;
+  } else if (dvMag > 1e-5) {
+    vx += (dvx / dvMag) * maxChange;
+    vz += (dvz / dvMag) * maxChange;
+  }
+
+  let speed = Math.hypot(vx, vz);
+  if (speed < 0.04 && Math.hypot(targetVx, targetVz) < 0.04) {
+    vx = 0;
+    vz = 0;
+    speed = 0;
+  }
+
+  const stepDx = vx * dt;
+  const stepDz = vz * dt;
+  const prevCycle = Math.floor(stridePhase / Math.PI);
+  if (speed > 0.08) {
+    stridePhase += (speed * dt / Math.max(0.5, strideLength)) * Math.PI * 2;
+  }
+  const nextCycle = Math.floor(stridePhase / Math.PI);
+  const footstepTriggered = speed > 0.35 && nextCycle > prevCycle;
+
+  return {
+    vx,
+    vz,
+    speed,
+    stepDx,
+    stepDz,
+    stridePhase: stridePhase % (Math.PI * 200),
+    footstepTriggered,
+    moving: speed > 0.08,
+    normalizedSpeed: maxSpeed > 0.01 ? clamp(speed / maxSpeed, 0, 1.35) : 0
+  };
+}
+
+/**
+ * Potentially Visible Set (PVS) occlusion culling map for Chánh Điện's walled sub-zones.
+ * Hides heavy geometry (e.g. 18 Arhats + Tam Bảo vs 8 East Corridor shrines) when behind solid walls.
+ */
+export function getVisibleInteriorZones(activeZoneKey, playerX = 15, playerZ = 16, cutaway = false) {
+  if (cutaway) {
+    return {
+      shared_shell: true,
+      east_corridor: true,
+      center_courtyard: true,
+      west_chanh_dien: true,
+      north_gallery: true,
+      south_gallery: true
+    };
+  }
+
+  const vis = {
+    shared_shell: true,
+    east_corridor: false,
+    center_courtyard: false,
+    west_chanh_dien: false,
+    north_gallery: false,
+    south_gallery: false
+  };
+
+  // Determine visibility through open portals & sightlines
+  if (activeZoneKey === 'chanh_dien' || playerX <= -15.2) {
+    // Inside Grand West Chánh Điện (x <= -15.2): East Corridor is completely occluded by center courtyard + solid East walls!
+    vis.west_chanh_dien = true;
+    // Near the rear doorway (x > -23.5), glimpses of Hồ Sen Bộ courtyard are visible through the open Bức Bàn portals
+    vis.center_courtyard = playerX > -24.5;
+    vis.north_gallery = playerX > -18.0 && playerZ < -5.0;
+    vis.south_gallery = playerX > -18.0 && playerZ > 5.0;
+    vis.east_corridor = false;
+  } else if (activeZoneKey === 'day_ban_tho_phai' || activeZoneKey === 'trai_duong' || playerX >= 10.6) {
+    // Inside East Arrival Corridor & Veranda (x >= 10.6): Grand West Chánh Điện (Tam Bảo + 18 Arhats) is behind solid Bức Bàn wall!
+    vis.east_corridor = true;
+    vis.center_courtyard = playerZ > -22.0;
+    vis.north_gallery = playerZ < -6.0;
+    vis.south_gallery = playerZ > 4.0;
+    vis.west_chanh_dien = false;
+  } else if (activeZoneKey === 'ho_sen_bo') {
+    // Center Open Courtyard: looks toward East colonnade, North/South galleries, and West Chánh Điện entrance facade
+    vis.center_courtyard = true;
+    vis.east_corridor = playerX > -4.0;
+    vis.west_chanh_dien = playerX < 2.0;
+    vis.north_gallery = playerZ < 5.0;
+    vis.south_gallery = playerZ > -5.0;
+  } else if (activeZoneKey === 'hanh_lang_trai') {
+    // North Gallery (Tổ Đường)
+    vis.north_gallery = true;
+    vis.center_courtyard = true;
+    vis.east_corridor = playerX > -2.0;
+    vis.west_chanh_dien = playerX < -6.0;
+  } else {
+    // South Gallery
+    vis.south_gallery = true;
+    vis.center_courtyard = true;
+    vis.east_corridor = playerX > -2.0;
+    vis.west_chanh_dien = playerX < -6.0;
+  }
+
+  return vis;
+}
+

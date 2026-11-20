@@ -728,72 +728,141 @@ export const gatesAndDiscoveryMethods = {
     // Antique cream lime-stucco inlaid with organic broken-porcelain floral clusters (khảm sành sứ Vĩnh Tràng)
     return makeCanvasTex(
       (g, w, h) => {
-        g.fillStyle = '#E6D6B8';
+        g.fillStyle = '#E8D9BC';
         g.fillRect(0, 0, w, h);
 
-        // Subtle lime-plaster mottling
-        for (let i = 0; i < 42; i++) {
-          const mx = ((Math.sin(i * 41.3) * 0.5 + 0.5) * w);
-          const my = ((Math.cos(i * 19.7) * 0.5 + 0.5) * h);
-          g.fillStyle = i % 2 === 0 ? 'rgba(210,190,152,0.28)' : 'rgba(252,246,232,0.28)';
+        // Subtle aged lime-plaster bedding
+        for (let i = 0; i < 90; i++) {
+          const mx = (Math.sin(i * 41.3) * 0.5 + 0.5) * w;
+          const my = (Math.cos(i * 19.7) * 0.5 + 0.5) * h;
+          g.fillStyle = i % 2 === 0 ? 'rgba(202,180,140,0.26)' : 'rgba(255,249,235,0.28)';
           g.beginPath();
-          g.arc(mx, my, 12 + (i % 16), 0, Math.PI * 2);
+          g.arc(mx, my, 14 + (i % 24), 0, Math.PI * 2);
           g.fill();
         }
 
-        // Porcelain floral medallions & organic irregular ceramic shards
-        const shardColors = ['#2D4C7E', '#3B6E5C', '#9E3E2E', '#D9A441', '#F4EFE4', '#6E91AA'];
+        // Authentic Vĩnh Tràng broken-porcelain floral & scroll medallions (khảm sành sứ)
+        const shardColors = ['#1F4685', '#2F6F58', '#A63A2A', '#DBA23A', '#F6F1E6', '#5685A8'];
+        const cell = 128;
         for (let row = 0; row < 4; row++) {
           for (let col = 0; col < 4; col++) {
-            const cx = col * 64 + 32;
-            const cy = row * 64 + 32;
-            // Thin gold-cream framing line
-            g.strokeStyle = 'rgba(175, 138, 72, 0.35)';
-            g.lineWidth = 2;
-            g.strokeRect(col * 64 + 4, row * 64 + 4, 56, 56);
+            const cx = col * cell + cell * 0.5;
+            const cy = row * cell + cell * 0.5;
 
-            // 5-petal porcelain blossom
-            const petalColor = shardColors[(row + col) % 3];
-            for (let p = 0; p < 5; p++) {
-              const ang = (p / 5) * Math.PI * 2 + row * 0.25;
-              const px = cx + Math.cos(ang) * 12;
-              const py = cy + Math.sin(ang) * 12;
-              g.fillStyle = petalColor;
+            // Ceramic border tile framing
+            g.strokeStyle = 'rgba(164, 122, 54, 0.52)';
+            g.lineWidth = 3;
+            g.strokeRect(col * cell + 6, row * cell + 6, cell - 12, cell - 12);
+
+            // Jade-green leaf shards radiating behind blossom
+            for (let lf = 0; lf < 4; lf++) {
+              const lang = (lf / 4) * Math.PI * 2 + Math.PI * 0.25;
+              g.fillStyle = '#2F6F58';
               g.beginPath();
-              g.ellipse(px, py, 7.5, 4.5, ang, 0, Math.PI * 2);
+              g.ellipse(cx + Math.cos(lang) * 34, cy + Math.sin(lang) * 34, 15, 7, lang, 0, Math.PI * 2);
               g.fill();
-              g.strokeStyle = '#E8DEC8';
-              g.lineWidth = 1.2;
+              g.strokeStyle = '#EFE6D2';
+              g.lineWidth = 1.6;
               g.stroke();
             }
-            // Terracotta / gold pistil center
-            g.fillStyle = '#D9A441';
+
+            // 6-petal glazed ceramic blossom with specular rim
+            const petalColor = shardColors[(row + col) % 3];
+            for (let p = 0; p < 6; p++) {
+              const ang = (p / 6) * Math.PI * 2 + row * 0.2;
+              const px = cx + Math.cos(ang) * 22;
+              const py = cy + Math.sin(ang) * 22;
+              g.fillStyle = petalColor;
+              g.beginPath();
+              g.ellipse(px, py, 14, 8.5, ang, 0, Math.PI * 2);
+              g.fill();
+              // Glazed ceramic sheen highlight
+              g.fillStyle = 'rgba(255,255,255,0.34)';
+              g.beginPath();
+              g.ellipse(px - 2, py - 2, 5.5, 2.8, ang, 0, Math.PI * 2);
+              g.fill();
+              // Grout line around shard
+              g.strokeStyle = '#EFE6D2';
+              g.lineWidth = 2.0;
+              g.stroke();
+            }
+            // Gold-terracotta pistil center
+            g.fillStyle = '#D99E30';
             g.beginPath();
-            g.arc(cx, cy, 4.5, 0, Math.PI * 2);
+            g.arc(cx, cy, 9.5, 0, Math.PI * 2);
             g.fill();
+            g.strokeStyle = '#7A2A1C';
+            g.lineWidth = 2;
+            g.stroke();
           }
         }
 
-        // Fine broken-porcelain background scatter
-        for (let s = 0; s < 96; s++) {
-          const sx = ((Math.sin(s * 17.9 + 1.2) * 0.5 + 0.5) * (w - 14)) + 7;
-          const sy = ((Math.cos(s * 31.1 + 0.7) * 0.5 + 0.5) * (h - 14)) + 7;
-          const r = 3 + (s % 4);
+        // Dense hand-broken porcelain shard mosaic scatter with grout outlines
+        for (let s = 0; s < 220; s++) {
+          const sx = (Math.sin(s * 17.9 + 1.2) * 0.5 + 0.5) * (w - 20) + 10;
+          const sy = (Math.cos(s * 31.1 + 0.7) * 0.5 + 0.5) * (h - 20) + 10;
+          const r = 5 + (s % 7);
           g.fillStyle = shardColors[s % shardColors.length];
           g.beginPath();
-          g.moveTo(sx - r, sy - r * 0.5);
-          g.lineTo(sx + r * 0.8, sy - r);
-          g.lineTo(sx + r, sy + r * 0.7);
-          g.lineTo(sx - r * 0.6, sy + r * 0.9);
+          g.moveTo(sx - r, sy - r * 0.55);
+          g.lineTo(sx + r * 0.85, sy - r);
+          g.lineTo(sx + r, sy + r * 0.72);
+          g.lineTo(sx - r * 0.62, sy + r * 0.92);
           g.closePath();
           g.fill();
+          g.strokeStyle = 'rgba(244,236,220,0.75)';
+          g.lineWidth = 1.2;
+          g.stroke();
         }
       },
-      256,
-      256,
+      512,
+      512,
       1,
       2
     );
+  },
+
+  makeMosaicBumpTex() {
+    if (this._mosaicBumpTex) return this._mosaicBumpTex;
+    this._mosaicBumpTex = makeCanvasTex(
+      (g, w, h) => {
+        g.fillStyle = '#5A5A5A';
+        g.fillRect(0, 0, w, h);
+        const cell = 128;
+        for (let row = 0; row < 4; row++) {
+          for (let col = 0; col < 4; col++) {
+            const cx = col * cell + cell * 0.5;
+            const cy = row * cell + cell * 0.5;
+            for (let p = 0; p < 6; p++) {
+              const ang = (p / 6) * Math.PI * 2 + row * 0.2;
+              g.fillStyle = '#E8E8E8';
+              g.beginPath();
+              g.ellipse(cx + Math.cos(ang) * 22, cy + Math.sin(ang) * 22, 13, 7.5, ang, 0, Math.PI * 2);
+              g.fill();
+            }
+            g.fillStyle = '#FFFFFF';
+            g.beginPath();
+            g.arc(cx, cy, 9, 0, Math.PI * 2);
+            g.fill();
+          }
+        }
+        for (let s = 0; s < 220; s++) {
+          const sx = (Math.sin(s * 17.9 + 1.2) * 0.5 + 0.5) * (w - 20) + 10;
+          const sy = (Math.cos(s * 31.1 + 0.7) * 0.5 + 0.5) * (h - 20) + 10;
+          const r = 4.5 + (s % 6);
+          g.fillStyle = '#DCDCDC';
+          g.beginPath();
+          g.arc(sx, sy, r, 0, Math.PI * 2);
+          g.fill();
+        }
+      },
+      512,
+      512,
+      1,
+      2,
+      false
+    );
+    return this._mosaicBumpTex;
   },
 
   buildSideMosaicGate() {
@@ -802,7 +871,14 @@ export const gatesAndDiscoveryMethods = {
     const M = this.MAT;
     const g = new THREE.Group();
     const mosaicTex = this.makeMosaicShardTex();
-    const mosaicMat = new THREE.MeshStandardMaterial({ map: mosaicTex, roughness: 0.36, metalness: 0.12 });
+    const mosaicBump = this.makeMosaicBumpTex();
+    const mosaicMat = new THREE.MeshStandardMaterial({
+      map: mosaicTex,
+      bumpMap: mosaicBump,
+      bumpScale: 0.032,
+      roughness: 0.24,
+      metalness: 0.16
+    });
 
     // Flanking main porcelain-mosaic piers (placed outside walkable 6.4m gap: +-3.8m)
     for (const px of [-3.85, 3.85]) {

@@ -179,6 +179,9 @@ export const modalAndEventsMethods = {
       this.toggleUtilityDrawer(false);
       this.openBlessingTowerModal();
     });
+    document.getElementById('btn-drawer-depth')?.addEventListener('click', () => {
+      this.openPilgrimageDepthModal('encounters');
+    });
     document.getElementById('btn-drawer-photo')?.addEventListener('click', () => {
       this.captureCleanMemoryPhoto();
     });
@@ -208,6 +211,18 @@ export const modalAndEventsMethods = {
       btn.addEventListener('click', () => {
         const key = btn.getAttribute('data-time-of-day');
         if (key) this.setTimeOfDay(key, false, true);
+      });
+    });
+    document.querySelectorAll('[data-weather-preset]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const key = btn.getAttribute('data-weather-preset');
+        if (key) this.setWeatherPresetInApp(key, true);
+      });
+    });
+    document.querySelectorAll('[data-camera-mode]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const mode = btn.getAttribute('data-camera-mode');
+        if (mode) this.setCameraViewModeInApp(mode, true);
       });
     });
     document.getElementById('nav-btn-activity')?.addEventListener('click', () => {
@@ -618,6 +633,14 @@ export const modalAndEventsMethods = {
         if (!modalOpen) {
           e.preventDefault();
           this.toggleZenHudMode();
+          return;
+        }
+      }
+      if (e.code === 'KeyV' && this.activeScreen === 'courtyard' && this.titleOverlayDismissed) {
+        const modalOpen = document.getElementById('universal-modal')?.classList.contains('open');
+        if (!modalOpen) {
+          e.preventDefault();
+          this.toggleCameraViewModeInApp();
           return;
         }
       }

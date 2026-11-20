@@ -19,6 +19,55 @@ export const world3dBridgeMethods = {
       onStepSound: (surface) => {
         this.audio?.playFootstep?.(surface === 'interior' ? 'wood' : surface);
       },
+      onSpatialAudioUpdate: ({ zone, rainIntensity }) => {
+        if (this.activeScreen === 'courtyard') {
+          this.audio?.setAmbientZone?.(zone);
+        }
+        if (typeof rainIntensity === 'number') {
+          this.audio?.setRainIntensity?.(rainIntensity);
+        }
+        if (typeof document !== 'undefined' && zone) {
+          document.body.dataset.audioZone = zone;
+        }
+      },
+      onWeatherChange: (presetKey) => {
+        this.weatherPreset = presetKey;
+        if (typeof document !== 'undefined') {
+          document.body.dataset.weather = presetKey;
+          document.querySelectorAll('[data-weather-preset]').forEach((btn) => {
+            btn.classList.toggle('active', btn.getAttribute('data-weather-preset') === presetKey);
+          });
+        }
+      },
+      onCameraModeChange: (mode) => {
+        this.cameraViewMode = mode;
+        if (typeof document !== 'undefined') {
+          document.body.dataset.cameraMode = mode;
+          document.querySelectorAll('[data-camera-mode]').forEach((btn) => {
+            btn.classList.toggle('active', btn.getAttribute('data-camera-mode') === mode);
+          });
+        }
+      },
+      onBenchStateChange: (bench) => {
+        if (typeof document !== 'undefined') {
+          document.body.dataset.seatedBench = bench ? bench.id : '';
+        }
+        if (bench) {
+          this.playBellTone(288, 1.8);
+          this.storeProfile.lotusPoints += 6;
+          this.spiritual = recordSpiritualMilestone(this.spiritual, `Ngồi nghỉ ngắm cảnh tại ${bench.name}`);
+          this.saveState();
+          this.showToast(
+            `🪑 ${bench.name}`,
+            `${bench.quote} (Bấm W/A/S/D hoặc [E] để đứng dậy; bấm [V] để ngắm ở góc nhìn thứ nhất)`,
+            4600,
+            false
+          );
+        } else {
+          this.playMokugyoTap?.();
+        }
+        this.refreshProximityPrompt();
+      },
       onAutoWalkTargetChange: (targetStation) => {
         this.autoWalkObjective = targetStation || null;
         const banner = document.getElementById('auto-walk-objective-banner');
@@ -238,6 +287,14 @@ export const world3dBridgeMethods = {
           this.openMarketplaceStallModal(payload?.category || 'huong_hoa', payload?.title);
         } else if (action === 'OPEN_LOCAL_EATERY') {
           this.openLocalEateryModal(payload?.eateryId, payload?.title);
+        } else if (action === 'OPEN_STREET_ENCOUNTER') {
+          this.openStreetEncounterModal(payload?.encounterId);
+        } else if (action === 'OPEN_RANDOM_ENCOUNTER') {
+          this.openRandomEncounterModal?.(payload?.encounterId);
+        } else if (action === 'OPEN_CONG_QUA_TASK') {
+          this.openCongQuaTaskModal?.(payload?.taskId);
+        } else if (action === 'SIT_SCENIC_BENCH') {
+          this.world3d?.sitOnScenicBench?.(payload?.benchId);
         } else if (action === 'CLOSED_MAIN_GATE') {
           this.playBellTone(260, 1.4);
           this.showToast(
@@ -402,7 +459,12 @@ export const world3dBridgeMethods = {
         nghin_mat_nghin_tay: '🙏',
         cho_ngu_cua_phat: '🪷',
         enter_chanh_dien_front: '🚪',
-        exit_interior: '🚪'
+        exit_interior: '🚪',
+        street_encounter: p.encounterId === 'xe_ca_rem' ? '🍦' : '👒',
+        random_encounter: '🤝',
+        cong_qua_task: '✨',
+        scenic_bench: '🪑',
+        stand_up_bench: '🚶'
       };
       if (iconEl) iconEl.textContent = iconMap[p.kind] || '✨';
       labelEl.textContent = cleanLabel || 'Tương tác';
@@ -463,6 +525,26 @@ export const world3dBridgeMethods = {
       }
       if (p.kind === 'koi_pond') {
         this.feedKoiPondInApp();
+        return true;
+      }
+      if (p.kind === 'street_encounter') {
+        this.openStreetEncounterModal(p.encounterId);
+        return true;
+      }
+      if (p.kind === 'random_encounter') {
+        this.openRandomEncounterModal?.(p.encounterId);
+        return true;
+      }
+      if (p.kind === 'cong_qua_task') {
+        this.openCongQuaTaskModal?.(p.taskId);
+        return true;
+      }
+      if (p.kind === 'scenic_bench') {
+        this.world3d?.sitOnScenicBench?.(p.benchId);
+        return true;
+      }
+      if (p.kind === 'stand_up_bench') {
+        this.world3d?.standUpFromBench?.();
         return true;
       }
     }
@@ -627,6 +709,7 @@ export const world3dBridgeMethods = {
 
   feedKoiPondInApp() {
     this.world3d?.placeLotusOfferingIn3D?.();
+    this.world3d?.triggerPondFeedingRipples?.();
     this.activityHub = ensureDailyMissionDate(this.activityHub, getLocalDateKey());
     this.activityHub.koiFedCount = (this.activityHub.koiFedCount || 0) + 1;
     this.storeProfile.lotusPoints += 12;

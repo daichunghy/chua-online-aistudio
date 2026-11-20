@@ -22,6 +22,9 @@ import { playerAndInteractionMethods } from './world/player-and-interaction.mjs'
 import { renderLoopAndCutsceneMethods } from './world/render-loop-and-cutscene.mjs';
 import { offeringRitualFxMethods } from './world/offering-ritual-fx.mjs';
 import { npcCourtyardInteractionMethods } from './world/npc-courtyard-interaction.mjs';
+import { occlusionCullingMethods } from './world/occlusion-culling.mjs';
+import { weatherAndStreetMethods } from './world/weather-and-street.mjs';
+import { livingWorld3dMethods } from './world/living-world-3d.mjs';
 
 export class VinhTrang3DWorld {
   constructor(canvas, callbacks = {}) {
@@ -44,6 +47,10 @@ export class VinhTrang3DWorld {
     this.activeCourtyardNpcId = null;
     this.onEntranceTourChange = callbacks.onEntranceTourChange || (() => {});
     this.onStepSound = callbacks.onStepSound || (() => {});
+    this.onSpatialAudioUpdate = callbacks.onSpatialAudioUpdate || (() => {});
+    this.onWeatherChange = callbacks.onWeatherChange || (() => {});
+    this.onCameraModeChange = callbacks.onCameraModeChange || (() => {});
+    this.onBenchStateChange = callbacks.onBenchStateChange || (() => {});
     this._stepAudioTimer = 0;
 
     this.scene = new THREE.Scene();
@@ -56,12 +63,28 @@ export class VinhTrang3DWorld {
     this.lectureHallMode = false;
     this.timeOfDay = 'morning';
     this.glbPromiseCache = new Map();
+    this._interiorBuilt = false;
     this._interiorLoadPromise = null;
     this._interiorGLBsMounted = false;
+    this._interiorZonesLoaded = {
+      east_corridor: false,
+      center_and_north: false,
+      west_chanh_dien: false
+    };
+    this._interiorZonePromises = {};
     this._interiorWorshippersSpawned = false;
     this._phase2Started = false;
+    this.interiorZoneBuckets = null;
     this.guidedBeaconGroup = null;
     this.guidedBeaconKey = null;
+    this.playerPhysics = {
+      vx: 0,
+      vz: 0,
+      speed: 0,
+      stridePhase: 0,
+      gaitMode: 'normal',
+      actualSpeed: 0
+    };
 
     this.renderer = new THREE.WebGLRenderer({
       canvas: this.canvas,
@@ -156,6 +179,47 @@ export class VinhTrang3DWorld {
       intEnvScene.add(intLanternBounce);
       this.interiorEnvTex = pmrem.fromScene(intEnvScene, 0.04).texture;
 
+      // Golden-hour sunset PMREM environment (warm copper-amber reflections on porcelain mosaic, wet stone & water)
+      const sunsetEnvScene = new THREE.Scene();
+      sunsetEnvScene.add(
+        new THREE.Mesh(
+          new THREE.BoxGeometry(20, 20, 20),
+          new THREE.MeshBasicMaterial({ color: 0xB86A54, side: THREE.BackSide })
+        )
+      );
+      const sunsetFloor = new THREE.Mesh(
+        new THREE.PlaneGeometry(20, 20),
+        new THREE.MeshBasicMaterial({ color: 0x5E3A24 })
+      );
+      sunsetFloor.rotation.x = -Math.PI / 2;
+      sunsetFloor.position.y = -4;
+      sunsetEnvScene.add(sunsetFloor);
+      const sunsetDisc = new THREE.Mesh(
+        new THREE.PlaneGeometry(10, 10),
+        new THREE.MeshBasicMaterial({ color: 0xFFB864, side: THREE.DoubleSide })
+      );
+      sunsetDisc.position.set(-8, 3.5, 4);
+      sunsetDisc.lookAt(0, 0, 0);
+      sunsetEnvScene.add(sunsetDisc);
+      this.sunsetEnvTex = pmrem.fromScene(sunsetEnvScene, 0.04).texture;
+
+      // Evening twilight PMREM environment (deep starlit indigo + warm lantern glow bounce)
+      const eveningEnvScene = new THREE.Scene();
+      eveningEnvScene.add(
+        new THREE.Mesh(
+          new THREE.BoxGeometry(20, 20, 20),
+          new THREE.MeshBasicMaterial({ color: 0x1E2F54, side: THREE.BackSide })
+        )
+      );
+      const eveningWarm = new THREE.Mesh(
+        new THREE.PlaneGeometry(8, 8),
+        new THREE.MeshBasicMaterial({ color: 0xE89B4C, side: THREE.DoubleSide })
+      );
+      eveningWarm.position.set(0, -3.5, 0);
+      eveningWarm.rotation.x = -Math.PI / 2;
+      eveningEnvScene.add(eveningWarm);
+      this.eveningEnvTex = pmrem.fromScene(eveningEnvScene, 0.04).texture;
+
       pmrem.dispose();
     } catch {
       // Fallback safely if PMREM is unavailable
@@ -181,6 +245,8 @@ export class VinhTrang3DWorld {
     this.cameraAzimuthOffset = 0;
     this.cameraPitchOffset = 0;
     this.cameraZoomOffset = 0;
+    this.cameraViewMode = 'third';
+    this.firstPersonPitch = 0.04;
     this.playerElevationY = 0;
     this.lastDoorSide = 'right';
     this._doorCooldownUntil = 0;
@@ -221,6 +287,9 @@ export class VinhTrang3DWorld {
     this.lectureClickTargets = [];
     this.mainCompoundClickTargets = [];
     this.stallClickTargets = [];
+    this.streetEncounterClickTargets = [];
+    this.benchClickTargets = [];
+    this.seatedBench = null;
     this.bellTowerClickTargets = [];
     this.closedMainGateClickTargets = [];
     this.courtyardLeafMeshes = new Map();
@@ -313,7 +382,9 @@ export class VinhTrang3DWorld {
     this.initLights();
     this.buildSkyDomeAndMountains();
     this.buildTempleGroundsV8();
-    this.buildInteriorChanhDienV8();
+    this.initWeatherSystem();
+    this.initLivingWorld3D();
+    // Defer buildInteriorChanhDienV8() until entry (or idle) to eliminate startup lag!
     this.buildStationBeacons();
     this.initPointerAndWheelControls();
     this.handleResize(false);
@@ -351,7 +422,10 @@ applyMixins(VinhTrang3DWorld,
   playerAndInteractionMethods,
   renderLoopAndCutsceneMethods,
   offeringRitualFxMethods,
-  npcCourtyardInteractionMethods
+  npcCourtyardInteractionMethods,
+  occlusionCullingMethods,
+  weatherAndStreetMethods,
+  livingWorld3dMethods
 );
 
 export {

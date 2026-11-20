@@ -8,11 +8,13 @@ import { THREE, findAnyTempleDestination, WORLD_BOUNDS } from './shared.mjs';
 import {
   resolveMultiPassCollision,
   buildNavigationGrid,
-  findGridPathAStar
+  optimizeEntrancePath,
+  getTerrainGroundHeight,
+  stepWalkingPhysics
 } from '../../logic/modules/pathfinding-and-collision.mjs';
 
 const INTERIOR_BOUNDS = {
-  minX: -40.6,
+  minX: -61.5,
   maxX: 31.3,
   minZ: -55.6,
   maxZ: 20.35
@@ -21,6 +23,23 @@ const INTERIOR_BOUNDS = {
 export const movementMethods = {
   getActiveBounds() {
     return this.inInterior ? INTERIOR_BOUNDS : WORLD_BOUNDS;
+  },
+
+  setGaitMode(mode = 'normal') {
+    const next = mode === 'thien_hanh' ? 'thien_hanh' : 'normal';
+    if (!this.playerPhysics) {
+      this.playerPhysics = { vx: 0, vz: 0, speed: 0, stridePhase: 0, gaitMode: next, actualSpeed: 0 };
+    } else {
+      this.playerPhysics.gaitMode = next;
+    }
+    return next;
+  },
+
+  getMaxWalkSpeed() {
+    if (this.playerPhysics?.gaitMode === 'thien_hanh') {
+      return this.inInterior ? 1.55 : 1.75;
+    }
+    return this.inInterior ? 3.85 : 4.65;
   },
 
   getNavigationGrid() {
@@ -50,7 +69,7 @@ export const movementMethods = {
     return this.navGridExterior;
   },
 
-  tryMove(nx, nz, radius = 0.52) {
+  tryMove(nx, nz, radius = 0.52, dt = 0.016) {
     const curX = this.playerState.x;
     const curZ = this.playerState.z;
     const bounds = this.getActiveBounds();
@@ -67,15 +86,10 @@ export const movementMethods = {
     const x = solved.x;
     const z = solved.z;
 
-    if (this.inInterior) {
-      this.playerElevationY = 0;
-    } else if (x >= 54.4 && x <= 64.6 && z >= 7.6 && z <= 21.4) {
-      this.playerElevationY = 1.14;
-    } else if (x >= 52.0 && x < 54.4 && z >= 12.6 && z <= 16.4) {
-      this.playerElevationY = ((x - 52.0) / 2.4) * 1.14;
-    } else {
-      this.playerElevationY = 0;
-    }
+    const targetElevation = getTerrainGroundHeight(x, z, this.inInterior);
+    const curElev = Number.isFinite(this.playerElevationY) ? this.playerElevationY : 0;
+    const dampT = 1 - Math.exp(-16 * Math.max(0.008, dt));
+    this.playerElevationY = curElev + (targetElevation - curElev) * dampT;
 
     return { x, z, collided: solved.collided };
   },
@@ -87,49 +101,14 @@ export const movementMethods = {
 
   computeSmartWaypoints(fromX, fromZ, toX, toZ, lookAt = null) {
     const grid = this.getNavigationGrid();
-    const segments = [];
-
-    if (!this.inInterior) {
-      const curOutside = fromZ > 42.1;
-      const destInside = toZ < 40.9;
-      const curInside = fromZ < 40.9;
-      const destOutside = toZ > 42.1;
-
-      if (curOutside && destInside) {
-        segments.push({ x: 40.5, z: 45.2 });
-        segments.push({ x: 40.5, z: 41.5 });
-        segments.push({ x: 39.2, z: 35.8 });
-      } else if (curInside && destOutside) {
-        segments.push({ x: 39.2, z: 35.8 });
-        segments.push({ x: 40.5, z: 41.5 });
-        segments.push({ x: 40.5, z: 45.2 });
-      }
-    }
-    segments.push({ x: toX, z: toZ });
-
-    const finalPts = [];
-    let curX = fromX;
-    let curZ = fromZ;
-
-    for (let s = 0; s < segments.length; s++) {
-      const seg = segments[s];
-      const leg = findGridPathAStar(grid, curX, curZ, seg.x, seg.z);
-      for (const p of leg) {
-        const last = finalPts[finalPts.length - 1];
-        if (!last || Math.hypot(p.x - last.x, p.z - last.z) > 0.45) {
-          finalPts.push({ x: p.x, z: p.z });
-        }
-      }
-      curX = seg.x;
-      curZ = seg.z;
-    }
+    const finalPts = optimizeEntrancePath(grid, fromX, fromZ, toX, toZ, this.inInterior);
 
     // Drop jittery / backwards initial waypoints snapped to a cell behind the player
     while (finalPts.length > 1) {
       const p0 = finalPts[0];
       const p1 = finalPts[1];
       const d0 = Math.hypot(p0.x - fromX, p0.z - fromZ);
-      if (d0 < 1.15) {
+      if (d0 < 0.95) {
         finalPts.shift();
         continue;
       }
@@ -138,8 +117,7 @@ export const movementMethods = {
       const vx1 = p1.x - fromX;
       const vz1 = p1.z - fromZ;
       const dot = vx0 * vx1 + vz0 * vz1;
-      // If p0 is behind the vector to p1 and p1 is close enough along clear sight, skip p0
-      if (dot < -0.15 && d0 < 2.8) {
+      if (dot < -0.15 && d0 < 2.6) {
         finalPts.shift();
         continue;
       }
@@ -192,7 +170,11 @@ export const movementMethods = {
     };
     const finalTarget = pts[pts.length - 1] || { x: tx, z: tz };
     if (this.walkTargetRing) {
-      this.walkTargetRing.position.set(finalTarget.x, 0.06, finalTarget.z);
+      this.walkTargetRing.position.set(
+        finalTarget.x,
+        getTerrainGroundHeight(finalTarget.x, finalTarget.z, this.inInterior) + 0.06,
+        finalTarget.z
+      );
       this.walkTargetRing.visible = true;
     }
     this.updateWalkPathLine();
@@ -217,9 +199,11 @@ export const movementMethods = {
       this.walkPathLine = null;
     }
     if (!this.autoWalkWaypoints.length) return;
-    const points = [new THREE.Vector3(this.playerState.x, 0.09, this.playerState.z)];
+    const curY = getTerrainGroundHeight(this.playerState.x, this.playerState.z, this.inInterior) + 0.09;
+    const points = [new THREE.Vector3(this.playerState.x, curY, this.playerState.z)];
     for (const wp of this.autoWalkWaypoints) {
-      points.push(new THREE.Vector3(wp.x, 0.09, wp.z));
+      const wy = getTerrainGroundHeight(wp.x, wp.z, this.inInterior) + 0.09;
+      points.push(new THREE.Vector3(wp.x, wy, wp.z));
     }
     const geom = new THREE.BufferGeometry().setFromPoints(points);
     const mat = new THREE.LineBasicMaterial({ color: 0xFFD166, transparent: true, opacity: 0.85 });
@@ -278,6 +262,9 @@ export const movementMethods = {
   },
 
   updateHeldMovement(dt) {
+    if (!this.playerPhysics) {
+      this.playerPhysics = { vx: 0, vz: 0, speed: 0, stridePhase: 0, gaitMode: 'normal', actualSpeed: 0 };
+    }
     let ix = 0;
     let iz = 0;
     if (this.heldDirs && this.heldDirs.size > 0) {
@@ -296,7 +283,34 @@ export const movementMethods = {
     }
 
     const inputMag = Math.hypot(ix, iz);
-    if (inputMag < 0.05) return;
+    if (inputMag < 0.05) {
+      // Smooth braking deceleration when keys/joystick released (if not auto-walking)
+      if (!this.autoWalkWaypoints?.length && this.playerPhysics.speed > 0.04) {
+        const res = stepWalkingPhysics(this.playerPhysics, 0, 0, {
+          dt,
+          maxSpeed: this.getMaxWalkSpeed(),
+          decel: 16.0
+        });
+        this.playerPhysics.vx = res.vx;
+        this.playerPhysics.vz = res.vz;
+        this.playerPhysics.speed = res.speed;
+        this.playerPhysics.stridePhase = res.stridePhase;
+        if (res.moving) {
+          const prevX = this.playerState.x;
+          const prevZ = this.playerState.z;
+          const moved = this.tryMove(prevX + res.stepDx, prevZ + res.stepDz, 0.52, dt);
+          this.playerState.x = moved.x;
+          this.playerState.z = moved.z;
+          this.playerPhysics.actualSpeed = Math.hypot(moved.x - prevX, moved.z - prevZ) / Math.max(0.004, dt);
+          this.playerState.moving = this.playerPhysics.actualSpeed > 0.14;
+          this.syncPlayerTransform();
+        } else {
+          this.playerPhysics.actualSpeed = 0;
+          this.playerState.moving = false;
+        }
+      }
+      return;
+    }
 
     const clampedMag = Math.min(1, inputMag);
     const normX = ix / inputMag;
@@ -310,20 +324,49 @@ export const movementMethods = {
 
     const worldDx = forwardX * (-normZ) + rightX * normX;
     const worldDz = forwardZ * (-normZ) + rightZ * normX;
-    const baseSpeed = this.inInterior ? 4.6 : 5.5;
-    const speed = baseSpeed * clampedMag * dt;
-    const moved = this.tryMove(
-      this.playerState.x + worldDx * speed,
-      this.playerState.z + worldDz * speed
-    );
+
+    const maxSpeed = this.getMaxWalkSpeed();
+    const phys = stepWalkingPhysics(this.playerPhysics, worldDx, worldDz, {
+      dt,
+      maxSpeed,
+      accel: this.playerPhysics.gaitMode === 'thien_hanh' ? 6.5 : 11.5,
+      decel: 15.0,
+      inputScale: clampedMag,
+      strideLength: this.playerPhysics.gaitMode === 'thien_hanh' ? 1.05 : 1.38
+    });
+    this.playerPhysics.vx = phys.vx;
+    this.playerPhysics.vz = phys.vz;
+    this.playerPhysics.speed = phys.speed;
+    this.playerPhysics.stridePhase = phys.stridePhase;
+
+    const prevX = this.playerState.x;
+    const prevZ = this.playerState.z;
+    const moved = this.tryMove(prevX + phys.stepDx, prevZ + phys.stepDz, 0.52, dt);
+    const actualDx = moved.x - prevX;
+    const actualDz = moved.z - prevZ;
+    const actualDist = Math.hypot(actualDx, actualDz);
+    this.playerPhysics.actualSpeed = actualDist / Math.max(0.004, dt);
+
+    // Prevent velocity wind-up against walls
+    if (moved.collided && actualDist < phys.speed * dt * 0.45) {
+      this.playerPhysics.vx = actualDx / Math.max(0.004, dt);
+      this.playerPhysics.vz = actualDz / Math.max(0.004, dt);
+      this.playerPhysics.speed = this.playerPhysics.actualSpeed;
+    }
+
     this.playerState.x = moved.x;
     this.playerState.z = moved.z;
+    const targetYaw = Math.atan2(worldDx, worldDz);
     this.playerState.yaw = this.lerpAngle(
       this.playerState.yaw,
-      Math.atan2(worldDx, worldDz),
+      targetYaw,
       1 - Math.exp(-9.5 * dt)
     );
     this.playerState.moving = true;
+
+    if (phys.footstepTriggered && !this.arrivalCutscene?.active && this.playerPhysics.actualSpeed > 0.35) {
+      this.onStepSound(this.inInterior ? 'interior' : 'stone');
+    }
 
     // Only auto-follow camera yaw when walking predominantly forward (never fight A/D strafing or reverse)
     const manualDragRecent = performance.now() - (this._lastCamDragAt || 0) < 2600;
@@ -343,19 +386,14 @@ export const movementMethods = {
     const px = this.playerState.x;
     const pz = this.playerState.z;
     if (this.inInterior) {
-      // Never silently eject the user outside while exploring Chánh Điện —
-      // explicit [E] / button prompts at interior doors handle exiting cleanly.
       return;
     }
-    // Never hijack an active auto-walk route that is heading to a different outdoor destination
     if (this.autoWalkWaypoints?.length > 0 && this.autoWalkStation?.key !== 'chanh_dien') {
       return;
     }
-    // Stepping onto the widened End-of-Road Left-Turn Shoe-Removal Veranda & Wooden Door (x = 34.0..37.2, z = -18.4..-10.6)
     if (pz >= -18.4 && pz <= -10.6 && px >= 34.0 && px <= 37.2) {
       this.enterInteriorGradual('right');
     } else if (px >= 20.4 && px <= 25.6 && pz >= 7.6 && pz <= 9.1) {
-      // Walking directly up the top of the front central staircase enters Chánh Điện front nave
       this.enterInteriorGradual('front_tam_quan');
     }
   },
@@ -364,6 +402,12 @@ export const movementMethods = {
     const jMag = Math.hypot(this.joystickVec?.x || 0, this.joystickVec?.z || 0);
     if (this.autoWalkWaypoints.length === 0 && this.heldDirs.size === 0 && jMag <= 0.08) {
       this.playerState.moving = false;
+      if (this.playerPhysics) {
+        this.playerPhysics.vx = 0;
+        this.playerPhysics.vz = 0;
+        this.playerPhysics.speed = 0;
+        this.playerPhysics.actualSpeed = 0;
+      }
     }
   },
 

@@ -10,9 +10,11 @@ import { createStoreProfileState } from './store-items.mjs';
 // TEMPLE ENTRANCE GROCERY HOUSE (NHÀ TẠP HÓA & QUÁN GIẢI KHÁT CỔNG CHÙA)
 // ============================================================================
 export const MARKETPLACE_STALL_CATEGORIES = [
+  { id: 'all', icon: '🏪', label: 'Tất cả' },
   { id: 'huong_hoa', icon: '🪷', label: 'Hương, Đèn & Hoa lễ' },
   { id: 'thu_cong', icon: '📿', label: 'Lưu niệm & Văn hóa phẩm' },
-  { id: 'am_thuc_chay', icon: '🍲', label: 'Kho quẹt chay & Đặc sản chay' }
+  { id: 'phap_phuc', icon: '👘', label: 'Pháp phục & Đồ tu học' },
+  { id: 'am_thuc_chay', icon: '🍲', label: 'Kho quẹt & Đặc sản chay' }
 ];
 
 export const MARKETPLACE_STALL_CATALOG = [
@@ -356,6 +358,120 @@ export const MARKETPLACE_STALL_CATALOG = [
     offeringType: null,
     cartProductId: 'combo_qua_que_mien_tay',
     image: '/Thiết kế giao diện/Vật phẩm 3D/fixed/fixed_dia_banh_bo.png'
+  },
+  {
+    id: 'sap_tram_nu_thac_khoi',
+    category: 'huong_hoa',
+    icon: '🌫️',
+    name: 'Hộp 36 nụ trầm hương thác khói tự nhiên',
+    subtitle: 'Trầm nụ nguyên chất mùi ấm dịu, thích hợp đốt cùng thác khói lá sen tại phòng thờ.',
+    desc: 'Trầm nụ nguyên chất mùi ấm dịu, thích hợp đốt cùng thác khói lá sen tại phòng thờ.',
+    priceVnd: 85000,
+    lotusCost: 38,
+    actionType: 'ritual_incense',
+    offeringType: 'incense',
+    cartProductId: 'thac_khoi_tram_huong_3d',
+    image: '/Thiết kế giao diện/Vật phẩm 3D/fixed/fixed_nen_hoa_sen.png'
+  },
+  {
+    id: 'sap_dau_gio_thao_duoc',
+    category: 'thu_cong',
+    icon: '🌿',
+    name: 'Chai dầu gió thảo dược khuynh diệp Mỹ Tho',
+    subtitle: 'Tinh dầu tràm và bạc hà dịu nhẹ bỏ túi cho cô bác đi hành hương đường xa.',
+    desc: 'Tinh dầu tràm và bạc hà dịu nhẹ bỏ túi cho cô bác đi hành hương đường xa.',
+    priceVnd: 45000,
+    lotusCost: 22,
+    actionType: 'handicraft',
+    offeringType: null,
+    cartProductId: 'quat_nan_gio_may',
+    image: '/Thiết kế giao diện/Vật phẩm 3D/fixed/fixed_gio_may_tre.png'
+  },
+
+  // === 4. PHÁP PHỤC & ĐỒ TU HỌC TẠI GIA ===
+  {
+    id: 'sap_ao_trang_lam',
+    category: 'phap_phuc',
+    icon: '👘',
+    name: 'Bộ Pháp Phục Áo Tràng Lam Phật Tử (Vải Đũi Mát)',
+    subtitle: 'Áo tràng cổ tàu 5 nút màu lam khói thanh lịch, đủ cỡ Nam · Nữ · Người lớn tuổi.',
+    desc: 'Áo tràng cổ tàu 5 nút màu lam khói thanh lịch, đủ cỡ Nam · Nữ · Người lớn tuổi.',
+    priceVnd: 260000,
+    lotusCost: 95,
+    actionType: 'handicraft',
+    offeringType: null,
+    cartProductId: 'ao_trang_phat_tu',
+    image: '/public/assets/aistudio/image_8f6004e3.png'
+  },
+  {
+    id: 'sap_bo_doan_thien',
+    category: 'phap_phuc',
+    icon: '🧘',
+    name: 'Bồ Đoàn Tọa Thiền Đài Sen Vỏ Đậu Xanh',
+    subtitle: 'Đệm ngồi thiền và tụng kinh êm ái, thoáng khí như bồ đoàn trong Chánh điện.',
+    desc: 'Đệm ngồi thiền và tụng kinh êm ái, thoáng khí như bồ đoàn trong Chánh điện.',
+    priceVnd: 280000,
+    lotusCost: 90,
+    actionType: 'handicraft',
+    offeringType: null,
+    cartProductId: 'toa_sen_ngoi_thien',
+    image: '/Thiết kế giao diện/Vật phẩm 3D/fixed/fixed_bo_doan_dai_sen.png'
+  },
+  {
+    id: 'sap_mo_go_tung_kinh',
+    category: 'phap_phuc',
+    icon: '🪵',
+    name: 'Mõ Gỗ Mít Tụng Kinh Chạm Song Ngư & Dùi',
+    subtitle: 'Âm mõ trầm ấm đều nhịp, chạm khắc thủ công từ lõi gỗ mít già bền đẹp.',
+    desc: 'Âm mõ trầm ấm đều nhịp, chạm khắc thủ công từ lõi gỗ mít già bền đẹp.',
+    priceVnd: 340000,
+    lotusCost: 110,
+    actionType: 'handicraft',
+    offeringType: null,
+    cartProductId: 'mo_go_mit_cham_rong',
+    image: '/Thiết kế giao diện/Vật phẩm 3D/fixed/fixed_mo_go_tung_kinh.png'
+  },
+  {
+    id: 'sap_den_hoa_sen_led',
+    category: 'phap_phuc',
+    icon: '🏮',
+    name: 'Cặp Đèn Hoa Sen Pha Lê 7 Cánh Bàn Thờ',
+    subtitle: 'Tỏa ánh sáng vàng ấm trang nghiêm nơi bàn thờ gia tiên và góc tu tập tại gia.',
+    desc: 'Tỏa ánh sáng vàng ấm trang nghiêm nơi bàn thờ gia tiên và góc tu tập tại gia.',
+    priceVnd: 380000,
+    lotusCost: 120,
+    actionType: 'handicraft',
+    offeringType: null,
+    cartProductId: 'den_hoa_sen_pha_le_3d',
+    image: '/Thiết kế giao diện/Vật phẩm 3D/fixed/fixed_den_hoa_dang.png'
+  },
+  {
+    id: 'sap_tra_sen_dong_thap',
+    category: 'am_thuc_chay',
+    icon: '🍵',
+    name: 'Hộp Trà Ướp Hoa Sen Đồng Tháp Thượng Hạng',
+    subtitle: 'Trà mộc ướp nhụy sen tươi thơm dịu thanh tao, thích hợp thưởng trà cùng gia đình.',
+    desc: 'Trà mộc ướp nhụy sen tươi thơm dịu thanh tao, thích hợp thưởng trà cùng gia đình.',
+    priceVnd: 125000,
+    lotusCost: 52,
+    actionType: 'refreshment',
+    offeringType: null,
+    cartProductId: 'bo_am_tra_sen_gom',
+    image: '/Thiết kế giao diện/Vật phẩm 3D/fixed/fixed_chum_sanh_hoa_sen.png'
+  },
+  {
+    id: 'sap_mut_dua_non_my_tho',
+    category: 'am_thuc_chay',
+    icon: '🥥',
+    name: 'Hộp Mứt Dừa Non Lá Dứa Mỹ Tho Ít Ngọt (300g)',
+    subtitle: 'Dừa non nạo dải dẻo mềm sên với nước cốt lá dứa tươi, quà quê miền Tây chuẩn vị.',
+    desc: 'Dừa non nạo dải dẻo mềm sên với nước cốt lá dứa tươi, quà quê miền Tây chuẩn vị.',
+    priceVnd: 78000,
+    lotusCost: 36,
+    actionType: 'refreshment',
+    offeringType: null,
+    cartProductId: 'combo_qua_que_mien_tay',
+    image: '/Thiết kế giao diện/Vật phẩm 3D/fixed/fixed_dia_banh_da_lon.png'
   }
 ];
 
