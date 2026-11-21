@@ -475,8 +475,10 @@ export const MARKETPLACE_STALL_CATALOG = [
   }
 ];
 
-export function filterMarketplaceItems(categoryId = 'huong_hoa') {
+export function filterMarketplaceItems(categoryId = 'all') {
   if (!categoryId || categoryId === 'all') return MARKETPLACE_STALL_CATALOG;
+  const isKnown = MARKETPLACE_STALL_CATEGORIES.some((cat) => cat.id === categoryId);
+  if (!isKnown) return MARKETPLACE_STALL_CATALOG;
   return MARKETPLACE_STALL_CATALOG.filter((item) => item.category === categoryId);
 }
 

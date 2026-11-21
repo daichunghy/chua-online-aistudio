@@ -1205,19 +1205,11 @@ export class TempleAudioEngine {
       }
       if (this._ambientLayers.bells) {
         if (!this._bellTimer) this._scheduleDistantBell();
-        if (!this._chimeTimer) this._scheduleAmbientChime();
       } else {
         if (this._bellTimer) {
           clearTimeout(this._bellTimer);
           this._bellTimer = null;
         }
-        if (this._chimeTimer) {
-          clearTimeout(this._chimeTimer);
-          this._chimeTimer = null;
-        }
-      }
-      if (this._ambientLayers.atmosphere && !this._rippleTimer) {
-        this._scheduleLotusRipple();
       }
     } else {
       this.startAmbient(this._ambientZone);
@@ -1226,6 +1218,49 @@ export class TempleAudioEngine {
     this._applyMixer();
     this._emitAmbientState();
     return this.getAmbientState();
+  }
+
+  /**
+   * Plays a crisp, natural wooden-bamboo rattle sound for Xóc Ống Xăm.
+   * @returns {boolean}
+   */
+  playBambooShakeSfx() {
+    if (this._muted || this._masterVolume <= 0 || this._sfxVolume <= 0) return false;
+    const ctx = this._ensureContext();
+    if (!ctx || !this._sfxGain) return false;
+    if (ctx.state === 'suspended' && typeof ctx.resume === 'function') {
+      try {
+        Promise.resolve(ctx.resume()).catch(() => {});
+      } catch {}
+    }
+    try {
+      const now = ctx.currentTime;
+      const noiseBuf = this._getPinkNoiseBuffer(ctx, 1.0);
+      // 7 crisp overlapping bamboo-stick clicks mimicking shaking an ống xăm
+      const offsets = [0.0, 0.065, 0.12, 0.195, 0.27, 0.34, 0.42];
+      offsets.forEach((off, i) => {
+        const t = now + off;
+        const src = ctx.createBufferSource();
+        src.buffer = noiseBuf;
+        const bp = ctx.createBiquadFilter();
+        bp.type = 'bandpass';
+        bp.frequency.setValueAtTime(1150 + ((i * 210) % 720), t);
+        bp.Q.setValueAtTime(4.2, t);
+        const g = ctx.createGain();
+        const peak = 0.22 * (0.78 + (i % 3) * 0.11);
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.linearRampToValueAtTime(peak, t + 0.008);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + 0.055);
+        src.connect(bp);
+        bp.connect(g);
+        g.connect(this._sfxGain);
+        src.start(t, (i * 0.09) % 0.6);
+        src.stop(t + 0.07);
+      });
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   /**
@@ -1330,176 +1365,65 @@ export class TempleAudioEngine {
       const now = ctx.currentTime;
       const noiseBuf = this._getPinkNoiseBuffer(ctx, 4.0);
 
-      // Atmosphere sub-bus (allows toggling wind/water/hall independently of bells & chanting)
+      // Minimal, calm atmosphere bus: only ultra-soft outdoor breeze + rain when raining (no synthetic hums/drones!)
       const atmosphereBus = ctx.createGain();
       atmosphereBus.gain.setValueAtTime(this._ambientLayers.atmosphere ? 1.0 : 0.0, now);
       atmosphereBus.connect(this._ambientGain);
 
-      // Sub-buses for smooth 3-zone spatial crossfading (street <-> courtyard <-> interior) + Mekong rain
-      const streetBus = ctx.createGain();
       const outdoorBus = ctx.createGain();
-      const indoorBus = ctx.createGain();
       const rainBus = ctx.createGain();
-      streetBus.gain.setValueAtTime(normalizedZone === 'street' ? 1.0 : 0.0, now);
-      outdoorBus.gain.setValueAtTime(normalizedZone === 'courtyard' ? 1.0 : normalizedZone === 'street' ? 0.35 : 0.0, now);
-      indoorBus.gain.setValueAtTime(normalizedZone === 'interior' ? 1.0 : 0.0, now);
+      outdoorBus.gain.setValueAtTime(normalizedZone === 'interior' ? 0.0 : 1.0, now);
       rainBus.gain.setValueAtTime(0.0, now);
-      streetBus.connect(atmosphereBus);
       outdoorBus.connect(atmosphereBus);
-      indoorBus.connect(atmosphereBus);
       rainBus.connect(atmosphereBus);
 
-      // --- Street Zone (Outside Cổng Phụ / Đường vào chùa Mỹ Tho): warm distant town hum ---
-      const streetSrc = ctx.createBufferSource();
-      streetSrc.buffer = noiseBuf;
-      streetSrc.loop = true;
-      const streetBP = ctx.createBiquadFilter();
-      streetBP.type = 'bandpass';
-      streetBP.frequency.setValueAtTime(240, now);
-      streetBP.Q.setValueAtTime(0.9, now);
-      const streetGain = ctx.createGain();
-      streetGain.gain.setValueAtTime(0.11, now);
-      streetSrc.connect(streetBP);
-      streetBP.connect(streetGain);
-      streetGain.connect(streetBus);
-
-      // --- Mekong Tropical Rain Layer (filtered foliage hiss + muffled roof patter indoors) ---
+      // --- Mekong Tropical Rain Layer (active ONLY when weather is raining) ---
       const rainSrc = ctx.createBufferSource();
       rainSrc.buffer = noiseBuf;
       rainSrc.loop = true;
       const rainHP = ctx.createBiquadFilter();
       rainHP.type = 'highpass';
-      rainHP.frequency.setValueAtTime(620, now);
+      rainHP.frequency.setValueAtTime(680, now);
       const rainLP = ctx.createBiquadFilter();
       rainLP.type = 'lowpass';
-      rainLP.frequency.setValueAtTime(normalizedZone === 'interior' ? 780 : 3400, now);
+      rainLP.frequency.setValueAtTime(normalizedZone === 'interior' ? 760 : 3200, now);
       rainLP.Q.setValueAtTime(0.6, now);
       const rainGain = ctx.createGain();
-      rainGain.gain.setValueAtTime(0.24, now);
+      rainGain.gain.setValueAtTime(0.2, now);
       rainSrc.connect(rainHP);
       rainHP.connect(rainLP);
       rainLP.connect(rainGain);
       rainGain.connect(rainBus);
 
-      // --- Outdoor: Pink-filtered Mekong garden breeze ---
+      // --- Single ultra-soft outdoor garden breeze ---
       const breezeSrc = ctx.createBufferSource();
       breezeSrc.buffer = noiseBuf;
       breezeSrc.loop = true;
-
       const breezeLP = ctx.createBiquadFilter();
       breezeLP.type = 'lowpass';
-      breezeLP.frequency.setValueAtTime(380, now);
-      breezeLP.Q.setValueAtTime(0.55, now);
-
-      const breezeLfo = ctx.createOscillator();
-      breezeLfo.type = 'sine';
-      breezeLfo.frequency.setValueAtTime(0.065, now);
-      const breezeLfoGain = ctx.createGain();
-      breezeLfoGain.gain.setValueAtTime(140, now);
-      breezeLfo.connect(breezeLfoGain);
-      breezeLfoGain.connect(breezeLP.frequency);
-
+      breezeLP.frequency.setValueAtTime(320, now);
+      breezeLP.Q.setValueAtTime(0.5, now);
       const breezeGain = ctx.createGain();
-      breezeGain.gain.setValueAtTime(0.14, now);
+      breezeGain.gain.setValueAtTime(0.06, now);
       breezeSrc.connect(breezeLP);
       breezeLP.connect(breezeGain);
       breezeGain.connect(outdoorBus);
 
-      // --- Outdoor: Subtle lotus pond water shimmer ---
-      const waterSrc = ctx.createBufferSource();
-      waterSrc.buffer = noiseBuf;
-      waterSrc.loop = true;
-
-      const waterBP = ctx.createBiquadFilter();
-      waterBP.type = 'bandpass';
-      waterBP.frequency.setValueAtTime(880, now);
-      waterBP.Q.setValueAtTime(1.8, now);
-
-      const waterLfo = ctx.createOscillator();
-      waterLfo.type = 'sine';
-      waterLfo.frequency.setValueAtTime(0.11, now);
-      const waterLfoGain = ctx.createGain();
-      waterLfoGain.gain.setValueAtTime(210, now);
-      waterLfo.connect(waterLfoGain);
-      waterLfoGain.connect(waterBP.frequency);
-
-      const waterLP = ctx.createBiquadFilter();
-      waterLP.type = 'lowpass';
-      waterLP.frequency.setValueAtTime(1650, now);
-
-      const waterGain = ctx.createGain();
-      waterGain.gain.setValueAtTime(0.032, now);
-
-      waterSrc.connect(waterBP);
-      waterBP.connect(waterLP);
-      waterLP.connect(waterGain);
-      waterGain.connect(outdoorBus);
-
-      // --- Indoor: Warm wooden-hall hush & deep faint resonant drone ---
-      const hallSrc = ctx.createBufferSource();
-      hallSrc.buffer = noiseBuf;
-      hallSrc.loop = true;
-
-      const hallLP = ctx.createBiquadFilter();
-      hallLP.type = 'lowpass';
-      hallLP.frequency.setValueAtTime(210, now);
-      hallLP.Q.setValueAtTime(0.5, now);
-
-      const hallGain = ctx.createGain();
-      hallGain.gain.setValueAtTime(0.11, now);
-      hallSrc.connect(hallLP);
-      hallLP.connect(hallGain);
-      hallGain.connect(indoorBus);
-
-      const droneOsc1 = ctx.createOscillator();
-      droneOsc1.type = 'sine';
-      droneOsc1.frequency.setValueAtTime(108, now);
-
-      const droneOsc2 = ctx.createOscillator();
-      droneOsc2.type = 'sine';
-      droneOsc2.frequency.setValueAtTime(162, now); // tranquil fifth above 108Hz
-
-      const droneLP = ctx.createBiquadFilter();
-      droneLP.type = 'lowpass';
-      droneLP.frequency.setValueAtTime(260, now);
-
-      const droneGain = ctx.createGain();
-      droneGain.gain.setValueAtTime(0.022, now);
-
-      droneOsc1.connect(droneLP);
-      droneOsc2.connect(droneLP);
-      droneLP.connect(droneGain);
-      droneGain.connect(indoorBus);
-
-      // Start continuous sources
-      streetSrc.start(now, 0.3);
-      rainSrc.start(now, 2.1);
+      rainSrc.start(now, 1.4);
       breezeSrc.start(now);
-      breezeLfo.start(now);
-      waterSrc.start(now, 1.3);
-      waterLfo.start(now);
-      hallSrc.start(now, 0.7);
-      droneOsc1.start(now);
-      droneOsc2.start(now);
 
       this._ambientNodes = {
         atmosphereBus,
-        streetBus,
         outdoorBus,
-        indoorBus,
         rainBus,
         rainLP,
-        sources: [streetSrc, rainSrc, breezeSrc, breezeLfo, waterSrc, waterLfo, hallSrc, droneOsc1, droneOsc2]
+        sources: [rainSrc, breezeSrc]
       };
       this._ambientActive = true;
       this.setRainIntensity(this._rainIntensity || 0);
 
       if (this._ambientLayers.bells) {
-        this._scheduleAmbientChime();
         this._scheduleDistantBell();
-      }
-      if (this._ambientLayers.atmosphere) {
-        this._scheduleLotusRipple();
       }
       if (this._ambientLayers.chanting && !this._muted) {
         this._startAmbientChant();
@@ -1514,8 +1438,7 @@ export class TempleAudioEngine {
   }
 
   /**
-   * Smoothly crossfades ambient soundscape across 3 spatial zones:
-   * 'street' (outside gate), 'courtyard' (temple grounds), and 'interior' (Chánh điện).
+   * Smoothly adapts minimal ambient soundscape between outdoor grounds and quiet Chánh điện.
    * @param {'street' | 'courtyard' | 'exterior' | 'interior' | string} zone
    */
   setAmbientZone(zone) {
@@ -1525,21 +1448,16 @@ export class TempleAudioEngine {
     if (!this._ambientActive || !this._ambientNodes || !this.ctx) return;
 
     const now = this.ctx.currentTime;
-    const streetTarget = normalizedZone === 'street' ? 1.0 : 0.0;
-    const outTarget = normalizedZone === 'courtyard' ? 1.0 : normalizedZone === 'street' ? 0.35 : 0.0;
-    const inTarget = normalizedZone === 'interior' ? 1.0 : 0.0;
+    const outTarget = normalizedZone === 'interior' ? 0.0 : 1.0;
 
     try {
-      this._ambientNodes.streetBus?.gain.setTargetAtTime(streetTarget, now, 0.55);
-      this._ambientNodes.outdoorBus.gain.setTargetAtTime(outTarget, now, 0.45);
-      this._ambientNodes.indoorBus.gain.setTargetAtTime(inTarget, now, 0.45);
-      // Muffle Mekong rain smoothly when stepping inside Chánh điện
+      this._ambientNodes.outdoorBus?.gain.setTargetAtTime(outTarget, now, 0.45);
       if (this._ambientNodes.rainLP) {
-        const cutoff = normalizedZone === 'interior' ? 760 : 3400;
+        const cutoff = normalizedZone === 'interior' ? 760 : 3200;
         this._ambientNodes.rainLP.frequency.setTargetAtTime(cutoff, now, 0.45);
       }
       if (this._ambientNodes.rainBus) {
-        const rainGain = clamp01(this._rainIntensity, 0) * (normalizedZone === 'interior' ? 0.38 : 1.0);
+        const rainGain = clamp01(this._rainIntensity, 0) * (normalizedZone === 'interior' ? 0.35 : 1.0);
         this._ambientNodes.rainBus.gain.setTargetAtTime(rainGain, now, 0.45);
       }
     } catch {}
@@ -1555,11 +1473,11 @@ export class TempleAudioEngine {
     if (!this._ambientActive || !this._ambientNodes?.rainBus || !this.ctx) return;
     const now = this.ctx.currentTime;
     const isIndoor = this._ambientZone === 'interior';
-    const targetGain = this._rainIntensity * (isIndoor ? 0.38 : 1.0);
+    const targetGain = this._rainIntensity * (isIndoor ? 0.35 : 1.0);
     try {
       this._ambientNodes.rainBus.gain.setTargetAtTime(targetGain, now, 0.35);
       if (this._ambientNodes.rainLP) {
-        this._ambientNodes.rainLP.frequency.setTargetAtTime(isIndoor ? 760 : 3400, now, 0.35);
+        this._ambientNodes.rainLP.frequency.setTargetAtTime(isIndoor ? 760 : 3200, now, 0.35);
       }
     } catch {}
   }
@@ -1571,7 +1489,7 @@ export class TempleAudioEngine {
     }
     if (!this._ambientActive || !this._ambientEnabled || !this._ambientLayers.bells) return;
 
-    const delayMs = 16000 + Math.random() * 14000; // Calm 16s–30s distant bronze temple bell toll
+    const delayMs = 34000 + Math.random() * 20000; // Sparse, serene 34s–54s distant temple bell toll
     this._bellTimer = setTimeout(() => {
       this._bellTimer = null;
       if (!this._ambientActive || !this._ambientEnabled || !this._ambientLayers.bells) return;
@@ -1584,7 +1502,7 @@ export class TempleAudioEngine {
         this.ctx.state === 'running'
       ) {
         const duckFactor = this._voicePlaying || this._ttsSpeaking || this._externalDuck ? 0.45 : 1.0;
-        this.playDistantAmbientBell((0.15 + Math.random() * 0.06) * duckFactor);
+        this.playDistantAmbientBell((0.14 + Math.random() * 0.05) * duckFactor);
       }
       this._scheduleDistantBell();
     }, delayMs);

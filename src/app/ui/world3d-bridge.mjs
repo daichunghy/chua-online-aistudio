@@ -259,6 +259,8 @@ export const world3dBridgeMethods = {
           this.toggleInteriorHallIn3D(true);
         } else if (action === 'OPEN_BLESSING_TOWER') {
           this.openBlessingTowerModal();
+        } else if (action === 'OPEN_XIN_XAM') {
+          this.openXinXamModal?.();
         } else if (action === 'PRAY_NGHIN_MAT_NGHIN_TAY') {
           this.prayAtRightGalleryShrine('nghin_mat_nghin_tay');
         } else if (action === 'PRAY_CHO_NGU_CUA_PHAT') {
@@ -462,6 +464,7 @@ export const world3dBridgeMethods = {
         bell_rhythm: '🔔',
         koi_pond: '🐟',
         blessing_tower: '🏮',
+        xin_xam: '🎋',
         chanh_dien_bell: '🔔',
         trong_bat_nha: '🥁',
         nghin_mat_nghin_tay: '🙏',
@@ -515,6 +518,10 @@ export const world3dBridgeMethods = {
         this.openBlessingTowerModal();
         return true;
       }
+      if (p.kind === 'xin_xam') {
+        this.openXinXamModal?.();
+        return true;
+      }
       if (p.kind === 'chanh_dien_bell') {
         this.ringChanhDienBellInApp();
         return true;
@@ -566,8 +573,8 @@ export const world3dBridgeMethods = {
         return true;
       }
       this.openMarketplaceStallModal(
-        this.nearbyStallTrigger.stallType || 'huong_hoa',
-        this.nearbyStallTrigger.title || 'Nhà Tạp Hóa Cổng Chùa Vĩnh Tràng'
+        this.nearbyStallTrigger.stallType || 'all',
+        this.nearbyStallTrigger.title || 'Nhà Lưu Niệm · Cửa Hàng Văn Hóa Phẩm Vĩnh Tràng'
       );
       return true;
     }

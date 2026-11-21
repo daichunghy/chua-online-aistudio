@@ -189,12 +189,23 @@ export const playerAndInteractionMethods = {
     this.cameraViewMode = next;
     if (next === 'first') {
       this.selfieCamActive = false;
-      this.firstPersonPitch = 0.04;
+      this.firstPersonPitch = 0.06;
       this.cameraBaseYaw = this.playerState.yaw;
       this.cameraAzimuthOffset = 0;
     }
     this.syncPlayerTransform();
-    if (immediate) this.snapCameraImmediate();
+    if (immediate) {
+      if (this.camera) {
+        const targetFov = next === 'first' ? 66 : 48;
+        const targetNear = next === 'first' ? 0.12 : 0.25;
+        if (Math.abs(this.camera.fov - targetFov) > 0.05 || Math.abs(this.camera.near - targetNear) > 0.005) {
+          this.camera.fov = targetFov;
+          this.camera.near = targetNear;
+          this.camera.updateProjectionMatrix();
+        }
+      }
+      this.snapCameraImmediate();
+    }
     this.onCameraModeChange?.(next);
     return next;
   },
@@ -215,6 +226,25 @@ export const playerAndInteractionMethods = {
   updateCameraDamped(dt = 0.016) {
     if (this.entranceTour?.active || this.arrivalCutscene?.active) return;
 
+    const isFpActive =
+      this.cameraViewMode === 'first' &&
+      !this._titlePanActive &&
+      !this.selfieCamActive &&
+      !(this.inInterior && this.interiorCutaway);
+
+    // Smoothly widen FOV (66°) and tighten near clip (0.12m) in 1st-person for natural interior & plaza clarity
+    if (this.camera) {
+      const desiredFov = isFpActive ? 66 : 48;
+      const desiredNear = isFpActive ? 0.12 : 0.25;
+      if (Math.abs(this.camera.fov - desiredFov) > 0.08 || Math.abs(this.camera.near - desiredNear) > 0.005) {
+        const blend = 1 - Math.exp(-8.5 * Math.min(0.12, dt));
+        this.camera.fov += (desiredFov - this.camera.fov) * blend;
+        if (Math.abs(this.camera.fov - desiredFov) <= 0.1) this.camera.fov = desiredFov;
+        this.camera.near = desiredNear;
+        this.camera.updateProjectionMatrix();
+      }
+    }
+
     if (this._titlePanActive && !this.inInterior) {
       this._titlePanTime = (this._titlePanTime || 0) + dt;
       const sway = Math.sin(this._titlePanTime * 0.22) * 3.8;
@@ -230,8 +260,11 @@ export const playerAndInteractionMethods = {
       this._camCurrentLook.copy(this._camDesiredLook);
       this._camInitialized = true;
     } else {
-      const posFactor = 1 - Math.exp(-7.5 * Math.min(0.12, dt));
-      const lookFactor = 1 - Math.exp(-8.5 * Math.min(0.12, dt));
+      // Crisper camera response in first-person prevents swimmy/disorienting lag when turning
+      const posRate = isFpActive ? 14.0 : 7.5;
+      const lookRate = isFpActive ? 16.0 : 8.5;
+      const posFactor = 1 - Math.exp(-posRate * Math.min(0.12, dt));
+      const lookFactor = 1 - Math.exp(-lookRate * Math.min(0.12, dt));
       this._camCurrentPos.lerp(this._camDesiredPos, posFactor);
       this._camCurrentLook.lerp(this._camDesiredLook, lookFactor);
     }
@@ -436,7 +469,12 @@ export const playerAndInteractionMethods = {
       const px = this.playerState.x;
       const pz = this.playerState.z;
       let intPrompt = null;
-      if (Math.hypot(px - 20.4, pz - 4.2) <= 3.4) {
+      if (Math.hypot(px - 13.6, pz - 14.8) <= 3.6) {
+        intPrompt = {
+          kind: 'xin_xam',
+          label: '🎋 [E] Xin Xăm · Xem Quẻ Quan Âm'
+        };
+      } else if (Math.hypot(px - 20.4, pz - 4.2) <= 3.4) {
         intPrompt = {
           kind: 'nghin_mat_nghin_tay',
           label: '🙏 [E] Chiêm Bái Tượng Phật Nghìn Mắt Nghìn Tay'
@@ -471,7 +509,7 @@ export const playerAndInteractionMethods = {
           exitSide: 'north_buddha',
           label: '🚪 [E] Ra Vườn Phật Niết Bàn & Bảo Tháp'
         };
-      } else if (px <= -58.2 && Math.abs(pz) <= 6.0) {
+      } else if (px <= -59.6 && Math.abs(pz) <= 4.5) {
         intPrompt = {
           kind: 'exit_interior',
           exitSide: 'front_tam_quan',
@@ -685,8 +723,8 @@ export const playerAndInteractionMethods = {
         this.cameraAzimuthOffset -= dx * 0.0045;
         if (this.cameraViewMode === 'first' && !this.selfieCamActive && !(this.inInterior && this.interiorCutaway)) {
           this.firstPersonPitch = THREE.MathUtils.clamp(
-            (this.firstPersonPitch || 0) - dy * 0.0042,
-            -0.62,
+            (this.firstPersonPitch || 0) - dy * 0.0036,
+            -0.56,
             0.92
           );
         } else {
@@ -698,6 +736,15 @@ export const playerAndInteractionMethods = {
         }
         downX = e.clientX;
         downY = e.clientY;
+        this.syncPlayerTransform();
+      }
+    });
+
+    // Double-click canvas in first-person view to cleanly re-level horizon
+    this.canvas.addEventListener('dblclick', () => {
+      if (this.cameraViewMode === 'first' && !this.selfieCamActive) {
+        this.firstPersonPitch = 0.06;
+        this.cameraAzimuthOffset = 0;
         this.syncPlayerTransform();
       }
     });
@@ -722,6 +769,13 @@ export const playerAndInteractionMethods = {
     raycaster.setFromCamera(ndc, this.camera);
 
     if (this.inInterior) {
+      if (this.interiorFortuneClickTargets?.length) {
+        const hits = raycaster.intersectObjects(this.interiorFortuneClickTargets, true);
+        if (hits.length > 0) {
+          this.onObjectClick('OPEN_XIN_XAM');
+          return;
+        }
+      }
       if (this.nghinMatClickTargets?.length) {
         const hits = raycaster.intersectObjects(this.nghinMatClickTargets, true);
         if (hits.length > 0) {

@@ -685,104 +685,374 @@ export const exteriorTownMethods = {
     // Quảng trường tròn trung tâm (OSM way/1147384259) lát gạch terrazzo & viền gạch tàu đỏ
     const plazaX = 8.0;
     const plazaZ = 104.0;
-    const plazaRing = new THREE.Mesh(new THREE.RingGeometry(5.8, 12.6, 48), parkTerrazzoMat);
+    const plazaRing = new THREE.Mesh(new THREE.RingGeometry(5.8, 13.6, 48), parkTerrazzoMat);
     plazaRing.rotation.x = -Math.PI / 2;
     plazaRing.position.set(plazaX, 0.095, plazaZ);
     plazaRing.receiveShadow = true;
     parkGroup.add(plazaRing);
 
-    const plazaBrickAccent = new THREE.Mesh(new THREE.RingGeometry(11.6, 12.6, 48), parkBrickMat);
+    const plazaBrickAccent = new THREE.Mesh(new THREE.RingGeometry(12.6, 13.6, 48), parkBrickMat);
     plazaBrickAccent.rotation.x = -Math.PI / 2;
     plazaBrickAccent.position.set(plazaX, 0.102, plazaZ);
     parkGroup.add(plazaBrickAccent);
 
-    // Đài phun nước hoa sen 2 tầng giữa quảng trường tròn
-    const centerPlanter = new THREE.Mesh(new THREE.CylinderGeometry(5.8, 6.0, 0.38, 36), parkBrickMat);
-    centerPlanter.position.set(plazaX, 0.22, plazaZ);
-    parkGroup.add(centerPlanter);
-    const centerSoil = new THREE.Mesh(new THREE.CylinderGeometry(5.45, 5.45, 0.4, 32), parkLawnMat);
-    centerSoil.position.set(plazaX, 0.23, plazaZ);
-    parkGroup.add(centerSoil);
+    // =========================================================================
+    // ĐẠI TƯỢNG PHẬT LỚN TRONG CÔNG VIÊN VĂN HÓA VĨNH TRÀNG (plazaX = 8.0, plazaZ = 104.0)
+    // Quay mặt hướng Đông (+X) thẳng ra cổng chính Công viên & đường vào Chùa Vĩnh Tràng!
+    // =========================================================================
+    const parkBuddhaGroup = new THREE.Group();
+    parkBuddhaGroup.position.set(plazaX, 0, plazaZ);
+    parkBuddhaGroup.rotation.y = Math.PI / 2; // Local +Z faces East (+X) toward main road & park gate!
+    this.parkBuddhaGroup = parkBuddhaGroup;
 
-    const basinOuter = new THREE.Mesh(new THREE.CylinderGeometry(2.9, 3.1, 0.62, 24), M.stoneLight);
-    basinOuter.position.set(plazaX, 0.62, plazaZ);
-    parkGroup.add(basinOuter);
-    const basinWater = new THREE.Mesh(
-      new THREE.CylinderGeometry(2.6, 2.6, 0.12, 24),
-      new THREE.MeshStandardMaterial({ color: 0x3D94AA, roughness: 0.16, metalness: 0.24 })
-    );
-    basinWater.position.set(plazaX, 0.9, plazaZ);
-    parkGroup.add(basinWater);
-    const fountainCol = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.48, 2.1, 16), M.stoneLight);
-    fountainCol.position.set(plazaX, 1.75, plazaZ);
-    parkGroup.add(fountainCol);
-    const fountainBowl = new THREE.Mesh(new THREE.CylinderGeometry(1.25, 0.48, 0.34, 18), M.stoneLight);
-    fountainBowl.position.set(plazaX, 2.55, plazaZ);
-    parkGroup.add(fountainBowl);
-    const fountainLotus = new THREE.Mesh(
-      new THREE.SphereGeometry(0.42, 12, 10),
-      new THREE.MeshStandardMaterial({ color: 0xEE7BA5, roughness: 0.4 })
-    );
-    fountainLotus.scale.set(1.15, 0.85, 1.15);
-    fountainLotus.position.set(plazaX, 2.95, plazaZ);
-    parkGroup.add(fountainLotus);
-    // Tia nước phun hình vòng cung quanh đài sen
-    const sprayMat = new THREE.MeshBasicMaterial({ color: 0xD8F4FF, transparent: true, opacity: 0.65 });
-    for (let si = 0; si < 8; si++) {
-      const sa = (si / 8) * Math.PI * 2;
-      const jet = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.055, 1.25, 6), sprayMat);
-      jet.position.set(plazaX + Math.cos(sa) * 1.15, 1.55, plazaZ + Math.sin(sa) * 1.15);
-      jet.rotation.z = Math.cos(sa) * 0.48;
-      jet.rotation.x = -Math.sin(sa) * 0.48;
-      parkGroup.add(jet);
+    // 3-tier solemn granite & crimson-lacquered lotus pedestal (total height 3.2m)
+    const pbStep1 = new THREE.Mesh(new THREE.CylinderGeometry(5.8, 6.25, 0.45, 16), M.stoneLight);
+    pbStep1.position.y = 0.225;
+    pbStep1.receiveShadow = true;
+    parkBuddhaGroup.add(pbStep1);
+
+    const pbTier1 = new THREE.Mesh(new THREE.CylinderGeometry(4.4, 4.95, 1.15, 12), M.stoneDark);
+    pbTier1.position.y = 1.02;
+    pbTier1.castShadow = true;
+    pbTier1.receiveShadow = true;
+    parkBuddhaGroup.add(pbTier1);
+
+    const pbTier2 = new THREE.Mesh(new THREE.CylinderGeometry(3.45, 3.85, 1.12, 12), M.pedestalRed);
+    pbTier2.position.y = 2.15;
+    pbTier2.castShadow = true;
+    parkBuddhaGroup.add(pbTier2);
+
+    const pbGoldCollar = new THREE.Mesh(new THREE.TorusGeometry(3.52, 0.11, 8, 24), M.goldAccent);
+    pbGoldCollar.rotation.x = Math.PI / 2;
+    pbGoldCollar.position.y = 2.74;
+    parkBuddhaGroup.add(pbGoldCollar);
+
+    const pbLotusCap = new THREE.Mesh(new THREE.CylinderGeometry(2.85, 3.35, 0.52, 16), M.stoneLight);
+    pbLotusCap.position.y = 2.96;
+    parkBuddhaGroup.add(pbLotusCap);
+
+    // Carved pink lotus petals encircling the upper pedestal rim
+    for (let lp = 0; lp < 16; lp++) {
+      const la = (lp / 16) * Math.PI * 2;
+      const pet = new THREE.Mesh(new THREE.ConeGeometry(0.46, 0.92, 6), lotusPetalMat);
+      pet.position.set(Math.cos(la) * 2.95, 3.22, Math.sin(la) * 2.95);
+      pet.rotation.z = -Math.cos(la) * 0.48;
+      pet.rotation.x = Math.sin(la) * 0.48;
+      parkBuddhaGroup.add(pet);
     }
 
-    for (let fi = 0; fi < 16; fi++) {
-      const fa = (fi / 16) * Math.PI * 2;
-      const fx = plazaX + Math.cos(fa) * 4.4;
-      const fz = plazaZ + Math.sin(fa) * 4.4;
-      const flBush = new THREE.Mesh(
-        new THREE.DodecahedronGeometry(0.46, 0),
-        bougainvilleaMats[fi % bougainvilleaMats.length]
-      );
-      flBush.scale.set(1.2, 0.68, 1.2);
-      flBush.position.set(fx, 0.56, fz);
-      parkGroup.add(flBush);
+    // Semicircular carved stone balustrade wrapping rear & flanks (leaves front East staircase open)
+    for (let bi = 0; bi <= 10; bi++) {
+      const ang = -Math.PI * 0.72 + (bi / 10) * (Math.PI * 1.44);
+      const bx = Math.sin(ang) * 5.75;
+      const bz = -Math.cos(ang) * 5.75;
+      const post = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.92, 0.28), M.stoneLight);
+      post.position.set(bx, 0.88, bz);
+      parkBuddhaGroup.add(post);
+      const cap = new THREE.Mesh(new THREE.SphereGeometry(0.15, 8, 6), lotusPetalMat);
+      cap.position.set(bx, 1.42, bz);
+      parkBuddhaGroup.add(cap);
     }
 
-    // Lối đi trục Bắc–Nam, 3 lối ngang Đông–Tây, viền Tây–Nam & 2 lối chéo X xuyên Quảng trường Đài Phun Nước (đúng thực tế OSM Công Viên Vĩnh Tràng!)
-    const perimeterWestWalk = new THREE.Mesh(new THREE.BoxGeometry(2.8, 0.09, 113.4), parkTerrazzoMat);
-    perimeterWestWalk.position.set(-24.4, 0.06, 111.0);
+    // Front granite staircase & golden nameplate facing East (+X)
+    for (let st = 0; st < 3; st++) {
+      const step = new THREE.Mesh(new THREE.BoxGeometry(3.8, 0.2, 0.44), M.stoneLight);
+      step.position.set(0, 0.22 + st * 0.18, 5.75 - st * 0.42);
+      step.receiveShadow = true;
+      parkBuddhaGroup.add(step);
+    }
+    const pbPlaque = new THREE.Mesh(
+      new THREE.BoxGeometry(4.6, 0.72, 0.16),
+      new THREE.MeshStandardMaterial({
+        map: makeTextTex('NAM MÔ A DI ĐÀ PHẬT · CÔNG VIÊN VĨNH TRÀNG', {
+          w: 1400, h: 200, bg: '#5A1610', border: '#F4C95D', color: '#FFF5DA', size: 44
+        }),
+        roughness: 0.44
+      })
+    );
+    pbPlaque.position.set(0, 1.98, 3.92);
+    parkBuddhaGroup.add(pbPlaque);
+
+    // Anchor where glb-loading.mjs mounts the 16.5m Monumental Giant Buddha GLB (with clean temporary fallback)
+    const parkBuddhaStatueAnchor = new THREE.Group();
+    parkBuddhaStatueAnchor.position.set(0, 3.22, 0);
+    const pbFallback = new THREE.Group();
+    const pbFBody = new THREE.Mesh(new THREE.CylinderGeometry(1.15, 1.85, 8.8, 16), M.statueWhite);
+    pbFBody.position.y = 4.4;
+    pbFallback.add(pbFBody);
+    const pbFHead = new THREE.Mesh(new THREE.SphereGeometry(0.95, 14, 12), M.statueWhite);
+    pbFHead.position.y = 9.8;
+    pbFallback.add(pbFHead);
+    parkBuddhaStatueAnchor.add(pbFallback);
+    parkBuddhaGroup.add(parkBuddhaStatueAnchor);
+    this.parkBuddhaStatueAnchor = parkBuddhaStatueAnchor;
+    this.parkBuddhaFallback = pbFallback;
+
+    // Solemn Outdoor Worship Sanctuary (Bàn Thờ Lộ Thiên + Đỉnh Đồng Tam Túc + Chiếu Lạy + Đèn Đá) in front of Park Giant Buddha
+    const pbAltarRed = new THREE.MeshStandardMaterial({ color: 0x7A1B14, roughness: 0.56 });
+    const pbPorcelain = new THREE.MeshStandardMaterial({ color: 0xF0EFE8, roughness: 0.24 });
+    const pbEmber = new THREE.MeshBasicMaterial({ color: 0xFF6A2B });
+    const pbFlame = new THREE.MeshBasicMaterial({ color: 0xFFE38A });
+
+    const pbAltarZ = 7.1;
+    const pbAltarBody = new THREE.Mesh(new THREE.BoxGeometry(3.8, 1.06, 1.08), pbAltarRed);
+    pbAltarBody.position.set(0, 0.62, pbAltarZ);
+    pbAltarBody.castShadow = true;
+    parkBuddhaGroup.add(pbAltarBody);
+    const pbAltarSlab = new THREE.Mesh(new THREE.BoxGeometry(4.02, 0.12, 1.24), M.stoneLight);
+    pbAltarSlab.position.set(0, 1.2, pbAltarZ);
+    parkBuddhaGroup.add(pbAltarSlab);
+    const pbAltarCloth = new THREE.Mesh(
+      new THREE.PlaneGeometry(2.65, 0.68),
+      new THREE.MeshBasicMaterial({
+        map: makeTextTex('THÀNH TÂM LỄ PHẬT', {
+          w: 760, h: 180, bg: '#7E1610', border: '#F4CA5E', color: '#FFE99A', size: 48
+        })
+      })
+    );
+    pbAltarCloth.position.set(0, 0.64, pbAltarZ + 0.56);
+    parkBuddhaGroup.add(pbAltarCloth);
+    for (const sgn of [-1, 1]) {
+      const vase = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.15, 0.46, 12), pbPorcelain);
+      vase.position.set(sgn * 1.48, 1.48, pbAltarZ - 0.1);
+      parkBuddhaGroup.add(vase);
+      for (let fi = -1; fi <= 1; fi++) {
+        const fl = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 6), lotusPetalMat);
+        fl.position.set(sgn * 1.48 + fi * 0.1, 1.8 + (fi === 0 ? 0.08 : 0), pbAltarZ - 0.1);
+        parkBuddhaGroup.add(fl);
+      }
+      const candle = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.09, 0.36, 10), M.goldAccent);
+      candle.position.set(sgn * 0.88, 1.44, pbAltarZ + 0.18);
+      parkBuddhaGroup.add(candle);
+      const flame = new THREE.Mesh(new THREE.ConeGeometry(0.025, 0.08, 6), pbFlame);
+      flame.position.set(sgn * 0.88, 1.66, pbAltarZ + 0.18);
+      parkBuddhaGroup.add(flame);
+    }
+    const pbCenser = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.18, 0.24, 14), M.bronzeBurner);
+    pbCenser.position.set(0, 1.38, pbAltarZ + 0.08);
+    parkBuddhaGroup.add(pbCenser);
+
+    // Centered Bronze Cauldron (Đỉnh Đồng Tam Túc)
+    const pbCauldronZ = 8.45;
+    const pbCPlinth = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.82, 0.28, 8), M.stoneDark);
+    pbCPlinth.position.set(0, 0.24, pbCauldronZ);
+    parkBuddhaGroup.add(pbCPlinth);
+    const pbCBowl = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.44, 0.58, 16), M.bronzeBurner);
+    pbCBowl.position.set(0, 0.94, pbCauldronZ);
+    parkBuddhaGroup.add(pbCBowl);
+    const pbCRim = new THREE.Mesh(new THREE.TorusGeometry(0.6, 0.055, 8, 16), M.goldAccent);
+    pbCRim.rotation.x = Math.PI / 2;
+    pbCRim.position.set(0, 1.24, pbCauldronZ);
+    parkBuddhaGroup.add(pbCRim);
+    for (let si = -2; si <= 2; si++) {
+      const stk = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.01, 0.42, 5), M.redColumn);
+      stk.position.set(si * 0.07, 1.44, pbCauldronZ);
+      parkBuddhaGroup.add(stk);
+      const tip = new THREE.Mesh(new THREE.SphereGeometry(0.018, 6, 6), pbEmber);
+      tip.position.set(si * 0.075, 1.66, pbCauldronZ);
+      parkBuddhaGroup.add(tip);
+    }
+
+    // 4 neat crimson-gold kneeling prayer mats facing the Park Giant Buddha
+    for (let mi = 0; mi < 4; mi++) {
+      const mx = (mi - 1.5) * 1.28;
+      const mat = new THREE.Mesh(new THREE.BoxGeometry(0.94, 0.05, 1.02), pbAltarRed);
+      mat.position.set(mx, 0.13, 10.35);
+      parkBuddhaGroup.add(mat);
+      const pad = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.32, 0.1, 12), M.redColumn);
+      pad.position.set(mx, 0.2, 10.5);
+      parkBuddhaGroup.add(pad);
+    }
+
+    parkGroup.add(parkBuddhaGroup);
+    this.addObstacle(plazaX, plazaZ, 5.4);
+    this.addRectObstacle(plazaX + 6.3, plazaX + 9.2, plazaZ - 2.4, plazaZ + 2.4);
+
+    // =========================================================================
+    // HÀNG RÀO CAO BAO QUANH CÔNG VIÊN VĂN HÓA VĨNH TRÀNG (~2.55m)
+    // Tường bệ xây kem vàng + Trụ cột cổ điển đầu búp sen + Song sắt đen mũi giáo,
+    // mở rộng 5 cổng vào thông thoáng tại các trục đường đi bộ!
+    // =========================================================================
+    const fenceWallMat = new THREE.MeshStandardMaterial({
+      color: 0xEFE2C4,
+      map: this.limeWallTex,
+      roughness: 0.8
+    });
+    const fenceCapMat = new THREE.MeshStandardMaterial({ color: 0xD8C6A2, roughness: 0.72 });
+    const fenceIronMat = new THREE.MeshStandardMaterial({ color: 0x202624, roughness: 0.42, metalness: 0.65 });
+
+    // Collect vertical wrought-iron pickets + masonry pillars/caps/finials into 4 fast InstancedMeshes
+    const picketMatrices = [];
+    const pillarMatrices = [];
+    const capMatrices = [];
+    const finialMatrices = [];
+    const instDummy = new THREE.Object3D();
+
+    const addFenceSpan = (x1, z1, x2, z2, registerCollider = true) => {
+      const dx = x2 - x1;
+      const dz = z2 - z1;
+      const len = Math.hypot(dx, dz);
+      if (len < 0.8) return;
+      const midX = (x1 + x2) * 0.5;
+      const midZ = (z1 + z2) * 0.5;
+      const angle = Math.atan2(dx, dz); // Local +Z runs along the span
+
+      const spanGrp = new THREE.Group();
+      spanGrp.position.set(midX, 0, midZ);
+      spanGrp.rotation.y = angle;
+
+      // Solid plastered masonry base plinth wall (height 0.78m) + coping cap
+      const baseWall = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.78, len), fenceWallMat);
+      baseWall.position.y = 0.39;
+      baseWall.receiveShadow = true;
+      spanGrp.add(baseWall);
+
+      const baseCap = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.08, len + 0.06), fenceCapMat);
+      baseCap.position.y = 0.82;
+      spanGrp.add(baseCap);
+
+      // Horizontal wrought-iron rails (y = 1.0, 1.65, 2.34)
+      for (const ry of [1.0, 1.65, 2.34]) {
+        const rail = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.055, len), fenceIronMat);
+        rail.position.y = ry;
+        spanGrp.add(rail);
+      }
+
+      const nx = dx / len;
+      const nz = dz / len;
+
+      // Tall classical masonry fence pillars spaced every ~7.5m (instanced!)
+      const bayCount = Math.max(1, Math.round(len / 7.5));
+      for (let bi = 0; bi <= bayCount; bi++) {
+        const d = (bi / bayCount) * len;
+        const px = x1 + nx * d;
+        const pz = z1 + nz * d;
+        instDummy.rotation.set(0, angle, 0);
+        instDummy.scale.set(1, 1, 1);
+
+        instDummy.position.set(px, 1.26, pz);
+        instDummy.updateMatrix();
+        pillarMatrices.push(instDummy.matrix.clone());
+
+        instDummy.position.set(px, 2.58, pz);
+        instDummy.updateMatrix();
+        capMatrices.push(instDummy.matrix.clone());
+
+        instDummy.position.set(px, 2.75, pz);
+        instDummy.updateMatrix();
+        finialMatrices.push(instDummy.matrix.clone());
+      }
+
+      // Vertical wrought-iron pickets every 0.85m along the span (instanced!)
+      const pCount = Math.floor(len / 0.85);
+      for (let pi = 1; pi < pCount; pi++) {
+        const d = (pi / pCount) * len;
+        const px = x1 + nx * d;
+        const pz = z1 + nz * d;
+        instDummy.position.set(px, 1.68, pz);
+        instDummy.rotation.set(0, 0, 0);
+        instDummy.scale.set(1, 1, 1);
+        instDummy.updateMatrix();
+        picketMatrices.push(instDummy.matrix.clone());
+      }
+
+      parkGroup.add(spanGrp);
+      if (registerCollider) {
+        const minX = Math.min(x1, x2) - 0.35;
+        const maxX = Math.max(x1, x2) + 0.35;
+        const minZ = Math.min(z1, z2) - 0.35;
+        const maxZ = Math.max(z1, z2) + 0.35;
+        this.addRectObstacle(minX, maxX, minZ, maxZ);
+      }
+    };
+
+    // East perimeter fence (x = 30.8) with 3 wide open gates at z = 70, 104 (main), 138
+    addFenceSpan(30.8, 54.4, 30.8, 66.2);
+    addFenceSpan(30.8, 73.8, 30.8, 99.2);
+    addFenceSpan(30.8, 108.8, 30.8, 134.2);
+    addFenceSpan(30.8, 141.8, 30.8, 167.6);
+
+    // North perimeter fence (z = 54.4) with wide open North gate at x = 8.0
+    addFenceSpan(-25.6, 54.4, 4.2, 54.4);
+    addFenceSpan(11.8, 54.4, 30.8, 54.4);
+
+    // West perimeter fence (x = -25.6, continuous)
+    addFenceSpan(-25.6, 54.4, -25.6, 167.6);
+
+    // South perimeter fence (z = 167.6) with wide open South gate at x = 8.0
+    addFenceSpan(-25.6, 167.6, 4.2, 167.6);
+    addFenceSpan(11.8, 167.6, 30.8, 167.6);
+
+    const buildInstanced = (geo, mat, matrices) => {
+      if (!matrices.length) return;
+      const inst = new THREE.InstancedMesh(geo, mat, matrices.length);
+      for (let i = 0; i < matrices.length; i++) inst.setMatrixAt(i, matrices[i]);
+      inst.instanceMatrix.needsUpdate = true;
+      parkGroup.add(inst);
+    };
+    buildInstanced(new THREE.BoxGeometry(0.5, 2.52, 0.5), fenceWallMat, pillarMatrices);
+    buildInstanced(new THREE.BoxGeometry(0.62, 0.14, 0.62), fenceCapMat, capMatrices);
+    buildInstanced(new THREE.SphereGeometry(0.14, 7, 5), M.goldAccent, finialMatrices);
+    buildInstanced(new THREE.CylinderGeometry(0.024, 0.028, 1.68, 4), fenceIronMat, picketMatrices);
+
+    // Grand Ceremonial East Entrance Gate Archway at (x = 30.8, z = 104.0) framing the view straight to the Park Giant Buddha!
+    const mainGateGrp = new THREE.Group();
+    mainGateGrp.position.set(30.8, 0, 104.0);
+    for (const gz of [-4.8, 4.8]) {
+      const gCol = new THREE.Mesh(new THREE.BoxGeometry(0.82, 4.35, 0.82), fenceWallMat);
+      gCol.position.set(0, 2.18, gz);
+      gCol.castShadow = true;
+      mainGateGrp.add(gCol);
+      const gCap = new THREE.Mesh(new THREE.BoxGeometry(1.06, 0.24, 1.06), M.roofTile);
+      gCap.position.set(0, 4.46, gz);
+      mainGateGrp.add(gCap);
+      const gLotus = new THREE.Mesh(new THREE.SphereGeometry(0.24, 10, 8), M.goldAccent);
+      gLotus.position.set(0, 4.78, gz);
+      mainGateGrp.add(gLotus);
+    }
+    const gLintel = new THREE.Mesh(new THREE.BoxGeometry(0.76, 0.72, 10.6), fenceWallMat);
+    gLintel.position.set(0, 4.42, 0);
+    mainGateGrp.add(gLintel);
+    const gRoof = new THREE.Mesh(new THREE.BoxGeometry(1.45, 0.42, 11.4), M.roofTile);
+    gRoof.position.set(0, 4.98, 0);
+    mainGateGrp.add(gRoof);
+    const gSign = new THREE.Mesh(
+      new THREE.BoxGeometry(0.84, 0.64, 7.6),
+      new THREE.MeshStandardMaterial({
+        map: makeTextTex('CÔNG VIÊN VĂN HÓA VĨNH TRÀNG', {
+          w: 1280, h: 160, bg: '#1B5233', border: '#F5CD67', color: '#FFF8E4', size: 54
+        }),
+        roughness: 0.4
+      })
+    );
+    gSign.position.set(0, 4.42, 0);
+    mainGateGrp.add(gSign);
+    parkGroup.add(mainGateGrp);
+
+    // Lối dạo lát đá gọn gàng trục Bắc–Nam & 3 lối ngang Đông–Tây
+    const perimeterWestWalk = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.09, 113.4), parkTerrazzoMat);
+    perimeterWestWalk.position.set(-23.4, 0.06, 111.0);
     perimeterWestWalk.receiveShadow = true;
     parkGroup.add(perimeterWestWalk);
 
-    const perimeterSouthWalk = new THREE.Mesh(new THREE.BoxGeometry(56.6, 0.09, 3.2), parkTerrazzoMat);
-    perimeterSouthWalk.position.set(2.6, 0.06, 166.2);
+    const perimeterSouthWalk = new THREE.Mesh(new THREE.BoxGeometry(56.6, 0.09, 3.0), parkTerrazzoMat);
+    perimeterSouthWalk.position.set(2.6, 0.06, 165.4);
     perimeterSouthWalk.receiveShadow = true;
     parkGroup.add(perimeterSouthWalk);
 
-    const nsParkPath = new THREE.Mesh(new THREE.BoxGeometry(4.6, 0.08, 114.0), parkPathMat);
+    const nsParkPath = new THREE.Mesh(new THREE.BoxGeometry(4.2, 0.08, 114.0), parkPathMat);
     nsParkPath.position.set(plazaX, 0.06, 111.0);
     nsParkPath.receiveShadow = true;
     parkGroup.add(nsParkPath);
 
     for (const pz of [70.0, 104.0, 138.0]) {
-      const ewPath = new THREE.Mesh(new THREE.BoxGeometry(57.2, 0.08, pz === 104.0 ? 4.4 : 3.6), parkPathMat);
+      const ewPath = new THREE.Mesh(new THREE.BoxGeometry(57.2, 0.08, pz === 104.0 ? 4.8 : 3.4), parkPathMat);
       ewPath.position.set(2.6, 0.058, pz);
       ewPath.receiveShadow = true;
       parkGroup.add(ewPath);
     }
 
-    // 2 lối dạo xuyên chéo qua quảng trường tròn trung tâm (nối Chòi lục giác, Khu thể dục & các góc công viên)
-    for (const diagAngle of [Math.PI * 0.25, -Math.PI * 0.25]) {
-      const diagPath = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.075, 62.0), parkPathMat);
-      diagPath.position.set(plazaX, 0.056, plazaZ);
-      diagPath.rotation.y = diagAngle;
-      diagPath.receiveShadow = true;
-      parkGroup.add(diagPath);
-    }
-
-    // Vạch qua đường đi bộ nối trực tiếp từ đường vào Chùa Vĩnh Tràng sang Công Viên Vĩnh Tràng
+    // Vạch qua đường đi bộ nối từ đường vào Chùa Vĩnh Tràng sang Công Viên Văn Hóa Vĩnh Tràng
     const zebraMat = new THREE.MeshStandardMaterial({ color: 0xF3F0E6, roughness: 0.72 });
     for (const cz of [70.0, 104.0, 138.0]) {
       for (let zi = -2; zi <= 2; zi++) {
@@ -792,146 +1062,144 @@ export const exteriorTownMethods = {
       }
     }
 
-    // Bảng sơ đồ hướng dẫn Công Viên Vĩnh Tràng đặt gọn trên thảm cỏ bên lối vào Quảng trường
-    const parkMapPost = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.07, 1.8, 8), parkGymBlue);
-    parkMapPost.position.set(27.0, 0.9, 98.8);
-    parkGroup.add(parkMapPost);
+    // Bảng chỉ dẫn bên trong cổng chính Công Viên Văn Hóa Vĩnh Tràng
+    const gatePlinth = new THREE.Mesh(new THREE.BoxGeometry(0.62, 1.05, 3.8), M.stoneLight);
+    gatePlinth.position.set(27.8, 0.52, 95.8);
+    gatePlinth.castShadow = true;
+    parkGroup.add(gatePlinth);
     const parkMapBoard = new THREE.Mesh(
-      new THREE.BoxGeometry(2.3, 0.92, 0.09),
+      new THREE.BoxGeometry(0.22, 1.18, 3.5),
       new THREE.MeshStandardMaterial({
-        map: makeTextTex('CÔNG VIÊN VĨNH TRÀNG · ĐÀI PHUN NƯỚC · CHÒI LỤC GIÁC', {
-          w: 1120, h: 300, bg: '#184F32', border: '#F0D388', color: '#FFFDF0', size: 32
+        map: makeTextTex('CÔNG VIÊN VĂN HÓA VĨNH TRÀNG\nĐẠI TƯỢNG PHẬT · HỒ SEN · NHÀ THỦY TẠ', {
+          w: 1080, h: 320, bg: '#1D4D33', border: '#E8C563', color: '#FFF9E8', size: 36
         }),
-        roughness: 0.4
+        roughness: 0.44
       })
     );
-    parkMapBoard.position.set(27.0, 1.65, 98.8);
-    parkMapBoard.rotation.y = Math.PI / 2;
+    parkMapBoard.position.set(27.8, 1.62, 95.8);
     parkGroup.add(parkMapBoard);
 
-    // KHU TẬP THỂ DỤC CÔNG VIÊN NGOÀI TRỜI (dụng cụ sơn vàng-xanh đặc trưng công viên Việt Nam tại x = 19.5, z = 86.0)
-    const gymPad = new THREE.Mesh(new THREE.BoxGeometry(10.5, 0.11, 11.5), parkTerrazzoMat);
-    gymPad.position.set(19.5, 0.075, 86.0);
-    gymPad.receiveShadow = true;
-    parkGroup.add(gymPad);
+    // HỒ SEN CẢNH QUAN MIỀN TÂY + CẦU GỖ VÒNG CUNG (thay thế hoàn toàn khu tập thể dục xanh-vàng lạc tông!)
+    const parkPondX = 16.5;
+    const parkPondZ = 84.5;
+    const parkPondRim = new THREE.Mesh(new THREE.CylinderGeometry(8.2, 8.6, 0.36, 28), M.stoneLight);
+    parkPondRim.scale.set(1.0, 1.0, 1.22);
+    parkPondRim.position.set(parkPondX, 0.18, parkPondZ);
+    parkPondRim.receiveShadow = true;
+    parkGroup.add(parkPondRim);
 
-    const gymSign = new THREE.Mesh(
-      new THREE.BoxGeometry(2.6, 0.56, 0.1),
-      new THREE.MeshStandardMaterial({
-        map: makeTextTex('KHU THỂ DỤC CÔNG VIÊN', {
-          w: 640, h: 150, bg: '#1D5D9B', border: '#F2C94C', color: '#FFFFFF', size: 36
-        }),
-        roughness: 0.4
-      })
+    const parkPondWater = new THREE.Mesh(
+      new THREE.CylinderGeometry(7.55, 7.55, 0.3, 28),
+      M.pondWater
     );
-    gymSign.position.set(23.8, 1.45, 81.2);
-    gymSign.rotation.y = Math.PI / 2;
-    parkGroup.add(gymSign);
+    parkPondWater.scale.set(1.0, 1.0, 1.22);
+    parkPondWater.position.set(parkPondX, 0.24, parkPondZ);
+    parkGroup.add(parkPondWater);
 
-    // Máy đi bộ trên không (2 chiếc)
-    for (const gx of [16.5, 19.2]) {
-      const frame = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 1.55, 8), parkGymBlue);
-      frame.position.set(gx, 0.86, 83.2);
-      parkGroup.add(frame);
-      const topBar = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.08, 0.08), parkGymYellow);
-      topBar.position.set(gx, 1.58, 83.2);
-      parkGroup.add(topBar);
-      for (const lx of [-0.25, 0.25]) {
-        const pendulum = new THREE.Mesh(new THREE.CylinderGeometry(0.032, 0.032, 1.15, 6), parkGymYellow);
-        pendulum.position.set(gx + lx, 0.96, 83.2 + (lx < 0 ? 0.18 : -0.18));
-        pendulum.rotation.x = lx < 0 ? 0.28 : -0.28;
-        parkGroup.add(pendulum);
-        const pedal = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.05, 0.36), ironRailingMat);
-        pedal.position.set(gx + lx, 0.38, 83.2 + (lx < 0 ? 0.32 : -0.32));
-        parkGroup.add(pedal);
+    // Lá sen & hoa sen hồng nở trên mặt hồ công viên
+    for (let li = 0; li < 16; li++) {
+      const la = (li / 16) * Math.PI * 2;
+      const lr = 2.6 + (li % 3) * 1.65;
+      const lx = parkPondX + Math.cos(la) * lr;
+      const lz = parkPondZ + Math.sin(la) * lr * 1.12;
+      const pad = new THREE.Mesh(new THREE.CylinderGeometry(0.48, 0.48, 0.03, 12), M.lotusLeaf);
+      pad.position.set(lx, 0.41, lz);
+      parkGroup.add(pad);
+      if (li % 3 === 0) {
+        const fl = new THREE.Mesh(new THREE.SphereGeometry(0.14, 8, 6), lotusPetalMat);
+        fl.position.set(lx, 0.52, lz);
+        parkGroup.add(fl);
       }
     }
-    // Bàn xoay eo 3 trụ tròn
-    const twistPost = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.09, 1.45, 10), parkGymBlue);
-    twistPost.position.set(21.8, 0.82, 86.2);
-    parkGroup.add(twistPost);
-    for (let ti = 0; ti < 3; ti++) {
-      const ta = (ti / 3) * Math.PI * 2;
-      const disc = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.26, 0.07, 14), parkGymYellow);
-      disc.position.set(21.8 + Math.cos(ta) * 0.62, 0.2, 86.2 + Math.sin(ta) * 0.62);
-      parkGroup.add(disc);
-      const handle = new THREE.Mesh(new THREE.TorusGeometry(0.24, 0.032, 6, 14), parkGymYellow);
-      handle.position.set(21.8 + Math.cos(ta) * 0.45, 1.24, 86.2 + Math.sin(ta) * 0.45);
-      handle.rotation.y = ta;
-      parkGroup.add(handle);
-    }
-    // Khung xà đơn & xà kép tập thể lực
-    for (const [px, pz] of [[16.2, 89.2], [18.8, 89.2], [21.4, 89.2]]) {
-      const p = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.06, 2.25, 8), parkGymBlue);
-      p.position.set(px, 1.2, pz);
-      parkGroup.add(p);
-    }
-    const pullBar = new THREE.Mesh(new THREE.CylinderGeometry(0.032, 0.032, 5.3, 8), parkGymYellow);
-    pullBar.rotation.z = Math.PI / 2;
-    pullBar.position.set(18.8, 2.25, 89.2);
-    parkGroup.add(pullBar);
 
-    // CHÒI LỤC GIÁC NGHỈ MÁT CÔNG VIÊN (mái ngói đỏ, cột gỗ, ghế ngồi vòng quanh tại x = -8.0, z = 82.0)
+    // Cầu gỗ cong sơn nâu gụ bắc ngang hồ sen công viên
+    const bridgeDeck = new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.16, 15.8), M.darkWood);
+    bridgeDeck.position.set(parkPondX, 0.62, parkPondZ);
+    bridgeDeck.castShadow = true;
+    parkGroup.add(bridgeDeck);
+    for (const sgn of [-1, 1]) {
+      const rail = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.1, 15.6), M.redColumn);
+      rail.position.set(parkPondX + sgn * 0.98, 1.28, parkPondZ);
+      parkGroup.add(rail);
+      for (let bp = -3; bp <= 3; bp++) {
+        const post = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.72, 0.11), M.darkWood);
+        post.position.set(parkPondX + sgn * 0.98, 0.96, parkPondZ + bp * 2.4);
+        parkGroup.add(post);
+      }
+    }
+
+    // NHÀ THỦY TẠ BÁT GIÁC 2 TẦNG MÁI NGÓI ĐỎ TRUYỀN THỐNG (x = -8.5, z = 82.0)
     const gazebo = new THREE.Group();
-    gazebo.position.set(-8.0, 0, 82.0);
-    const gzBase = new THREE.Mesh(new THREE.CylinderGeometry(4.2, 4.5, 0.36, 8), parkTerrazzoMat);
-    gzBase.position.y = 0.18;
+    gazebo.position.set(-8.5, 0, 82.0);
+    const gzBase = new THREE.Mesh(new THREE.CylinderGeometry(4.8, 5.2, 0.44, 8), M.stoneLight);
+    gzBase.position.y = 0.22;
     gzBase.receiveShadow = true;
     gazebo.add(gzBase);
-    for (let gi = 0; gi < 6; gi++) {
-      const ga = (gi / 6) * Math.PI * 2;
-      const gCol = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.16, 3.2, 8), M.redColumn);
-      gCol.position.set(Math.cos(ga) * 3.25, 1.9, Math.sin(ga) * 3.25);
+    for (let gi = 0; gi < 8; gi++) {
+      const ga = (gi / 8) * Math.PI * 2;
+      const gPlinth = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.24, 0.24, 8), M.stoneDark);
+      gPlinth.position.set(Math.cos(ga) * 3.7, 0.54, Math.sin(ga) * 3.7);
+      gazebo.add(gPlinth);
+      const gCol = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.16, 3.25, 10), M.redColumn);
+      gCol.position.set(Math.cos(ga) * 3.7, 2.25, Math.sin(ga) * 3.7);
       gCol.castShadow = true;
       gazebo.add(gCol);
     }
-    const gzRoof = new THREE.Mesh(new THREE.ConeGeometry(4.8, 2.0, 6), M.roofTile);
-    gzRoof.position.y = 4.45;
-    gzRoof.castShadow = true;
-    gazebo.add(gzRoof);
-    const gzFinial = new THREE.Mesh(new THREE.SphereGeometry(0.24, 10, 8), M.gold);
-    gzFinial.position.y = 5.55;
+    const gzRoofLower = new THREE.Mesh(new THREE.ConeGeometry(5.5, 1.55, 8), M.roofTile);
+    gzRoofLower.position.y = 4.45;
+    gzRoofLower.castShadow = true;
+    gazebo.add(gzRoofLower);
+    const gzUpperNeck = new THREE.Mesh(new THREE.CylinderGeometry(2.15, 2.3, 0.65, 8), M.redColumn);
+    gzUpperNeck.position.y = 5.25;
+    gazebo.add(gzUpperNeck);
+    const gzRoofUpper = new THREE.Mesh(new THREE.ConeGeometry(3.2, 1.45, 8), M.roofTile);
+    gzRoofUpper.position.y = 6.22;
+    gzRoofUpper.castShadow = true;
+    gazebo.add(gzRoofUpper);
+    const gzFinial = new THREE.Mesh(new THREE.SphereGeometry(0.24, 10, 8), M.goldAccent);
+    gzFinial.position.y = 7.05;
     gazebo.add(gzFinial);
-    const gzBench = new THREE.Mesh(new THREE.TorusGeometry(2.6, 0.24, 6, 6), M.stoneLight);
+    const gzBench = new THREE.Mesh(new THREE.TorusGeometry(2.8, 0.24, 6, 8), M.stoneLight);
     gzBench.rotation.x = Math.PI / 2;
-    gzBench.position.y = 0.64;
+    gzBench.position.y = 0.78;
     gazebo.add(gzBench);
     parkGroup.add(gazebo);
 
-    // Hàng cau kiểng / dừa cảnh thanh mảnh dọc lối vào công viên
-    const addParkPalm = (px, pz, h = 6.2) => {
+    // Hàng cau vua & dừa kiểng miền Tây thanh mảnh dọc lối vào công viên và quanh hồ sen
+    const addParkPalm = (px, pz, h = 6.4) => {
       const pg = new THREE.Group();
-      const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.17, h, 8), M.trunk);
+      const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.18, h, 8), M.trunk);
       trunk.position.y = h * 0.5;
       trunk.castShadow = true;
       pg.add(trunk);
       for (let fi = 0; fi < 7; fi++) {
         const fa = (fi / 7) * Math.PI * 2;
-        const frond = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.06, 2.25), M.foliageLight);
-        frond.position.set(Math.cos(fa) * 0.95, h + 0.15, Math.sin(fa) * 0.95);
+        const frond = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.06, 2.35), M.foliageLight);
+        frond.position.set(Math.cos(fa) * 0.98, h + 0.15, Math.sin(fa) * 0.98);
         frond.rotation.y = -fa + Math.PI / 2;
-        frond.rotation.x = 0.32;
+        frond.rotation.x = 0.34;
         pg.add(frond);
       }
       pg.position.set(px, 0, pz);
       parkGroup.add(pg);
     };
     [
-      [25.2, 66.5, 6.2], [25.2, 74.0, 5.8], [25.2, 99.5, 6.4],
-      [25.2, 108.5, 6.0], [25.2, 134.5, 6.2], [25.2, 142.0, 5.9],
-      [3.5, 66.0, 5.8], [12.5, 66.0, 6.1], [3.5, 142.0, 6.0], [12.5, 142.0, 5.7]
+      [25.6, 66.5, 6.4], [25.6, 74.0, 6.0], [25.6, 100.5, 6.6],
+      [25.6, 108.5, 6.2], [25.6, 134.5, 6.4], [25.6, 142.0, 6.0],
+      [5.5, 74.0, 6.2], [5.5, 95.0, 6.4], [3.5, 142.0, 6.2], [12.5, 142.0, 5.9],
+      [-18.0, 74.0, 6.6], [-18.0, 106.0, 6.4], [-18.0, 138.0, 6.2]
     ].forEach(([px, pz, h]) => addParkPalm(px, pz, h));
 
     this.exteriorGroup.add(parkGroup);
 
-    // Ghế đá công viên Mỹ Tho, đèn cầu đôi cổ điển & cây xanh tỏa bóng khắp Công viên Vĩnh Tràng
+    // Ghế đá công viên, đèn cầu cổ điển & cây bóng mát xanh rợp khắp Công viên Văn hóa Vĩnh Tràng
     [
       [21.5, 67.4, 0], [15.5, 72.6, Math.PI],
       [plazaX - 13.0, plazaZ - 4.2, Math.PI * 0.35],
       [plazaX + 13.0, plazaZ - 4.2, -Math.PI * 0.35],
       [plazaX - 13.0, plazaZ + 4.2, Math.PI * 0.65],
       [plazaX + 13.0, plazaZ + 4.2, -Math.PI * 0.65],
-      [24.5, 99.6, 0], [24.5, 108.4, Math.PI],
+      [24.5, 101.2, 0], [24.5, 108.4, Math.PI],
       [21.5, 135.4, 0], [15.5, 140.6, Math.PI],
       [4.2, 84.0, Math.PI / 2], [11.8, 124.0, -Math.PI / 2],
       [15.0, 58.2, 0], [-2.0, 58.2, 0]
@@ -941,75 +1209,69 @@ export const exteriorTownMethods = {
       [28.5, 67.4], [28.5, 72.6], [28.5, 100.8], [28.5, 107.2], [28.5, 135.4], [28.5, 140.6],
       [plazaX - 12.2, plazaZ - 8.2], [plazaX + 12.2, plazaZ - 8.2],
       [plazaX - 12.2, plazaZ + 8.2], [plazaX + 12.2, plazaZ + 8.2],
-      [5.0, 62.0], [11.0, 154.0], [14.0, 86.0]
+      [6.0, 62.0], [11.0, 154.0], [16.5, 96.5]
     ].forEach(([lx, lz]) => addUrbanParkLamp(lx, lz, 4.6));
 
     [
-      [-18.0, 62.0, 1.15], [-3.0, 63.5, 1.10], [17.5, 63.0, 1.06],
-      [-18.0, 92.0, 1.18], [-18.0, 122.0, 1.16], [-5.5, 122.5, 1.12], [20.5, 124.0, 1.14],
-      [-17.5, 152.0, 1.15], [-4.0, 154.0, 1.10], [20.5, 152.5, 1.12],
-      [19.0, 162.5, 1.06], [-10.0, 163.0, 1.08]
+      [-18.0, 62.0, 1.18], [-3.0, 63.5, 1.14], [17.5, 63.0, 1.10],
+      [-18.0, 92.0, 1.22], [-18.0, 122.0, 1.18], [-5.5, 122.5, 1.14], [20.5, 124.0, 1.16],
+      [-17.5, 152.0, 1.18], [-4.0, 154.0, 1.12], [20.5, 152.5, 1.15],
+      [19.0, 162.5, 1.08], [-10.0, 163.0, 1.10]
     ].forEach(([tx, tz, sc]) => addUrbanShadeTree(tx, tz, sc, false));
 
     // =========================================================================================
-    // 2. TP. MỸ THO URBAN STREETSCAPE LINING THE 170m STRAIGHT APPROACH ROAD & FAR MAIN AVENUE
-    //    Left side looking out from Cổng Phụ (East, x = 57.5) = continuous shophouses, eateries
-    //    & open Bãi Giữ Xe Ô Tô · Xe Du Lịch (z = 102..138).
-    //    Far South (z = 221.5) = Đường Nguyễn Trung Trực urban townhouses closing the 170m vista!
+    // 2. KHU DÂN CƯ NHÀ VƯỜN XÃ MỸ PHONG · TP. MỸ THO XUNG QUANH CHÙA VĨNH TRÀNG
+    //    Thay tường nhà phố 3 tầng san sát bằng nhà vườn miền Tây 1–2 tầng mái ngói/mái xanh,
+    //    xen kẽ vườn dừa, cây ăn trái đặc trưng vùng Mỹ Tho quanh Chùa Vĩnh Tràng thực tế!
     // =========================================================================================
     const urbanTownhouses = [
-      // EAST SIDE OF STRAIGHT APPROACH ROAD (facing West -PI/2 directly onto the 170m straight road!)
-      [57.2, 52.5, 9.6, 10.2, 2, -Math.PI / 2, { colorIdx: 0, roofIdx: 0, glassFront: true, awningColor: 0x1E6A46, sign: 'CÀ PHÊ · GIẢI KHÁT', signBg: '#1D5C3B' }],
-      [57.2, 63.0, 9.8, 10.2, 3, -Math.PI / 2, { colorIdx: 2, roofIdx: 1, glassFront: false, awningColor: 0x8F2D24, sign: 'HOA TƯƠI · NHANG ĐÈN', signBg: '#8F2D24' }],
-      // (z = 75.0 Nhà Cô Ba · Hủ tiếu Mỹ Tho & z = 89.0 Bếp Dì Sáu · Bánh bèo & chè live in residential-lane.mjs)
-      // (z = 102.0 .. 138.0 is the open paved BÃI GIỮ XE Ô TÔ · XE DU LỊCH parking lot!)
-      [57.2, 146.5, 9.8, 10.2, 2, -Math.PI / 2, { colorIdx: 1, roofIdx: 0, glassFront: true, awningColor: 0x266A46, sign: 'NƯỚC DỪA XIÊM · GIẢI KHÁT', signBg: '#1D5C3B' }],
-      [57.2, 157.0, 9.8, 10.2, 3, -Math.PI / 2, { colorIdx: 4, roofIdx: 1, glassFront: false, awningColor: 0x2F6E4E, sign: 'CỬA HÀNG TẠP HÓA', signBg: '#255F40' }],
-      [57.2, 167.5, 9.6, 10.2, 2, -Math.PI / 2, { colorIdx: 3, roofIdx: 0, glassFront: true, awningColor: 0x7A4922, sign: 'TIỆM BÁNH · NƯỚC MÁT', signBg: '#6B3E1C' }],
-      [57.2, 178.0, 9.8, 10.2, 3, -Math.PI / 2, { colorIdx: 0, roofIdx: 1, glassFront: true, awningColor: 0x1D5D8A, sign: 'NHÀ THUỐC TÂY', signBg: '#155084' }],
-      [57.2, 188.5, 9.8, 10.2, 2, -Math.PI / 2, { colorIdx: 5, roofIdx: 0, glassFront: true, awningColor: 0x6E241C, sign: 'VẬT PHẨM PHẬT GIÁO', signBg: '#6E241C' }],
+      // DỌC LỀ ĐÔNG ĐƯỜNG VÀO CHÙA (quán giải khát, hoa tươi, tạp hóa 1–2 tầng thân thiện miền Tây)
+      [57.2, 52.5, 9.6, 9.8, 1, -Math.PI / 2, { colorIdx: 0, roofIdx: 0, glassFront: true, awningColor: 0x1E6A46, sign: 'CÀ PHÊ · GIẢI KHÁT', signBg: '#1D5C3B' }],
+      [57.2, 63.8, 9.6, 9.8, 2, -Math.PI / 2, { colorIdx: 2, roofIdx: 1, glassFront: false, awningColor: 0x8F2D24, sign: 'HOA TƯƠI · NHANG ĐÈN', signBg: '#8F2D24' }],
+      [57.2, 146.5, 9.8, 9.8, 1, -Math.PI / 2, { colorIdx: 1, roofIdx: 0, glassFront: true, awningColor: 0x266A46, sign: 'NƯỚC DỪA XIÊM · GIẢI KHÁT', signBg: '#1D5C3B' }],
+      [57.2, 158.0, 9.6, 9.8, 2, -Math.PI / 2, { colorIdx: 4, roofIdx: 1, glassFront: false, awningColor: 0x2F6E4E, sign: 'TẠP HÓA MỸ PHONG', signBg: '#255F40' }],
+      [57.2, 169.5, 9.6, 9.8, 1, -Math.PI / 2, { colorIdx: 3, roofIdx: 0, glassFront: true, awningColor: 0x7A4922, sign: 'QUÁN CHAY · NƯỚC MÁT', signBg: '#6B3E1C' }],
+      [57.2, 182.0, 9.8, 9.8, 2, -Math.PI / 2, { colorIdx: 5, roofIdx: 0, glassFront: true, awningColor: 0x6E241C, sign: 'VẬT PHẨM PHẬT GIÁO', signBg: '#6E241C' }],
 
-      // WEST SIDE SOUTH OF CÔNG VIÊN VĨNH TRÀNG (facing East +PI/2 onto the outer straight approach road)
-      [25.2, 175.5, 9.8, 10.2, 2, Math.PI / 2, { colorIdx: 2, roofIdx: 0, glassFront: true, awningColor: 0x22577A, sign: 'CÀ PHÊ · ĐIỂM TÂM', signBg: '#22577A' }],
-      [25.2, 186.5, 10.0, 10.2, 3, Math.PI / 2, { colorIdx: 1, roofIdx: 1, glassFront: true, awningColor: 0x8F3426, sign: 'HỦ TIẾU MỸ THO', signBg: '#7E261C' }],
+      // PHÍA NAM CÔNG VIÊN VĂN HÓA VĨNH TRÀNG (nhà vườn & quán hủ tiếu Mỹ Tho 1–2 tầng)
+      [25.2, 176.5, 9.8, 9.6, 1, Math.PI / 2, { colorIdx: 2, roofIdx: 0, glassFront: true, awningColor: 0x22577A, sign: 'CÀ PHÊ VƯỜN · ĐIỂM TÂM', signBg: '#22577A' }],
+      [25.2, 188.0, 9.8, 9.6, 2, Math.PI / 2, { colorIdx: 1, roofIdx: 1, glassFront: true, awningColor: 0x8F3426, sign: 'HỦ TIẾU MỸ THO', signBg: '#7E261C' }],
 
-      // WEST SIDE OVERLOOKING CÔNG VIÊN VĨNH TRÀNG (x = -36.5, facing East +PI/2)
-      [-36.5, 64.0, 11.4, 10.2, 2, Math.PI / 2, { colorIdx: 0, roofIdx: 0, glassFront: false, awningColor: 0x295B82 }],
-      [-36.5, 78.0, 11.6, 10.2, 3, Math.PI / 2, { colorIdx: 3, roofIdx: 1, glassFront: true, awningColor: 0x1E6A46 }],
-      [-36.5, 92.0, 11.2, 10.2, 2, Math.PI / 2, { colorIdx: 1, roofIdx: 0, glassFront: false, awningColor: 0x7A4922 }],
-      [-36.5, 106.0, 11.6, 10.2, 3, Math.PI / 2, { colorIdx: 4, roofIdx: 1, glassFront: true, awningColor: 0x295B82 }],
-      [-36.5, 120.0, 11.4, 10.2, 2, Math.PI / 2, { colorIdx: 2, roofIdx: 0, glassFront: false, awningColor: 0x8F3426 }],
-      [-36.5, 134.0, 11.6, 10.2, 3, Math.PI / 2, { colorIdx: 5, roofIdx: 1, glassFront: true, awningColor: 0x1E6A46 }],
-      [-36.5, 148.0, 11.2, 10.2, 2, Math.PI / 2, { colorIdx: 0, roofIdx: 0, glassFront: false, awningColor: 0x3A5878 }],
-      [-36.5, 162.0, 11.6, 10.2, 2, Math.PI / 2, { colorIdx: 1, roofIdx: 1, glassFront: true, awningColor: 0x22577A }],
+      // PHÍA TÂY CÔNG VIÊN (nhà vườn miền Tây 1–2 tầng thoáng đãng xen giữa vườn cây thay vì bức tường 3 tầng)
+      [-39.5, 68.0, 10.6, 9.4, 1, Math.PI / 2, { colorIdx: 0, roofIdx: 0, glassFront: false, awningColor: 0x1E6A46 }],
+      [-39.5, 90.0, 10.8, 9.4, 2, Math.PI / 2, { colorIdx: 3, roofIdx: 1, glassFront: false, awningColor: 0x7A4922 }],
+      [-39.5, 114.0, 10.6, 9.4, 1, Math.PI / 2, { colorIdx: 1, roofIdx: 0, glassFront: false, awningColor: 0x266A46 }],
+      [-39.5, 138.0, 10.8, 9.4, 2, Math.PI / 2, { colorIdx: 2, roofIdx: 1, glassFront: false, awningColor: 0x8F3426 }],
+      [-39.5, 160.0, 10.6, 9.4, 1, Math.PI / 2, { colorIdx: 0, roofIdx: 0, glassFront: false, awningColor: 0x1E6A46 }],
 
-      // FAR SOUTH TP. MỸ THO URBAN FRONTAGE ACROSS ĐƯỜNG NGUYỄN TRUNG TRỰC (z = 221.5, facing North!)
-      [-18.0, 221.5, 12.0, 10.4, 3, Math.PI, { colorIdx: 2, roofIdx: 1 }],
-      [-4.0, 221.5, 12.0, 10.4, 2, Math.PI, { colorIdx: 0, roofIdx: 0 }],
-      [10.0, 221.5, 12.2, 10.4, 3, Math.PI, { colorIdx: 4, roofIdx: 1 }],
-      [24.0, 221.5, 12.0, 10.4, 2, Math.PI, { colorIdx: 1, roofIdx: 0, glassFront: true, sign: 'NHÀ HÀNG CHAY', signBg: '#1D5C3B' }],
-      [38.0, 221.5, 12.4, 10.4, 3, Math.PI, { colorIdx: 3, roofIdx: 1, glassFront: true, sign: 'SIÊU THỊ MINI · MỸ THO', signBg: '#155084' }],
-      [52.0, 221.5, 12.2, 10.4, 3, Math.PI, { colorIdx: 0, roofIdx: 0, glassFront: true, sign: 'CÀ PHÊ PHỐ', signBg: '#6B3E1C' }],
-      [66.0, 221.5, 12.0, 10.4, 2, Math.PI, { colorIdx: 5, roofIdx: 1 }],
-      [80.0, 221.5, 12.0, 10.4, 3, Math.PI, { colorIdx: 2, roofIdx: 0 }],
-      [94.0, 221.5, 12.0, 10.4, 2, Math.PI, { colorIdx: 1, roofIdx: 1 }],
+      // MẶT ĐƯỜNG NGUYỄN TRUNG TRỰC PHÍA NAM (nhà phố 2 tầng nhẹ nhàng không áp bức chân trời)
+      [-14.0, 221.5, 11.4, 9.8, 2, Math.PI, { colorIdx: 2, roofIdx: 1 }],
+      [2.0, 221.5, 11.6, 9.8, 1, Math.PI, { colorIdx: 0, roofIdx: 0 }],
+      [18.0, 221.5, 11.4, 9.8, 2, Math.PI, { colorIdx: 1, roofIdx: 0, glassFront: true, sign: 'NHÀ HÀNG CHAY', signBg: '#1D5C3B' }],
+      [36.0, 221.5, 11.8, 9.8, 2, Math.PI, { colorIdx: 3, roofIdx: 1, glassFront: true, sign: 'ĐẶC SẢN TIỀN GIANG', signBg: '#1D5C3B' }],
+      [54.0, 221.5, 11.6, 9.8, 2, Math.PI, { colorIdx: 0, roofIdx: 0, glassFront: true, sign: 'CÀ PHÊ MỸ THO', signBg: '#6B3E1C' }],
+      [72.0, 221.5, 11.4, 9.8, 1, Math.PI, { colorIdx: 5, roofIdx: 1 }],
 
-      // West urban residential houses flanking Chùa Vĩnh Tràng
-      [-77.5, 42.5, 9.4, 10.2, 2, 0, { colorIdx: 1, roofIdx: 0, glassFront: true, sign: 'VẬT PHẨM PHẬT GIÁO', signBg: '#6E241C' }],
-      [-88.5, 42.5, 9.6, 10.2, 3, 0, { colorIdx: 4, roofIdx: 1, glassFront: false, sign: 'CÀ PHÊ · ĐIỂM TÂM', signBg: '#22577A' }],
-      [-80.5, 22.0, 10.0, 9.2, 2, Math.PI / 2, { colorIdx: 0, roofIdx: 0 }],
-      [-80.5, -8.0, 10.6, 9.2, 2, Math.PI / 2, { colorIdx: 3, roofIdx: 1 }],
-      [-80.5, -38.0, 10.0, 9.2, 2, Math.PI / 2, { colorIdx: 2, roofIdx: 0 }],
-      // East urban neighborhood houses beyond the sanctuary fence
-      [81.0, 26.0, 10.0, 9.2, 2, -Math.PI / 2, { colorIdx: 1, roofIdx: 0 }],
-      [81.0, -8.0, 10.6, 9.2, 2, -Math.PI / 2, { colorIdx: 4, roofIdx: 1 }],
-      [81.0, -40.0, 10.0, 9.2, 2, -Math.PI / 2, { colorIdx: 0, roofIdx: 0 }],
-      // North rear urban houses behind the temple gardens
-      [-32.0, -85.0, 11.0, 9.6, 2, 0, { colorIdx: 2, roofIdx: 1 }],
-      [4.0, -87.0, 11.4, 9.6, 2, 0, { colorIdx: 0, roofIdx: 0 }],
-      [38.0, -85.0, 11.0, 9.6, 2, 0, { colorIdx: 3, roofIdx: 1 }]
+      // NHÀ VƯỜN XÃ MỸ PHONG BAO QUANH 3 MẶT TÂY – ĐÔNG – BẮC CHÙA VĨNH TRÀNG (1 tầng mái ngói giữa vườn cây ăn trái!)
+      [-82.0, 36.0, 10.2, 9.2, 1, Math.PI / 2, { colorIdx: 1, roofIdx: 0 }],
+      [-82.0, 2.0, 10.4, 9.2, 1, Math.PI / 2, { colorIdx: 0, roofIdx: 0 }],
+      [-82.0, -34.0, 10.2, 9.2, 1, Math.PI / 2, { colorIdx: 2, roofIdx: 0 }],
+      [82.0, 22.0, 10.2, 9.2, 1, -Math.PI / 2, { colorIdx: 1, roofIdx: 0 }],
+      [82.0, -14.0, 10.4, 9.2, 1, -Math.PI / 2, { colorIdx: 3, roofIdx: 0 }],
+      [82.0, -46.0, 10.2, 9.2, 1, -Math.PI / 2, { colorIdx: 0, roofIdx: 0 }],
+      [-32.0, -86.0, 10.8, 9.4, 1, 0, { colorIdx: 2, roofIdx: 0 }],
+      [6.0, -88.0, 11.0, 9.4, 1, 0, { colorIdx: 0, roofIdx: 0 }],
+      [42.0, -86.0, 10.8, 9.4, 1, 0, { colorIdx: 3, roofIdx: 0 }]
     ];
     for (const args of urbanTownhouses) addUrbanTownhouse(...args);
+
+    // Vườn cây ăn trái & hàng dừa xanh mướt xã Mỹ Phong bao quanh chùa & công viên
+    [
+      [-37.5, 79.0, 1.24], [-37.5, 102.0, 1.28], [-37.5, 126.0, 1.22], [-37.5, 149.0, 1.26],
+      [-75.0, 18.0, 1.32], [-75.0, -18.0, 1.35], [-75.0, -52.0, 1.28],
+      [75.0, 6.0, 1.30], [75.0, -30.0, 1.32], [75.0, -60.0, 1.26],
+      [-14.0, -82.0, 1.34], [24.0, -82.0, 1.32], [-52.0, -78.0, 1.28]
+    ].forEach(([ox, oz, sc]) => addUrbanShadeTree(ox, oz, sc, false));
 
     // Urban Shade Trees neatly lining BOTH sides of the 170m straight approach road!
     // West side (Công viên Vĩnh Tràng promenade, x = 32.2) — keeps park sign (z=61.5) & entrances (z=70,104,138) clear

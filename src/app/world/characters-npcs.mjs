@@ -1489,8 +1489,8 @@ export const charactersNpcsMethods = {
         hand: 'beads',
         speed: 0.88,
         pts: [
-          wp(13.8, 14.0, 'pass'),
-          wp(13.8, -14.0, 'pass'),
+          wp(16.0, 14.0, 'pass'),
+          wp(16.0, -14.0, 'pass'),
           wp(-12.2, -14.0, 'pass'),
           wp(-12.2, 0.0, 'pass'),
           wp(-18.4, 0.0, 'pass'),
@@ -1534,8 +1534,8 @@ export const charactersNpcsMethods = {
         tint: [0.68, 0.82, 0.88],
         speed: 0.96,
         pts: [
-          wp(13.8, 17.5, 'pass'),
-          wp(13.8, 0.0, 'pass'),
+          wp(16.0, 17.5, 'pass'),
+          wp(16.0, 0.0, 'pass'),
           wp(7.5, -7.5, 'dung', 2.4, 0.0, 0.0),
           wp(7.5, 7.5, 'pass')
         ]

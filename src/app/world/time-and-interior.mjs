@@ -534,7 +534,7 @@ export const timeAndInteriorMethods = {
     if (this.inInterior) {
       this.applyInteriorAtmosphere();
       if (this.lastDoorSide === 'front_tam_quan') {
-        this.playerState.x = -35.5;
+        this.playerState.x = -57.5;
         this.playerState.z = 0.0;
         this.playerState.yaw = Math.PI * 0.5;
         this.cameraBaseYaw = Math.PI * 0.5;
@@ -623,6 +623,12 @@ export const timeAndInteriorMethods = {
       const yaw = Math.PI - 0.16;
       this.playerState.yaw = yaw;
       this.cameraBaseYaw = yaw;
+    } else if (zoneKey === 'xin_xam') {
+      this.playerState.x = 15.9;
+      this.playerState.z = 14.8;
+      const yaw = -Math.PI / 2;
+      this.playerState.yaw = yaw;
+      this.cameraBaseYaw = yaw;
     } else if (zoneKey === 'nghin_mat_nghin_tay') {
       this.playerState.x = 17.6;
       this.playerState.z = 4.2;
@@ -661,8 +667,8 @@ export const timeAndInteriorMethods = {
       this.cameraBaseYaw = Math.PI * 0.44;
     } else {
       // Grand 100+ Pilgrim Worship Nave of Chánh Điện:
-      // Standing along the central crimson carpet looking East (+X) across 112 bồ đoàn toward Tam Bảo, Bao Lam & 18 La Hán!
-      this.playerState.x = -46.0;
+      // Start near the front Tam Quan entrance doorway looking East (+X) down the entire crimson carpet toward Tam Bảo!
+      this.playerState.x = -56.5;
       this.playerState.z = 0.0;
       this.playerState.yaw = Math.PI / 2;
       this.cameraBaseYaw = Math.PI / 2;

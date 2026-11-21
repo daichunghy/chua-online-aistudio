@@ -3,9 +3,13 @@ import assert from 'node:assert/strict';
 
 import {
   SHOPEE_AFFILIATE_LINKS,
+  SHOPEE_BESTSELLER_META,
+  SHOPEE_CURATED_COMBOS,
   validateShopeeAffiliateUrl,
   resolveShopeeAffiliateUrl,
-  mergeShopeeAffiliateOverrides
+  mergeShopeeAffiliateOverrides,
+  recordShopeeAffiliateClick,
+  getTotalShopeeClicks
 } from './modules/shopee-affiliate.mjs';
 import {
   RANDOM_ENCOUNTERS,
@@ -51,11 +55,36 @@ describe('Shopee Affiliate Link Manager & Expanded Store Catalog', () => {
     assert.ok('sap_kho_quet_chay' in SHOPEE_AFFILIATE_LINKS);
   });
 
-  it('exposes expanded walkable store catalog with >= 28 authentic items across categories', () => {
+  it('exposes expanded walkable store catalog with >= 28 authentic items and safe fallback for unknown categories', () => {
     assert.ok(MARKETPLACE_STALL_CATALOG.length >= 28);
     assert.ok(MARKETPLACE_STALL_CATEGORIES.some((c) => c.id === 'phap_phuc'));
     assert.equal(filterMarketplaceItems('all').length, MARKETPLACE_STALL_CATALOG.length);
+    assert.equal(filterMarketplaceItems('phap_khi').length, MARKETPLACE_STALL_CATALOG.length);
     assert.ok(filterMarketplaceItems('phap_phuc').length >= 4);
+  });
+
+  it('provides curated Shopee bestsellers, gift combos, and immutable affiliate click tracking', () => {
+    const bestsellerIds = Object.keys(SHOPEE_BESTSELLER_META);
+    assert.ok(bestsellerIds.length >= 4);
+    for (const id of bestsellerIds) {
+      assert.ok(MARKETPLACE_STALL_CATALOG.some((item) => item.id === id));
+    }
+    assert.equal(SHOPEE_CURATED_COMBOS.length, 3);
+    for (const combo of SHOPEE_CURATED_COMBOS) {
+      const resolved = resolveShopeeAffiliateUrl(combo, {});
+      assert.match(resolved.url, /^https:\/\/shopee\.vn\/search\?keyword=/);
+      const custom = resolveShopeeAffiliateUrl(combo, { [combo.id]: 'https://s.shopee.vn/combo99' });
+      assert.equal(custom.isCustomAffiliate, true);
+      assert.equal(custom.url, 'https://s.shopee.vn/combo99');
+    }
+
+    const s0 = {};
+    const s1 = recordShopeeAffiliateClick(s0, 'sap_kho_quet_chay');
+    const s2 = recordShopeeAffiliateClick(s1, 'sap_kho_quet_chay');
+    const s3 = recordShopeeAffiliateClick(s2, 'combo_dac_san_chay_mien_tay');
+    assert.equal(getTotalShopeeClicks(s0), 0);
+    assert.equal(getTotalShopeeClicks(s3), 3);
+    assert.equal(s3.sap_kho_quet_chay, 2);
   });
 });
 

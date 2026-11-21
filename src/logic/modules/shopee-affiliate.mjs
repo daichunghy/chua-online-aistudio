@@ -48,6 +48,11 @@ export const SHOPEE_AFFILIATE_LINKS = {
   sap_tra_sen_dong_thap: '',
   sap_mut_dua_non_my_tho: '',
 
+  // === COMBO QUÀ BIẾU CHUYỂN ĐỔI CAO ===
+  combo_dac_san_chay_mien_tay: '',
+  combo_di_chua_thanh_tinh: '',
+  combo_an_tinh_tai_gia: '',
+
   // === CATALOG TỦ ĐỒ / CỬA HÀNG CHÍNH ===
   so_tay_hoa_sen: '',
   trang_hat_go: '',
@@ -97,8 +102,71 @@ export const SHOPEE_AFFILIATE_KEYWORDS = {
   sap_banh_pia_chay: 'banh pia chay dau xanh sau rieng',
   sap_hat_sen_say_gion: 'hat sen say gion dong thap',
   sap_tra_sen_dong_thap: 'tra sen dong thap thuong hang',
-  sap_mut_dua_non_my_tho: 'mut dua non ben tre it ngot'
+  sap_mut_dua_non_my_tho: 'mut dua non ben tre it ngot',
+  combo_dac_san_chay_mien_tay: 'combo kho quet chay chao mon banh pia chay mien tay',
+  combo_di_chua_thanh_tinh: 'ao trang lam di chua kem tui vai hoa sen trang hat',
+  combo_an_tinh_tai_gia: 'bo doan ngoi thien nhang tram huong sach thac khoi'
 };
+
+export const SHOPEE_BESTSELLER_META = {
+  sap_kho_quet_chay: {
+    badge: 'Bán chạy #1',
+    rating: '4.9',
+    soldLabel: 'Đã bán 2,4k+',
+    hook: 'Quà chay Mỹ Tho được khách hành hương đặt mua nhiều nhất'
+  },
+  sap_nhang_tram: {
+    badge: 'Ưa chuộng',
+    rating: '4.9',
+    soldLabel: 'Đã bán 3,1k+',
+    hook: 'Trầm sạch ít khói dùng hằng ngày nơi bàn thờ gia tiên'
+  },
+  sap_trang_hat_go: {
+    badge: 'Quà biếu',
+    rating: '4.9',
+    soldLabel: 'Đã bán 1,8k+',
+    hook: '108 hạt gỗ bồ đề mộc tinh tế, dễ mang theo niệm Phật'
+  },
+  sap_ao_trang_lam: {
+    badge: 'Chuẩn phom',
+    rating: '4.8',
+    soldLabel: 'Đã bán 1,5k+',
+    hook: 'Vải đũi thoáng mát, đủ cỡ Nam · Nữ đi lễ trang nghiêm'
+  }
+};
+
+export const SHOPEE_CURATED_COMBOS = [
+  {
+    id: 'combo_dac_san_chay_mien_tay',
+    icon: '🎁',
+    badge: 'Tiết kiệm 15%',
+    name: 'Combo Đặc Sản Chay Miền Tây',
+    itemsSummary: 'Kho Quẹt Chay + Chao Môn + Bánh Pía Chay + Trà Sen',
+    priceVnd: 265000,
+    originalPriceVnd: 310000,
+    keyword: SHOPEE_AFFILIATE_KEYWORDS.combo_dac_san_chay_mien_tay
+  },
+  {
+    id: 'combo_di_chua_thanh_tinh',
+    icon: '🪷',
+    badge: 'Đủ bộ đi lễ',
+    name: 'Combo Hành Hương Thanh Tịnh',
+    itemsSummary: 'Áo Tràng Lam + Tràng Hạt 108 + Túi Vải Thêu Sen',
+    priceVnd: 495000,
+    originalPriceVnd: 565000,
+    keyword: SHOPEE_AFFILIATE_KEYWORDS.combo_di_chua_thanh_tinh
+  },
+  {
+    id: 'combo_an_tinh_tai_gia',
+    icon: '🕯️',
+    badge: 'Góc tu tại gia',
+    name: 'Combo An Tịnh Phòng Thờ',
+    itemsSummary: 'Bồ Đoàn Hoa Sen + Trầm Nụ Thác Khói + Đèn Hoa Sen',
+    priceVnd: 660000,
+    originalPriceVnd: 745000,
+    keyword: SHOPEE_AFFILIATE_KEYWORDS.combo_an_tinh_tai_gia
+  }
+];
 
 const ALLOWED_SHOPEE_HOSTS = new Set([
   'shopee.vn',
@@ -138,12 +206,16 @@ export function validateShopeeAffiliateUrl(rawUrl) {
 }
 
 /**
- * Trả về đường dẫn Shopee Affiliate cho một món hàng.
+ * Trả về đường dẫn Shopee Affiliate cho một món hàng hoặc combo.
  * Ưu tiên: (1) Link user đã gắn trong customOverrides -> (2) SHOPEE_AFFILIATE_LINKS -> (3) Link tìm kiếm Shopee VN.
  */
 export function resolveShopeeAffiliateUrl(productOrId, customOverrides = {}) {
   const id = typeof productOrId === 'string' ? productOrId : String(productOrId?.id || '');
   const name = typeof productOrId === 'object' && productOrId ? String(productOrId.name || '') : '';
+  const explicitKeyword =
+    typeof productOrId === 'object' && productOrId && productOrId.keyword
+      ? String(productOrId.keyword)
+      : '';
 
   const customCandidate = customOverrides && typeof customOverrides === 'object' ? customOverrides[id] : '';
   const customCheck = validateShopeeAffiliateUrl(customCandidate);
@@ -151,7 +223,7 @@ export function resolveShopeeAffiliateUrl(productOrId, customOverrides = {}) {
     return {
       url: customCheck.normalized,
       isCustomAffiliate: true,
-      label: 'Mua Shopee (Affiliate)'
+      label: 'Mua Shopee (Chính hãng) ↗'
     };
   }
 
@@ -161,16 +233,17 @@ export function resolveShopeeAffiliateUrl(productOrId, customOverrides = {}) {
     return {
       url: staticCheck.normalized,
       isCustomAffiliate: true,
-      label: 'Mua Shopee (Affiliate)'
+      label: 'Mua Shopee (Chính hãng) ↗'
     };
   }
 
-  const keyword = SHOPEE_AFFILIATE_KEYWORDS[id] || name || 'do phat giao chua vinh trang';
+  const keyword =
+    SHOPEE_AFFILIATE_KEYWORDS[id] || explicitKeyword || name || 'do phat giao chua vinh trang';
   const searchUrl = `https://shopee.vn/search?keyword=${encodeURIComponent(keyword)}`;
   return {
     url: searchUrl,
     isCustomAffiliate: false,
-    label: 'Xem trên Shopee'
+    label: 'Đặt giao tận nhà Shopee ↗'
   };
 }
 
@@ -197,4 +270,23 @@ export function mergeShopeeAffiliateOverrides(existing = {}, updates = {}) {
     }
   }
   return next;
+}
+
+/**
+ * Ghi nhận lượt bấm sang link Shopee Affiliate theo từng mã sản phẩm (immutable).
+ */
+export function recordShopeeAffiliateClick(stats = {}, productId = '') {
+  const next = stats && typeof stats === 'object' ? { ...stats } : {};
+  const id = String(productId || '').trim();
+  if (!id) return next;
+  next[id] = (Number(next[id]) || 0) + 1;
+  return next;
+}
+
+/**
+ * Tính tổng lượt bấm sang Shopee Affiliate từ bảng thống kê.
+ */
+export function getTotalShopeeClicks(stats = {}) {
+  if (!stats || typeof stats !== 'object') return 0;
+  return Object.values(stats).reduce((sum, v) => sum + (Number(v) > 0 ? Math.floor(Number(v)) : 0), 0);
 }

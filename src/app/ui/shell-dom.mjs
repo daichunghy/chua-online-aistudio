@@ -130,6 +130,7 @@ export const shellDomMethods = {
         <nav id="interior-zone-bar" class="interior-zone-bar" style="display:none;" aria-label="Di chuyển trong Chánh Điện">
           <button type="button" class="walk-chip-btn active" data-interior-zone="chanh_dien">1. Chánh Điện</button>
           <button type="button" class="walk-chip-btn" data-interior-zone="day_ban_tho_phai">2. 8 Bàn Thờ</button>
+          <button type="button" class="walk-chip-btn" data-interior-zone="xin_xam">🎋 Xin Xăm</button>
           <button type="button" class="walk-chip-btn" data-interior-zone="ho_sen_bo">3. Hồ Sen Bộ</button>
           <button type="button" class="walk-chip-btn" data-interior-zone="hanh_lang_trai">4. Tổ Đường</button>
           <button type="button" class="walk-chip-btn" id="btn-interior-cutaway" title="Mặt cắt 3D mặt bằng Chánh Điện">✂️ Mặt cắt 3D</button>

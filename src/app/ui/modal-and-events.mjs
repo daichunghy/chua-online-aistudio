@@ -365,10 +365,14 @@ export const modalAndEventsMethods = {
         if (!zone || !this.world3d) return;
         this.world3d.goToInteriorZone(zone);
         this.highlightInteriorZoneChip(zone);
+        if (zone === 'xin_xam') {
+          this.openXinXamModal?.();
+          return;
+        }
         const zoneNotes = {
           day_ban_tho_phai: [
-            '1. Hành Lang Phải Mở Rộng · 8 Ban Thờ Phật & Lối Thông Ra Vườn Tượng',
-            'Lối đi dài rộng thoáng với 8 ban thờ Phật & Bồ Tát thếp vàng bên tay phải, phòng khách – tủ kinh sách mở rộng và cổng vòm cuối đường thông thẳng ra vườn tượng Phật ngoài trời.'
+            '1. Hành Lang Phải · 8 Ban Thờ Phật & Khu Xin Xăm Quan Âm',
+            'Lối đi rộng thoáng với Bàn Xin Xăm Quan Âm, 8 ban thờ Phật & Bồ Tát thếp vàng bên tay phải và cổng cuối đường ra vườn tượng Phật ngoài trời.'
           ],
           nghin_mat_nghin_tay: [
             '🙏 Ban Tượng Phật Nghìn Mắt Nghìn Tay',
@@ -380,11 +384,11 @@ export const modalAndEventsMethods = {
           ],
           chanh_dien: [
             '2. Chính Điện Đại Hùng Bửu Điện · Phật Ở Giữa & 18 La Hán Xung Quanh',
-            'Tôn tượng Tam Bảo an vị chính giữa Chánh Điện quay mặt hướng ra Cổng Tam Quan; từ cửa đối diện Hòn Non Bộ bỏ dép bên ngoài rồi đi vòng hai bên qua 18 Vị La Hán lên phía trước lễ Phật.'
+            'Tôn tượng Tam Bảo an vị chính giữa Chánh Điện quay mặt hướng ra Cổng Tam Quan; đi vòng hai bên qua 18 Vị La Hán lên phía trước lễ Phật.'
           ],
           ho_sen_bo: [
             '3. Giữa Hình Vuông · Hồ Sen Bộ & Hòn Non Bộ',
-            'Khoảng sân thiên tỉnh mở chính giữa bốn dãy vòm vàng Pháp–Việt nhìn thẳng sang cửa gỗ vào Chánh Điện, kệ bỏ dép và Trống Bát Nhã — bước vào và đi vòng hai bên để chiêm bái Phật quay ra Cổng Tam Quan.'
+            'Khoảng sân thiên tỉnh với hàng cột gỗ lim – bao lam truyền thống nhìn thẳng sang cửa gỗ vào Chánh Điện.'
           ],
           hanh_lang_trai: [
             '4. Cạnh Trên Hình Vuông · Tổ Đường Rộng Thoáng',

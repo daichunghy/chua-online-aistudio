@@ -442,7 +442,7 @@ export const exploreAccountMethods = {
           </div>
           <div class="market-items-grid" style="max-height:46vh;overflow-y:auto;padding-right:4px;">
             ${items.map((item) => {
-              const shopee = resolveShopeeAffiliateUrl(item.id, item.name, this.shopeeAffiliateOverrides);
+              const shopee = resolveShopeeAffiliateUrl(item, this.shopeeAffiliateOverrides);
               return `
               <article class="market-item-card">
                 <div class="market-item-top">

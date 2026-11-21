@@ -4,7 +4,7 @@
  * Mixin của ChuaOnlineApp: 4 method (openArrivalPilgrimageModal … highlightInteriorZoneChip).
  * Được gắn vào class trong chua-online-app.mjs qua applyMixins().
  */
-import { CHARACTER_PROFILES, recordSpiritualMilestone, getLocalDateKey, shouldShowDailyDharmaToday, getNationalityProfile, getPilgrimageMode, getTempleSeasonalContext, createHoaDangLantern, BLESSING_TOWER_CATEGORIES, registerBlessingTowerPrayer, filterBlessingTowerEntries } from './shared.mjs';
+import { CHARACTER_PROFILES, recordSpiritualMilestone, getLocalDateKey, shouldShowDailyDharmaToday, getNationalityProfile, getPilgrimageMode, getTempleSeasonalContext, createHoaDangLantern, BLESSING_TOWER_CATEGORIES, registerBlessingTowerPrayer, filterBlessingTowerEntries, FORTUNE_INTENTIONS, createFortuneHistoryState, drawFortuneStick, tossYinYangBlocks, recordFortuneReading } from './shared.mjs';
 
 const BLESSING_TOWER_BACKUP_KEY = 'chua_online_blessing_tower_v2';
 
@@ -604,6 +604,220 @@ export const pilgrimageModalsMethods = {
     };
 
     renderHoaDang();
+  },
+
+  openXinXamModal() {
+    const FORTUNE_STORAGE_KEY = 'chua_online_fortune_history_v1';
+    if (!this.fortuneHistory || typeof this.fortuneHistory !== 'object') {
+      try {
+        const raw = localStorage.getItem(FORTUNE_STORAGE_KEY);
+        const parsed = raw ? JSON.parse(raw) : null;
+        this.fortuneHistory =
+          parsed && Array.isArray(parsed.readings) ? parsed : createFortuneHistoryState();
+      } catch {
+        this.fortuneHistory = createFortuneHistoryState();
+      }
+    }
+    const persistFortune = () => {
+      try {
+        localStorage.setItem(FORTUNE_STORAGE_KEY, JSON.stringify(this.fortuneHistory));
+      } catch {
+        // ignore quota errors
+      }
+    };
+    let selectedIntention = 'binh_an';
+    let currentReading = this.fortuneHistory.lastReading || null;
+    let isShaking = false;
+    let showingDetails = Boolean(currentReading);
+
+    const escapeHtml = (s) =>
+      String(s || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+
+    const renderXinXam = () => {
+      const stick = currentReading?.stick || null;
+      const keo = currentReading?.keoResult || null;
+      const historyList = Array.isArray(this.fortuneHistory?.readings)
+        ? this.fortuneHistory.readings.slice(0, 5)
+        : [];
+
+      const rankColor =
+        stick?.rankTone === 'gold'
+          ? '#F6D16B'
+          : stick?.rankTone === 'jade'
+          ? '#7ED3A5'
+          : '#F2B26B';
+
+      this.openModal(
+        '🎋 Xin Xăm · Xem Quẻ Quan Âm',
+        `
+        <div style="display:flex;flex-direction:column;gap:14px;">
+          <div style="padding:12px 14px;border-radius:12px;background:#4A1F12;border:1px solid #C89B4B;font-size:13.5px;line-height:1.55;color:#FFF6E0;">
+            Thành tâm chắp tay niệm <strong style="color:#FFD97A;">Nam Mô Quán Thế Âm Bồ Tát</strong>, chọn tâm nguyện rồi bấm <strong style="color:#FFD97A;">Xóc Ống Xăm</strong> để thỉnh quẻ và gieo keo âm dương.
+          </div>
+
+          <div>
+            <div style="font-size:13px;font-weight:800;letter-spacing:0.02em;color:#5A2512;margin-bottom:8px;">1. Chọn tâm nguyện cầu xin</div>
+            <div style="display:flex;flex-wrap:wrap;gap:8px;">
+              ${FORTUNE_INTENTIONS.map(
+                (item) => `
+                <button type="button" data-xam-intent="${item.id}"
+                  style="padding:7px 12px;border-radius:10px;border:1.5px solid ${selectedIntention === item.id ? '#8E2616' : 'rgba(90,46,24,0.34)'};background:${selectedIntention === item.id ? '#8E2616' : '#EFE0BE'};color:${selectedIntention === item.id ? '#FFF8E6' : '#3C1D0E'};font-size:13px;font-weight:${selectedIntention === item.id ? '700' : '600'};cursor:pointer;">
+                  ${item.icon} ${escapeHtml(item.label)}
+                </button>`
+              ).join('')}
+            </div>
+          </div>
+
+          <div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px;">
+            <button type="button" id="btn-xam-shake" ${isShaking ? 'disabled' : ''}
+              style="flex:1;min-width:190px;padding:12px 16px;border-radius:12px;border:1.5px solid #D99B2A;background:linear-gradient(135deg,#9E2A1B,#B85819);color:#FFF8E5;font-size:15px;font-weight:700;cursor:pointer;">
+              ${isShaking ? '🎋 Đang xóc ống xăm...' : '🎋 Xóc Ống Xăm Thỉnh Quẻ'}
+            </button>
+            ${
+              stick
+                ? `<button type="button" id="btn-xam-keo"
+                    style="padding:12px 15px;border-radius:12px;border:1.5px solid #C89236;background:#5E1912;color:#FFF4D8;font-size:14px;font-weight:700;cursor:pointer;">
+                    🔴 Gieo Keo Âm Dương
+                  </button>`
+                : ''
+            }
+          </div>
+
+          ${
+            keo
+              ? `<div style="padding:11px 14px;border-radius:10px;border:1.5px solid ${keo.approved ? '#2A7A4B' : '#A6561A'};background:${keo.approved ? '#1B4F32' : '#5E2E12'};font-size:13px;line-height:1.5;color:#FFF6E2;">
+                  <strong style="color:${keo.approved ? '#A6F2C4' : '#FFD48A'};">${keo.approved ? '✅' : '🌗'} ${escapeHtml(keo.label)}</strong> (${escapeHtml(keo.faces.join(' · '))})<br/>
+                  <span>${escapeHtml(keo.message)}</span>
+                </div>`
+              : ''
+          }
+
+          ${
+            stick && showingDetails
+              ? `<div style="padding:16px;border-radius:14px;background:linear-gradient(180deg,#3C190F,#241009);border:1.5px solid #C89B4B;display:flex;flex-direction:column;gap:10px;">
+                  <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
+                    <div style="font-size:18px;font-weight:800;color:#FFE7A8;">Quẻ Xăm Số ${stick.number}</div>
+                    <span style="padding:4px 10px;border-radius:8px;background:rgba(246,209,107,0.16);border:1px solid ${rankColor};color:${rankColor};font-size:12.5px;font-weight:700;">${escapeHtml(stick.rank)}</span>
+                  </div>
+                  <div style="font-size:15px;font-weight:700;color:#FFF6E0;">${escapeHtml(stick.title)}</div>
+                  <div style="padding:10px 12px;border-radius:10px;background:rgba(16,9,6,0.52);border-left:3px solid #E8B84B;font-style:italic;line-height:1.7;color:#FCE9BF;font-size:14px;">
+                    ${stick.poem.map((line) => `<div>${escapeHtml(line)}</div>`).join('')}
+                  </div>
+                  <div style="font-size:12.5px;color:#E6CEA2;">${escapeHtml(stick.story)}</div>
+                  <div style="font-size:13.5px;line-height:1.55;color:#FFF4DC;"><strong>Lời giải:</strong> ${escapeHtml(stick.summary)}</div>
+                  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px;margin-top:2px;">
+                    <div style="padding:9px 10px;border-radius:10px;background:rgba(255,244,218,0.08);font-size:12.5px;line-height:1.45;color:#F8EBD0;">
+                      <strong style="color:#F5CA68;">🏠 Gia đạo</strong><br/>${escapeHtml(stick.family)}
+                    </div>
+                    <div style="padding:9px 10px;border-radius:10px;background:rgba(255,244,218,0.08);font-size:12.5px;line-height:1.45;color:#F8EBD0;">
+                      <strong style="color:#F5CA68;">💼 Công việc</strong><br/>${escapeHtml(stick.career)}
+                    </div>
+                    <div style="padding:9px 10px;border-radius:10px;background:rgba(255,244,218,0.08);font-size:12.5px;line-height:1.45;color:#F8EBD0;">
+                      <strong style="color:#F5CA68;">🌿 Sức khỏe</strong><br/>${escapeHtml(stick.health)}
+                    </div>
+                  </div>
+                  <div style="padding:9px 12px;border-radius:10px;background:rgba(36,96,64,0.42);border:1px solid rgba(126,211,165,0.45);font-size:13px;line-height:1.5;color:#E6FAEE;">
+                    🪷 <strong>Lời khuyên tu tập:</strong> ${escapeHtml(stick.dharmaAdvice)}
+                  </div>
+                </div>`
+              : `<div style="padding:20px;border-radius:12px;text-align:center;background:#EFE1C0;border:1.5px dashed rgba(94,44,20,0.38);color:#4E2312;font-size:13.5px;font-weight:600;">
+                  Bấm <strong>Xóc Ống Xăm Thỉnh Quẻ</strong> để rút một thẻ xăm tại Bàn Xin Xăm Quan Âm.
+                </div>`
+          }
+
+          ${
+            historyList.length > 0
+              ? `<div>
+                  <div style="font-size:12.5px;font-weight:800;color:#5A2512;margin-bottom:6px;">Các quẻ đã thỉnh gần đây (${this.fortuneHistory.totalDraws} lượt)</div>
+                  <div style="display:flex;flex-direction:column;gap:6px;">
+                    ${historyList
+                      .map(
+                        (r) => `<button type="button" data-xam-history="${escapeHtml(r.id)}"
+                          style="display:flex;justify-content:space-between;align-items:center;padding:8px 11px;border-radius:9px;border:1px solid rgba(90,46,24,0.28);background:#EFE0BE;color:#3A1B0D;font-size:12.5px;font-weight:600;cursor:pointer;text-align:left;">
+                          <span>🎋 Số ${r.stick.number} · ${escapeHtml(r.stick.title)}</span>
+                          <span style="color:#8E2616;font-weight:700;">${escapeHtml(r.stick.rank)}</span>
+                        </button>`
+                      )
+                      .join('')}
+                  </div>
+                </div>`
+              : ''
+          }
+        </div>
+        `,
+        { variant: 'scroll' }
+      );
+
+      document.querySelectorAll('[data-xam-intent]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          selectedIntention = btn.getAttribute('data-xam-intent') || 'binh_an';
+          this.playMokugyoTap?.();
+          renderXinXam();
+        });
+      });
+
+      document.getElementById('btn-xam-shake')?.addEventListener('click', () => {
+        if (isShaking) return;
+        isShaking = true;
+        this.audio?.playBambooShakeSfx?.();
+        renderXinXam();
+        setTimeout(() => {
+          isShaking = false;
+          const drawn = drawFortuneStick(selectedIntention);
+          currentReading = drawn;
+          showingDetails = true;
+          this.fortuneHistory = recordFortuneReading(this.fortuneHistory, drawn);
+          this.storeProfile.lotusPoints += 8;
+          this.spiritual = recordSpiritualMilestone(
+            this.spiritual,
+            `Xin Xăm Quan Âm · Quẻ số ${drawn.stick.number} (${drawn.stick.rank})`
+          );
+          this.grantPilgrimXp?.(8, 'Xin Xăm Quan Âm');
+          persistFortune();
+          this.saveState?.();
+          this.updateActionBadges?.();
+          this.playBellTone?.(324, 1.8);
+          renderXinXam();
+        }, 520);
+      });
+
+      document.getElementById('btn-xam-keo')?.addEventListener('click', () => {
+        if (!currentReading) return;
+        this.playMokugyoTap?.(true);
+        const keoRes = tossYinYangBlocks();
+        currentReading = { ...currentReading, keoResult: keoRes };
+        this.fortuneHistory = {
+          ...this.fortuneHistory,
+          lastReading: currentReading,
+          readings: (this.fortuneHistory.readings || []).map((r) =>
+            r.id === currentReading.id ? currentReading : r
+          )
+        };
+        persistFortune();
+        this.saveState?.();
+        if (keoRes.approved) this.audio?.playBlessingChime?.();
+        renderXinXam();
+      });
+
+      document.querySelectorAll('[data-xam-history]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const rid = btn.getAttribute('data-xam-history');
+          const found = (this.fortuneHistory?.readings || []).find((r) => r.id === rid);
+          if (found) {
+            currentReading = found;
+            showingDetails = true;
+            this.playMokugyoTap?.();
+            renderXinXam();
+          }
+        });
+      });
+    };
+
+    renderXinXam();
   },
 
   highlightInteriorZoneChip(zoneKey) {

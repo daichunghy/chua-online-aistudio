@@ -481,32 +481,167 @@ export const materialsAndLightsMethods = {
       false
     );
 
-    // 4. Weathered Statue Stone Bump Texture (PROMPT_ARGON_CHAT_LIEU #1)
+    // 4. Weathered Granite / Marble Stone Albedo & Bump Maps (Natural mineral speckles & chiseling)
     this.stoneBumpTex = makeCanvasTex(
       (g, w, h) => {
-        g.fillStyle = '#808080';
+        g.fillStyle = '#828282';
         g.fillRect(0, 0, w, h);
-        for (let i = 0; i < 600; i++) {
-          const v = 110 + ((i * 29) % 36);
+        for (let i = 0; i < 1800; i++) {
+          const sx = (i * 47 + ((i * 13) % 19)) % w;
+          const sy = (i * 83 + ((i * 7) % 23)) % h;
+          const v = 96 + ((i * 29) % 64);
           g.fillStyle = `rgb(${v},${v},${v})`;
-          g.fillRect((i * 47) % w, (i * 83) % h, 3, 3);
+          g.fillRect(sx, sy, 2 + (i % 3), 2 + ((i + 1) % 2));
+        }
+        // Subtle hairline stone veins
+        g.strokeStyle = 'rgba(60,60,60,0.22)';
+        g.lineWidth = 1.2;
+        for (let k = 0; k < 14; k++) {
+          g.beginPath();
+          let vx = (k * 37) % w;
+          let vy = (k * 61) % h;
+          g.moveTo(vx, vy);
+          for (let s = 0; s < 5; s++) {
+            vx += 18 + ((k * s * 11) % 24);
+            vy += ((k + s) % 2 === 0 ? 1 : -1) * (8 + ((k * 7) % 14));
+            g.lineTo(vx, vy);
+          }
+          g.stroke();
         }
       },
       256,
       256,
-      6,
-      6,
+      4,
+      4,
       false
     );
+    this.stoneBumpTex.anisotropy = maxAniso;
 
-    // 5. Vertical Wood Grain Texture (PROMPT_ARGON_CHAT_LIEU #3)
+    this.graniteLightTex = makeCanvasTex(
+      (g, w, h) => {
+        g.fillStyle = '#B8B0A2';
+        g.fillRect(0, 0, w, h);
+        // Natural mineral clouds
+        for (let i = 0; i < 65; i++) {
+          const x = (i * 71) % w;
+          const y = (i * 103) % h;
+          const r = 18 + (i % 30);
+          g.fillStyle = i % 2 === 0 ? 'rgba(232,226,214,0.16)' : 'rgba(118,110,96,0.14)';
+          g.beginPath();
+          g.arc(x, y, r, 0, Math.PI * 2);
+          g.fill();
+        }
+        // Fine granite quartz & biotite flecks
+        for (let i = 0; i < 1600; i++) {
+          const x = (i * 53 + ((i * 17) % 29)) % w;
+          const y = (i * 97 + ((i * 11) % 19)) % h;
+          const m = i % 5;
+          g.fillStyle =
+            m === 0 ? 'rgba(248,244,234,0.34)' :
+            m === 1 ? 'rgba(72,68,62,0.26)' :
+            m === 2 ? 'rgba(138,132,122,0.24)' :
+            'rgba(205,198,184,0.22)';
+          g.fillRect(x, y, 2, 2);
+        }
+      },
+      256,
+      256,
+      4,
+      4
+    );
+    this.graniteLightTex.anisotropy = maxAniso;
+
+    this.graniteDarkTex = makeCanvasTex(
+      (g, w, h) => {
+        g.fillStyle = '#6D685E';
+        g.fillRect(0, 0, w, h);
+        for (let i = 0; i < 60; i++) {
+          const x = (i * 89) % w;
+          const y = (i * 59) % h;
+          g.fillStyle = i % 2 === 0 ? 'rgba(148,142,130,0.18)' : 'rgba(54,50,44,0.2)';
+          g.beginPath();
+          g.arc(x, y, 16 + (i % 24), 0, Math.PI * 2);
+          g.fill();
+        }
+        for (let i = 0; i < 1500; i++) {
+          const x = (i * 61 + ((i * 13) % 23)) % w;
+          const y = (i * 113 + ((i * 7) % 17)) % h;
+          g.fillStyle = i % 3 === 0 ? 'rgba(196,192,182,0.24)' : 'rgba(38,35,32,0.28)';
+          g.fillRect(x, y, 2, 2);
+        }
+      },
+      256,
+      256,
+      4,
+      4
+    );
+    this.graniteDarkTex.anisotropy = maxAniso;
+
+    this.pedestalRedTex = makeCanvasTex(
+      (g, w, h) => {
+        g.fillStyle = '#7E392C';
+        g.fillRect(0, 0, w, h);
+        // Hand-troweled Southern temple ochre-crimson stucco with subtle ashlar joints
+        for (let i = 0; i < 90; i++) {
+          const x = (i * 67) % w;
+          const y = (i * 109) % h;
+          g.fillStyle = i % 2 === 0 ? 'rgba(162,84,62,0.18)' : 'rgba(66,24,18,0.18)';
+          g.beginPath();
+          g.arc(x, y, 16 + (i % 28), 0, Math.PI * 2);
+          g.fill();
+        }
+        g.strokeStyle = 'rgba(46,16,12,0.28)';
+        g.lineWidth = 2;
+        for (let y = 0; y < h; y += 64) {
+          g.beginPath();
+          g.moveTo(0, y);
+          g.lineTo(w, y);
+          g.stroke();
+        }
+        for (let i = 0; i < 900; i++) {
+          g.fillStyle = i % 3 === 0 ? 'rgba(218,162,126,0.12)' : 'rgba(44,16,12,0.16)';
+          g.fillRect((i * 73) % w, (i * 131) % h, 2, 2);
+        }
+      },
+      256,
+      256,
+      3,
+      2
+    );
+    this.pedestalRedTex.anisotropy = maxAniso;
+
+    // 5. Organic Multi-Octave Vietnamese Hardwood Grain Texture + Paired Linear Bump Map
     this.woodGrainTex = makeCanvasTex(
       (g, w, h) => {
-        g.fillStyle = '#5A3D26';
+        const baseGrad = g.createLinearGradient(0, 0, w, 0);
+        baseGrad.addColorStop(0, '#5A3820');
+        baseGrad.addColorStop(0.35, '#6B4427');
+        baseGrad.addColorStop(0.7, '#4F301B');
+        baseGrad.addColorStop(1, '#5D3A22');
+        g.fillStyle = baseGrad;
         g.fillRect(0, 0, w, h);
-        for (let x = 0; x < w; x += 4) {
-          g.fillStyle = x % 8 === 0 ? 'rgba(40,22,10,0.22)' : 'rgba(120,82,48,0.16)';
-          g.fillRect(x, 0, 2, h);
+
+        // Organic undulating cathedral wood rings & fibers
+        for (let i = 0; i < 92; i++) {
+          const baseX = (i / 92) * w;
+          const isDark = i % 3 === 0;
+          g.strokeStyle = isDark ? 'rgba(28,14,6,0.30)' : 'rgba(146,98,54,0.18)';
+          g.lineWidth = isDark ? 1.5 + (i % 2) : 1.1;
+          g.beginPath();
+          for (let y = 0; y <= h; y += 8) {
+            const wave =
+              Math.sin((y / h) * Math.PI * 2 + i * 0.35) * 4.2 +
+              Math.sin((y / h) * Math.PI * 6 + i * 0.9) * 1.4;
+            const px = baseX + wave;
+            if (y === 0) g.moveTo(px, y);
+            else g.lineTo(px, y);
+          }
+          g.stroke();
+        }
+        // Subtle timber pores & warm lacquer sheen streaks
+        for (let i = 0; i < 420; i++) {
+          g.fillStyle = i % 4 === 0 ? 'rgba(24,11,5,0.22)' : 'rgba(176,124,72,0.09)';
+          g.fillRect((i * 59) % w, (i * 97) % h, 1.5, 10 + (i % 16));
         }
       },
       256,
@@ -514,6 +649,36 @@ export const materialsAndLightsMethods = {
       2,
       2
     );
+    this.woodGrainTex.anisotropy = maxAniso;
+
+    this.woodBumpTex = makeCanvasTex(
+      (g, w, h) => {
+        g.fillStyle = '#808080';
+        g.fillRect(0, 0, w, h);
+        for (let i = 0; i < 92; i++) {
+          const baseX = (i / 92) * w;
+          const v = i % 3 === 0 ? 58 : 152;
+          g.strokeStyle = `rgba(${v},${v},${v},0.48)`;
+          g.lineWidth = 1.6;
+          g.beginPath();
+          for (let y = 0; y <= h; y += 8) {
+            const wave =
+              Math.sin((y / h) * Math.PI * 2 + i * 0.35) * 4.2 +
+              Math.sin((y / h) * Math.PI * 6 + i * 0.9) * 1.4;
+            const px = baseX + wave;
+            if (y === 0) g.moveTo(px, y);
+            else g.lineTo(px, y);
+          }
+          g.stroke();
+        }
+      },
+      256,
+      256,
+      2,
+      2,
+      false
+    );
+    this.woodBumpTex.anisotropy = maxAniso;
 
     // 6. Rippled Emerald-Teal Lotus Pond Texture & Botanical Leaf Vein Texture
     this.waterTex = makeCanvasTex(
@@ -538,23 +703,30 @@ export const materialsAndLightsMethods = {
       3
     );
 
-    // 7. Terracotta Red "Gạch Tàu" Interior Floor Tiles (Image 2 & 3 reference)
+    // 7. Terracotta Red "Gạch Tàu" Floor Tiles + Paired Bump Map
     this.gachTauTex = makeCanvasTex(
       (g, w, h) => {
-        g.fillStyle = '#8F3824';
+        g.fillStyle = '#7E311E';
         g.fillRect(0, 0, w, h);
         const step = 64;
         for (let y = 0; y < h; y += step) {
           for (let x = 0; x < w; x += step) {
             const seed = ((Math.sin(x * 17.3 + y * 43.1) * 43758.54) % 1 + 1) % 1;
-            const d = Math.round(seed * 18 - 9);
-            g.fillStyle = `rgb(${156 + d}, ${63 + Math.round(d * 0.5)}, ${41 + Math.round(d * 0.4)})`;
+            const d = Math.round(seed * 22 - 11);
+            g.fillStyle = `rgb(${152 + d}, ${61 + Math.round(d * 0.55)}, ${39 + Math.round(d * 0.4)})`;
             g.fillRect(x + 2, y + 2, step - 4, step - 4);
-            g.fillStyle = 'rgba(255, 208, 168, 0.08)';
-            g.fillRect(x + 6, y + 6, step - 20, step - 24);
+            // Soft kiln-fired patina & center foot-worn polish
+            const rad = g.createRadialGradient(x + step * 0.5, y + step * 0.5, 4, x + step * 0.5, y + step * 0.5, step * 0.56);
+            rad.addColorStop(0, 'rgba(255, 214, 174, 0.13)');
+            rad.addColorStop(1, 'rgba(54, 20, 12, 0.14)');
+            g.fillStyle = rad;
+            g.fillRect(x + 2, y + 2, step - 4, step - 4);
+            // Kiln grain speckles
+            g.fillStyle = seed > 0.5 ? 'rgba(240,192,148,0.12)' : 'rgba(64,22,12,0.14)';
+            g.fillRect(x + 8 + Math.round(seed * 18), y + 10, 14, 9);
           }
         }
-        g.strokeStyle = 'rgba(42, 18, 12, 0.58)';
+        g.strokeStyle = 'rgba(42, 18, 12, 0.62)';
         g.lineWidth = 3;
         for (let i = 0; i <= w; i += step) {
           g.beginPath();
@@ -572,6 +744,103 @@ export const materialsAndLightsMethods = {
       8,
       12
     );
+    this.gachTauTex.anisotropy = maxAniso;
+
+    this.gachTauBumpTex = makeCanvasTex(
+      (g, w, h) => {
+        g.fillStyle = '#CCCCCC';
+        g.fillRect(0, 0, w, h);
+        const step = 64;
+        g.strokeStyle = '#363636';
+        g.lineWidth = 4;
+        for (let i = 0; i <= w; i += step) {
+          g.beginPath();
+          g.moveTo(i, 0);
+          g.lineTo(i, h);
+          g.stroke();
+          g.beginPath();
+          g.moveTo(0, i);
+          g.lineTo(w, i);
+          g.stroke();
+        }
+        for (let i = 0; i < 650; i++) {
+          const v = i % 2 === 0 ? 175 : 225;
+          g.fillStyle = `rgba(${v},${v},${v},0.3)`;
+          g.fillRect((i * 71) % w, (i * 113) % h, 3, 3);
+        }
+      },
+      512,
+      512,
+      8,
+      12,
+      false
+    );
+    this.gachTauBumpTex.anisotropy = maxAniso;
+
+    // 7b. Authentic Heritage Chùa Vĩnh Tràng "Gạch Bông Pháp Cổ" Encaustic Patterned Floor Tiles
+    this.gachBongTex = makeCanvasTex(
+      (g, w, h) => {
+        g.fillStyle = '#D9CEB6';
+        g.fillRect(0, 0, w, h);
+        const step = 128;
+        for (let ty = 0; ty < h; ty += step) {
+          for (let tx = 0; tx < w; tx += step) {
+            const cx = tx + step * 0.5;
+            const cy = ty + step * 0.5;
+            const alt = ((tx / step) + (ty / step)) % 2 === 0;
+            // Warm ivory-ochre encaustic base
+            g.fillStyle = alt ? '#DFD3BA' : '#D5C7AA';
+            g.fillRect(tx + 2, ty + 2, step - 4, step - 4);
+            // Outer sage/terracotta heritage frame
+            g.strokeStyle = '#8F3F2B';
+            g.lineWidth = 4;
+            g.strokeRect(tx + 8, ty + 8, step - 16, step - 16);
+            // Corner lotus quarter-rosettes (forms full medallions where 4 tiles meet!)
+            g.fillStyle = '#3C6255';
+            for (const [ox, oy] of [[tx + 2, ty + 2], [tx + step - 2, ty + 2], [tx + 2, ty + step - 2], [tx + step - 2, ty + step - 2]]) {
+              g.beginPath();
+              g.arc(ox, oy, 20, 0, Math.PI * 2);
+              g.fill();
+            }
+            // Central 8-petal floral lotus star in ochre-gold & crimson
+            g.fillStyle = '#B87A35';
+            g.beginPath();
+            g.moveTo(cx, cy - 34);
+            g.lineTo(cx + 12, cy - 12);
+            g.lineTo(cx + 34, cy);
+            g.lineTo(cx + 12, cy + 12);
+            g.lineTo(cx, cy + 34);
+            g.lineTo(cx - 12, cy + 12);
+            g.lineTo(cx - 34, cy);
+            g.lineTo(cx - 12, cy - 12);
+            g.closePath();
+            g.fill();
+            g.fillStyle = '#8B2E22';
+            g.beginPath();
+            g.arc(cx, cy, 13, 0, Math.PI * 2);
+            g.fill();
+            g.fillStyle = '#E8D9B5';
+            g.beginPath();
+            g.arc(cx, cy, 6, 0, Math.PI * 2);
+            g.fill();
+            // Subtle aged tile wear
+            g.strokeStyle = 'rgba(66,52,38,0.42)';
+            g.lineWidth = 2.5;
+            g.strokeRect(tx + 1, ty + 1, step - 2, step - 2);
+          }
+        }
+        // Fine matte ceramic grain
+        for (let i = 0; i < 900; i++) {
+          g.fillStyle = i % 2 === 0 ? 'rgba(92,76,56,0.08)' : 'rgba(255,248,232,0.09)';
+          g.fillRect((i * 89) % w, (i * 137) % h, 2, 2);
+        }
+      },
+      512,
+      512,
+      10,
+      10
+    );
+    this.gachBongTex.anisotropy = maxAniso;
 
     // 8. Botanical Lily Pad Texture with Radial Veins
     this.lotusPadTex = makeCanvasTex(
@@ -622,14 +891,14 @@ export const materialsAndLightsMethods = {
         map: this.limeWallTex,
         bumpMap: this.limeBumpTex,
         bumpScale: 0.024,
-        roughness: 0.62
+        roughness: 0.64
       }),
       goldLight: new THREE.MeshStandardMaterial({
         color: 0xF5D98C,
         map: this.limeWallTex,
         bumpMap: this.limeBumpTex,
         bumpScale: 0.018,
-        roughness: 0.56
+        roughness: 0.58
       }),
       goldAccent: new THREE.MeshStandardMaterial({
         color: 0xD8A436,
@@ -638,23 +907,24 @@ export const materialsAndLightsMethods = {
       }),
       creamTrim: new THREE.MeshStandardMaterial({
         color: 0xF2ECE0,
+        map: this.limeWallTex,
         bumpMap: this.limeBumpTex,
         bumpScale: 0.016,
         roughness: 0.68
       }),
       redColumn: new THREE.MeshStandardMaterial({
         color: 0x862820,
-        bumpMap: this.woodGrainTex,
-        bumpScale: 0.012,
-        roughness: 0.38,
+        bumpMap: this.woodBumpTex,
+        bumpScale: 0.016,
+        roughness: 0.36,
         metalness: 0.08
       }),
       darkWood: new THREE.MeshStandardMaterial({
-        color: 0x5A3D26,
+        color: 0x5E3E26,
         map: this.woodGrainTex,
-        bumpMap: this.woodGrainTex,
-        bumpScale: 0.018,
-        roughness: 0.62
+        bumpMap: this.woodBumpTex,
+        bumpScale: 0.024,
+        roughness: 0.58
       }),
       darkOpening: new THREE.MeshStandardMaterial({ color: 0x221712, roughness: 0.88 }),
       roofTile: new THREE.MeshStandardMaterial({
@@ -664,34 +934,47 @@ export const materialsAndLightsMethods = {
         roughness: 0.64
       }),
       statueWhite: new THREE.MeshStandardMaterial({
-        color: 0xEFE9DD,
+        color: 0xF3EEE4,
+        map: this.graniteLightTex,
         bumpMap: this.stoneBumpTex,
-        bumpScale: 0.02,
-        roughness: 0.78,
-        metalness: 0.0
+        bumpScale: 0.018,
+        roughness: 0.72,
+        metalness: 0.02
       }),
-      lotusBlue: new THREE.MeshStandardMaterial({ color: 0x4E86A8, roughness: 0.5 }),
-      pedestalRed: new THREE.MeshStandardMaterial({ color: 0x8A4A3A, roughness: 0.62 }),
+      lotusBlue: new THREE.MeshStandardMaterial({ color: 0x4E86A8, bumpMap: this.stoneBumpTex, bumpScale: 0.014, roughness: 0.5 }),
+      pedestalRed: new THREE.MeshStandardMaterial({
+        color: 0x9B4B3A,
+        map: this.pedestalRedTex,
+        bumpMap: this.limeBumpTex,
+        bumpScale: 0.022,
+        roughness: 0.66
+      }),
       stoneDark: new THREE.MeshStandardMaterial({
-        color: 0x6E675C,
+        color: 0x868075,
+        map: this.graniteDarkTex,
         bumpMap: this.stoneBumpTex,
-        bumpScale: 0.025,
-        roughness: 0.84
+        bumpScale: 0.028,
+        roughness: 0.82
       }),
       stoneLight: new THREE.MeshStandardMaterial({
-        color: 0xA89E8E,
+        color: 0xC6BEB0,
+        map: this.graniteLightTex,
         bumpMap: this.stoneBumpTex,
-        bumpScale: 0.02,
-        roughness: 0.78
+        bumpScale: 0.024,
+        roughness: 0.76
       }),
       stupaBody: new THREE.MeshStandardMaterial({
         color: 0xD2924E,
         map: this.limeWallTex,
+        bumpMap: this.limeBumpTex,
+        bumpScale: 0.02,
         roughness: 0.6
       }),
       stupaRoof: new THREE.MeshStandardMaterial({
         color: 0xA85A38,
         map: this.roofTex,
+        bumpMap: this.roofBumpTex,
+        bumpScale: 0.03,
         roughness: 0.64
       }),
       mosaicBlue: new THREE.MeshStandardMaterial({
@@ -709,10 +992,18 @@ export const materialsAndLightsMethods = {
         roughness: 0.36,
         metalness: 0.12
       }),
-      terracottaPot: new THREE.MeshStandardMaterial({ color: 0xA45236, roughness: 0.68 }),
+      terracottaPot: new THREE.MeshStandardMaterial({
+        color: 0xA45236,
+        map: this.pedestalRedTex,
+        bumpMap: this.stoneBumpTex,
+        bumpScale: 0.018,
+        roughness: 0.68
+      }),
       trunk: new THREE.MeshStandardMaterial({
         color: 0x5A402C,
         map: this.woodGrainTex,
+        bumpMap: this.woodBumpTex,
+        bumpScale: 0.032,
         roughness: 0.88
       }),
       foliageDark: new THREE.MeshStandardMaterial({
@@ -748,8 +1039,10 @@ export const materialsAndLightsMethods = {
       }),
       bronzeBurner: new THREE.MeshStandardMaterial({
         color: 0x487A5E,
-        roughness: 0.38,
-        metalness: 0.62
+        bumpMap: this.stoneBumpTex,
+        bumpScale: 0.012,
+        roughness: 0.36,
+        metalness: 0.66
       }),
       lanternGlow: new THREE.MeshStandardMaterial({
         color: 0xFFE8AD,

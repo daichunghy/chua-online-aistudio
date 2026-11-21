@@ -269,6 +269,34 @@ export const glbLoadingMethods = {
       );
       s.rotation.y = 0;
       this.adidaGroup.add(s);
+
+      // 1B. Đại Tượng Phật Lớn bên trong Công Viên Văn Hóa Vĩnh Tràng (16.5m trên bệ 3.2m = ~19.7m!)
+      if (this.parkBuddhaStatueAnchor && !this.parkBuddhaStatueAnchor.userData._glbMounted) {
+        this.parkBuddhaStatueAnchor.userData._glbMounted = true;
+        if (this.parkBuddhaFallback?.parent) {
+          this.parkBuddhaFallback.parent.remove(this.parkBuddhaFallback);
+        }
+        const ps = this.cleanStatueScene(adidaGltf.scene, null);
+        const pBox = new THREE.Box3().setFromObject(ps);
+        const pH = Math.max(0.1, pBox.max.y - pBox.min.y);
+        ps.scale.setScalar(16.5 / pH);
+        const pBox2 = new THREE.Box3().setFromObject(ps);
+        ps.position.set(
+          -(pBox2.min.x + pBox2.max.x) / 2,
+          -pBox2.min.y,
+          -(pBox2.min.z + pBox2.max.z) / 2
+        );
+        ps.rotation.y = 0;
+        if (this.isSoftwareGl) {
+          ps.traverse((c) => {
+            if (c.isMesh) {
+              c.castShadow = false;
+              c.receiveShadow = false;
+            }
+          });
+        }
+        this.parkBuddhaStatueAnchor.add(ps);
+      }
     }
 
     // 2. Đại tượng Phật Di Lặc — uniform proportional scale (~15.2m statue atop 4.8m terrace = 20m total)
@@ -877,54 +905,22 @@ export const glbLoadingMethods = {
         if (this.tamBaoMainAnchor && thienDinhGltf?.scene && !this.tamBaoMainAnchor.userData._glbMounted) {
           this.tamBaoMainAnchor.userData._glbMounted = true;
           clearPlaceholders(this.tamBaoMainAnchor);
-          this._mountInteriorStatue(thienDinhGltf.scene, this.tamBaoMainAnchor, { targetH: 3.35, matKind: 'gilded_gold' });
+          this._mountInteriorStatue(thienDinhGltf.scene, this.tamBaoMainAnchor, { targetH: 3.1, matKind: 'gilded_gold' });
         }
         if (this.tamBaoLeftAnchor && quanAmGltf?.scene && !this.tamBaoLeftAnchor.userData._glbMounted) {
           this.tamBaoLeftAnchor.userData._glbMounted = true;
           clearPlaceholders(this.tamBaoLeftAnchor);
-          this._mountInteriorStatue(quanAmGltf.scene, this.tamBaoLeftAnchor, { targetH: 2.75, matKind: 'gilded_gold' });
+          this._mountInteriorStatue(quanAmGltf.scene, this.tamBaoLeftAnchor, { targetH: 2.55, matKind: 'gilded_gold' });
         }
         if (this.tamBaoRightAnchor && adidaGltf?.scene && !this.tamBaoRightAnchor.userData._glbMounted) {
           this.tamBaoRightAnchor.userData._glbMounted = true;
           clearPlaceholders(this.tamBaoRightAnchor);
-          this._mountInteriorStatue(adidaGltf.scene, this.tamBaoRightAnchor, { targetH: 2.75, matKind: 'gilded_gold' });
+          this._mountInteriorStatue(adidaGltf.scene, this.tamBaoRightAnchor, { targetH: 2.55, matKind: 'gilded_gold' });
         }
         await this._yieldInteriorFrame(delayMs);
 
-        if (this.archMeshCache.bao_lam && this.baoLamAnchor && !this.baoLamAnchor.userData._glbMounted) {
-          this.baoLamAnchor.userData._glbMounted = true;
-          const bl = this.archMeshCache.bao_lam.clone(true);
-          bl.traverse((o) => {
-            if (o.isMesh) {
-              o.castShadow = false;
-              o.receiveShadow = false;
-              if (o.geometry && !o.geometry.getAttribute('normal')) o.geometry.computeVertexNormals();
-            }
-          });
-          const box = new THREE.Box3().setFromObject(bl);
-          const sz = box.getSize(new THREE.Vector3());
-          bl.scale.set(9.6 / Math.max(0.2, sz.x), 6.4 / Math.max(0.2, sz.y), 0.92 / Math.max(0.1, sz.z));
-          const b2 = new THREE.Box3().setFromObject(bl);
-          bl.position.set(-(b2.min.x + b2.max.x) / 2, -b2.min.y, -(b2.min.z + b2.max.z) / 2);
-          this.baoLamAnchor.add(bl);
-          this.freezeStaticSubtree?.(bl);
-        }
-        await this._yieldInteriorFrame(delayMs);
-
-        if (this.archMeshCache.long_tru) {
-          for (const ph of this.longTruPlaceholders) {
-            if (ph.group?.userData?._glbMounted) continue;
-            ph.group.userData._glbMounted = true;
-            for (const p of ph.replaceParts) if (p.parent) p.parent.remove(p);
-            const ltModel = this.fitProp(this.archMeshCache.long_tru, 6.15);
-            ltModel.rotation.y = ph.sideSign < 0 ? 0.35 : -0.35;
-            const lb = new THREE.Box3().setFromObject(ltModel);
-            ltModel.position.set(-(lb.min.x + lb.max.x) / 2, 0.44 - lb.min.y, -(lb.min.z + lb.max.z) / 2);
-            stripCastShadow(ltModel);
-            ph.group.add(ltModel);
-            this.freezeStaticSubtree?.(ltModel);
-          }
-        }
+        // Authentic Chùa Vĩnh Tràng Chánh Điện uses an open high gilded Bao Lam & slender lacquered columns
+        // built architecturally in vinh-trang-square-interior.mjs — do NOT mount enclosed miếu bao_lam or chunky long_tru GLBs.
         if (this.archMeshCache.dai_hong_chung && this.interiorBellAnchor?.group && !this.interiorBellAnchor.group.userData._glbMounted) {
           this.interiorBellAnchor.group.userData._glbMounted = true;
           if (this.interiorBellAnchor.placeholder?.parent) {
@@ -958,40 +954,14 @@ export const glbLoadingMethods = {
           while (this.craneTortoiseAnchor.children.length > 0) {
             this.craneTortoiseAnchor.remove(this.craneTortoiseAnchor.children[0]);
           }
-          for (const cx of [-2.85, 2.85]) {
-            const crane = this.fitProp(this.propMeshCache.cap_hac_rua, 1.65);
+          for (const cx of [-3.05, 3.05]) {
+            const crane = this.fitProp(this.propMeshCache.cap_hac_rua, 1.55);
             const cb = new THREE.Box3().setFromObject(crane);
             crane.position.set(cx - (cb.min.x + cb.max.x) / 2, -cb.min.y, -(cb.min.z + cb.max.z) / 2);
             crane.rotation.y = cx < 0 ? 0.16 : -0.16;
             stripCastShadow(crane);
             this.craneTortoiseAnchor.add(crane);
             this.freezeStaticSubtree?.(crane);
-          }
-        }
-
-        // Also place already-cached altar props (mam_ngu_qua, mo_go, ban_tho) onto Tam Bảo if lazy-built after Phase 1
-        if (this.tamBaoAltarGroup && !this.tamBaoAltarGroup.userData._altarPropsMounted) {
-          this.tamBaoAltarGroup.userData._altarPropsMounted = true;
-          if (this.propMeshCache.mam_ngu_qua) {
-            const tray = this.fitProp(this.propMeshCache.mam_ngu_qua, 0.72);
-            tray.position.set(-1.35, 1.26, 0.88);
-            stripCastShadow(tray);
-            this.tamBaoAltarGroup.add(tray);
-            this.freezeStaticSubtree?.(tray);
-          }
-          if (this.propMeshCache.mo_go) {
-            const mogo = this.fitProp(this.propMeshCache.mo_go, 0.56);
-            mogo.position.set(1.35, 1.26, 0.88);
-            stripCastShadow(mogo);
-            this.tamBaoAltarGroup.add(mogo);
-            this.freezeStaticSubtree?.(mogo);
-          }
-          if (this.propMeshCache.ban_tho) {
-            const bowl = this.fitProp(this.propMeshCache.ban_tho, 0.7);
-            bowl.position.set(0, 1.26, 0.96);
-            stripCastShadow(bowl);
-            this.tamBaoAltarGroup.add(bowl);
-            this.freezeStaticSubtree?.(bowl);
           }
         }
         await this._yieldInteriorFrame(delayMs);

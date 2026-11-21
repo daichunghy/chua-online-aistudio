@@ -221,9 +221,9 @@ export const renderLoopAndCutsceneMethods = {
         this._doorCooldownUntil = performance.now() + 2600;
         const isFront = tr.side === 'front_tam_quan';
         const entryYaw = isFront ? Math.PI * 0.5 : Math.PI - 0.34;
-        const startX = isFront ? -36.2 : 15.1;
+        const startX = isFront ? -60.2 : 15.1;
         const startZ = isFront ? 0.0 : 18.8;
-        const targetX = isFront ? -33.6 : 14.5;
+        const targetX = isFront ? -57.2 : 14.5;
         const targetZ = isFront ? 0.0 : 16.0;
         this.playerState.x = startX;
         this.playerState.z = startZ;
@@ -318,6 +318,7 @@ export const renderLoopAndCutsceneMethods = {
     const trDt = this.isSoftwareGl ? Math.max(dt, Math.min(rawDelta, 0.35)) : dt;
     const elapsed = this.clock.elapsedTime;
 
+    try {
     if (this.seatedBench && (this.heldDirs.size > 0 || Math.hypot(this.joystickVec?.x || 0, this.joystickVec?.z || 0) > 0.15)) {
       this.standUpFromBench?.();
     }
@@ -497,6 +498,12 @@ export const renderLoopAndCutsceneMethods = {
 
     this.updateProjectedPins();
     this.updateCourtyardNpcInteraction();
+    } catch (frameErr) {
+      if (!this._lastFrameErrLog || performance.now() - this._lastFrameErrLog > 4000) {
+        this._lastFrameErrLog = performance.now();
+        console.error('[animate]', frameErr);
+      }
+    }
     if (this.isSoftwareGl && document.querySelector('.modal-backdrop.open')) {
       window.setTimeout(() => this.animate(), 420);
       return;
@@ -613,9 +620,10 @@ export const renderLoopAndCutsceneMethods = {
     if (bm.strikerPivot) {
       bm.strikerPivot.rotation.x = swingAngle * 0.85;
     }
-    if (this.interiorBellAnchor && bm.ringTimer > 0) {
+    const bellObj = this.interiorBellAnchor?.group || this.interiorBellAnchor;
+    if (bellObj?.rotation && bm.ringTimer > 0) {
       // Gentle physical bell resonance sway
-      this.interiorBellAnchor.rotation.z = Math.sin(elapsed * 9.5) * 0.025 * Math.max(0, 1 - bm.ringTimer / 2.6);
+      bellObj.rotation.z = Math.sin(elapsed * 9.5) * 0.025 * Math.max(0, 1 - bm.ringTimer / 2.6);
     }
 
     // Expand golden soundwave ring around Đại Hồng Chung
@@ -625,7 +633,7 @@ export const renderLoopAndCutsceneMethods = {
       if (rt >= 1) {
         bm.ringTimer = 0;
         bm.waveRing.visible = false;
-        if (this.interiorBellAnchor) this.interiorBellAnchor.rotation.z = 0;
+        if (bellObj?.rotation) bellObj.rotation.z = 0;
       } else {
         bm.waveRing.scale.setScalar(0.55 + rt * 3.8);
         if (bm.waveRing.material) bm.waveRing.material.opacity = (1 - rt) * (1 - rt) * 0.68;

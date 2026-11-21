@@ -37,6 +37,8 @@ export * from './modules/shopee-affiliate.mjs'; // Liên kết Shopee Affiliate 
 export * from './modules/pilgrimage-depth.mjs'; // Đợt 3: Gặp gỡ hữu duyên, Công quả & 12 Góc Ảnh Di Sản
 export * from './modules/surface-footsteps.mjs'; // Phát hiện bề mặt bước chân (cỏ, gạch, gỗ, đá sỏi)
 export * from './modules/social-community.mjs'; // Cộng đồng đạo hữu: kết bạn, bảng xếp hạng, tặng quà, giao lưu
+export * from './modules/fortune-sticks.mjs'; // Xin Xăm · Xem Quẻ Quan Âm & Gieo Keo Âm Dương
+
 
 
 

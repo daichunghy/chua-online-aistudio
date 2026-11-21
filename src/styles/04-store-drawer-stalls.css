@@ -857,3 +857,189 @@
   border-color: #EE4D2D;
 }
 
+.shopee-click-pill {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: #FFE5DC;
+  color: #B83214;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.market-spotlight-section {
+  background: linear-gradient(180deg, #FFF7EC 0%, #FFFDF8 100%);
+  border: 1.5px solid rgba(238, 77, 45, 0.24);
+  border-radius: 18px;
+  padding: 14px;
+  margin-bottom: 12px;
+}
+
+.market-section-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: 14.5px;
+  font-weight: 800;
+  color: #5C2C14;
+  margin-bottom: 10px;
+}
+
+.market-section-sub {
+  font-size: 12px;
+  font-weight: 700;
+  color: #9A4A24;
+}
+
+.market-bestseller-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.market-bestseller-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 11px 12px;
+  border-radius: 14px;
+  background: #FFFFFF;
+  border: 1.5px solid rgba(238, 77, 45, 0.22);
+  box-shadow: 0 4px 12px rgba(92, 56, 31, 0.06);
+}
+
+.market-bestseller-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.market-item-icon-sm {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+}
+
+.market-social-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.market-badge-hot {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 7px;
+  border-radius: 6px;
+  background: #EE4D2D;
+  color: #FFFFFF;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.market-badge-combo {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: #1B5535;
+  color: #FFF7DE;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.market-social-proof {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #8A5416;
+}
+
+.market-bestseller-title {
+  font-size: 13.5px;
+  font-weight: 800;
+  color: #3E2616;
+  line-height: 1.25;
+  margin-top: 3px;
+}
+
+.market-bestseller-price {
+  font-size: 13px;
+  font-weight: 800;
+  color: #D43C1C;
+  margin-top: 2px;
+}
+
+.market-combo-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.market-combo-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 12px;
+  border-radius: 14px;
+  background: #FFFDF8;
+  border: 1.5px solid rgba(201, 150, 46, 0.36);
+}
+
+.market-combo-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.market-combo-icon {
+  font-size: 20px;
+}
+
+.market-combo-title {
+  font-size: 13.5px;
+  font-weight: 800;
+  color: #4A2815;
+  line-height: 1.25;
+}
+
+.market-combo-items {
+  font-size: 12px;
+  color: #6B4F3A;
+  line-height: 1.38;
+}
+
+.market-combo-prices {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.market-price-strike {
+  font-size: 11.5px;
+  color: #9A8472;
+  text-decoration: line-through;
+}
+
+.market-btn-shopee-sm {
+  min-height: 36px;
+  margin-top: 2px;
+  padding: 6px 10px;
+  font-size: 12.5px;
+}
+
+@media (max-width: 780px) {
+  .market-bestseller-grid,
+  .market-combo-grid,
+  .market-items-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+

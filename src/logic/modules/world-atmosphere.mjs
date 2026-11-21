@@ -208,21 +208,23 @@ export function computeFirstPersonEyePose({
   stridePhase = 0,
   moveSpeed = 0
 } = {}) {
-  const clampedPitch = Math.max(-0.62, Math.min(0.92, Number(pitchRad) || 0));
-  const speedBlend = Math.max(0, Math.min(1, (Number(moveSpeed) || 0) / 3.2));
-  const walkBobY = Math.sin((Number(stridePhase) || 0) * 2) * 0.036 * speedBlend;
-  const walkSwayX = Math.cos(Number(stridePhase) || 0) * 0.014 * speedBlend;
+  const clampedPitch = Math.max(-0.56, Math.min(0.92, Number(pitchRad) || 0));
+  const speedBlend = Math.max(0, Math.min(1, (Number(moveSpeed) || 0) / 3.4));
+  // Subtle, natural eye stabilization to avoid motion discomfort in interior corridors
+  const walkBobY = Math.sin((Number(stridePhase) || 0) * 2) * 0.022 * speedBlend;
+  const walkSwayX = Math.cos(Number(stridePhase) || 0) * 0.006 * speedBlend;
 
-  const eyeY = (Number(elevationY) || 0) + Math.max(1.05, (Number(charHeight) || 1.64) * 0.91) + walkBobY;
+  const eyeY = (Number(elevationY) || 0) + Math.max(1.12, (Number(charHeight) || 1.64) * 0.94) + walkBobY;
   const sinY = Math.sin(yaw);
   const cosY = Math.cos(yaw);
   const rightX = -cosY;
   const rightZ = sinY;
 
-  const camX = x + sinY * 0.08 + rightX * walkSwayX;
-  const camZ = z + cosY * 0.08 + rightZ * walkSwayX;
+  // Slightly forward of torso center so accessories/columns never intrude into lens
+  const camX = x + sinY * 0.16 + rightX * walkSwayX;
+  const camZ = z + cosY * 0.16 + rightZ * walkSwayX;
 
-  const lookDist = 12.0;
+  const lookDist = 14.0;
   const cosP = Math.cos(clampedPitch);
   const sinP = Math.sin(clampedPitch);
 

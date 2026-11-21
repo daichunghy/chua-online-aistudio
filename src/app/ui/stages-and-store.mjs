@@ -4,7 +4,7 @@
  * Mixin của ChuaOnlineApp: 8 method (mountProfileCharacterStage … openMarketplaceStallModal).
  * Được gắn vào class trong chua-online-app.mjs qua applyMixins().
  */
-import { CHARACTER_PROFILES, calculateCartSummary, STORE_CATEGORIES, STORE_ITEMS_CATALOG, filterStoreItems, tryOnStoreItem, purchaseStoreItem, MARKETPLACE_STALL_CATEGORIES, MARKETPLACE_STALL_CATALOG, filterMarketplaceItems, purchaseMarketplaceItem, resolveShopeeAffiliateUrl, validateShopeeAffiliateUrl, unifyEquippedVisualPayload, recolorGarmentOnScene, clearRiggedBoneProps, createBespokeRobeGroup, createStoreAccessoryGroup, createSculptedArhatShowcase } from './shared.mjs';
+import { CHARACTER_PROFILES, calculateCartSummary, STORE_CATEGORIES, STORE_ITEMS_CATALOG, filterStoreItems, tryOnStoreItem, purchaseStoreItem, MARKETPLACE_STALL_CATEGORIES, MARKETPLACE_STALL_CATALOG, filterMarketplaceItems, purchaseMarketplaceItem, SHOPEE_BESTSELLER_META, SHOPEE_CURATED_COMBOS, resolveShopeeAffiliateUrl, validateShopeeAffiliateUrl, mergeShopeeAffiliateOverrides, recordShopeeAffiliateClick, getTotalShopeeClicks, unifyEquippedVisualPayload, recolorGarmentOnScene, clearRiggedBoneProps, createBespokeRobeGroup, createStoreAccessoryGroup, createSculptedArhatShowcase } from './shared.mjs';
 
 export const stagesAndStoreMethods = {
   async mountProfileCharacterStage(canvasId, { charKey = 'nu', pose = 'Dung' }) {
@@ -898,28 +898,56 @@ export const stagesAndStoreMethods = {
      ======================================================================== */
   openMarketplaceStallModal(
     initialCategory = null,
-    stallTitle = 'Nhà Lưu Niệm · Tiệm Tạp Hóa Đặc Sản Chay Vĩnh Tràng'
+    stallTitle = 'Nhà Lưu Niệm · Cửa Hàng Văn Hóa Phẩm Vĩnh Tràng'
   ) {
-    if (initialCategory) {
+    const validCatIds = new Set(MARKETPLACE_STALL_CATEGORIES.map((c) => c.id));
+    if (initialCategory && validCatIds.has(initialCategory)) {
       this.marketStallTab = initialCategory;
-    } else if (!this.marketStallTab) {
+    } else if (initialCategory) {
+      this.marketStallTab = 'all';
+    } else if (!this.marketStallTab || !validCatIds.has(this.marketStallTab)) {
       this.marketStallTab = 'all';
     }
     let showAffiliateEditor = false;
+    const CLICK_STATS_KEY = 'chua_online_shopee_clicks_v1';
+    const loadClickStats = () => {
+      try {
+        const raw = localStorage.getItem(CLICK_STATS_KEY);
+        const parsed = raw ? JSON.parse(raw) : {};
+        return parsed && typeof parsed === 'object' ? parsed : {};
+      } catch {
+        return {};
+      }
+    };
+    const saveClickStats = (nextStats) => {
+      try {
+        localStorage.setItem(CLICK_STATS_KEY, JSON.stringify(nextStats));
+      } catch {}
+    };
+    let shopeeClicks = loadClickStats();
 
     const renderMarketBody = () => {
       const items = filterMarketplaceItems(this.marketStallTab);
       const cartSummary = calculateCartSummary(this.cart);
-      const configuredCount = Object.values(this.shopeeAffiliateOverrides || {}).filter(
-        (u) => validateShopeeAffiliateUrl(u).ok
-      ).length;
+      const configuredCount = Object.values(this.shopeeAffiliateOverrides || {}).filter((u) => {
+        const check = validateShopeeAffiliateUrl(u);
+        return check.valid && Boolean(check.normalized);
+      }).length;
+      const totalClicks = getTotalShopeeClicks(shopeeClicks);
+      const bestsellerItems = Object.keys(SHOPEE_BESTSELLER_META)
+        .map((id) => MARKETPLACE_STALL_CATALOG.find((x) => x.id === id))
+        .filter(Boolean);
+      const editableItems = [
+        ...SHOPEE_CURATED_COMBOS.map((c) => ({ id: c.id, icon: c.icon, name: `[Combo] ${c.name}` })),
+        ...MARKETPLACE_STALL_CATALOG
+      ];
 
       const html = `
         <div class="market-stall-banner">
           <div>
-            <div style="font-size:15px;font-weight:800;color:#5C381F;">Nhà Lưu Niệm · Tiệm Tạp Hóa Chay Vĩnh Tràng (Rộng rãi đi bộ vào chọn đồ)</div>
-            <div style="font-size:13px;color:#4A3222;margin-top:2px;">
-              Đầy đủ ${MARKETPLACE_STALL_CATALOG.length} mặt hàng: nhang trầm, hoa sen, pháp phục, đặc sản chay Mỹ Tho &amp; đồ thủ công. Có sẵn nút đặt mua trực tiếp qua Shopee.
+            <div style="font-size:15.5px;font-weight:800;color:#5C381F;">Nhà Lưu Niệm · Đặc Sản Chay &amp; Văn Hóa Phẩm Chùa Vĩnh Tràng</div>
+            <div style="font-size:13px;color:#4A3222;margin-top:3px;">
+              Đầy đủ ${MARKETPLACE_STALL_CATALOG.length} món đặc sản chay Mỹ Tho, nhang trầm sạch, tràng hạt &amp; pháp phục. Chọn thỉnh lễ ngay trong chùa hoặc đặt giao tận nhà chính hãng qua Shopee.
             </div>
           </div>
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
@@ -928,7 +956,7 @@ export const stagesAndStoreMethods = {
               🛒 Giỏ hàng (<span id="market-cart-count">${cartSummary.totalCount}</span>)
             </button>
             <button type="button" id="btn-market-affiliate-cfg" class="market-secondary-pill" style="background:#FFF1EB;border-color:#EE4D2D;color:#C43416;">
-              🔗 Gắn link Shopee (${configuredCount})
+              🔗 Gắn link Shopee (${configuredCount} link${totalClicks > 0 ? ` · ${totalClicks} lượt bấm` : ''})
             </button>
             <button type="button" id="btn-market-to-store" class="market-secondary-pill">
               Tủ đồ 3D (9 mục)
@@ -942,31 +970,37 @@ export const stagesAndStoreMethods = {
           <div class="shopee-affiliate-editor-panel">
             <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
               <div>
-                <div style="font-size:14.5px;font-weight:800;color:#B83214;">🔗 Quản lý Link Shopee Affiliate (${MARKETPLACE_STALL_CATALOG.length} sản phẩm)</div>
+                <div style="font-size:14.5px;font-weight:800;color:#B83214;">🔗 Quản lý Link Shopee Affiliate (${editableItems.length} sản phẩm &amp; combo · ${totalClicks} lượt bấm)</div>
                 <div style="font-size:12.5px;color:#5C381F;margin-top:2px;">
-                  Dán link rút gọn Shopee Affiliate (ví dụ <code>https://s.shopee.vn/...</code> hoặc <code>https://shope.ee/...</code>) vào ô bên cạnh từng món. Nếu để trống, nút sẽ tự mở trang tìm kiếm chính xác sản phẩm trên Shopee.vn.
+                  Dán link rút gọn Shopee Affiliate (<code>https://s.shopee.vn/...</code> hoặc <code>https://shope.ee/...</code>) vào ô bên cạnh từng món hoặc combo. Món nào chưa gắn link sẽ tự mở đúng từ khóa tìm kiếm trên Shopee.vn.
                 </div>
               </div>
-              <button type="button" id="btn-save-shopee-affiliates" class="market-btn-shopee" style="width:auto;padding:8px 16px;">
+              <button type="button" id="btn-save-shopee-affiliates" class="market-btn-shopee" style="width:auto;padding:8px 16px;margin-top:0;">
                 ✓ Lưu tất cả link Shopee
               </button>
             </div>
             <div class="shopee-affiliate-rows">
-              ${MARKETPLACE_STALL_CATALOG.map((it) => {
-                const curUrl = this.shopeeAffiliateOverrides?.[it.id] || '';
-                return `
-                  <label class="shopee-affiliate-row">
-                    <span class="shopee-affiliate-item-name">${it.icon} ${it.name}</span>
-                    <input
-                      type="url"
-                      class="shopee-affiliate-input"
-                      data-aff-item-id="${it.id}"
-                      value="${String(curUrl).replace(/"/g, '&quot;')}"
-                      placeholder="https://s.shopee.vn/... (để trống = tìm trên Shopee)"
-                    />
-                  </label>
-                `;
-              }).join('')}
+              ${editableItems
+                .map((it) => {
+                  const curUrl = this.shopeeAffiliateOverrides?.[it.id] || '';
+                  const itemClicks = Number(shopeeClicks[it.id]) || 0;
+                  return `
+                    <label class="shopee-affiliate-row">
+                      <span class="shopee-affiliate-item-name">
+                        ${it.icon} ${it.name}
+                        ${itemClicks > 0 ? `<span class="shopee-click-pill">${itemClicks} lượt bấm</span>` : ''}
+                      </span>
+                      <input
+                        type="url"
+                        class="shopee-affiliate-input"
+                        data-aff-item-id="${it.id}"
+                        value="${String(curUrl).replace(/"/g, '&quot;')}"
+                        placeholder="https://s.shopee.vn/... (để trống = tìm trên Shopee)"
+                      />
+                    </label>
+                  `;
+                })
+                .join('')}
             </div>
           </div>
         `
@@ -986,10 +1020,86 @@ export const stagesAndStoreMethods = {
           ).join('')}
         </div>
 
+        ${
+          this.marketStallTab === 'all'
+            ? `
+          <section class="market-spotlight-section" aria-label="Sản phẩm bán chạy đặt giao Shopee">
+            <div class="market-section-heading">
+              <span>🔥 Được Phật tử &amp; Du khách đặt mua nhiều nhất</span>
+              <span class="market-section-sub">Giao nhanh toàn quốc · Đổi trả chuẩn Shopee</span>
+            </div>
+            <div class="market-bestseller-grid">
+              ${bestsellerItems
+                .map((item) => {
+                  const meta = SHOPEE_BESTSELLER_META[item.id] || {};
+                  const shopee = resolveShopeeAffiliateUrl(item, this.shopeeAffiliateOverrides);
+                  return `
+                    <article class="market-bestseller-card" data-bestseller-id="${item.id}">
+                      <div class="market-bestseller-top">
+                        <div class="market-item-icon market-item-icon-sm">
+                          ${
+                            item.image
+                              ? `<img src="${item.image}" alt="${item.name}" class="market-item-thumb-img" onerror="this.style.display='none';if(this.nextElementSibling)this.nextElementSibling.style.display='inline';" /><span style="display:none;">${item.icon}</span>`
+                              : `<span>${item.icon}</span>`
+                          }
+                        </div>
+                        <div style="flex:1;min-width:0;">
+                          <div class="market-social-row">
+                            <span class="market-badge-hot">${meta.badge || 'Bán chạy'}</span>
+                            <span class="market-social-proof">★ ${meta.rating || '4.9'} · ${meta.soldLabel || 'Đã bán 1k+'}</span>
+                          </div>
+                          <div class="market-bestseller-title">${item.name}</div>
+                          <div class="market-bestseller-price">${item.priceVnd.toLocaleString('vi-VN')}đ</div>
+                        </div>
+                      </div>
+                      <a class="market-btn-shopee market-btn-shopee-sm" href="${shopee.url}" target="_blank" rel="noopener noreferrer" data-shopee-affiliate="${item.id}">
+                        🛒 ${shopee.label}
+                      </a>
+                    </article>
+                  `;
+                })
+                .join('')}
+            </div>
+
+            <div class="market-section-heading" style="margin-top:14px;">
+              <span>🎁 Combo Quà Biếu Miền Tây &amp; Đi Chùa Tiết Kiệm</span>
+              <span class="market-section-sub">Gom đủ bộ tiện biếu gia đình</span>
+            </div>
+            <div class="market-combo-grid">
+              ${SHOPEE_CURATED_COMBOS.map((combo) => {
+                const shopee = resolveShopeeAffiliateUrl(combo, this.shopeeAffiliateOverrides);
+                return `
+                  <article class="market-combo-card" data-combo-id="${combo.id}">
+                    <div class="market-combo-head">
+                      <span class="market-combo-icon">${combo.icon}</span>
+                      <span class="market-badge-combo">${combo.badge}</span>
+                    </div>
+                    <div class="market-combo-title">${combo.name}</div>
+                    <div class="market-combo-items">${combo.itemsSummary}</div>
+                    <div class="market-combo-prices">
+                      <strong class="market-price-vnd">${combo.priceVnd.toLocaleString('vi-VN')}đ</strong>
+                      <span class="market-price-strike">${combo.originalPriceVnd.toLocaleString('vi-VN')}đ</span>
+                    </div>
+                    <a class="market-btn-shopee market-btn-shopee-sm" href="${shopee.url}" target="_blank" rel="noopener noreferrer" data-shopee-affiliate="${combo.id}">
+                      🛒 ${shopee.label}
+                    </a>
+                  </article>
+                `;
+              }).join('')}
+            </div>
+          </section>
+          <div class="market-section-heading" style="margin-top:14px;">
+            <span>🏪 Toàn bộ gian hàng Nhà Lưu Niệm (${items.length} món)</span>
+          </div>
+        `
+            : ''
+        }
+
         <div class="market-items-grid">
           ${items
             .map((item) => {
-              const shopee = resolveShopeeAffiliateUrl(item.id, item.name, this.shopeeAffiliateOverrides);
+              const shopee = resolveShopeeAffiliateUrl(item, this.shopeeAffiliateOverrides);
+              const meta = SHOPEE_BESTSELLER_META[item.id] || null;
               return `
             <article class="market-item-card" data-market-item-id="${item.id}">
               <div class="market-item-top">
@@ -1001,6 +1111,11 @@ export const stagesAndStoreMethods = {
                   }
                 </div>
                 <div style="flex:1;min-width:0;">
+                  ${
+                    meta
+                      ? `<div class="market-social-row" style="margin-bottom:3px;"><span class="market-badge-hot">${meta.badge}</span><span class="market-social-proof">★ ${meta.rating} · ${meta.soldLabel}</span></div>`
+                      : ''
+                  }
                   <div class="market-item-title">${item.name}</div>
                   <div class="market-item-prices">
                     <span class="market-price-vnd">${item.priceVnd.toLocaleString('vi-VN')}đ</span>
@@ -1031,7 +1146,7 @@ export const stagesAndStoreMethods = {
         </div>
       `;
 
-      this.openModal(stallTitle || 'Nhà Lưu Niệm · Tiệm Tạp Hóa Chay Vĩnh Tràng', html);
+      this.openModal(stallTitle || 'Nhà Lưu Niệm · Cửa Hàng Văn Hóa Phẩm Vĩnh Tràng', html);
 
       document.querySelectorAll('[data-market-tab]').forEach((btn) => {
         btn.addEventListener('click', () => {
@@ -1056,8 +1171,22 @@ export const stagesAndStoreMethods = {
         renderMarketBody();
       });
 
+      document.querySelectorAll('[data-shopee-affiliate]').forEach((link) => {
+        link.addEventListener('click', () => {
+          const id = link.getAttribute('data-shopee-affiliate');
+          if (!id) return;
+          shopeeClicks = recordShopeeAffiliateClick(shopeeClicks, id);
+          saveClickStats(shopeeClicks);
+          const cfgBtn = document.getElementById('btn-market-affiliate-cfg');
+          if (cfgBtn) {
+            const newTotal = getTotalShopeeClicks(shopeeClicks);
+            cfgBtn.textContent = `🔗 Gắn link Shopee (${configuredCount} link · ${newTotal} lượt bấm)`;
+          }
+        });
+      });
+
       document.getElementById('btn-save-shopee-affiliates')?.addEventListener('click', () => {
-        const nextOverrides = { ...(this.shopeeAffiliateOverrides || {}) };
+        const updates = {};
         let invalidCount = 0;
         let savedCount = 0;
         document.querySelectorAll('.shopee-affiliate-input').forEach((inp) => {
@@ -1065,18 +1194,19 @@ export const stagesAndStoreMethods = {
           if (!id) return;
           const val = String(inp.value || '').trim();
           if (!val) {
-            nextOverrides[id] = '';
+            updates[id] = '';
             return;
           }
           const check = validateShopeeAffiliateUrl(val);
-          if (check.ok) {
-            nextOverrides[id] = check.url;
+          if (check.valid && check.normalized) {
+            updates[id] = check.normalized;
             savedCount += 1;
           } else {
             invalidCount += 1;
           }
         });
-        this.saveShopeeAffiliateOverrides(nextOverrides);
+        const merged = mergeShopeeAffiliateOverrides(this.shopeeAffiliateOverrides || {}, updates);
+        this.saveShopeeAffiliateOverrides(merged);
         showAffiliateEditor = false;
         this.playBellTone(324, 1.4);
         this.showToast(
