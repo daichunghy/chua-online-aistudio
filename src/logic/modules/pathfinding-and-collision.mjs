@@ -63,51 +63,74 @@ export function resolveMultiPassCollision(curX, curZ, targetX, targetZ, config =
   const rects = Array.isArray(config.rects) ? config.rects : [];
   const passes = Math.max(1, Math.min(6, Number(config.passes) || 3));
 
+  const startBlocked = isPointBlocked(curX, curZ, circles, rects, Math.max(0.1, radius - 0.04));
   let x = clamp(targetX, bounds.minX + radius, bounds.maxX - radius);
   let z = clamp(targetZ, bounds.minZ + radius, bounds.maxZ - radius);
   let collided = false;
 
-  for (let pass = 0; pass < passes; pass++) {
-    let passMoved = false;
+  const solveAt = (initX, initZ) => {
+    let sx = clamp(initX, bounds.minX + radius, bounds.maxX - radius);
+    let sz = clamp(initZ, bounds.minZ + radius, bounds.maxZ - radius);
+    let hit = false;
+    for (let pass = 0; pass < passes; pass++) {
+      let passMoved = false;
 
-    for (let i = 0; i < circles.length; i++) {
-      const c = circles[i];
-      const pushed = pointToCirclePush(x, z, c.x, c.z, c.r + radius);
-      if (pushed) {
-        x = pushed.x;
-        z = pushed.z;
-        collided = true;
-        passMoved = true;
+      for (let i = 0; i < circles.length; i++) {
+        const c = circles[i];
+        const pushed = pointToCirclePush(sx, sz, c.x, c.z, c.r + radius);
+        if (pushed) {
+          sx = pushed.x;
+          sz = pushed.z;
+          hit = true;
+          passMoved = true;
+        }
       }
-    }
 
-    for (let i = 0; i < rects.length; i++) {
-      const r = rects[i];
-      const pushed = pointToRectPush(x, z, r, radius);
-      if (pushed) {
-        x = pushed.x;
-        z = pushed.z;
-        collided = true;
-        passMoved = true;
+      for (let i = 0; i < rects.length; i++) {
+        const r = rects[i];
+        const pushed = pointToRectPush(sx, sz, r, radius);
+        if (pushed) {
+          sx = pushed.x;
+          sz = pushed.z;
+          hit = true;
+          passMoved = true;
+        }
       }
+
+      const clampedX = clamp(sx, bounds.minX + radius, bounds.maxX - radius);
+      const clampedZ = clamp(sz, bounds.minZ + radius, bounds.maxZ - radius);
+      if (clampedX !== sx || clampedZ !== sz) {
+        sx = clampedX;
+        sz = clampedZ;
+        hit = true;
+      }
+
+      if (!passMoved) break;
     }
+    return { x: sx, z: sz, hit };
+  };
 
-    const clampedX = clamp(x, bounds.minX + radius, bounds.maxX - radius);
-    const clampedZ = clamp(z, bounds.minZ + radius, bounds.maxZ - radius);
-    if (clampedX !== x || clampedZ !== z) {
-      x = clampedX;
-      z = clampedZ;
-      collided = true;
-    }
+  const primary = solveAt(x, z);
+  x = primary.x;
+  z = primary.z;
+  collided = primary.hit;
 
-    if (!passMoved) break;
-  }
-
-  // Final safety check: if solver still overlaps deeply inside a wall due to extreme step,
-  // blend back toward curX/curZ so we never tunnel through thin barriers.
+  // Anti-tunneling safety check ONLY when start wasn't already overlapping a collider;
+  // if start was overlapped, allow clean depenetration out instead of freezing the player.
   const stepDist = Math.hypot(targetX - curX, targetZ - curZ);
   const resolvedStep = Math.hypot(x - curX, z - curZ);
-  if (stepDist > 0.001 && resolvedStep > stepDist + 2.2) {
+  if (!startBlocked && stepDist > 0.001 && resolvedStep > stepDist + 2.5) {
+    // Try smooth axis-separated wall sliding before giving up
+    const slideX = solveAt(targetX, curZ);
+    const slideZ = solveAt(curX, targetZ);
+    const dxSlide = Math.hypot(slideX.x - curX, slideX.z - curZ);
+    const dzSlide = Math.hypot(slideZ.x - curX, slideZ.z - curZ);
+    if (dxSlide <= stepDist + 0.5 && dxSlide >= dzSlide && dxSlide > 0.002) {
+      return { x: slideX.x, z: slideX.z, collided: true };
+    }
+    if (dzSlide <= stepDist + 0.5 && dzSlide > 0.002) {
+      return { x: slideZ.x, z: slideZ.z, collided: true };
+    }
     return { x: curX, z: curZ, collided: true };
   }
 
@@ -596,12 +619,23 @@ export function optimizeEntrancePath(grid, fromX, fromZ, toX, toZ, inInterior = 
  */
 export function getTerrainGroundHeight(x, z, inInterior = false) {
   if (inInterior) return 0;
+  // Nhà Lưu Niệm · Quầy Tạp Hóa raised tiled floor (0.23m) + front entry step ramp
+  if (x >= 36.8 && x <= 47.6 && z >= -41.4 && z <= -25.1) {
+    return 0.23;
+  }
+  if (x >= 39.8 && x <= 44.6 && z > -25.1 && z <= -23.8) {
+    return clamp((-23.8 - z) / 1.3, 0, 1) * 0.23;
+  }
   // Stilt porch / raised hall platform & ramp (x in [52.0..64.6], z in [7.6..21.4])
   if (x >= 54.4 && x <= 64.6 && z >= 7.6 && z <= 21.4) {
     return 1.14;
   }
   if (x >= 52.0 && x < 54.4 && z >= 12.6 && z <= 16.4) {
     return ((x - 52.0) / 2.4) * 1.14;
+  }
+  // Công Viên Văn Hóa Vĩnh Tràng raised stone promenade (x in [-25.0..30.2], z in [55.0..167.0])
+  if (x >= -25.0 && x <= 30.2 && z >= 55.0 && z <= 167.0) {
+    return 0.06;
   }
   // Straight 170m outer approach road (x in [33.7..47.3], z in [41.5..212.0]) — subtle road crown
   if (x >= 33.7 && x <= 47.3 && z >= 41.5 && z <= 212.0) {

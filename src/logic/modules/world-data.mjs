@@ -125,8 +125,8 @@ export const PILGRIMAGE_STATIONS = [
     zoneCode: 'Trục vườn giữa hướng về Bảo Tháp 7 tầng',
     pinLabel: 'Tượng Phật A Di Đà',
     pos: { x: -9.5, z: -23.5 },
-    standPos: { x: -9.5, z: -12.8 },
-    via: [[10.0, 20.0], [2.0, 4.0], [-9.5, -12.8]],
+    standPos: { x: -9.5, z: -11.4 },
+    via: [[10.0, 20.0], [2.0, 4.0], [-9.5, -11.4]],
     mapCoord: { x: 44, y: 42 },
     lookAt: { x: -9.5, y: 12.0, z: -23.5 },
     audio: 's1_adida.mp3',
@@ -140,8 +140,8 @@ export const PILGRIMAGE_STATIONS = [
     zoneCode: 'Công viên Di Lặc bên trái khi từ cổng nhìn vào',
     pinLabel: 'Tượng Phật Di Lặc',
     pos: { x: -26.5, z: 4.0 },
-    standPos: { x: -26.5, z: 22.8 },
-    via: [[10.0, 22.5], [-10.0, 22.8], [-26.5, 22.8]],
+    standPos: { x: -26.5, z: 26.2 },
+    via: [[10.0, 22.5], [-10.0, 25.5], [-26.5, 26.2]],
     mapCoord: { x: 30, y: 62 },
     lookAt: { x: -26.5, y: 9.0, z: 4.0 },
     audio: 's4_dilac.mp3',
@@ -185,10 +185,10 @@ export const PILGRIMAGE_STATIONS = [
     zoneCode: 'Cuối đường rợp bóng mát từ Cổng Phụ',
     pinLabel: 'Nhà Lưu Niệm',
     pos: { x: 42.2, z: -32.8 },
-    standPos: { x: 42.2, z: -31.0 },
-    via: [[41.2, 41.5], [41.8, 14.0], [42.2, -28.0], [42.2, -31.0]],
+    standPos: { x: 42.2, z: -26.8 },
+    via: [[41.2, 41.5], [41.8, 14.0], [42.2, -23.0], [42.2, -26.8]],
     mapCoord: { x: 84, y: 46 },
-    lookAt: { x: 42.2, y: 1.9, z: -35.2 },
+    lookAt: { x: 42.2, y: 1.9, z: -34.2 },
     audio: 'merit_box.mp3',
     subtitle: 'Bước thẳng vào bên trong Nhà Lưu Niệm để chọn kho quẹt chay, chao môn chay, tương hột, muối mè, tràng hạt bồ đề, mỹ nghệ gỗ dừa Mỹ Tho, tượng nhỏ và kinh sách Phật giáo.',
     ritualType: 'shop'
@@ -215,8 +215,8 @@ export const PILGRIMAGE_STATIONS = [
     zoneCode: 'Khu vườn phía sau Chánh điện',
     pinLabel: 'Phật Niết Bàn & Bảo Tháp',
     pos: { x: 14.5, z: -49.0 },
-    standPos: { x: 14.5, z: -37.2 },
-    via: [[3.5, 16.0], [3.5, -24.0], [3.5, -37.2], [14.5, -37.2]],
+    standPos: { x: 14.5, z: -33.6 },
+    via: [[3.5, 16.0], [3.5, -24.0], [3.5, -33.6], [14.5, -33.6]],
     mapCoord: { x: 60, y: 24 },
     lookAt: { x: 14.5, y: 8.5, z: -49.0 },
     audio: 's5_nirvana.mp3',
@@ -499,7 +499,7 @@ export const WORLD_BOUNDS = {
   minX: -66.5,
   maxX: 100.0,
   minZ: -104.0,
-  maxZ: 158.0
+  maxZ: 176.0
 };
 
 export function stepPlayerMovement(state, input, speed = 0.22, obstacles = []) {

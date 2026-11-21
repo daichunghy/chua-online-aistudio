@@ -37,12 +37,14 @@ body.clean-photo-capturing #scene-pins-layer,
 body.clean-photo-capturing #interior-zone-bar,
 body.clean-photo-capturing #stall-proximity-btn,
 body.clean-photo-capturing #ritual-toast,
+body.clean-photo-capturing #virtue-meter-widget,
 body.clean-photo-capturing #auto-walk-objective-banner {
   opacity: 0 !important;
   pointer-events: none !important;
 }
 
 body.title-overlay-active #main-top-hud,
+body.title-overlay-active #virtue-meter-widget,
 body.title-overlay-active #elder-bottom-dock,
 body.title-overlay-active #gesture-action-bar,
 body.title-overlay-active #soft-joystick-zone,
@@ -1307,4 +1309,290 @@ body.zen-hud-collapsed .gesture-action-bar {
   .passport-summary-strip {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .virtue-meter-widget {
+    top: 56px;
+    left: 10px;
+    width: min(260px, calc(100vw - 20px));
+  }
+
+  .virtue-meter-popover {
+    width: min(330px, calc(100vw - 20px));
+  }
 }
+
+/* ============================================================================
+   THANH CÔNG ĐỨC HÔM NAY (DAILY VIRTUE METER HUD BAR & POPOVER)
+   Clean temple-wood & gold bar positioned cleanly top-left below main title
+   ============================================================================ */
+.virtue-meter-widget {
+  position: fixed;
+  top: 58px;
+  left: 18px;
+  z-index: 118;
+  width: 292px;
+  transition: opacity 0.25s ease, top 0.18s ease;
+}
+
+.virtue-meter-widget.is-interior {
+  top: 118px;
+}
+
+.virtue-meter-bar-btn {
+  position: relative;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 12px 9px;
+  border-radius: 12px;
+  border: 1px solid rgba(235, 193, 114, 0.45);
+  background: rgba(38, 22, 12, 0.92);
+  color: #fff9ef;
+  cursor: pointer;
+  text-align: left;
+  box-shadow: 0 6px 18px rgba(16, 8, 3, 0.32);
+  transition: border-color 0.2s ease, background 0.2s ease, transform 0.16s ease;
+}
+
+.virtue-meter-bar-btn:hover {
+  border-color: #f6d586;
+  background: rgba(50, 29, 16, 0.96);
+}
+
+.virtue-meter-bar-btn.is-complete {
+  border-color: #f6cf70;
+  background: rgba(52, 33, 14, 0.94);
+}
+
+.virtue-meter-head-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12.5px;
+  line-height: 1.2;
+}
+
+.virtue-meter-title {
+  font-weight: 700;
+  color: #fff5df;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.virtue-meter-stage {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #f5cf7b;
+  margin-left: auto;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.virtue-meter-score {
+  font-size: 12px;
+  font-weight: 800;
+  color: #ffe4a1;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.virtue-meter-track {
+  position: relative;
+  width: 100%;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(255, 240, 212, 0.18);
+  overflow: hidden;
+  border: 1px solid rgba(244, 206, 124, 0.22);
+}
+
+.virtue-meter-fill {
+  position: relative;
+  height: 100%;
+  width: 0%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #c97726 0%, #eab543 58%, #ffe18d 100%);
+  transition: width 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.virtue-meter-bar-btn.is-complete .virtue-meter-fill {
+  background: linear-gradient(90deg, #2f8a52 0%, #68b865 55%, #f5d36d 100%);
+}
+
+.virtue-meter-tick {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1.5px;
+  background: rgba(34, 18, 8, 0.45);
+  pointer-events: none;
+}
+
+.virtue-meter-delta {
+  position: absolute;
+  left: calc(100% + 8px);
+  top: 50%;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #286e40;
+  color: #fffaf0;
+  border: 1px solid #f6d57a;
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+  opacity: 0;
+  transform: translateY(-50%) translateX(-6px);
+  pointer-events: none;
+  box-shadow: 0 4px 12px rgba(14, 7, 2, 0.35);
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.virtue-meter-delta.visible {
+  opacity: 1;
+  transform: translateY(-50%) translateX(0);
+}
+
+.virtue-meter-popover {
+  margin-top: 8px;
+  width: 344px;
+  max-height: min(440px, calc(100vh - 235px));
+  overflow-y: auto;
+  border-radius: 16px;
+  border: 1.5px solid rgba(224, 180, 102, 0.58);
+  background: #fbf4e4;
+  color: #362112;
+  padding: 14px;
+  box-shadow: 0 18px 40px rgba(18, 9, 3, 0.42);
+}
+
+.virtue-pop-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(132, 92, 52, 0.2);
+}
+
+.virtue-pop-header strong {
+  font-family: 'Lora', Georgia, serif;
+  font-size: 16px;
+  color: #4a2611;
+}
+
+.virtue-pop-sub {
+  font-size: 12.5px;
+  color: #6b492c;
+  margin-top: 2px;
+  line-height: 1.4;
+}
+
+.virtue-pop-milestones {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  margin: 12px 0;
+}
+
+.virtue-ms-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 7px 4px;
+  border-radius: 10px;
+  border: 1px solid rgba(150, 108, 62, 0.25);
+  background: #fffdf7;
+  text-align: center;
+}
+
+.virtue-ms-node.reached {
+  border-color: #c98d2b;
+  background: #fef3d6;
+}
+
+.virtue-ms-pts {
+  font-size: 12px;
+  font-weight: 800;
+  color: #8f4818;
+}
+
+.virtue-ms-node.reached .virtue-ms-pts {
+  color: #1f6c3e;
+}
+
+.virtue-ms-lbl {
+  font-size: 11px;
+  font-weight: 700;
+  color: #5b3a20;
+}
+
+.virtue-pop-actions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.virtue-action-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 11px;
+  border: 1px solid rgba(145, 102, 58, 0.22);
+  background: #fffdf8;
+}
+
+.virtue-action-row.done {
+  border-color: rgba(45, 128, 76, 0.38);
+  background: #f3faf4;
+}
+
+.virtue-action-info {
+  min-width: 0;
+  flex: 1;
+}
+
+.virtue-action-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: #362112;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.virtue-action-meta {
+  font-size: 11.5px;
+  color: #6b4c30;
+  margin-top: 2px;
+}
+
+.virtue-action-go-btn {
+  min-height: 34px;
+  padding: 0 11px;
+  border-radius: 9px;
+  border: 1px solid #b8682a;
+  background: #fff5e2;
+  color: #7c3511;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.virtue-action-go-btn:hover {
+  background: #b84a1e;
+  color: #fff9ef;
+}
+
+.virtue-action-row.done .virtue-action-go-btn {
+  border-color: #2f7a48;
+  background: #e5f5ea;
+  color: #1e5f35;
+}
+

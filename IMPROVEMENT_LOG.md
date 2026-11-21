@@ -295,3 +295,28 @@ Dựa trên phản hồi thực tế và đối chiếu ảnh thực địa Chù
 - **Đợt 3 — Gặp gỡ hữu duyên, Công quả & 12 Góc Ảnh Di Sản (`pilgrimage-depth.mjs`, `living-world-3d.mjs`, `hud-navigation.mjs`, `passport-and-cloud.mjs`, `world3d-bridge.mjs`)**:
   - Dựng đạo cụ 3D + hitbox tương tác & phím `[E]` cho **3 Gặp gỡ hữu duyên** (Bà cụ đánh rơi tràng hạt gần Hồ Sen, Du khách quốc tế hỏi kiến trúc Pháp–Việt, Sư thầy mời trà sen) và **3 việc Công quả** (Đánh bóng lư hương đồng, Tưới vườn cây kiểng Công Viên, Phụ dọn Trai đường).
   - Tích hợp tự động nhận diện **12 Góc Ảnh Di Sản** ngay khi chụp ảnh kỷ niệm sạch HUD (`+20 🪷` cho mỗi góc mới), có trung tâm tổng hợp trong Ngăn kéo Tiện ích (`🤝 Công Quả · Hữu Duyên · 12 Ảnh Di Sản`).
+
+
+---
+
+## 16. Thanh Công Đức Hôm Nay (Virtue Meter), Tối Ưu Âm Thanh, Sửa Lỗi Di Chuyển & Nâng Cấp Không Gian Quầy Tạp Hóa 3D
+
+### A. Thanh Công Đức Hôm Nay (`src/logic/modules/virtue-meter.mjs`)
+- Bổ sung thanh tiến trình **Công đức hôm nay** (`0 / 100 điểm`, tự làm mới mỗi ngày theo múi giờ địa phương, lưu chuỗi ngày liên tiếp & tổng công đức) cùng 4 cột mốc tu tập thuần Việt: **Khởi Tâm (25)**, **Tinh Tấn (50)**, **An Lạc (75)**, **Viên Mãn (100)** và thưởng hoàn thành mục tiêu ngày (`+30 🪷 Hoa Sen` một lần/ngày).
+- Tự động ghi nhận điểm khi thực hiện các tương tác tâm linh & đọc kinh: **Dâng hương**, **Lễ Phật**, **Đọc kinh · Học Phật** (tụng kinh, nghe giảng, hoàn thành trắc nghiệm), **Niệm Phật · Tràng hạt**, **Dâng hoa sen**, **Thỉnh chuông**, **Thả hoa đăng**, **Tháp đèn cầu an**, **Xin xăm · Xem quẻ** và **Công quả sân chùa**.
+- Giao diện HUD gọn gàng 1 dòng ở góc trên trái (tự hạ xuống dưới thanh chọn khu khi vào Chánh điện để không chồng lấn), có nhãn `+XX Công đức` trượt mượt bên phải và bảng chi tiết mở rộng cho phép bấm đi nhanh tới từng hoạt động.
+
+### B. Tối Ưu Hóa Âm Thanh (`src/app/audio-engine.mjs`)
+- Chuyển tắt/bật tiếng sang đường chuyển âm mượt (`32ms`) thay vì ngắt đột ngột gây tiếng lụp bụp.
+- Thêm bộ chống chồng âm (cooldown) cho chuông đồng (`220ms`), mõ gỗ (`95ms`), chuông ngân (`260ms`) và tiếng hoa sen/xu (`180ms`), cân chỉnh lại âm lượng chuông/mõ êm ấm hơn.
+- Làm dịu tiếng bước chân theo bề mặt (nhịp `340ms`, hạ trần âm lượng, lọc ấm hơn với pha mở mềm tránh tiếng rít).
+
+### C. Khắc Phục Lỗi Kẹt Di Chuyển & Va Chạm (`world-data.mjs`, `pathfinding-and-collision.mjs`, `movement.mjs`)
+- Di chuyển 4 điểm đứng (`standPos`) từng bị trùng vào bệ thờ/kệ hàng (`Nhà Lưu Niệm`, `Phật A Di Đà`, `Phật Di Lặc`, `Phật Niết Bàn`) cùng điểm ra cửa Bắc Chánh Điện sang vị trí hoàn toàn thông thoáng.
+- Mở rộng giới hạn phía Nam (`WORLD_BOUNDS.maxZ: 158 -> 176`) để đi hết lối dạo **Công Viên Văn Hóa Vĩnh Tràng** mà không bị chặn tường vô hình.
+- Nâng cấp `resolveMultiPassCollision` cho phép tự thoát kẹt mượt khi đứng sát vật cản và trượt dọc tường theo trục mở; bổ sung độ cao nền `getTerrainGroundHeight` cho sàn nâng Nhà Lưu Niệm (`0.23m` + bậc dốc cửa) và sân Công viên (`0.06m`); làm mịn lưới A* (`cellSize: 1.15m`).
+
+### D. Nâng Cấp Không Gian Quầy Tạp Hóa · Nhà Lưu Niệm 3D (`src/app/world/grocery-halls-statues.mjs`)
+- Tăng độ sáng ấm nội thất với sàn gạch sáng, trần phát sáng dịu, 3 nguồn đèn boutique và dải LED hắt kệ gỗ.
+- Nâng cấp 2 bảng chữ A mặt tiền thành **bảng thực đơn nhiều dòng kèm giá vàng rõ nét** (`65K`, `125K`, `25K`, `160K`, `149K`); làm nổi bật 4 khung ảnh sản phẩm thực tế sát kính trên nền kem ấm có viền giá đỏ; thêm **Kệ đầu dãy "COMBO QUÀ BIẾU · TỪ 149K"** hướng thẳng ra cửa chính, băng rôn tường hậu, 7 đèn lồng lụa hiên trước, đôi chậu Cúc Vạn Thọ, chồng giỏ mây, bàn mời dùng thử Trà Sen – Mứt Dừa và **Cô chủ tiệm áo bà ba xanh ngọc**.
+- Đã kiểm thử tự động (`56 / 56` unit test PASS) và kiểm thử trình duyệt thực tế (`0` lỗi console, kiểm tra hình ảnh trực tiếp HUD + Quầy Tạp Hóa + Chánh Điện + di chuyển đa khu vực).

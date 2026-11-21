@@ -60,11 +60,11 @@ export const movementMethods = {
     if (!this.navGridExterior) {
       this.navGridExterior = buildNavigationGrid({
         bounds: WORLD_BOUNDS,
-        cellSize: 1.45,
+        cellSize: 1.15,
         circles: this.obstacles || [],
         rects: this.rectObstacles || [],
-        agentRadius: 0.56,
-        clearance: 0.18
+        agentRadius: 0.50,
+        clearance: 0.14
       });
     }
     return this.navGridExterior;

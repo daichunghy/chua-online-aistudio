@@ -183,8 +183,12 @@ export class TempleAudioEngine {
     this._chantPendingStart = false;
     this._externalDuck = false;
 
-    // Footstep cadence guard to avoid rapid stacking/clipping
+    // Footstep & SFX cadence guards to avoid rapid stacking/clipping
     this._lastFootstepAt = 0;
+    this._lastBellAt = 0;
+    this._lastMokugyoAt = 0;
+    this._lastChimeAt = 0;
+    this._lastCoinLotusAt = 0;
 
     // Voice HTMLAudioElement state
     this.voiceEl = null;
@@ -307,7 +311,8 @@ export class TempleAudioEngine {
   setMuted(muted) {
     const nextMuted = Boolean(muted);
     this._muted = nextMuted;
-    this._applyMixer({ immediate: true });
+    // Use smooth 25ms ramp instead of abrupt step to avoid audio clicks/pops
+    this._applyMixer({ immediate: false });
     if (nextMuted) {
       this.stopSpeaking();
       this._pauseAmbientChant();
@@ -408,7 +413,7 @@ export class TempleAudioEngine {
     const now = this.ctx.currentTime || 0;
     try {
       if (!immediate && typeof gainNode.gain.setTargetAtTime === 'function') {
-        gainNode.gain.setTargetAtTime(targetValue, now, 0.02);
+        gainNode.gain.setTargetAtTime(targetValue, now, 0.032);
       } else if (typeof gainNode.gain.setValueAtTime === 'function') {
         gainNode.gain.setValueAtTime(targetValue, now);
       } else {
@@ -789,24 +794,28 @@ export class TempleAudioEngine {
    * @returns {boolean}
    */
   playBronzeBell(pitchScale = 1.0, strength = 1.0) {
+    const nowMs = Date.now();
+    if (nowMs - this._lastBellAt < 220) return false;
+    this._lastBellAt = nowMs;
+
     const ctx = this._canPlaySfx();
     if (!ctx) return false;
 
     const pScale = clampRange(pitchScale, 0.4, 2.5, 1.0);
-    const vel = clampRange(strength, 0.05, 1.5, 1.0);
+    const vel = clampRange(strength, 0.05, 1.4, 1.0);
     const fundamental = 196 * pScale;
     const now = ctx.currentTime;
-    const decayTime = 4.5;
+    const decayTime = 4.4;
 
     try {
       const bellFilter = ctx.createBiquadFilter();
       bellFilter.type = 'lowpass';
-      bellFilter.frequency.setValueAtTime(Math.min(4800, 2500 * pScale), now);
-      bellFilter.frequency.exponentialRampToValueAtTime(Math.max(260, 620 * pScale), now + 2.4);
-      bellFilter.Q.setValueAtTime(0.75, now);
+      bellFilter.frequency.setValueAtTime(Math.min(4200, 2200 * pScale), now);
+      bellFilter.frequency.exponentialRampToValueAtTime(Math.max(240, 560 * pScale), now + 2.4);
+      bellFilter.Q.setValueAtTime(0.7, now);
 
       const bellMaster = ctx.createGain();
-      bellMaster.gain.setValueAtTime(0.45 * vel, now);
+      bellMaster.gain.setValueAtTime(0.36 * vel, now);
       bellFilter.connect(bellMaster);
       bellMaster.connect(this._sfxGain);
 
@@ -884,17 +893,21 @@ export class TempleAudioEngine {
    * @returns {boolean}
    */
   playWoodenMokugyo(accent = false) {
+    const nowMs = Date.now();
+    if (nowMs - this._lastMokugyoAt < 95) return false;
+    this._lastMokugyoAt = nowMs;
+
     const ctx = this._canPlaySfx();
     if (!ctx) return false;
 
     const now = ctx.currentTime;
-    const vel = accent ? 1.25 : 0.92;
+    const vel = accent ? 1.12 : 0.86;
     const pitchBoost = accent ? 1.03 : 1.0;
-    const decay = 0.18;
+    const decay = 0.175;
 
     try {
       const bus = ctx.createGain();
-      bus.gain.setValueAtTime(0.65 * vel, now);
+      bus.gain.setValueAtTime(0.48 * vel, now);
       bus.connect(this._sfxGain);
 
       // Resonant hollow jackfruit-wood cavity formants (290Hz & 445Hz)
@@ -1846,15 +1859,15 @@ export class TempleAudioEngine {
    */
   playFootstep(surface = 'tile') {
     const nowMs = Date.now();
-    if (nowMs - this._lastFootstepAt < 130) return false;
+    if (nowMs - this._lastFootstepAt < 340) return false;
     this._lastFootstepAt = nowMs;
 
     const ctx = this._canPlaySfx();
     if (!ctx) return false;
 
     const now = ctx.currentTime;
-    const pitchVar = 0.94 + Math.random() * 0.12;
-    const gainVar = 0.88 + Math.random() * 0.2;
+    const pitchVar = 0.95 + Math.random() * 0.1;
+    const gainVar = 0.86 + Math.random() * 0.16;
     const rawKind = String(surface || 'tile').trim().toLowerCase();
     const kind = rawKind === 'interior' ? 'wood' : rawKind === 'stone' ? 'tile' : rawKind;
 
@@ -1862,14 +1875,15 @@ export class TempleAudioEngine {
       const noiseBuf = this._getPinkNoiseBuffer(ctx, 1.0);
 
       if (kind === 'grass') {
-        // Soft organic muffled earth thud + gentle grass blade rustle
+        // Ultra-soft organic earth thud + calm grass rustle
         const thud = ctx.createOscillator();
         thud.type = 'sine';
-        thud.frequency.setValueAtTime(102 * pitchVar, now);
-        thud.frequency.exponentialRampToValueAtTime(52 * pitchVar, now + 0.065);
+        thud.frequency.setValueAtTime(92 * pitchVar, now);
+        thud.frequency.exponentialRampToValueAtTime(48 * pitchVar, now + 0.065);
         const thudGain = ctx.createGain();
-        thudGain.gain.setValueAtTime(0.08 * gainVar, now);
-        thudGain.gain.exponentialRampToValueAtTime(0.0005, now + 0.075);
+        thudGain.gain.setValueAtTime(0.0005, now);
+        thudGain.gain.linearRampToValueAtTime(0.052 * gainVar, now + 0.006);
+        thudGain.gain.exponentialRampToValueAtTime(0.0004, now + 0.075);
         thud.connect(thudGain);
         thudGain.connect(this._sfxGain);
         thud.start(now);
@@ -1879,57 +1893,58 @@ export class TempleAudioEngine {
         swish.buffer = noiseBuf;
         const bp = ctx.createBiquadFilter();
         bp.type = 'bandpass';
-        bp.frequency.setValueAtTime(1750 * pitchVar, now);
-        bp.Q.setValueAtTime(1.15, now);
+        bp.frequency.setValueAtTime(1320 * pitchVar, now);
+        bp.Q.setValueAtTime(1.0, now);
         const swishGain = ctx.createGain();
-        swishGain.gain.setValueAtTime(0.001, now);
-        swishGain.gain.linearRampToValueAtTime(0.095 * gainVar, now + 0.025);
-        swishGain.gain.exponentialRampToValueAtTime(0.0005, now + 0.11);
+        swishGain.gain.setValueAtTime(0.0005, now);
+        swishGain.gain.linearRampToValueAtTime(0.056 * gainVar, now + 0.024);
+        swishGain.gain.exponentialRampToValueAtTime(0.0004, now + 0.1);
         swish.connect(bp);
         bp.connect(swishGain);
         swishGain.connect(this._sfxGain);
-        swish.start(now, Math.random() * 0.35, 0.12);
+        swish.start(now, Math.random() * 0.35, 0.11);
         return true;
       }
 
       if (kind === 'wood') {
-        // Warm hollow timber floor resonance inside Chánh Điện
+        // Gentle warm timber floor resonance inside Chánh Điện (barefoot/socked serenity)
         const osc = ctx.createOscillator();
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(152 * pitchVar, now);
-        osc.frequency.exponentialRampToValueAtTime(78 * pitchVar, now + 0.082);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(138 * pitchVar, now);
+        osc.frequency.exponentialRampToValueAtTime(72 * pitchVar, now + 0.078);
 
         const oscGain = ctx.createGain();
-        oscGain.gain.setValueAtTime(0.14 * gainVar, now);
-        oscGain.gain.exponentialRampToValueAtTime(0.0005, now + 0.095);
+        oscGain.gain.setValueAtTime(0.0005, now);
+        oscGain.gain.linearRampToValueAtTime(0.085 * gainVar, now + 0.006);
+        oscGain.gain.exponentialRampToValueAtTime(0.0004, now + 0.09);
 
         osc.connect(oscGain);
         oscGain.connect(this._sfxGain);
         osc.start(now);
-        osc.stop(now + 0.11);
+        osc.stop(now + 0.1);
 
         const tapSrc = ctx.createBufferSource();
         tapSrc.buffer = noiseBuf;
         const bp = ctx.createBiquadFilter();
         bp.type = 'bandpass';
-        bp.frequency.setValueAtTime(410 * pitchVar, now);
-        bp.Q.setValueAtTime(3.4, now);
+        bp.frequency.setValueAtTime(360 * pitchVar, now);
+        bp.Q.setValueAtTime(2.6, now);
         const tapGain = ctx.createGain();
-        tapGain.gain.setValueAtTime(0.09 * gainVar, now);
-        tapGain.gain.exponentialRampToValueAtTime(0.0005, now + 0.058);
+        tapGain.gain.setValueAtTime(0.0005, now);
+        tapGain.gain.linearRampToValueAtTime(0.048 * gainVar, now + 0.005);
+        tapGain.gain.exponentialRampToValueAtTime(0.0004, now + 0.052);
         tapSrc.connect(bp);
         bp.connect(tapGain);
         tapGain.connect(this._sfxGain);
-        tapSrc.start(now, Math.random() * 0.3, 0.07);
+        tapSrc.start(now, Math.random() * 0.3, 0.065);
         return true;
       }
 
       if (kind === 'gravel') {
-        // Crisp multi-grain dusty approach gravel crunch
+        // Soft natural gravel brush (muted high frequencies so it never hisses)
         const grains = [
-          { offset: 0.0, freq: 1420 * pitchVar, dur: 0.045, amp: 0.095 },
-          { offset: 0.022, freq: 2250 * pitchVar, dur: 0.055, amp: 0.08 },
-          { offset: 0.045, freq: 1020 * pitchVar, dur: 0.045, amp: 0.068 }
+          { offset: 0.0, freq: 1120 * pitchVar, dur: 0.045, amp: 0.052 },
+          { offset: 0.024, freq: 1620 * pitchVar, dur: 0.05, amp: 0.042 }
         ];
         for (const g of grains) {
           const t = now + g.offset;
@@ -1938,9 +1953,10 @@ export class TempleAudioEngine {
           const bp = ctx.createBiquadFilter();
           bp.type = 'bandpass';
           bp.frequency.setValueAtTime(g.freq, t);
-          bp.Q.setValueAtTime(2.0, t);
+          bp.Q.setValueAtTime(1.6, t);
           const gNode = ctx.createGain();
-          gNode.gain.setValueAtTime(g.amp * gainVar, t);
+          gNode.gain.setValueAtTime(0.0005, t);
+          gNode.gain.linearRampToValueAtTime(g.amp * gainVar, t + 0.005);
           gNode.gain.exponentialRampToValueAtTime(0.0004, t + g.dur);
           src.connect(bp);
           bp.connect(gNode);
@@ -1950,15 +1966,16 @@ export class TempleAudioEngine {
         return true;
       }
 
-      // Default: 'tile' (terracotta / granite temple courtyard paving)
+      // Default: 'tile' (terracotta / granite temple courtyard paving — soft warm step)
       const thudOsc = ctx.createOscillator();
       thudOsc.type = 'sine';
-      thudOsc.frequency.setValueAtTime(192 * pitchVar, now);
-      thudOsc.frequency.exponentialRampToValueAtTime(96 * pitchVar, now + 0.052);
+      thudOsc.frequency.setValueAtTime(168 * pitchVar, now);
+      thudOsc.frequency.exponentialRampToValueAtTime(84 * pitchVar, now + 0.052);
 
       const thudGain = ctx.createGain();
-      thudGain.gain.setValueAtTime(0.105 * gainVar, now);
-      thudGain.gain.exponentialRampToValueAtTime(0.0005, now + 0.062);
+      thudGain.gain.setValueAtTime(0.0005, now);
+      thudGain.gain.linearRampToValueAtTime(0.068 * gainVar, now + 0.005);
+      thudGain.gain.exponentialRampToValueAtTime(0.0004, now + 0.062);
       thudOsc.connect(thudGain);
       thudGain.connect(this._sfxGain);
       thudOsc.start(now);
@@ -1968,15 +1985,16 @@ export class TempleAudioEngine {
       tapSrc.buffer = noiseBuf;
       const tapBP = ctx.createBiquadFilter();
       tapBP.type = 'bandpass';
-      tapBP.frequency.setValueAtTime(1080 * pitchVar, now);
-      tapBP.Q.setValueAtTime(2.6, now);
+      tapBP.frequency.setValueAtTime(860 * pitchVar, now);
+      tapBP.Q.setValueAtTime(2.0, now);
       const tapGain = ctx.createGain();
-      tapGain.gain.setValueAtTime(0.088 * gainVar, now);
-      tapGain.gain.exponentialRampToValueAtTime(0.0005, now + 0.038);
+      tapGain.gain.setValueAtTime(0.0005, now);
+      tapGain.gain.linearRampToValueAtTime(0.048 * gainVar, now + 0.004);
+      tapGain.gain.exponentialRampToValueAtTime(0.0004, now + 0.038);
       tapSrc.connect(tapBP);
       tapBP.connect(tapGain);
       tapGain.connect(this._sfxGain);
-      tapSrc.start(now, Math.random() * 0.3, 0.052);
+      tapSrc.start(now, Math.random() * 0.3, 0.05);
       return true;
     } catch {
       return false;
@@ -1992,6 +2010,10 @@ export class TempleAudioEngine {
    * @returns {boolean}
    */
   playBlessingChime() {
+    const nowMs = Date.now();
+    if (nowMs - this._lastChimeAt < 260) return false;
+    this._lastChimeAt = nowMs;
+
     const ctx = this._canPlaySfx();
     if (!ctx) return false;
 
@@ -2043,6 +2065,10 @@ export class TempleAudioEngine {
    * @returns {boolean}
    */
   playCoinLotusSfx() {
+    const nowMs = Date.now();
+    if (nowMs - this._lastCoinLotusAt < 180) return false;
+    this._lastCoinLotusAt = nowMs;
+
     const ctx = this._canPlaySfx();
     if (!ctx) return false;
 

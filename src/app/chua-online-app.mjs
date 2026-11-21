@@ -3,7 +3,7 @@
  * File này giữ constructor/state/init; các nhóm method nằm trong src/app/ui/*.mjs (xem docs/ARCHITECTURE.md).
  */
 
-import { CHARACTER_PROFILES, INITIAL_UGC_GALLERY, createSpiritualState, checkUGCMilestoneUnlock, calculateJourneyImprint, calculateCartSummary, getLocalDateKey, fetchDailyDharmaService, COURTYARD_NPC_DHARMA_QUOTES, createStoreProfileState, TIME_OF_DAY_PRESETS, createActivityHubState, ensureDailyMissionDate, NATIONALITY_PROFILES, PILGRIMAGE_MODES, HOA_DANG_WISHES, createDharmaJournalState, ACADEMY_COURSES, createAcademyEntitlementState, createBlessingTowerState, mergeBlessingTowerEntries, createSocialState, createSutraStudyState, SutraStudyController, TempleAudioEngine, STORAGE_KEY, applyMixins, createVisitorClientId, createAmbientSettingsState, DEFAULT_TEMPLE_ID, createPilgrimagePassportState, getActiveTempleRecord, createPilgrimageDepthState, mergeShopeeAffiliateOverrides } from './ui/shared.mjs';
+import { CHARACTER_PROFILES, INITIAL_UGC_GALLERY, createSpiritualState, checkUGCMilestoneUnlock, calculateJourneyImprint, calculateCartSummary, getLocalDateKey, fetchDailyDharmaService, COURTYARD_NPC_DHARMA_QUOTES, createStoreProfileState, TIME_OF_DAY_PRESETS, createActivityHubState, ensureDailyMissionDate, NATIONALITY_PROFILES, PILGRIMAGE_MODES, HOA_DANG_WISHES, createDharmaJournalState, ACADEMY_COURSES, createAcademyEntitlementState, createBlessingTowerState, mergeBlessingTowerEntries, createSocialState, createVirtueMeterState, getVirtueMeterSummary, createSutraStudyState, SutraStudyController, TempleAudioEngine, STORAGE_KEY, applyMixins, createVisitorClientId, createAmbientSettingsState, DEFAULT_TEMPLE_ID, createPilgrimagePassportState, getActiveTempleRecord, createPilgrimageDepthState, mergeShopeeAffiliateOverrides } from './ui/shared.mjs';
 import { shellDomMethods } from './ui/shell-dom.mjs';
 import { world3dBridgeMethods } from './ui/world3d-bridge.mjs';
 import { effectsAudioMethods } from './ui/effects-audio.mjs';
@@ -32,6 +32,7 @@ export class ChuaOnlineApp {
     this.spiritual = createSpiritualState(this.saved.spiritual);
     this.storeProfile = createStoreProfileState(this.saved.storeProfile);
     this.activityHub = ensureDailyMissionDate(createActivityHubState(this.saved.activityHub));
+    this.virtueMeter = createVirtueMeterState(this.saved.virtueMeter);
     this.goalsTrackerCollapsed =
       typeof this.saved.goalsTrackerCollapsed === 'boolean'
         ? this.saved.goalsTrackerCollapsed
@@ -299,7 +300,8 @@ export class ChuaOnlineApp {
           uploadedUserPhotoDataUrl: this.uploadedUserPhotoDataUrl,
           lastDailyDharmaDate: this.lastDailyDharmaDate,
           lastDailyDharmaQuoteId: this.lastDailyDharmaQuoteId,
-          pilgrimageDepth: this.pilgrimageDepth
+          pilgrimageDepth: this.pilgrimageDepth,
+          virtueMeter: this.virtueMeter
         })
       );
       if (this.blessingTower?.entries?.length) {
@@ -320,6 +322,7 @@ export class ChuaOnlineApp {
     this.renderLectureStage();
     this.updateActionBadges();
     this.updateSocialBadge();
+    this.updateVirtueMeterHUD?.();
     this.refreshTopStampSummary();
     this.refreshGuidedNextButton();
     this.initVisitorPresence();
@@ -417,6 +420,7 @@ export class ChuaOnlineApp {
             memoryPhotos: this.passport?.memoryPhotos?.length || 0
           };
         })(),
+        virtueMeter: getVirtueMeterSummary(this.virtueMeter),
         cartSummary: calculateCartSummary(this.cart)
       });
   }

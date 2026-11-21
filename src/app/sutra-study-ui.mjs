@@ -397,9 +397,7 @@ export class SutraStudyController {
     if (typeof this.app.grantPilgrimXp === 'function') {
       this.app.grantPilgrimXp(result.bonusMeritXp, `Học kinh: ${sutra.shortTitle}`);
     }
-    if (result.firstTimeCompleted && typeof this.app.recordDailyMissionMetric === 'function') {
-      // fallback handled via app method if exposed; direct import already exists in app
-    }
+    this.app.recordVirtueProgress?.('reading', `Đọc kinh: ${sutra.shortTitle}`);
     this.app.saveState();
     this.app.updateActionBadges?.();
     this.app.audio?.playSutraCue?.('bell_close');

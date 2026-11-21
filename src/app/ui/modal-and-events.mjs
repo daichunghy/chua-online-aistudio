@@ -125,6 +125,14 @@ export const modalAndEventsMethods = {
     document.getElementById('utility-drawer-backdrop')?.addEventListener('click', () => {
       this.toggleUtilityDrawer(false);
     });
+    document.getElementById('virtue-meter-toggle')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.toggleVirtuePopover?.();
+    });
+    document.getElementById('btn-close-virtue-popover')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.toggleVirtuePopover?.(false);
+    });
 
     // Bottom-Center Collapsible Elderly Dock (includes Cửa hàng & Cử chỉ directly on main screen)
     document.getElementById('btn-dock-zen-toggle')?.addEventListener('click', () => {

@@ -4,7 +4,7 @@
  * Mixin của ChuaOnlineApp: 12 method (showToast … refreshGoalsTrackerHUD).
  * Được gắn vào class trong chua-online-app.mjs qua applyMixins().
  */
-import { stepPlayerMovement, findNearestStation, recordSpiritualMilestone, checkUGCMilestoneUnlock, calculateCartSummary, getLocalDateKey, calculateMeritSummary, TIME_OF_DAY_PRESETS, WEATHER_PRESETS, CAMERA_VIEW_MODES, STREET_ENCOUNTERS, getTempleScheduleSlot, RANDOM_ENCOUNTERS, CONG_QUA_TASKS, HERITAGE_PHOTO_SPOTS, completeRandomEncounter, completeCongQuaTask, getPilgrimageDepthSummary, ensureDailyMissionDate, getDailyMissionsWithProgress, claimDailyMissionReward, getExplorationChaptersStatus, getQuestsWithProgress, getMailboxWithStatus, getPilgrimRankInfo, buildVisitorPresenceSummary } from './shared.mjs';
+import { stepPlayerMovement, findNearestStation, recordSpiritualMilestone, checkUGCMilestoneUnlock, calculateCartSummary, getLocalDateKey, calculateMeritSummary, TIME_OF_DAY_PRESETS, WEATHER_PRESETS, CAMERA_VIEW_MODES, STREET_ENCOUNTERS, getTempleScheduleSlot, RANDOM_ENCOUNTERS, CONG_QUA_TASKS, HERITAGE_PHOTO_SPOTS, completeRandomEncounter, completeCongQuaTask, getPilgrimageDepthSummary, ensureDailyMissionDate, getDailyMissionsWithProgress, claimDailyMissionReward, getExplorationChaptersStatus, getQuestsWithProgress, getMailboxWithStatus, getPilgrimRankInfo, buildVisitorPresenceSummary, recordVirtueActivity, getVirtueMeterSummary } from './shared.mjs';
 
 export const hudNavigationMethods = {
   showToast(title, desc, durationMs = 4500, showCheckinBtn = false) {
@@ -105,8 +105,11 @@ export const hudNavigationMethods = {
     if (spiritualBar) spiritualBar.style.display = isCourtyard ? 'flex' : 'none';
     if (goalsTracker) goalsTracker.style.display = isCourtyard ? 'flex' : 'none';
     if (topRightCluster) topRightCluster.style.display = isCourtyard ? 'inline-flex' : 'none';
+    const virtueWidget = document.getElementById('virtue-meter-widget');
+    if (virtueWidget) virtueWidget.style.display = isCourtyard ? 'block' : 'none';
     if (!isCourtyard) {
       this.toggleUtilityDrawer?.(false);
+      this.toggleVirtuePopover?.(false);
     }
     if (!isCourtyard && visitorPopover) {
       visitorPopover.style.display = 'none';
@@ -367,6 +370,7 @@ export const hudNavigationMethods = {
         this.storeProfile.lotusPoints += res.rewardLotus;
         this.grantPilgrimXp?.(res.rewardXp, task.shortLabel);
         this.spiritual = recordSpiritualMilestone(this.spiritual, `Làm công quả: ${task.title}`);
+        this.recordVirtueProgress?.('cong_qua', task.shortLabel);
         this.saveState();
         this.updateActionBadges?.();
         this.playBellTone(324, 2.0);
@@ -918,6 +922,176 @@ export const hudNavigationMethods = {
       };
       window.addEventListener('pagehide', sendLeave);
       window.addEventListener('beforeunload', sendLeave);
+    }
+  },
+
+  /* ========================================================================
+     THANH CÔNG ĐỨC HÔM NAY (DAILY VIRTUE METER HUD & POPOVER)
+     ======================================================================== */
+  recordVirtueProgress(actionType, note = '') {
+    const timeLabel = new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+    const res = recordVirtueActivity(this.virtueMeter, actionType, { note, timeLabel });
+    this.virtueMeter = res.state;
+
+    if (res.bonusLotus > 0 && this.storeProfile) {
+      this.storeProfile.lotusPoints = (this.storeProfile.lotusPoints || 0) + res.bonusLotus;
+    }
+
+    this.updateVirtueMeterHUD(res.gained);
+    this.saveState?.();
+
+    if (res.reachedGoalNow) {
+      this.audio?.playBlessingChime?.();
+      this.audio?.playCoinLotusSfx?.();
+      this.showToast?.(
+        '🪷 Viên mãn mục tiêu tu tập hôm nay!',
+        `Công đức hôm nay đạt ${res.totalPoints}/${res.goal} điểm · Nhận thưởng +${res.bonusLotus} 🪷 Hoa Sen.`,
+        5200,
+        false
+      );
+    }
+    return res;
+  },
+
+  updateVirtueMeterHUD(deltaPoints = 0) {
+    const summary = getVirtueMeterSummary(this.virtueMeter);
+    const widget = document.getElementById('virtue-meter-widget');
+    const barBtn = document.getElementById('virtue-meter-toggle');
+    const stageEl = document.getElementById('virtue-meter-stage');
+    const scoreEl = document.getElementById('virtue-meter-score');
+    const fillEl = document.getElementById('virtue-meter-fill');
+    const progEl = document.getElementById('virtue-meter-progressbar');
+    const deltaEl = document.getElementById('virtue-meter-delta');
+
+    if (widget) {
+      widget.classList.toggle('is-interior', Boolean(this.world3d?.insideInterior));
+    }
+    if (barBtn) {
+      barBtn.classList.toggle('is-complete', summary.completed);
+    }
+    if (stageEl) {
+      stageEl.textContent = summary.completed ? '✓ Viên Mãn' : summary.stageLabel;
+    }
+    if (scoreEl) {
+      scoreEl.textContent = `${summary.points} / ${summary.goal}`;
+    }
+    if (fillEl) {
+      fillEl.style.width = `${summary.percent}%`;
+    }
+    if (progEl) {
+      progEl.setAttribute('aria-valuenow', String(summary.clampedPoints));
+      progEl.setAttribute('aria-valuemax', String(summary.goal));
+    }
+    if (deltaEl && deltaPoints > 0) {
+      deltaEl.textContent = `+${deltaPoints} Công đức`;
+      deltaEl.classList.add('visible');
+      if (this._virtueDeltaTimer) clearTimeout(this._virtueDeltaTimer);
+      this._virtueDeltaTimer = setTimeout(() => {
+        deltaEl.classList.remove('visible');
+      }, 2200);
+    }
+
+    const pop = document.getElementById('virtue-meter-popover');
+    if (pop && pop.style.display !== 'none') {
+      this.renderVirtuePopoverContent(summary);
+    }
+  },
+
+  toggleVirtuePopover(forceOpen = null) {
+    const pop = document.getElementById('virtue-meter-popover');
+    const btn = document.getElementById('virtue-meter-toggle');
+    if (!pop || !btn) return;
+    const isOpen = pop.style.display !== 'none';
+    const nextOpen = typeof forceOpen === 'boolean' ? forceOpen : !isOpen;
+    pop.style.display = nextOpen ? 'block' : 'none';
+    btn.setAttribute('aria-expanded', nextOpen ? 'true' : 'false');
+    if (nextOpen) {
+      const mixer = document.getElementById('audio-mixer-popover');
+      if (mixer) mixer.style.display = 'none';
+      this.renderVirtuePopoverContent(getVirtueMeterSummary(this.virtueMeter));
+    }
+  },
+
+  renderVirtuePopoverContent(summary = getVirtueMeterSummary(this.virtueMeter)) {
+    const titleEl = document.getElementById('virtue-pop-title');
+    const subEl = document.getElementById('virtue-pop-sub');
+    const msEl = document.getElementById('virtue-pop-milestones');
+    const listEl = document.getElementById('virtue-pop-actions-list');
+    if (!msEl || !listEl) return;
+
+    if (titleEl) {
+      titleEl.textContent = summary.completed
+        ? `Viên mãn công đức hôm nay (${summary.points}/${summary.goal})`
+        : `Mục tiêu tu tập hôm nay (${summary.points}/${summary.goal})`;
+    }
+    if (subEl) {
+      const streakTxt = summary.streakDays > 0 ? ` · Chuỗi ${summary.streakDays} ngày` : '';
+      subEl.textContent = summary.completed
+        ? `Đã nhận thưởng +${summary.bonusLotus} 🪷 Hoa Sen hôm nay${streakTxt}`
+        : `Còn ${summary.remaining} điểm để viên mãn mục tiêu (+${summary.bonusLotus} 🪷)${streakTxt}`;
+    }
+
+    msEl.innerHTML = summary.milestones
+      .map(
+        (ms) => `
+      <div class="virtue-ms-node ${ms.reached ? 'reached' : ''}">
+        <span class="virtue-ms-pts">${ms.reached ? '✓' : '🪷'} ${ms.points}</span>
+        <span class="virtue-ms-lbl">${ms.label}</span>
+      </div>`
+      )
+      .join('');
+
+    listEl.innerHTML = summary.actions
+      .map(
+        (act) => `
+      <div class="virtue-action-row ${act.doneToday ? 'done' : ''}">
+        <div class="virtue-action-info">
+          <div class="virtue-action-name">
+            <span>${act.icon}</span>
+            <span>${act.label}</span>
+          </div>
+          <div class="virtue-action-meta">
+            ${act.doneToday ? `Đã thực hiện ${act.count}/${act.maxPerDay} lần · +${act.earnedPoints} điểm` : `+${act.points} điểm · ${act.hint}`}
+          </div>
+        </div>
+        <button type="button" class="virtue-action-go-btn" data-virtue-go="${act.quickTarget}">
+          ${act.capped ? 'Đủ hôm nay' : act.doneToday ? 'Làm tiếp' : 'Thực hiện'}
+        </button>
+      </div>`
+      )
+      .join('');
+
+    listEl.querySelectorAll('[data-virtue-go]').forEach((b) => {
+      b.addEventListener('click', () => {
+        const target = b.getAttribute('data-virtue-go');
+        this.toggleVirtuePopover(false);
+        this.triggerVirtueQuickAction(target);
+      });
+    });
+  },
+
+  triggerVirtueQuickAction(target) {
+    if (target === 'ritual_incense') {
+      this.triggerDangHuong?.();
+    } else if (target === 'ritual_bow') {
+      this.triggerLePhat?.({ skipWalk: true });
+    } else if (target === 'sutra_reading') {
+      this.lectureTab = 'sutra';
+      this.switchScreen?.('lecture');
+    } else if (target === 'ritual_chant') {
+      this.triggerNiemPhat?.();
+    } else if (target === 'ritual_lotus') {
+      this.triggerDangHoa?.();
+    } else if (target === 'ritual_bell') {
+      this.triggerNiemPhat?.();
+    } else if (target === 'lanterns') {
+      this.openHoaDangModal?.();
+    } else if (target === 'blessing_tower') {
+      this.openBlessingTowerModal?.();
+    } else if (target === 'fortune') {
+      this.openXinXamModal?.();
+    } else if (target === 'cong_qua') {
+      this.openPilgrimageDepthModal?.('cong_qua');
     }
   }
 };

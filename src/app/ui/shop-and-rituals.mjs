@@ -238,6 +238,7 @@ export const shopAndRitualsMethods = {
     const res = performSpiritualAction(this.spiritual, 'LE_PHAT');
     this.spiritual = res.state;
     this.grantPilgrimXp(10, 'Lễ Phật Tam Bái');
+    this.recordVirtueProgress?.('bow', 'Lễ Phật Tam Bái');
     this.saveState();
     this.updateActionBadges();
     this.world3d?.playPlayerBowAnimation();
@@ -367,6 +368,7 @@ export const shopAndRitualsMethods = {
       this.spiritual = r.state;
       if ((this.spiritual.incenseStep || 1) >= 4) {
         this.activityHub = recordDailyMissionMetric(this.activityHub, 'dailyIncense', 1);
+        this.recordVirtueProgress?.('incense', 'Dâng 3 nén tâm hương');
       }
       this.saveState();
       this.updateActionBadges();
@@ -379,6 +381,7 @@ export const shopAndRitualsMethods = {
       const r = performSpiritualAction(this.spiritual, 'DANG_HUONG_COMPLETE');
       this.spiritual = r.state;
       this.activityHub = recordDailyMissionMetric(this.activityHub, 'dailyIncense', 1);
+      this.recordVirtueProgress?.('incense', 'Cắm hương trước Chánh điện');
       this.saveState();
       this.updateActionBadges();
       this.closeModal();
@@ -391,6 +394,7 @@ export const shopAndRitualsMethods = {
       const r = performSpiritualAction(this.spiritual, 'DANG_HUONG_COMPLETE');
       this.spiritual = r.state;
       this.activityHub = recordDailyMissionMetric(this.activityHub, 'dailyIncense', 1);
+      this.recordVirtueProgress?.('incense', 'Dâng hương lễ Phật');
       this.saveState();
       this.updateActionBadges();
       this.openUGCStudioModal();
@@ -402,6 +406,7 @@ export const shopAndRitualsMethods = {
     this.spiritual = res.state;
     this.activityHub = recordDailyMissionMetric(this.activityHub, 'dailyLotus', 1);
     this.grantPilgrimXp(10, 'Dâng hoa sen');
+    this.recordVirtueProgress?.('lotus', 'Dâng hoa sen lên Phật đài');
     this.saveState();
     this.updateActionBadges();
     this.updateEquippedTags();
@@ -691,6 +696,7 @@ export const shopAndRitualsMethods = {
       this.activityHub = recordDailyMissionMetric(this.activityHub, 'dailyBeads', count);
       if (count >= 10 || this.spiritual.malaBeads === 0) {
         this.grantPilgrimXp(8, 'Niệm Phật Tràng Hạt');
+        this.recordVirtueProgress?.('chant', 'Niệm Phật lần tràng hạt');
       }
       this.saveState();
       this.updateActionBadges();
@@ -707,6 +713,7 @@ export const shopAndRitualsMethods = {
     document.getElementById('btn-strike-bell')?.addEventListener('click', () => {
       const r = performSpiritualAction(this.spiritual, 'RING_BELL');
       this.spiritual = r.state;
+      this.recordVirtueProgress?.('bell', 'Thỉnh Đại Hồng Chung');
       this.saveState();
       this.playBellTone(196, 3.4);
     });

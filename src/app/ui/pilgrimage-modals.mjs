@@ -440,6 +440,7 @@ export const pilgrimageModalsMethods = {
           `Thắp đèn cầu an tại Tháp Đèn Sân Chánh Điện (Ô #${res.entry.slotNumber})`
         );
         this.grantPilgrimXp(res.rewardXp, 'Ghi tên Tháp Đèn Cầu An');
+        this.recordVirtueProgress?.('blessing', 'Tháp Đèn Cầu An');
 
         try {
           localStorage.setItem(BLESSING_TOWER_BACKUP_KEY, JSON.stringify(this.blessingTower));
@@ -592,6 +593,7 @@ export const pilgrimageModalsMethods = {
         this.storeProfile.lotusPoints += 30;
         this.spiritual = recordSpiritualMilestone(this.spiritual, 'Thả Hoa Đăng Nguyện Ước tại Hồ Sen');
         this.grantPilgrimXp(25, 'Thả Hoa Đăng');
+        this.recordVirtueProgress?.('lantern', 'Thả Hoa Đăng Hồ Sen');
         this.syncHoaDangLanternsTo3D();
         this.saveState();
         this.updateActionBadges();
@@ -777,6 +779,7 @@ export const pilgrimageModalsMethods = {
             `Xin Xăm Quan Âm · Quẻ số ${drawn.stick.number} (${drawn.stick.rank})`
           );
           this.grantPilgrimXp?.(8, 'Xin Xăm Quan Âm');
+          this.recordVirtueProgress?.('fortune', `Xin Xăm Quẻ #${drawn.stick.number}`);
           persistFortune();
           this.saveState?.();
           this.updateActionBadges?.();

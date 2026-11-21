@@ -209,6 +209,7 @@ export const world3dBridgeMethods = {
         if (goalsTracker) goalsTracker.style.display = inside ? 'none' : 'block';
         if (topRightCluster) topRightCluster.classList.toggle('interior-mode', Boolean(inside));
         if (visitorPopover) visitorPopover.classList.toggle('interior-mode', Boolean(inside));
+        this.updateVirtueMeterHUD?.();
         this.syncVisitorPresence?.();
         if (inside) {
           this.nearbyStallTrigger = null;
@@ -710,6 +711,7 @@ export const world3dBridgeMethods = {
     this.activityHub = res.activity;
     this.storeProfile = res.storeProfile;
     this.spiritual = performSpiritualAction(this.spiritual, 'SWEEP_LEAVES').state;
+    this.recordVirtueProgress?.('cong_qua', 'Quét lá sân chùa');
     this.nearbyInteractPrompt = null;
     this.saveState();
     this.syncTempleWorldGameplayState();

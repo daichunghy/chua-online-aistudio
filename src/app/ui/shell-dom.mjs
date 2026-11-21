@@ -224,6 +224,43 @@ export const shellDomMethods = {
           </div>
         </header>
 
+        <!-- Thanh Công Đức Hôm Nay (Daily Spiritual Goal Progress Bar) -->
+        <div id="virtue-meter-widget" class="virtue-meter-widget" aria-label="Công đức hôm nay">
+          <button
+            type="button"
+            id="virtue-meter-toggle"
+            class="virtue-meter-bar-btn"
+            aria-expanded="false"
+            aria-controls="virtue-meter-popover"
+            title="Xem mục tiêu tu tập và công đức hôm nay"
+          >
+            <div class="virtue-meter-head-row">
+              <span class="virtue-meter-title">🪷 Công đức hôm nay</span>
+              <span class="virtue-meter-stage" id="virtue-meter-stage">Bắt Đầu</span>
+              <span class="virtue-meter-score" id="virtue-meter-score">0 / 100</span>
+            </div>
+            <div class="virtue-meter-track" role="progressbar" id="virtue-meter-progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Tiến độ công đức hôm nay">
+              <div class="virtue-meter-fill" id="virtue-meter-fill" style="width:0%"></div>
+              <span class="virtue-meter-tick" style="left:25%" aria-hidden="true"></span>
+              <span class="virtue-meter-tick" style="left:50%" aria-hidden="true"></span>
+              <span class="virtue-meter-tick" style="left:75%" aria-hidden="true"></span>
+            </div>
+            <span class="virtue-meter-delta" id="virtue-meter-delta" aria-live="polite"></span>
+          </button>
+
+          <div id="virtue-meter-popover" class="virtue-meter-popover" style="display:none;" role="dialog" aria-label="Chi tiết mục tiêu tu tập hôm nay">
+            <div class="virtue-pop-header">
+              <div>
+                <strong id="virtue-pop-title">Mục tiêu tu tập hôm nay</strong>
+                <div class="virtue-pop-sub" id="virtue-pop-sub">Hoàn thành 100 điểm công đức để nhận +30 🪷 Hoa Sen</div>
+              </div>
+              <button type="button" id="btn-close-virtue-popover" class="courtyard-help-close" aria-label="Đóng bảng công đức">✕</button>
+            </div>
+            <div class="virtue-pop-milestones" id="virtue-pop-milestones"></div>
+            <div class="virtue-pop-actions-list" id="virtue-pop-actions-list"></div>
+          </div>
+        </div>
+
         <!-- Simplified Auto-Balanced Audio Popover -->
         <div id="audio-mixer-popover" class="audio-mixer-popover" style="display:none;" role="dialog" aria-label="Điều chỉnh âm thanh Chùa Vĩnh Tràng">
           <div class="audio-mixer-head">

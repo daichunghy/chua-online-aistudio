@@ -28,7 +28,7 @@ export const renderLoopAndCutsceneMethods = {
     const dz = wp.z - this.playerState.z;
     const dist = Math.hypot(dx, dz);
     const isFinalWp = this.autoWalkWaypoints.length === 1;
-    const reachRadius = isFinalWp ? 0.42 : 0.72;
+    const reachRadius = isFinalWp ? 0.52 : 0.85;
 
     if (dist < reachRadius) {
       this.autoWalkWaypoints.shift();
@@ -281,7 +281,7 @@ export const renderLoopAndCutsceneMethods = {
         this._doorCooldownUntil = performance.now() + 2400;
         if (tr.side === 'north_buddha') {
           this.playerState.x = 14.5;
-          this.playerState.z = -37.2;
+          this.playerState.z = -33.6;
           this.playerState.yaw = Math.PI;
           this.cameraBaseYaw = Math.PI;
         } else if (tr.side === 'front_tam_quan') {

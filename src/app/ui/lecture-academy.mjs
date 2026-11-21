@@ -94,12 +94,14 @@ export const lectureAcademyMethods = {
 
       document.getElementById('btn-listen-tts')?.addEventListener('click', () => {
         this.toggleLectureSpeech(lesson);
+        this.recordVirtueProgress?.('reading', `Nghe giảng: ${lesson.title}`);
       });
       document.getElementById('btn-toggle-lecture-listen')?.addEventListener('click', () => {
         if (this.audioPlaying) {
           this.pauseVoiceAudio();
         } else {
           this.playVoiceAudio(lesson.audio, { rate: this.readAlongRate || 1.0 });
+          this.recordVirtueProgress?.('reading', `Nghe pháp âm: ${lesson.title}`);
         }
         this.renderLectureStage();
       });
@@ -213,6 +215,7 @@ export const lectureAcademyMethods = {
               this.activityHub = recordDailyMissionMetric(this.activityHub, 'dailyLessons', 1);
               this.grantPilgrimXp(20, lesson.title);
             }
+            this.recordVirtueProgress?.('reading', `Học Phật: ${lesson.title}`);
             this.saveState();
             this.updateActionBadges();
             this.playBellTone(324, 1.8);
